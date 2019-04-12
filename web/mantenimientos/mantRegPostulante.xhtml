@@ -1,0 +1,993 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" > 
+    <ui:define name="content">
+        <h:body> 
+            <div>
+                <p:layout fullPage="false"  style="width:1800px;height:750px" styleClass="centrado" >
+                    <p:layoutUnit position="west" size="675" header="#{msgs.etiquetaBuscadorPostulante}" minSize="150" maxSize="680" resizable="true" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500" >
+                        <div>
+                            <h:form id="frmDatosPostulante">
+                                <h:panelGrid  id="pnlTablaPostulante" style="width: 450px;padding: 5px" styleClass="centrado">
+                                    <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}" style="width: 500px" >
+                                        <h:panelGrid columns="2" class="siseFontGrid5">
+                                            <h:panelGrid columns="2" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}" class="siseFontGrid5">                                          
+                                                <h:outputLabel value="#{msgs.etiquetaCole}" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}"/>
+                                                <h:outputLabel value=" " style="color: red" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}"/>
+                                            </h:panelGrid>
+                                            <p:selectOneMenu value="#{estudianteMB.estudianteFiltroBean.personaBean.unidadNegocioBean.uniNeg}" required="true" style="width: 315px" filter="true" filterMatchMode="contains" panelStyle="width:350px" class="resetSelect" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}" label="#{msgs.etiquetaCole}">
+                                                <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                <f:selectItems value="#{estudianteMB.listaUnidadNegocioBean}" var="un" itemLabel="#{un.nombreUniNeg}" itemValue="#{un.uniNeg}"/>
+                                            </p:selectOneMenu>
+                                            <h:panelGrid columns="2" class="siseFontGrid5">
+                                                <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                                <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                            </h:panelGrid>
+                                            <p:inputText value="#{estudianteMB.estudianteFiltroBean.personaBean.idPersona}" size="15" maxlength="15"/>
+                                            <h:outputLabel value="#{msgs.etiquetaApePat}" />
+                                            <p:inputText value="#{estudianteMB.estudianteFiltroBean.personaBean.apepat}" size="28" maxlength="30"/>  
+                                            <h:outputLabel value="#{msgs.etiquetaApeMat}" />
+                                            <p:inputText value="#{estudianteMB.estudianteFiltroBean.personaBean.apemat}"  size="28" maxlength="30" />
+                                            <h:outputLabel value="#{msgs.etiquetaNombre}" />
+                                            <p:inputText value="#{estudianteMB.estudianteFiltroBean.personaBean.nombre}"  size="28" maxlength="30" />  
+                                            <h:outputLabel value="#{msgs.etiquetaPerIng}" class="negrita siseFontGrid5" /> 
+                                            <p:selectOneMenu value="#{estudianteMB.estudianteFiltroBean.anioIngreso}"    label="#{msgs.etiquetaPerIng}" filter="true" style="width: 225px" panelStyle="width: 225px" class="resetSelect">
+                                                <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{estudianteMB.listaPeriodoIngreso}" var="anioFiltro" itemLabel="#{anioFiltro}" itemValue="#{anioFiltro}"/>
+                                            </p:selectOneMenu> 
+                                        </h:panelGrid>
+                                        <p:separator/>
+                                        <h:panelGrid columns="2" styleClass="centrado">
+                                            <p:commandButton value="#{msgs.botonBuscar}" action="#{estudianteMB.obtenerFiltroEstudiantePost()}" update="pnlTablaPostulante,pnlTablaPostulante2,msg"/>
+                                            <p:commandButton  value="#{msgs.botonLimpiar}" process="@this" actionListener="#{estudianteMB.limpiarFiltroEstudiante}" update="pnlTablaPostulante,pnlTablaPostulante2,:tabDatosPostulante">
+                                            </p:commandButton>
+                                        </h:panelGrid> 
+                                        <p:messages autoUpdate="false" id="msg" />
+                                    </p:panel>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlTablaPostulante2" styleClass="centrado"> 
+                                    <p:dataTable id="dgPostulante" value="#{estudianteMB.listaEstudianteBean}" widgetVar="dgPostulante" 
+                                                 paginator="true"
+                                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                                 rowsPerPageTemplate="10,20"
+                                                 selectionMode="single"
+                                                 paginatorPosition="bottom" rowIndexVar="n" selection="#{estudianteMB.estudianteBean}" 
+                                                 var="estudiante" rowKey="#{estudiante}"  rows="#{estudianteMB.numRegistrosTablasPorFiltro}" 
+                                                 rendered="#{not empty estudianteMB.listaEstudianteBean}" 
+                                                 style="width: 650px;font-size:14px !important;margin-bottom:0">
+                                        <p:ajax event="rowSelect" listener="#{estudianteMB.rowSelect}" update=":tabDatosPostulante" />
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.tituloPostulantes}" />  
+                                        </f:facet>
+                                        <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                            <center>
+                                                <h:outputText value="#{n+1}" />
+                                            </center>
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="7%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.idPersona}" >
+                                            <h:outputText value="#{estudiante.personaBean.idPersona}"/>
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.nombre}">
+                                            <h:outputText value="#{estudiante.personaBean.nombre}"/>
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaApePat}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.apepat}" >
+                                            <h:outputText value="#{estudiante.personaBean.apepat}" />
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaApeMat}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.apemat}">
+                                            <h:outputText value="#{estudiante.personaBean.apemat}" />
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaStatusPostulante}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.tipoStatusEst.idCodigo}">
+                                            <h:outputText value="#{estudiante.tipoStatusEst.codigo}" />
+                                        </p:column>
+                                    </p:dataTable>
+                                </h:panelGrid>
+                            </h:form>
+                        </div>
+                    </p:layoutUnit>
+                    <p:layoutUnit position="center" styleClass="centrado">
+                        <div> 
+                            <h:panelGrid styleClass="centrado" id="pnlDatosPostulante" style="padding-top: 5px" >
+                                <p:panel header="#{msgs.tituloFichaPost}"   >
+                                    <p:tabView dynamic="true" cache="true" id="tabDatosPostulante" style="width: 1100px">
+                                        <p:tab title="#{msgs.etiquetaDatosBas}">
+                                            <h:form id="frmDatosBasicoEst">
+                                                <p:fieldset legend="#{msgs.tituloBusProspecto}" styleClass="centrado">
+                                                    <h:panelGrid columns="6" class="siseFontGrid">
+                                                        <h:outputLabel value="#{msgs.etiquetaProspecto}" class="negrita"/>
+                                                        <h:outputText value="" class="requerido"/> 
+                                                        <p:inputText id="txtNomFamiliar" value="#{estudianteMB.estudianteBean.personaBean.nombreCompleto}" label="#{msgs.etiquetaPersona}" size="35" readonly="true"/> 
+                                                        <p:commandLink id="btnBuscarFamiliar" actionListener="#{personaMB.limpiarPersonaFiltro()}" oncomplete="PF('popPostulante').show();" process="@this" update=":frmBuscarPostulante">
+                                                            <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                                        </p:commandLink>
+                                                    </h:panelGrid>
+                                                </p:fieldset>
+                                                <br/>
+                                                <h:panelGrid columns="3" id="pnlPersona"  styleClass="centrado" style="width: 700px">
+                                                    <h:panelGrid columns="3" style="padding: 5px;width: 400px" class="siseFontGrid3">
+                                                        <h:panelGrid columns="2">
+                                                            <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                                            <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                                        </h:panelGrid>
+                                                        <h:outputText value="*" class="requerido"/>
+                                                        <p:inputText value="#{estudianteMB.estudianteBean.personaBean.idPersona}" size="15" maxlength="15" readonly="#{estudianteMB.estudianteBean.personaBean.idPersona!=null}" required="true">
+                                                            <p:ajax event="blur" listener="#{prospectoMB.copiarCodigoEnNroDoc()}" update="txtNroDoc"/>
+                                                        </p:inputText>
+                                                        <h:outputLabel value="#{msgs.etiquetaApepat}" class="negrita"/>
+                                                        <h:outputText value="*" class="requerido"/>
+                                                        <p:inputText  value="#{estudianteMB.estudianteBean.personaBean.apepat}"    label="#{msgs.etiquetaApepat}" size="30" maxlength="29" required="true"/> 
+                                                        <h:outputLabel value="#{msgs.etiquetaApemat}" class="negrita"/>
+                                                        <h:outputText value="*" class="requerido"/>
+                                                        <p:inputText  value="#{estudianteMB.estudianteBean.personaBean.apemat}"    label="#{msgs.etiquetaApemat}" size="30" maxlength="29" required="true"/> 
+                                                        <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                                        <h:outputText value="*" class="requerido"/> 
+                                                        <p:inputText  value="#{estudianteMB.estudianteBean.personaBean.nombre}"    label="#{msgs.etiquetaNombre}" size="30" maxlength="29" required="true"/> 
+                                                        <h:outputLabel value="#{msgs.etiquetaFecNac}" class="negrita"/>
+                                                        <h:outputText value="" class="requerido"/>
+                                                        <p:calendar id="fecIni" value="#{estudianteMB.estudianteBean.personaBean.fecNac}"    label="#{msgs.etiquetaNaci}" mode="popup"
+                                                                    pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                                        </p:calendar>
+                                                        <h:outputLabel value="#{msgs.etiquetaCorreoPer}" class="negrita"/>
+                                                        <h:outputText value="" class="requerido"/>
+                                                        <p:inputTextarea  value="#{estudianteMB.estudianteBean.personaBean.correo}"    label="#{msgs.etiquetaCorreoPer}" cols="30" rows="2" maxlength="49"/>
+                                                    </h:panelGrid>
+                                                    <p:separator style="width:1px;height:180px" />
+                                                    <h:panelGrid columns="3" style="padding: 5px;width: 540px" class="siseFontGrid3" >
+                                                        <h:outputLabel value="#{msgs.etiquetaSexo}" class="negrita"/>
+                                                        <h:outputText value=" "  class="requerido"/>
+                                                        <p:selectOneRadio value="#{estudianteMB.estudianteBean.personaBean.sexo}"    label="#{msgs.etiquetaSexo}">
+                                                            <f:selectItem itemValue="1" itemLabel="#{msgs.comboMasculino}"/>
+                                                            <f:selectItem itemValue="0" itemLabel="#{msgs.comboFemenino}"/>
+                                                        </p:selectOneRadio>
+                                                        <h:outputLabel value="#{msgs.etiquetaDocPer}" class="negrita"/>
+                                                        <h:outputText value="" class="requerido"/>
+                                                        <h:panelGrid columns="5" style="font-size: 1em">
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteBean.personaBean.idTipoDocPer.idCodigo}"    label="#{msgs.etiquetaDocPer}" style="width: 180px" panelStyle="width:180px" >
+                                                                <f:selectItems value="#{estudianteMB.listaDocPer}" var="docPer" itemLabel="#{docPer.codigo}" itemValue="#{docPer.idCodigo}"/>
+                                                            </p:selectOneMenu> 
+                                                            <h:outputLabel value="#{msgs.etiquetaNro}" class="negrita"/>
+                                                            <h:outputText value="*" class="requerido"/>
+                                                            <p:inputText id="txtNroDoc" value="#{estudianteMB.estudianteBean.personaBean.nroDoc}" label="#{msgs.etiquetaNro}" size="15" maxlength="15" required="true"/> 
+                                                        </h:panelGrid><h:outputLabel value="#{msgs.etiquetaNac}" class="negrita"/>
+                                                        <h:outputText value=" " class="requerido"/>
+                                                        <p:selectOneMenu value="#{estudianteMB.estudianteBean.personaBean.paisBean.idPais}"    label="#{msgs.etiquetaNac}" style="width: 180px" panelStyle="width:180px" filter="true">
+                                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                            <f:selectItems value="#{estudianteMB.listaNacionalidad}" var="nacionalidad" itemLabel="#{nacionalidad.nacionalidad}" itemValue="#{nacionalidad.idPais}"/>
+                                                        </p:selectOneMenu>
+                                                        <h:outputLabel value="#{msgs.etiquetaGradoPost}" class="negrita"/>
+                                                        <h:outputText value=" " class="requerido"/>
+                                                        <p:selectOneMenu value="#{estudianteMB.estudianteBean.personaBean.gradoAcademicoBean.idGradoAcademico}"    label="#{msgs.etiquetaGradoApro}" style="width: 180px" panelStyle="width:180px"  filter="true">
+                                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                            <f:selectItems value="#{estudianteMB.listaGradoAcademico}" var="grado" itemLabel="#{grado.nombre}" itemValue="#{grado.idGradoAcademico}"/>
+                                                        </p:selectOneMenu>
+                                                        <h:outputLabel value="#{msgs.etiquetaCorreoResp}" class="negrita"/>
+                                                        <h:outputText value="" class="requerido"/>
+                                                        <p:inputTextarea  value="#{estudianteMB.estudianteBean.personaBean.contacto}"  label="#{msgs.etiquetaContactoPer}" cols="45" rows="3" maxlength="99">
+                                                        </p:inputTextarea>
+                                                        <p:link id="est" outcome="/mantenimientos/mantAdmision.xhtml" target="_blank" value="#{msgs.etiquetaIrSegAdm}"  rendered="#{estudianteMB.flgExisteAdmison==true or admisionMB.flgExisteAdmison==true}"> 
+                                                            <f:param name="caniari" value="#{estudianteMB.estudianteBean.personaBean.idPersona}" />
+                                                            <f:param name="caniari2" value="#{estudianteMB.estudianteBean.personaBean.unidadNegocioBean.uniNeg}" />
+                                                        </p:link> 
+                                                        <br></br>
+                                                    </h:panelGrid>
+                                                    <h:inputHidden />
+                                                    <h:inputHidden />
+                                                    <h:panelGrid styleClass="centrado" id="pnlDatosConEntrevista" style="text-align: center !important ; font-weight: bold;" > 
+                                                        <h:panelGrid class="centrado siseFontGrid3" columns="1"  >
+                                                            <p:commandButton id="btnConfAdm" value="#{msgs.etiquetaConfAdm}" oncomplete="if(args.operacionCorrecta){PF('popAdm').show();}" disabled="#{estudianteMB.estudianteBean.personaBean.idPersona==null}"
+                                                                             actionListener="#{estudianteMB.ponerPersonaPostulanteEnAdmision()}" update=":frmAdm:tabViewAdm,msgsDocObli">
+                                                            </p:commandButton>
+                                                            <p:messages id="msgsDocObli" showSummary="true" autoUpdate="false" />
+                                                        </h:panelGrid>  
+                                                    </h:panelGrid>
+                                                    <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                                                    <h:inputHidden />
+                                                    <h:inputHidden />
+                                                </h:panelGrid>
+                                                <h:panelGrid class="centrado" columns="2">
+                                                    <p:commandButton actionListener="#{estudianteMB.comprobarEstudiante('postulante')}" update=":frmDatosPostulante:pnlTablaPostulante2,msgsAddPer,:frmError:pnlDatosError,pnlPersona" 
+                                                                     oncomplete="if(args.error){PF('popError').show();}else if(args.operacionCorrecta){PF('popDone').show();}"
+                                                                     value="#{msgs.botonGrabar}">
+                                                    </p:commandButton>
+                                                    <p:commandButton actionListener="#{estudianteMB.limpiarEstudiante()}" update=":tabDatosPostulante"
+                                                                     value="#{msgs.botonNuevo}" process="@this">
+                                                    </p:commandButton>
+                                                </h:panelGrid>
+                                                <p:messages id="msgsAddPer" showSummary="true"/>
+                                            </h:form>
+                                        </p:tab>  
+                                        <p:tab title="#{msgs.etiquetaDatosSec}">
+                                            <h:form enctype="multipart/form-data">
+                                                <h:panelGrid columns="2" id="pnlEstudiante" cellpadding="3" styleClass="centrado"> 
+                                                    <p:panel header="#{msgs.etiquetaSitActual}" style="width: 500px">
+                                                        <h:panelGrid columns="3" class="siseFontGrid3">
+                                                            <h:outputLabel value="#{msgs.etiquetaStatusGra}:" class="negrita" />
+                                                            <h:outputText value=" " class="requerido"/>
+                                                            <h:outputText value="#{estudianteMB.estudianteBean.tipoStatusEst.codigo}" class="negrita" /> 
+                                                            <br></br><br></br><br></br>   <br></br><br></br><br></br> 
+                                                        </h:panelGrid>
+                                                    </p:panel>
+                                                    <p:panel header="#{msgs.etiquetaDatIngreso}" style="width: 500px">
+                                                        <h:panelGrid columns="3" id="codigoooo" class="siseFontGrid3" rendered="#{estudianteMB.flgReingresante==false}">
+                                                            <h:outputLabel value="#{msgs.etiquetaCodAlumReingre}:" class="negrita" />
+                                                            <h:outputText value=" " class="requerido"/>
+                                                            <p:inputText value="#{estudianteMB.estudianteBean.codigo}" class="negrita" />
+                                                        </h:panelGrid> 
+                                                        <h:panelGrid columns="3" class="siseFontGrid3" cellpadding="3"> 
+                                                            <h:outputLabel value="#{msgs.etiquetaModIngreso}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteBean.tipoIngresoEst.idCodigo}"    label="#{msgs.etiquetaProcedencia}" style="width: 250px" panelStyle="width:250px">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaProcedencia}" var="ingresoEst" itemLabel="#{ingresoEst.codigo}" itemValue="#{ingresoEst.idCodigo}"/>
+                                                                <p:ajax event="change" listener="#{estudianteMB.obtenerAlumnoReingreso()}" update="codigoooo"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaAnioIng}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/> 
+                                                            <h:outputLabel value="#{estudianteMB.estudianteBean.anioIngreso}" class="negrita"/>
+                                                            <h:outputLabel value="#{msgs.etiquetaFechaIng}:" class="negrita" style="font-size: 1.2em"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:calendar value="#{estudianteMB.estudianteBean.fechaIngreso}"  label="#{msgs.etiquetaFechaIng}" mode="popup" size="10"
+                                                                        pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                                            </p:calendar> 
+                                                        </h:panelGrid>
+                                                    </p:panel>
+                                                    <p:panel header="#{msgs.etiquetaDatosNacimiento}" style="width: 500px">
+                                                        <h:panelGrid columns="3"  class="siseFontGrid3"  >
+                                                            <h:outputLabel value="#{msgs.etiquetaPaisNac}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteBean.paisNaciBean.idPais}" style="width: 250px" panelStyle="width:250px" filter="true">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaPaisNac}" var="paisNac" itemLabel="#{paisNac.nombre}" itemValue="#{paisNac.idPais}"/>
+                                                                <p:ajax event="change" listener="#{estudianteMB.obtenerPaisPorDefectoPeru()}" update="cmbDepartamento,cmbProvincia,cmbProvincia,cmbDistrito"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaDepNac}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu id="cmbDepartamento" disabled="#{estudianteMB.flgPaisPeru==false}" value="#{estudianteMB.estudianteBean.idDistritoNaci.provinciaBean.departamentoBean.idDepartamento}" style="width: 250px" panelStyle="width:250px" filter="true" filterMatchMode="contains">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaDepartamentoNaci}" var="departamento" itemLabel="#{departamento.nombre}" itemValue="#{departamento.idDepartamento}"/>
+                                                                <p:ajax event="change" listener="#{estudianteMB.obtenerProvinciaNaci()}" update="cmbProvincia"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaProvNac}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu id="cmbProvincia" disabled="#{estudianteMB.flgPaisPeru==false}" value="#{estudianteMB.estudianteBean.idDistritoNaci.provinciaBean.idProvincia}" style="width: 250px" panelStyle="width:250px" filter="true" filterMatchMode="contains">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaProvinciaNaci}" var="provincia" itemLabel="#{provincia.nombre}" itemValue="#{provincia.idProvincia}"/>
+                                                                <p:ajax event="change" listener="#{estudianteMB.obtenerDistritoNaci()}" update="cmbDistrito"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaDisNac}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu id="cmbDistrito" disabled="#{estudianteMB.flgPaisPeru==false}" value="#{estudianteMB.estudianteBean.idDistritoNaci.idDistrito}" style="width: 250px" panelStyle="width:250px" filter="true" filterMatchMode="contains">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaDistritoNaci}" var="distrito" itemLabel="#{distrito.nombre}" itemValue="#{distrito.idDistrito}"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaRefLugNac}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputTextarea  value="#{estudianteMB.estudianteBean.refeLugarNaci}"    label="#{msgs.etiquetaRefLugNac}" maxlength="100" 
+                                                                              cols="40" rows="5"/> 
+                                                            <h:outputLabel value="#{msgs.etiquetaIdio}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteBean.tipoIdioma.idCodigo}"    label="#{msgs.etiquetaIdio}"  style="width: 250px" panelStyle="width:250px">
+                                                                <f:selectItems value="#{estudianteMB.listaIdioma}" var="idioma" itemLabel="#{idioma.codigo}" itemValue="#{idioma.idCodigo}"/>
+                                                            </p:selectOneMenu>
+                                                            <br></br><br></br><br></br><br></br> <br></br><br></br><br></br><br></br><br></br><br></br><br></br> 
+                                                        </h:panelGrid>
+                                                    </p:panel>
+                                                    <p:panel header="#{msgs.etiquetaDatosDomicilio}" style="width: 500px">
+                                                        <h:panelGrid columns="3" class="siseFontGrid3">
+                                                            <h:outputLabel value="#{msgs.etiquetaDepDom}:" class="negrita" />
+                                                            <h:outputText value=" " class="requerido"/>
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteBean.idDistritoDomi.provinciaBean.departamentoBean.idDepartamento}" style="width: 250px" panelStyle="width:250px" filter="true" filterMatchMode="contains">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaDepartamentoDomi}" var="departamento" itemLabel="#{departamento.nombre}" itemValue="#{departamento.idDepartamento}"/>
+                                                                <p:ajax event="change" listener="#{estudianteMB.obtenerProvinciaDomi()}" update="cmbProvincia1"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaProvDom}:" class="negrita" />
+                                                            <h:outputText value=" " class="requerido"/>
+                                                            <p:selectOneMenu id="cmbProvincia1" value="#{estudianteMB.estudianteBean.idDistritoDomi.provinciaBean.idProvincia}" widgetVar="cmbProvincia1" style="width: 250px" panelStyle="width:250px" filter="true" filterMatchMode="contains">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaProvinciaDomi}" var="provincia" itemLabel="#{provincia.nombre}" itemValue="#{provincia.idProvincia}"/>
+                                                                <p:ajax event="change" listener="#{estudianteMB.obtenerDistritoDomi()}" update="cmbDistrito1"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaDisDom}:" class="negrita" />
+                                                            <h:outputText value=" " class="requerido"/>
+                                                            <p:selectOneMenu id="cmbDistrito1" value="#{estudianteMB.estudianteBean.idDistritoDomi.idDistrito}" widgetVar="cmbDistrito1" style="width: 250px" panelStyle="width:250px" filter="true" filterMatchMode="contains">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaDistritoDomi}" var="distrito" itemLabel="#{distrito.nombre}" itemValue="#{distrito.idDistrito}"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaTipViaDom}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteBean.idTipoViaDomi.idCodigo}"    label="#{msgs.etiquetaTipViaDom}" style="width: 250px" panelStyle="width:250px">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaViaDomicilio}" var="via" itemLabel="#{via.codigo}" itemValue="#{via.idCodigo}"/>
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaViaDom}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputTextarea  value="#{estudianteMB.estudianteBean.viaDomi}"  label="#{msgs.etiquetaViaDom}" maxlength="50" 
+                                                                              style="width: 300px;height: 40px"/> 
+                                                            <h:outputLabel value="#{msgs.etiquetaNro}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputText  value="#{estudianteMB.estudianteBean.nroDomi}" label="#{msgs.etiquetaNro}" maxlength="20" size="10"/> 
+                                                            <h:outputLabel value="#{msgs.etiquetaUrb}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputTextarea  value="#{estudianteMB.estudianteBean.urbDomi}"    label="#{msgs.etiquetaUrb}" maxlength="50" 
+                                                                              style="width: 300px;height: 40px"/> 
+                                                            <h:outputLabel value="#{msgs.etiquetaRefDomi}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputTextarea  value="#{estudianteMB.estudianteBean.refeDomi}"    label="#{msgs.etiquetaRefDomi}" maxlength="100" 
+                                                                              style="width: 300px;height: 50px"/>
+                                                            <h:outputLabel value="#{msgs.etiquetaTel1}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputText  value="#{estudianteMB.estudianteBean.telefono1Domi}"    label="#{msgs.etiquetaTel1}" maxlength="20" size="15"/>
+                                                            <h:outputLabel value="#{msgs.etiquetaTel2}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputText  value="#{estudianteMB.estudianteBean.telefono2Domi}"    label="#{msgs.etiquetaTel2}" maxlength="20" size="15"/>
+                                                            <br></br><br></br>  
+                                                            <h:inputHidden value="#{estudianteMB.estudianteBean.personaBean.idPersona}"/>
+                                                        </h:panelGrid>
+                                                    </p:panel> 
+                                                </h:panelGrid>
+                                                <h:panelGrid class="centrado" columns="2">
+                                                    <p:commandButton actionListener="#{estudianteMB.guardarEstudiante('postulante')}" update="msgsAddEst"      
+                                                                     oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                                     value="#{msgs.botonGrabar}">
+                                                    </p:commandButton>
+                                                    <p:commandButton actionListener="#{estudianteMB.limpiarEstudiante()}"                                                             
+                                                                     value="#{msgs.botonNuevo}" process="@this">
+                                                    </p:commandButton>
+                                                </h:panelGrid>
+                                                <p:growl id="msgsAddEst" showDetail="true" showSummary="true"  autoUpdate="false"/>
+                                            </h:form>
+                                        </p:tab>
+                                        <p:tab title="#{msgs.etiquetaDatAdicionales}">
+                                            <h:form id="frmDatosAdi">
+                                                <h:panelGrid columns="2" id="pnlEstudianteInfo" > 
+                                                    <p:panel header="#{msgs.etiquetaInfColeProcedencia}" style="width: 500px" >
+                                                        <h:panelGrid columns="3" class="siseFontGrid3" >
+                                                            <h:outputLabel value="#{msgs.etiquetaColegioProEnt}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/> 
+                                                            <p:inputTextarea value="#{estudianteMB.estudianteInfoBean.colegioProcedencia}"  label="#{msgs.etiquetaColegioProEnt}"  cols="45" rows="3"/>
+                                                            <h:outputLabel value="#{msgs.etiquetaAnosColegioPro}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/> 
+                                                            <p:spinner id="minMax" value="#{estudianteMB.estudianteInfoBean.aniosColegioProcedencia}" min="0" max="11" label="#{msgs.etiquetaAnosColegioPro}" size="2"/>
+                                                            <h:outputLabel value="#{msgs.etiquetaTipCambioCol}:" class="negrita"/>
+                                                            <h:outputText value=" " class="requerido"/>
+                                                            <p:selectOneRadio value="#{estudianteMB.estudianteInfoBean.tipoCambioColegio.idCodigo}"    label="#{msgs.etiquetaTipCambioCol}"  >
+                                                                <f:selectItems value="#{estudianteMB.listaCambioColegio}" var="camCol" itemLabel="#{camCol.codigo}" itemValue="#{camCol.idCodigo}"/>
+                                                            </p:selectOneRadio>
+                                                            <h:outputLabel value="#{msgs.etiquetaTipMovCambio}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteInfoBean.tipoMotivoCambio.idCodigo}" label="#{msgs.etiquetaTipMovCambio}" style="width: 220px" panelStyle="width:22s0px" filter="true">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaMotivoCambio}" var="motCam" itemLabel="#{motCam.codigo}" itemValue="#{motCam.idCodigo}" />
+                                                            </p:selectOneMenu>
+                                                            <h:outputLabel value="#{msgs.etiquetaAnoMovimiento}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputText value="#{estudianteMB.estudianteInfoBean.anioRetiro}" label="#{msgs.etiquetaAnoRetiro}" size="5" maxlength="4" />
+                                                            <h:outputLabel value="#{msgs.etiquetaGradoAcaMov}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:selectOneMenu value="#{estudianteMB.estudianteInfoBean.gradoAcademicoCambioBean.idGradoAcademico}"    label="#{msgs.etiquetaGradoAcaRet}" style="width: 220px" panelStyle="width:220px" filter="true">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{estudianteMB.listaGradoAcademicoCambio}" var="gradoRetiro" itemLabel="#{gradoRetiro.nombre}" itemValue="#{gradoRetiro.idGradoAcademico}"/>
+                                                            </p:selectOneMenu>
+                                                            <br></br> 
+                                                            <br></br> 
+                                                            <br></br> 
+
+                                                        </h:panelGrid>
+                                                    </p:panel>
+                                                    <p:panel header="#{msgs.etiquetaEncuestaFamiliar}" style="width: 500px">
+                                                        <h:panelGrid columns="3" class="siseFontGrid3" >
+                                                            <h:outputLabel value="#{msgs.etiquetaNroHermanos}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputText value="#{estudianteMB.estudianteInfoBean.nroHermanos}" label="#{msgs.etiquetaNroHermanos}"  size="5" maxlength="2" />
+                                                            <h:outputLabel value="#{msgs.etiquetaNroHermanas}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputText value="#{estudianteMB.estudianteInfoBean.nroHermanas}" label="#{msgs.etiquetaNroHermanas}" size="5" maxlength="2"  />
+                                                            <h:outputLabel value="#{msgs.etiquetaNroHermano}:" class="negrita"/>
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputText value="#{estudianteMB.estudianteInfoBean.nroHermano}" label="#{msgs.etiquetaNroHermano}" size="5" maxlength="2"  />
+                                                            <h:outputLabel value="#{msgs.etiquetaRefeFami}:" class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputTextarea  value="#{estudianteMB.estudianteInfoBean.refeFamiliar}"    label="#{msgs.etiquetaRefeFami}" maxlength="200" cols="45" rows="4"/> 
+
+                                                            <h:outputLabel value="#{msgs.etiquetaObsFam}: " class="negrita" />
+                                                            <h:outputText value="" class="requerido"/>
+                                                            <p:inputTextarea  value="#{estudianteMB.estudianteInfoBean.obsFamiliar}"    label="#{msgs.etiquetaObsFam}" maxlength="500" cols="45" rows="5" />
+                                                            <br></br>
+                                                        </h:panelGrid>
+                                                    </p:panel> 
+                                                </h:panelGrid>
+                                                <h:panelGrid class="centrado" columns="2">
+                                                    <p:commandButton actionListener="#{estudianteMB.guardarEstudianteInfo('postulante')}" update="msgsAddEstInfo"      
+                                                                     oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                                     value="#{msgs.botonGrabar}">
+                                                    </p:commandButton>
+                                                    <p:commandButton actionListener="#{estudianteMB.limpiarEstudianteInfo()}"                                                             
+                                                                     value="#{msgs.botonNuevo}" process="@this">
+                                                    </p:commandButton>
+                                                </h:panelGrid>
+                                                <p:growl id="msgsAddEstInfo" showDetail="true" showSummary="true"  autoUpdate="false"/>
+                                            </h:form>
+                                        </p:tab>  
+                                    </p:tabView>
+                                </p:panel>
+                            </h:panelGrid>
+                        </div>
+                    </p:layoutUnit>
+                </p:layout>
+            </div>  
+            <h:form id="frmEliminaFamiliar">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarFamiliar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosEliminaFamiliar">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{estudianteMB.familiarEstudianteBean.familiarBean.personaBean.nombreCompleto}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{estudianteMB.eliminarFamiliarEstudiante()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update="msgsDelProc"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarFamiliar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarFamiliar').hide();"/>
+                    </h:panelGrid>
+                    <p:messages id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmBuscarPostulante">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popPostulante" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid columns="3" styleClass="centrado" id="pnlFiltroPost">
+                                <h:outputLabel value="#{msgs.etiquetaCole}" rendered="#{personaMB.personalBean.flgSuperAdmin==true}"/>
+                                <h:outputText value="*" class="requerido" rendered="#{personaMB.personalBean.flgSuperAdmin==true}"/>
+                                <p:selectOneMenu value="#{personaMB.personaFiltroBean.unidadNegocioBean.uniNeg}"  style="width: 315px" filter="true" filterMatchMode="contains"  panelStyle="width:350px" class="resetSelect" rendered="#{personaMB.personalBean.flgSuperAdmin==true}" label="#{msgs.etiquetaCole}">
+                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItems value="#{personaMB.listaUnidadNegocioBean}" var="un" itemLabel="#{un.nombreUniNeg}" itemValue="#{un.uniNeg}"/>
+                                </p:selectOneMenu>
+                                <h:panelGrid columns="2">
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                    <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                </h:panelGrid>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.idPersona}" size="15" maxlength="15">
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaApePat}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.apepat}" size="28" maxlength="30">  
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaApeMat}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.apemat}" size="28" maxlength="30">
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaNombre}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.nombre}" size="28" maxlength="30"> 
+                                </p:inputText>  
+                            </h:panelGrid> 
+                            <h:panelGrid styleClass="centrado" columns="2">
+                                <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{personaMB.obtenerPorFiltro('prospecto')}" update="pnlFiltro,pnlTablaPersona,msg" />
+                                <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{personaMB.limpiarPersonaFiltro()}" update="pnlFiltroPost,pnlTablaPersona,msg"/>
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  id="pnlTablaPersona" styleClass="centrado"> 
+                        <p:dataTable id="tblPersona" value="#{personaMB.listaPersonaBean}" widgetVar="tblPersona"
+                                     selectionMode="single" 
+                                     paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     selection="#{personaMB.personaBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="persona" rowKey="#{persona.idPersona}"  rows="10" 
+                                     rendered="#{not empty personaMB.listaPersonaBean}" 
+                                     style="width: 725px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloPersonas}" />  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{persona.idPersona}" >
+                                <h:outputText value="#{persona.idPersona}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaAbApePaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{persona.apepat}" >
+                                <h:outputText value="#{persona.apepat}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAAbApeMaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{persona.apemat}">
+                                <h:outputText value="#{persona.apemat}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{persona.nombre}">
+                                <h:outputText value="#{persona.nombre}"/>
+                            </p:column>
+                            <p:column style="text-align:center;width:60px" width="6%">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                </f:facet>
+                                <p:commandLink id="cmdSelFam" actionListener="#{personaMB.ponerPersonaPostulante(persona)}"
+                                               update=":tabDatosPostulante"
+                                               oncomplete="PF('popPostulante').hide();">
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd" for="cmdSelFam" value="#{msgs.toolTipSeleccionar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmBuscarFamiliares">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popFamiliar" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid columns="3" styleClass="centrado" id="pnlFiltroFamiliar">
+                                <h:panelGrid columns="2">
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                    <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                </h:panelGrid>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{familiarMB.familiarFiltroBean.personaBean.idPersona}" size="15" maxlength="15">
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaApePat}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{familiarMB.familiarFiltroBean.personaBean.apepat}" size="28" maxlength="30">  
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaApeMat}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{familiarMB.familiarFiltroBean.personaBean.apemat}" size="28" maxlength="30">
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaNombre}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{familiarMB.familiarFiltroBean.personaBean.nombre}" size="28" maxlength="30"> 
+                                </p:inputText>  
+                                <h:inputHidden value="#{familiarMB.tipoFam}"/>
+                            </h:panelGrid> 
+                            <h:panelGrid styleClass="centrado" columns="2">
+                                <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{familiarMB.obtenerPorFiltro()}" update="pnlFiltro,pnlTablaFamiliar,msg" />
+                                <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{familiarMB.limpiarFamiliarFiltro()}" update="pnlFiltroFamiliar,msg"/>
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  id="pnlTablaFamiliar" styleClass="centrado"> 
+                        <p:dataTable id="tblFamiliar" value="#{familiarMB.listaFamiliarBean}" widgetVar="tblFamiliar"
+                                     selectionMode="single" 
+                                     paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     selection="#{familiarMB.familiarBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="familiar" rowKey="#{familiar}"  rows="10" 
+                                     rendered="#{not empty familiarMB.listaFamiliarBean}" 
+                                     style="width: 725px;font-size:14px !important;margin-bottom:0">
+
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloFamiliares}" />  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{familiar.personaBean.idPersona}" >
+                                <h:outputText value="#{familiar.personaBean.idPersona}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaAbApePaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{familiar.personaBean.apepat}" >
+                                <h:outputText value="#{familiar.personaBean.apepat}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAAbApeMaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{familiar.personaBean.apemat}">
+                                <h:outputText value="#{familiar.personaBean.apemat}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{familiar.personaBean.nombre}">
+                                <h:outputText value="#{familiar.personaBean.nombre}"/>
+                            </p:column>
+                            <p:column style="text-align:center;width:60px" width="6%">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                </f:facet>
+                                <p:commandLink id="cmdSelFam" actionListener="#{familiarMB.ponerFamiliarEst(familiar)}"
+                                               oncomplete="PF('popFamiliar').hide();">
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd" for="cmdSelFam" value="#{msgs.toolTipSeleccionar}" />
+                            </p:column>
+                        </p:dataTable>
+                        <p:dataTable id="tblPersona" value="#{familiarMB.listaPersonaFamiliarBean}" widgetVar="tblPersona"
+                                     selectionMode="single" 
+                                     paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     selection="#{familiarMB.personaBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="persona" rowKey="#{persona}"  rows="10" 
+                                     rendered="#{not empty familiarMB.listaPersonaFamiliarBean}" 
+                                     style="width: 725px;font-size:14px !important;margin-bottom:0">
+
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloFamiliares}" />  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{familiar.personaBean.idPersona}" >
+                                <h:outputText value="#{persona.idPersona}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaAbApePaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{familiar.personaBean.apepat}" >
+                                <h:outputText value="#{persona.apepat}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAAbApeMaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{familiar.personaBean.apemat}">
+                                <h:outputText value="#{persona.apemat}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{familiar.personaBean.nombre}">
+                                <h:outputText value="#{persona.nombre}"/>
+                            </p:column>
+                            <p:column style="text-align:center;width:60px" width="6%">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                </f:facet>
+                                <p:commandLink id="cmdSelFam" actionListener="#{familiarMB.ponerFamiliarPerEst(persona)}"
+                                               oncomplete="PF('popFamiliar').hide();">
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd" for="cmdSelFam" value="#{msgs.toolTipSeleccionar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmError">
+                <p:dialog header="#{msgs.appTitulo}" width="600" showEffect="fade" hideEffect="explode" widgetVar="popError" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png" style="padding-right: 20px"/>
+                        <h:panelGrid columns="1" id="pnlDatosError" >
+                            <h:panelGrid columns="1">
+                                <h:outputText value="#{msgs.errorDNIDup}" class="requerido"/>
+                            </h:panelGrid>
+                            <h:panelGrid columns="2">
+                                <h:outputLabel value="#{msgs.etiquetaDNI}: " /> 
+                                <h:outputLabel  value="#{estudianteMB.estudianteVista.personaBean.idPersona}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaNombre}: " />
+                                <h:outputLabel  value="#{estudianteMB.estudianteVista.personaBean.nombre}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaApepat}: " />
+                                <h:outputLabel  value="#{estudianteMB.estudianteVista.personaBean.apepat}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaApemat}: " />
+                                <h:outputLabel  value="#{estudianteMB.estudianteVista.personaBean.apemat}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaFecNac}: " />
+                                <h:outputLabel value="#{estudianteMB.estudianteVista.personaBean.fecNac}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                </h:outputLabel> 
+                            </h:panelGrid>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{estudianteMB.guardarEstudiante('postulante')}"
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":tabDatosPostulante:frmDatosBasicoEst:pnlPersona,msgsDelProc"
+                                         oncomplete="if(args.operacionCorrecta){PF('popError').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popError').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"  autoUpdate="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmAdm">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popAdm" resizable="false" modal="true"  styleClass="autoWidthDialog" closable="false" closeOnEscape="true" >
+                    <p:tabView dynamic="true" cache="true"  styleClass="centrado" id="tabViewAdm"  scrollable="true" style="width: 1000px">
+                        <p:tab title="#{msgs.tituloInserModAdmision}" id="tabMantAdm" titleStyle="font-size: 0.9em">     
+                            <h:panelGrid styleClass="centrado" >
+                                <p:panel header="#{msgs.etiquetaDatosAdmi}">
+                                    <h:panelGrid columns="1" id="pnlDatosAdmision" class="centrado" style="padding: 10px">  
+                                        <h:panelGrid columns="1" width="400">
+                                            <p:dataTable id="tblProgramacion" value="#{admisionMB.listaProgramacionBean}" widgetVar="tblProgramacion"
+                                                         paginator="true" selectionMode="single" paginatorPosition="bottom"
+                                                         selection="#{admisionMB.admisionBean.programacionBean}"
+                                                         var="programacion" rowKey="#{programacion.idProgramacion}"
+                                                         rows="3" 
+                                                         rendered="#{not empty admisionMB.listaProgramacionBean}" 
+                                                         style="width: 875px; font-size: 10px;font-size:14px !important;">
+                                                <p:ajax event="rowSelect" listener="#{admisionMB.rowSelectProgramacion}" update=":frmAdm:tabViewAdm:pnlAdmision,:frmAdm:tabViewAdm:pnlGrabAdm" />
+                                                <f:facet name="header" >
+                                                    <h:outputText value="#{msgs.tituloLisProgAdm}" />  
+                                                </f:facet>  
+                                                <p:column filterBy="#{programacion.procesoBean.descripcion}" headerText="#{msgs.etiquetaProceso}" filterMatchMode="contains" width="155" styleClass="nombreFiltro7 siseFontTable3 centrado-texto">
+                                                    <h:outputText value="#{programacion.procesoBean.descripcion}" />
+                                                </p:column>
+                                                <p:column filterBy="#{programacion.conceptoUniNegBean.conceptoBean.nombre}" headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="170" styleClass="nombreFiltro7 siseFont1">
+                                                    <h:outputText value="#{programacion.conceptoUniNegBean.conceptoBean.nombreConceptoVista}" />
+                                                </p:column> 
+                                                <p:column sortBy="#{programacion.ambienteBean.nombre}" headerText="#{msgs.etiquetaAmbiente}" filterMatchMode="contains" width="90" styleClass="nombreFiltro4 siseFontTable3 centrado-texto">
+                                                    <h:outputText value="#{programacion.ambienteBean.nombre}" />
+                                                </p:column>
+                                                <p:column sortBy="#{programacion.procesoBean.anio}" headerText="#{msgs.etiquetaPeriodo}" filterMatchMode="contains" width="40" styleClass="nombreFiltro1 centrado-texto siseFontTable3">
+                                                    <h:outputText value="#{programacion.procesoBean.anio}" />
+                                                </p:column> 
+                                                <p:column class="centrado-texto" sortBy="#{programacion.fecIni}" headerText="#{msgs.etiquetaFecIn}" filterMatchMode="contains" width="70" styleClass="nombreFiltro3 centrado-texto siseFontTable3" >
+                                                    <f:facet name="filter">
+                                                        <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                                            <p:ajax event="dateSelect" oncomplete="PF('tblProgramacion').filter()"/>
+                                                        </p:calendar> 
+                                                    </f:facet>
+                                                    <h:outputText value="#{programacion.fecIni}">
+                                                        <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                                    </h:outputText>
+                                                </p:column>
+                                                <p:column class="centrado-texto" sortBy="#{programacion.fecFin}" headerText="#{msgs.etiquetaFecFin}" filterMatchMode="contains" width="70" styleClass="nombreFiltro3 centrado-texto siseFontTable3" >
+                                                    <f:facet name="filter">
+                                                        <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                                            <p:ajax event="dateSelect" oncomplete="PF('tblProgramacion').filter()"/>
+                                                        </p:calendar> 
+                                                    </f:facet>
+                                                    <h:outputText value="#{programacion.fecFin}">
+                                                        <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                                    </h:outputText>
+                                                </p:column>
+                                                <!--
+                                                <p:column sortBy="#{programacion.max}" headerText="#{msgs.etiquetaMaxAbr}" filterMatchMode="contains" width="30" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto">
+                                                    <h:outputText value="#{programacion.max}" />
+                                                </p:column>
+                                                <p:column sortBy="#{programacion.min}" headerText="#{msgs.etiquetaMimAbr}" filterMatchMode="contains" width="30" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto">
+                                                    <h:outputText value="#{programacion.min}" />
+                                                </p:column> 
+                                                -->
+                                                <p:column filterBy="#{programacion.disponiblesAdm}" headerText="#{msgs.etiquetaDisponibles}" filterMatchMode="contains" width="40" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto" style="font-weight: bolder;background-color: gold">
+                                                    <h:outputText value="#{programacion.disponiblesAdm}" />
+                                                </p:column>
+                                            </p:dataTable>
+                                        </h:panelGrid>
+                                        <h:panelGrid columns="3" cellpadding="3" class="siseFontGrid3" style="width: 675px" id="pnlAdmision">
+                                            <h:outputLabel value="#{msgs.etiquetaFecIns}:" class="negrita"/>
+                                            <h:outputText value="" class="requerido"/>
+                                            <p:calendar value="#{admisionMB.admisionBean.fechaInscripcion}"    label="#{msgs.etiquetaFecIns}" mode="popup"
+                                                        pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"/> 
+                                            <h:outputLabel value="#{msgs.etiquetaProgramacion}:" class="negrita"/>
+                                            <h:outputText value="*" class="requerido"/>
+                                            <h:panelGrid id="pnlProgramacion" columns="1">
+                                                <p:inputTextarea value="#{admisionMB.admisionBean.programacionBean.nombreProgramacion}" readonly="true" cols="40" rows="2" label="#{msgs.etiquetaProgramacion}"/>
+                                                <h:inputHidden value="#{admisionMB.admisionBean.programacionBean.idProgramacion}"/>
+                                            </h:panelGrid>
+                                            <h:outputLabel value="#{msgs.etiquetaPost}:" class="negrita"/>
+                                            <h:outputText value="" class="requerido"/> 
+                                            <h:outputLabel value="#{admisionMB.admisionBean.estudianteBean.personaBean.nombreCompleto}" />
+                                            <h:outputLabel value="#{msgs.EtiquetaCodigo}:" class="negrita"/>
+                                            <h:outputText value="" class="requerido"/> 
+                                            <h:outputLabel value="#{admisionMB.admisionBean.estudianteBean.personaBean.idPersona}"  />
+                                            <h:outputLabel value="#{msgs.etiquetaGradoPost}" class="negrita"/>
+                                            <h:outputText value="" class="requerido"/>
+                                            <p:selectOneMenu value="#{admisionMB.admisionBean.gradoAcademicoBean.idGradoAcademico}"    label="#{msgs.etiquetaGradoPost}" filter="true" style="width:205px" panelStyle="width:205px" required="true">
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{admisionMB.listaGradoAcademicoBean}" var="gradoAcademico" itemLabel="#{gradoAcademico.nombre}" itemValue="#{gradoAcademico.idGradoAcademico}"/>
+                                            </p:selectOneMenu> 
+                                            <h:outputLabel value="#{msgs.etiquetaFecCita}:" class="negrita"/>
+                                            <h:outputText value="" class="requerido"/>
+                                            <p:calendar value="#{admisionMB.admisionBean.fecExamen}"    label="#{msgs.etiquetaFecExa}" mode="popup"
+                                                        pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"/> 
+                                            <h:outputLabel value="#{msgs.etiquetaHorExa}:" class="negrita"/>
+                                            <h:outputText value="" class="requerido"/>
+                                            <p:calendar value="#{admisionMB.admisionBean.horaExamen}"  label="#{msgs.etiquetaHorExa}" mode="popup"
+                                                        pattern="HH:mm a" timeOnly="true" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"/> 
+                                            <h:outputLabel value="#{msgs.etiquetaGrupo}:" class="negrita"/>
+                                            <h:inputHidden />
+                                            <p:inputText  value="#{admisionMB.admisionBean.grupo}" label="#{msgs.etiquetaGrupo}"> 
+                                            </p:inputText>
+                                            <h:outputLabel value="#{msgs.etiquetaStatusPostulante}:" class="negrita"/>
+                                            <h:outputText value="" class="requerido"/>
+                                            <p:selectOneMenu value="#{admisionMB.admisionBean.codigoBean.idCodigo}" required="true"  label="#{msgs.etiquetaStatusPostulante}" filter="true" style="width:205px" panelStyle="width:205px">
+                                                <f:selectItems value="#{admisionMB.listaCodigoSoloInscBean}" var="estadoPostulante" itemLabel="#{estadoPostulante.codigo}" itemValue="#{estadoPostulante.idCodigo}"/> 
+                                            </p:selectOneMenu> 
+                                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/> 
+                                            <h:inputHidden value="#{admisionMB.admisionBean.idAdmision}"  />
+                                            <h:outputText value="" />
+                                            <h:outputText value="Enviar mensaje por Email: " />
+                                            <h:inputHidden value="#{admisionMB.admisionBean.idAdmision}"/>
+                                            <p:selectBooleanCheckbox label="Envia Mensaje: " id="basic" value="#{admisionMB.flgEmail}" >
+                                                <p:ajax event="change" listener="#{admisionMB.ponerEmail()}"  />
+                                            </p:selectBooleanCheckbox>
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                    <h:panelGrid class="centrado" columns="2" id="pnlGrabAdm">
+                                        <p:commandButton    actionListener="#{admisionMB.validarAdmisionPorPerido()}"
+                                                            disabled="#{admisionMB.admisionBean.programacionBean.idProgramacion==null}"
+                                                            oncomplete="if(args.operacionCorrecta){PF('popConfirmarAdm').show();}else{PF('popErrorAdm').show();}"
+                                                            update="msgsAddPro,:frmConfAdm:michilala"  
+                                                            value="#{msgs.botonGrabar}">
+                                        </p:commandButton> 
+                                        <p:commandButton actionListener="#{admisionMB.limpiarPostulanteAdmision()}" value="#{msgs.botonCerrar}" oncomplete="PF('popAdm').hide();"/> 
+                                    </h:panelGrid> 
+                                    <p:messages id="msgsAddPro"  autoUpdate="false"/> 
+                                </p:panel>
+                            </h:panelGrid>                 
+                        </p:tab>
+                        <p:tab title="#{msgs.etiquetaDocAPresentar}" id="tabEstDoc" titleStyle="font-size: 0.9em" rendered="#{not empty admisionMB.listaEstudianteDocumentoBean}" >    
+                            <h:panelGrid  id="pnlTablaDocumentos"  columns="1" styleClass="centrado">
+                                <p:dataTable id="tblDocumento" value="#{admisionMB.listaEstudianteDocumentoBean}" widgetVar="tblDocumento"
+                                             paginator="true"  editable="true" rowStyleClass="#{documento.status eq false and documento.checkListBean.flgObligatorio eq true ? 'pintarFila' : null}"
+                                             paginatorPosition="bottom" 
+                                             var="documento" rowKey="#{documento}" rows="10"
+                                             rendered="#{not empty admisionMB.listaEstudianteDocumentoBean}" 
+                                             style="width: 600px; overflow-x: auto;font-size:14px !important;">  
+                                    <f:facet name="header" >
+                                        <h:outputText value="#{msgs.etiquetaDocAPresentar}" style="font-size: 1.1em"/>  
+                                    </f:facet>
+                                    <p:column sortBy="#{documento.checkListBean.documento}" headerText="#{msgs.etiquetaDocumento}" filterMatchMode="contains" width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{documento.checkListBean.documento}"/>
+                                    </p:column>
+                                    <p:column sortBy="#{documento.checkListBean.tipoCopiaBean.codigo}" headerText="#{msgs.etiquetaTipoCopia}" filterMatchMode="contains" width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{documento.checkListBean.tipoCopiaBean.codigo}"/>
+                                    </p:column> 
+                                    <p:column sortBy="#{documento.checkListBean.flgObligatorio}" headerText="#{msgs.etiquetaObligatorio}" filterMatchMode="contains" width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{documento.checkListBean.flgObligatorioVista}"/>
+                                    </p:column> 
+                                    <p:column sortBy="#{documento.status}" headerText="#{msgs.etiquetaEstado}"   width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{documento.statusVista}"/>
+                                    </p:column> 
+                                    <p:column class="centrado" filterMatchMode="contains" width="30" styleClass="siseFont1">
+                                        <center>
+                                            <p:selectBooleanCheckbox value="#{documento.status}"/>
+                                        </center>
+                                    </p:column> 
+                                </p:dataTable>
+                                <p:growl id="msgsDoc" showDetail="true" life="5000"  autoUpdate="false"/>
+                                <h:panelGrid id="pnlIdAdm">
+                                    <h:inputHidden value="#{admisionMB.admisionBean.idAdmision}" id="txtIdAdm"/>
+                                </h:panelGrid>
+                            </h:panelGrid> 
+                            <h:panelGrid class="centrado" columns="2"> 
+                                <p:commandButton    actionListener="#{admisionMB.darCheckDocumentoAdmision()}" 
+                                                    update=":frmAdm:tabViewAdm:tblDocumento,:frmAdm:tabViewAdm:pnlAdmision,msgsAddDoc" disabled="#{not empty admisionMB.listaEstudianteDocumentoBean==false}"
+                                                    oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                    value="#{msgs.botonGrabar}">
+                                </p:commandButton>
+                                <p:commandButton  actionListener="#{admisionMB.limpiarPostulanteAdmision()}" value="#{msgs.botonCerrar}" oncomplete="PF('popAdm').hide();"/> 
+                            </h:panelGrid> 
+                            <p:growl id="msgsAddDoc" showDetail="false" showSummary="true" autoUpdate="false"/>
+                        </p:tab>
+                    </p:tabView>  
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfAdm">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirmarAdm" resizable="false" modal="true">
+                    <h:panelGrid columns="2" id="michilala1" styleClass="centrado"> 
+                        <h:panelGrid columns="1" id="pnlDatosConfEnt" class="centrado" > 
+                            <h:outputLabel value="#{msgs.etiquetaConfEnf}"/>
+                        </h:panelGrid>
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                    </h:panelGrid> 
+                    <h:panelGrid  class="centrado" id="michilala" columns="2">
+                        <h:outputLabel value="#{msgs.etiquetaPost}:" class="negrita siseFontGrid4" />
+                        <h:outputText value="#{admisionMB.admisionBean.estudianteBean.personaBean.nombreCompleto}" class="siseFontGrid5"/>
+                        <h:outputLabel value="#{msgs.EtiquetaCodigo}:" class="negrita siseFontGrid4"  />
+                        <h:outputText value="#{admisionMB.admisionBean.estudianteBean.personaBean.idPersona}" class="siseFontGrid5"/>  
+                        <h:outputLabel value="#{msgs.etiquetaFecCita}:" class="negrita siseFontGrid4" />
+                        <h:outputLabel value="#{admisionMB.admisionBean.fecExamen}" class="negrita siseFontGrid5">
+                            <f:convertDateTime type="date" dateStyle="short"/>
+                        </h:outputLabel>  
+                        <h:inputHidden value="#{admisionMB.admisionBean.programacionBean.idProgramacion}"/>
+                        <h:inputHidden value="#{admisionMB.admisionBean.gradoAcademicoBean.idGradoAcademico}"/> 
+                    </h:panelGrid>
+                    <br></br>
+                    <h:panelGrid columns="2" styleClass="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}"  
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check"  actionListener="#{admisionMB.guardarAdmision()}"
+                                         update=":frmAdm:tabViewAdm,msgsConfEnt,:frmAdm:tabViewAdm:tblDocumento,:frmAdm:tabViewAdm:pnlAdmision,:tabDatosPostulante:frmDatosBasicoEst:pnlPersona"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirmarAdm').hide();PF('popDone2').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popConfirmarAdm').hide();"/>
+                    </h:panelGrid> 
+                    <p:growl id="msgsConfEnt" showDetail="true" showSummary="false" autoUpdate="false"/>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmErrorAdm">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popErrorAdm" resizable="false" modal="true">
+                    <h:panelGrid columns="2" id="pnlErrorAdm" styleClass="centrado"> 
+                        <h:graphicImage value="/resources/images/icons/warning.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosErrorAdm" class="centrado" > 
+                            <h:outputLabel value="#{msgs.mensajeAdmiYaReg}"/>
+                        </h:panelGrid> 
+                    </h:panelGrid> 
+                    <h:panelGrid columns="2" styleClass="centrado">
+                        <p:commandButton value="#{msgs.botonAceptar}" oncomplete="PF('popErrorAdm').hide();"/>
+                    </h:panelGrid> 
+                    <p:growl id="msgsErrorAdm" showDetail="true" showSummary="false" autoUpdate="false"/>
+                </p:dialog>
+            </h:form> 
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone2" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center"> 
+                        <p:commandButton oncomplete="PF('popDone2').hide();PF('popAdm').hide()" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmBuscarResp">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popResp" resizable="false" modal="true" styleClass="autoWidthDialog">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid columns="3" styleClass="centrado" id="pnlFiltroPer">
+                                <h:panelGrid columns="2">
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                    <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                </h:panelGrid>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.idPersona}" size="15" maxlength="15">
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaApePat}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.apepat}" size="28" maxlength="30">  
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaApeMat}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.apemat}" size="28" maxlength="30">
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaNombre}"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputText value="#{personaMB.personaFiltroBean.nombre}" size="28" maxlength="30"> 
+                                </p:inputText>  
+                            </h:panelGrid> 
+                            <h:panelGrid styleClass="centrado" columns="2">
+                                <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{personaMB.obtenerPorFiltro('persona')}" update="pnlFiltro,pnlTablaPersona,msg" />
+                                <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{personaMB.limpiarPersonaFiltro()}" update="pnlFiltroPer,pnlTablaPersona,msg"/>
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  id="pnlTablaPersona" styleClass="centrado"> 
+                        <p:dataTable id="tblPersona" value="#{personaMB.listaPersonaBean}" widgetVar="tblPersona"
+                                     selectionMode="single" 
+                                     paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     selection="#{personaMB.personaBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="persona" rowKey="#{persona.idPersona}"  rows="10" 
+                                     rendered="#{not empty personaMB.listaPersonaBean}" 
+                                     style="width: 705px;font-size:14px !important;margin-bottom:0">
+
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloPersonas}" />  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{persona.idPersona}" >
+                                <h:outputText value="#{persona.idPersona}"/>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{persona.nombre}">
+                                <h:outputText value="#{persona.nombre}"/>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaApePat}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{persona.apepat}" >
+                                <h:outputText value="#{persona.apepat}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaApeMat}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{persona.apemat}">
+                                <h:outputText value="#{persona.apemat}" />
+                            </p:column> 
+                            <p:column style="text-align:center;width:60px">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                </f:facet>
+                                <p:commandLink id="cmdSelApo" actionListener="#{personaMB.ponerPersonaDinamico(persona,'responsable')}"
+                                               update=":tabDatosPostulante:frmDatosAdi:pnlDatosResp"
+                                               oncomplete="PF('popResp').hide();">
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd" for="cmdSelApo" value="#{msgs.toolTipSeleccionar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

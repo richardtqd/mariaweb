@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteVacunaDAO">  
+    <sql id="consultaEstudianteVacuna">
+        SELECT  
+        estNa.idestudiante as idEstudiante
+        ,estNa.idestudiantevacuna as idEstudianteVacuna  
+        ,estNa.creafecha as creaFecha
+        ,estNa.creapor as creaPor
+        ,estNa.modipor as modiPor
+        ,est.idestudiante as idEstudiante
+        ,uni.unineg as uniNeg
+        ,uni.nombreUniNeg as nombreUniNeg
+        ,tipoEdad.codigo as tipoEdad
+        ,tipoEdad.idCodigo as idTipoEdad
+        ,tipoVacuna.codigo as tipoVacunas
+        ,tipoVacuna.idcodigo as idTipoVacunas
+        FROM MX_EstudianteVacuna estNa
+        left join MO_UnidadNegocio uni on uni.unineg=estNa.unineg
+        left join MX_Estudiante est on est.idestudiante= estNa.idestudiante and uni.unineg=est.unineg
+        left join MO_Codigo tipoEdad on tipoEdad.idCodigo= estNa.idtipoedad
+        left join MO_Codigo tipoVacuna on tipoVacuna.idCodigo=estNa.idtipovacunas
+    </sql>
+    <resultMap id="estudianteVacunaResultado" type="pe.marista.sigma.bean.EstudianteVacunaBean">  
+        <id property="idEstudianteVacuna" column="idEstudianteVacuna"/>
+        <id property="estudianteBean.personaBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="estudianteBean.personaBean.idPersona" column="idEstudiante"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha"  column="creaFecha"/>
+        <result property="modiPor"  column="modiPor"/> 
+        <!--1. idEstudiante (Estudiante)-->
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/> 
+        <!--2. idTipoEdad (Codigo)-->
+        <association property="tipoEdad" column="idTipoEdad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoEdadResultado"/> 
+        <association property="tipoVacunas" column="idTipoVacunas"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoVacunasResultado"/> 
+        
+    </resultMap>
+    <resultMap id="tipoEdadResultado" type="pe.marista.sigma.bean.CodigoBean"> 
+        <result property="codigo"  column="tipoEdad"/>
+        <result property="idCodigo"  column="idTipoEdad"/>
+    </resultMap>
+    <resultMap id="tipoVacunasResultado" type="pe.marista.sigma.bean.CodigoBean"> 
+        <result property="codigo"  column="tipoVacunas"/>
+        <result property="idCodigo"  column="idTipoVacunas"/>
+    </resultMap>
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+    </resultMap>
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    <select id="obtenerEstVacunaPorEst" resultMap="estudianteVacunaResultado" parameterType="String">
+        <include refid="consultaEstudianteVacuna" />
+        Where estNa.idEstudiante = #{idPersona}
+    </select>
+    <select id="obtenerEstVacunaPorId" resultMap="estudianteVacunaResultado" parameterType="pe.marista.sigma.bean.EstudianteVacunaBean">
+        <include refid="consultaEstudianteVacuna" />
+        Where estNa.idEstudiante= #{estudianteBean.personaBean.idPersona}         and 
+        estNa.uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg}       and  
+        idestudiantevacuna = #{idEstudianteVacuna} 
+    </select>
+    <insert id="insertarEstudianteVacuna" parameterType="pe.marista.sigma.bean.EstudianteVacunaBean">
+        INSERT INTO MX_EstudianteVacuna
+        (unineg
+        ,idestudiante
+        ,idtipoedad
+        ,idtipovacunas
+        , creapor
+        , creafecha)
+        Values 
+        (#{estudianteBean.personaBean.unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona}
+        ,#{tipoEdad.idCodigo},#{tipoVacunas.idCodigo},#{creaPor},getDate())        
+        <selectKey keyProperty="idEstudianteVacuna" order="AFTER" resultType="Integer">
+            SELECT max(idEstudianteVacuna) FROM MX_EstudianteVacuna WHERE uniNeg = #{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and idEstudiante = #{estudianteBean.personaBean.idPersona}
+        </selectKey>
+    </insert>  
+    <update id="modificarEstudianteVacuna" parameterType="pe.marista.sigma.bean.EstudianteVacunaBean">
+        UPDATE MX_EstudianteVacuna
+        SET   
+        idtipoedad = #{tipoEdad.idCodigo}
+        ,idtipovacunas = #{tipoVacunas.idCodigo} 
+        ,modipor = #{modiPor} 
+        Where idEstudiante = #{estudianteBean.personaBean.idPersona} and idestudianteVacuna=#{idEstudianteVacuna} and unineg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg}
+    </update>
+    <select id="obtenerVacunas" resultType="pe.marista.sigma.bean.reporte.EstudianteVacunasRepBean" parameterType="map">
+        select 
+        isnull(tipoEdad.codigo,'-') as tipoEdad
+        ,isnull(tipoVac.codigo,'Ninguno') as tipoVacuna
+        from MX_Estudiante e
+        left join MX_EstudianteVacuna va on va.idestudiante= e.idestudiante
+        left join MO_Codigo tipoEdad on tipoEdad.idcodigo= va.idtipoedad
+        left join MO_Codigo tipoVac on tipoVac.idcodigo= va.idtipovacunas
+        WHERE e.idestudiante=#{idEstudiante}  and e.unineg=#{uniNeg}
+    </select>
+</mapper>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.AmbienteDAO">  
+    <sql id="consultaCampos">
+        Select 
+        amb.idAmbiente, 
+        amb.uniNeg, 
+        uni.nombreUniNeg, 
+        amb.nombre, 
+        amb.aforo, 
+        amb.idTipoAmbiente, 
+        cod.codigo, 
+        cod.valor, 
+        amb.creaPor, 
+        amb.creaFecha, 
+        amb.modiPor
+        From MX_Ambiente amb 
+        Left Join MO_UnidadNegocio uni ON amb.uniNeg=uni.uniNeg 
+        Left Join MO_Codigo cod ON amb.idTipoAmbiente=cod.idCodigo
+    </sql>
+    <resultMap id="ambienteResultado" type="pe.marista.sigma.bean.AmbienteBean">
+        <id property="idAmbiente" column="idAmbiente"/>
+        <result property="nombre" column="nombre"/>
+        <result property="aforo" column="aforo"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="codigoBean" column="idTipoAmbiente"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoAmbiente"/>
+        <result property="codigo" column="codigo"/>
+        <result property="valor" column="valor"/>
+    </resultMap>
+    <select id="obtenerAmbiente" resultMap="ambienteResultado">
+        <include refid="consultaCampos" />
+    </select>
+    <select id="obtenerAmbientePorUnidadNeg" resultMap="ambienteResultado" parameterType="String">
+        <include refid="consultaCampos" /> where amb.uniNeg = #{uniNeg}
+    </select>
+    <select id="obtenerAmbientePorId" resultMap="ambienteResultado" parameterType="Integer">
+        <include refid="consultaCampos" />Where amb.idAmbiente = #{idAmbiente}
+    </select>
+    <insert id="insertarAmbiente" parameterType="pe.marista.sigma.bean.AmbienteBean">
+        Insert Into MX_Ambiente (uniNeg,nombre, aforo, idTipoAmbiente,creaPor,creaFecha) Values (#{unidadNegocioBean.uniNeg},#{nombre},#{aforo}, #{codigoBean.idCodigo},#{creaPor},getDate())
+    </insert>
+    <update id="modificarAmbiente" parameterType="pe.marista.sigma.bean.AmbienteBean">
+        Update MX_Ambiente Set
+        nombre = #{nombre},  
+        aforo = #{aforo},  
+        idTipoAmbiente = #{codigoBean.idCodigo},
+        modiPor = #{modiPor}
+        Where idAmbiente = #{idAmbiente}
+    </update>
+    <delete id="eliminarAmbiente" parameterType="Integer">
+        Delete From MX_Ambiente Where idAmbiente = #{idAmbiente}
+    </delete>
+</mapper>

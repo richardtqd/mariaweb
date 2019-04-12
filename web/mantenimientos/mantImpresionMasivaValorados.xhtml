@@ -1,0 +1,705 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body>
+            <p:layout fullPage="false"  style="width:1300px;height:850px" styleClass="centrado">
+                <p:layoutUnit position="west" size="800" header="#{msgs.tituloImpMasivaValorados}" resizable="false" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500">
+                    <h:form id="frmDatosMatricula">
+                        <h:panelGrid  id="pnlTablaFiltroNoMatri" style="width: 700px" styleClass="centrado">
+                            <br/><br/>
+                            <p:fieldset legend="#{msgs.etiquetaSeleccionar}" styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false">
+                                <h:panelGrid  columns="10">
+                                    <p:selectOneRadio value="#{impresionMasivaValoradosMB.tipPagante}" >
+                                        <f:selectItem itemLabel="#{msgs.etiquetaEstudiante}" itemValue="1"/>
+                                        <f:selectItem itemLabel="#{msgs.etiquetaColaboradores}" itemValue="2"/> 
+                                        <f:selectItem itemLabel="#{msgs.etiquetaExterno}" itemValue="3"/> 
+                                        <f:selectItem itemLabel="#{msgs.etiquetaEntidad}" itemValue="4"/> 
+                                        <p:ajax listener="#{impresionMasivaValoradosMB.cambiarFiltro()}" 
+                                                update=":frmDatosMatricula,
+                                                :frmDatosMatricula:flBusqueda,
+                                                :frmDatosMatricula:flBusquedaPersonal,
+                                                :frmDatosMatricula:flBusquedaExterno,
+                                                :frmDatosMatricula:flBusquedaEntidad,
+                                                :frmDatosMatricula:flSelEvento" />
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                            </p:fieldset>
+                            <br/><br/>
+
+                            <!-- ESTUDIANTE -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusEst}" id="flBusqueda" rendered="#{impresionMasivaValoradosMB.renderEstudiante==true}">
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid id="pnlTodos" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgTodos}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlNivelGradoAca,pnlEstEsp,pnlAdi" listener="#{impresionMasivaValoradosMB.verificarFiltroTodos()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlEstEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgEstEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodos,pnlNivelGradoAca,pnlEstEsp,pnlAdi" listener="#{impresionMasivaValoradosMB.verificarFiltroEstEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaEstEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlNivelGradoAca" columns="3" >
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgPorNivelGrado}" styleClass="titulo"  > 
+                                                <p:ajax event="change" update="pnlNivelGradoAca,pnlTodos,pnlEstEsp,pnlAdi" listener="#{impresionMasivaValoradosMB.verificarFiltroNivelGrado()}" />
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaPorNivelGrado}"/> 
+                                        </h:panelGrid>  
+                                        <h:panelGrid columns="2">
+                                            <p:selectOneMenu value="#{impresionMasivaValoradosMB.matriculaFiltroBean.anio}"    label="#{msgs.etiquetaPeriodo}" style="width: 125px" panelStyle="width: 125px" styleClass="resetSelect">
+                                                <f:selectItems value="#{impresionMasivaValoradosMB.listaAnioFiltroMatricula}" var="anio" itemLabel="#{anio}" itemValue="#{anio}"/>
+                                            </p:selectOneMenu>  
+                                            <h:outputLabel value="#{msgs.etiquetaPeriodo}" styleClass="negrita siseFontGrid5" /> 
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" id="pnlAdi">
+                                        <p:panel rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.EtiquetaCodigo}" styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}" /> 
+                                                <p:inputText  value="#{impresionMasivaValoradosMB.matriculaFiltroBean.estudianteBean.personaBean.idPersona}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaApePat}" styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}"/>
+                                                <p:inputText value="#{impresionMasivaValoradosMB.matriculaFiltroBean.estudianteBean.personaBean.apepat}" label="#{msgs.etiquetaApePat}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}" />  
+                                                <h:outputLabel value="#{msgs.etiquetaApeMat}" styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}" />
+                                                <p:inputText value="#{impresionMasivaValoradosMB.matriculaFiltroBean.estudianteBean.personaBean.apemat}" label="#{msgs.etiquetaApeMat}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombre}" styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}"/>
+                                                <p:inputText value="#{impresionMasivaValoradosMB.matriculaFiltroBean.estudianteBean.personaBean.nombre}" label="#{msgs.etiquetaNombre}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgEstEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel>
+                                        <p:panel rendered="#{impresionMasivaValoradosMB.flgPorNivelGrado==true}">  
+                                            <h:panelGrid columns="2" width="300">
+                                                <h:outputLabel value="#{msgs.etiquetaNivelAcademico}" styleClass="titulo" rendered="#{impresionMasivaValoradosMB.flgPorNivelGrado==true}" /> 
+                                                <p:selectOneMenu value="#{impresionMasivaValoradosMB.matriculaFiltroBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}" style="width:160px" panelStyle="width:160px" label="#{msgs.etiquetaNivelAcademico}" rendered="#{impresionMasivaValoradosMB.flgPorNivelGrado==true}" >
+                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                    <f:selectItems value="#{impresionMasivaValoradosMB.listaNivelAcademicoBean}" var="nivAca" itemLabel="#{nivAca.nombre}" itemValue="#{nivAca.idNivelAcademico}"/> 
+                                                    <p:ajax event="change" listener="#{impresionMasivaValoradosMB.obtenerGradoAcaBasica()}" update="cmboGradoAcaBas" />
+                                                </p:selectOneMenu>     
+                                                <h:outputLabel value="#{msgs.etiquetaGradoAca}" styleClass="titulo" rendered="#{impresionMasivaValoradosMB.flgPorNivelGrado==true}"  /> 
+                                                <p:selectOneMenu id="cmboGradoAcaBas" value="#{impresionMasivaValoradosMB.matriculaFiltroBean.estudianteBean.gradoHabilitado.idGradoAcademico}" style="width:160px" panelStyle="width:160px" styleClass="resetSelect" label="#{msgs.etiquetaGradoAca}" rendered="#{impresionMasivaValoradosMB.flgPorNivelGrado==true}">
+                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                    <f:selectItems value="#{impresionMasivaValoradosMB.listaGradoAcademicoFiltroBean}" var="gradAcaBas" itemLabel="#{gradAcaBas.nombre}" itemValue="#{gradAcaBas.idGradoAcademico}"/>
+                                                </p:selectOneMenu>  
+                                            </h:panelGrid> 
+                                        </p:panel>
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="2">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{impresionMasivaValoradosMB.obtenerFiltro(1)}" process=":frmDatosMatricula:flBusqueda"
+                                                     update="pnlTablaMatricula,msg,:frmDatosMatricula:btnAsignar"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{impresionMasivaValoradosMB.obtenerLimpiaFiltro(1)}" update="pnlTablaFiltroNoMatri,pnlTablaMatricula,msg"/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msg"/>
+                            </p:fieldset>
+
+                            <!-- PERSONAL -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusPer}" id="flBusquedaPersonal" rendered="#{impresionMasivaValoradosMB.renderPersonal==true}" >
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid id="pnlTodosPer" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgTodosPer}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlNivelGradoAcaPer,pnlPerEsp,pnlAdiPer" listener="#{impresionMasivaValoradosMB.verificarFiltroTodosPer()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlPerEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgPerEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodosPer,pnlNivelGradoAcaPer,pnlPerEsp,pnlAdiPer" listener="#{impresionMasivaValoradosMB.verificarFiltroPerEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaPerEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlNivelGradoAcaPer" columns="3" >
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgPerUniOrg}" styleClass="titulo"  > 
+                                                <p:ajax event="change" update="pnlNivelGradoAcaPer,pnlTodosPer,pnlPerEsp,pnlAdiPer" listener="#{impresionMasivaValoradosMB.verificarFiltroPerUniOrg()}" />
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaPorUniOrg}"/> 
+                                        </h:panelGrid> 
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" id="pnlAdiPer">
+                                        <p:panel rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.etiquetaNroDocAbb}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}" /> 
+                                                <p:inputText  value="#{impresionMasivaValoradosMB.personalFiltroBean.nroDoc}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaCodigoPersonal}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}" /> 
+                                                <p:inputText  value="#{impresionMasivaValoradosMB.personalFiltroBean.codPer}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaApePat}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}"/>
+                                                <p:inputText value="#{impresionMasivaValoradosMB.personalFiltroBean.apepat}" label="#{msgs.etiquetaApePat}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}" />  
+                                                <h:outputLabel value="#{msgs.etiquetaApeMat}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}" />
+                                                <p:inputText value="#{impresionMasivaValoradosMB.personalFiltroBean.apemat}" label="#{msgs.etiquetaApeMat}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombre}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}"/>
+                                                <p:inputText value="#{impresionMasivaValoradosMB.personalFiltroBean.nombre}" label="#{msgs.etiquetaNombre}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgPerEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel>
+                                        <p:panel rendered="#{impresionMasivaValoradosMB.flgPerUniOrg==true}">  
+                                            <h:panelGrid columns="2" width="300">
+                                                <h:outputLabel value="#{msgs.etiquetaUnidOrg}: " styleClass="titulo" rendered="#{impresionMasivaValoradosMB.flgPerUniOrg==true}" /> 
+                                                <p:selectOneMenu value="#{impresionMasivaValoradosMB.personalFiltroBean.unidadOrganicaBean.idUniOrg}" style="width:160px" panelStyle="width:160px" label="#{msgs.etiquetaUnidOrgo}" rendered="#{impresionMasivaValoradosMB.flgPerUniOrg==true}" >
+                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                    <f:selectItems value="#{impresionMasivaValoradosMB.listaUnidadOrganicaBean}" var="uo" itemLabel="#{uo.nombreUniOrg}" itemValue="#{uo.idUniOrg}"/> 
+                                                </p:selectOneMenu>
+                                            </h:panelGrid> 
+                                        </p:panel>
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="2">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{impresionMasivaValoradosMB.obtenerFiltro(2)}" process=":frmDatosMatricula:flBusquedaPersonal"
+                                                     update="pnlTablaPersonal,msgPer,:frmDatosMatricula:btnAsignar"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{impresionMasivaValoradosMB.obtenerLimpiaFiltro(2)}" update=":frmDatosMatricula:flBusquedaPersonal,pnlTablaPersonal,msgPer"/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msgPer"/>
+                            </p:fieldset>
+
+                            <!-- EXTERNO -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusExt}" id="flBusquedaExterno" rendered="#{impresionMasivaValoradosMB.renderPersona==true}" >
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid id="pnlTodosExt" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgTodosExt}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlTodosExt,pnlExtEsp,pnlAdiExt" listener="#{impresionMasivaValoradosMB.verificarFiltroTodosExt()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlExtEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgExtEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodosExt,pnlExtEsp,pnlAdiExt" listener="#{impresionMasivaValoradosMB.verificarFiltroExtEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaExtEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" id="pnlAdiExt">
+                                        <p:panel rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.etiquetaNroDocAbb}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}" /> 
+                                                <p:inputText  value="#{impresionMasivaValoradosMB.personaFiltroBean.idPersona}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaApePat}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}"/>
+                                                <p:inputText value="#{impresionMasivaValoradosMB.personaFiltroBean.apepat}" label="#{msgs.etiquetaApePat}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}" />  
+                                                <h:outputLabel value="#{msgs.etiquetaApeMat}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}" />
+                                                <p:inputText value="#{impresionMasivaValoradosMB.personaFiltroBean.apemat}" label="#{msgs.etiquetaApeMat}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombre}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}"/>
+                                                <p:inputText value="#{impresionMasivaValoradosMB.personaFiltroBean.nombre}" label="#{msgs.etiquetaNombre}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgExtEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel> 
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="3">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{impresionMasivaValoradosMB.obtenerFiltro(3)}" process=":frmDatosMatricula:flBusquedaExterno"
+                                                     update="pnlTablaExterno,msgExt,:frmDatosMatricula:btnAsignar"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{impresionMasivaValoradosMB.obtenerLimpiaFiltro(3)}" update=":frmDatosMatricula:flBusquedaExterno,pnlTablaExterno,msgExt"/>
+                                    <p:link id="est" outcome="/mantenimientos/mantPersona.xhtml" target="_blank" value="#{msgs.etiquetaRegPersona}" accesskey=""/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msgExt"/>
+                            </p:fieldset>
+
+                            <!-- ENTIDAD -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusEnt}" id="flBusquedaEntidad" rendered="#{impresionMasivaValoradosMB.renderEntidad==true}" >
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid id="pnlTodosEnt" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgTodosEnt}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlTodosEnt,pnlEntEsp,pnlAdiEnt" listener="#{impresionMasivaValoradosMB.verificarFiltroTodosEnt()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlEntEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{impresionMasivaValoradosMB.flgEntEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodosEnt,pnlEntEsp,pnlAdiEnt" listener="#{impresionMasivaValoradosMB.verificarFiltroEntEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaEntEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" id="pnlAdiEnt">
+                                        <p:panel rendered="#{impresionMasivaValoradosMB.flgEntEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.etiquetaRuc}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgEntEsp==true}" /> 
+                                                <p:inputText  value="#{impresionMasivaValoradosMB.entidadFiltroBean.ruc}" label="#{msgs.etiquetaRuc}" readonly="false" size="15" rendered="#{impresionMasivaValoradosMB.flgEntEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombreEnt}: " styleClass="negrita siseFont5" rendered="#{impresionMasivaValoradosMB.flgEntEsp==true}"/>
+                                                <p:inputText value="#{impresionMasivaValoradosMB.entidadFiltroBean.nombre}" label="#{msgs.etiquetaNombreEnt}" size="28" maxlength="30" rendered="#{impresionMasivaValoradosMB.flgEntEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel> 
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="3">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{impresionMasivaValoradosMB.obtenerFiltro(4)}" process=":frmDatosMatricula:flBusquedaEntidad"
+                                                     update="pnlTablaEntidad,msgEnt,:frmDatosMatricula:btnAsignar"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{impresionMasivaValoradosMB.obtenerLimpiaFiltro(4)}" update=":frmDatosMatricula:flBusquedaEntidad,pnlTablaEntidad,msgEnt"/>
+                                    <p:link outcome="/configuracion/mantEntidad.xhtml" target="_blank" value="#{msgs.etiquetaRegEntidad}" accesskey=""/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msgEnt"/>
+                            </p:fieldset>
+
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaSeleccionarEv}" id="flSelEvento" 
+                                         rendered="#{impresionMasivaValoradosMB.renderEntidad==true or 
+                                                     impresionMasivaValoradosMB.renderEstudiante == true or
+                                                     impresionMasivaValoradosMB.renderPersona == true or
+                                                     impresionMasivaValoradosMB.renderPersonal == true}" >
+                                <h:panelGrid columns="3" styleClass="centrado-izq" > 
+                                    <h:outputLabel value="#{msgs.etiquetaEvento}:" class="negrita" style="font-size: 1em"/>
+                                    <h:outputText value="(*)" class="requerido"/>
+                                    <p:selectOneMenu id="cboEvento" value="#{impresionMasivaValoradosMB.paganteBean.eventoBean.idEvento}"  label="#{msgs.etiquetaEvento}"  
+                                                     style="width: 275px" panelStyle="width:275px" required="true" >
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                        <f:selectItems value="#{impresionMasivaValoradosMB.listaEventoBean}" var="evento" itemLabel="#{evento.nombre}" 
+                                                       itemValue="#{evento.idEvento}"/>
+                                        <p:ajax event="change" listener="#{impresionMasivaValoradosMB.obtenerTipoPagante()}" update=":frmDatosMatricula:cboTipPagante"/>
+                                    </p:selectOneMenu>
+
+                                    <h:outputLabel value="#{msgs.etiquetaTipoPagante}:" class="negrita" style="font-size: 1em"/>
+                                    <h:outputText value="(*)" class="requerido"/>
+                                    <p:selectOneMenu id="cboTipPagante" value="#{impresionMasivaValoradosMB.paganteBean.tipoPaganteBean.idtipoPagante}"  label="#{msgs.etiquetaTipoPagante}"  
+                                                     style="width: 275px" panelStyle="width:275px" required="true">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                        <f:selectItems value="#{impresionMasivaValoradosMB.listaEventoTipoPaganteBean}" var="tevento" itemLabel="#{tevento.tipoPaganteBean.nomPagante}" 
+                                                       itemValue="#{tevento.tipoPaganteBean.idtipoPagante}"/>
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaTipoAsig}:" class="negrita" style="font-size: 1em"/>
+                                    <h:outputText value="(*)" class="requerido"/>
+                                    <p:selectOneRadio value="#{impresionMasivaValoradosMB.tipAsignacion}" >
+                                        <f:selectItem itemLabel="#{msgs.etiquetaAsigNormal}" itemValue="1"/>
+                                        <f:selectItem itemLabel="#{msgs.etiquetaAsigEspeci}" itemValue="2"/> 
+                                        <p:ajax listener="#{impresionMasivaValoradosMB.obtenerTipoAsig()}" update=":frmDatosMatricula:flSelEvento" />
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlAsigEspSel" columns="2" styleClass="centrado-izq" rendered="#{impresionMasivaValoradosMB.flgRenderEsp}" >
+                                    <p:outputLabel value="#{msgs.etiquetaSeleccionarForma}: " />
+                                    <p:selectOneRadio value="#{impresionMasivaValoradosMB.selTipAsigEsp}" >
+                                        <f:selectItem itemLabel="#{msgs.etiquetaForma1}" itemValue="1"/>
+                                        <f:selectItem itemLabel="#{msgs.etiquetaForma2}" itemValue="2"/> 
+                                        <p:ajax listener="#{impresionMasivaValoradosMB.obtenerTipoAsigForma()}" update=":frmDatosMatricula:flSelEvento" />
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlTipEstadoFicha" styleClass="centrado-izq" columns="7" rendered="#{impresionMasivaValoradosMB.selTipAsigEsp == 2 or impresionMasivaValoradosMB.selTipAsigEsp == 1}" >
+                                    <p:outputLabel value="#{msgs.etiquetaTipoAsig}: " />
+                                    <p:selectOneRadio  value="#{impresionMasivaValoradosMB.tipAsignacionFicha}" label="#{msgs.etiquetaTipoAsig}" >
+                                        <f:selectItem itemValue="1" itemLabel="#{msgs.asigDonacion}"/>
+                                        <f:selectItem itemValue="0" itemLabel="#{msgs.asigPendiente}"/>
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlAsigEspecial" styleClass="centrado-izq" columns="7" rendered="#{impresionMasivaValoradosMB.flgRenderEsp == true and impresionMasivaValoradosMB.selTipAsigEsp == 2}" > 
+                                    <p:outputLabel value="#{msgs.etiquetaNroAsigna}: " />
+                                    <p:inputText id="txtNroAsig" value="#{impresionMasivaValoradosMB.nroAsig}" size="5" label="#{msgs.etiquetaNroIni}" />
+                                    <p:outputLabel value="#{msgs.etiquetaNroIni}: " />
+                                    <p:inputText id="txtNroIni" value="#{impresionMasivaValoradosMB.nroIni}" size="5" label="#{msgs.etiquetaNroIni}" />
+                                    <p:outputLabel value="#{msgs.etiquetaNroFin}: " />
+                                    <p:inputText id="txtNroFin" value="#{impresionMasivaValoradosMB.nroFin}" size="5" label="#{msgs.etiquetaNroFin}" readonly="true" />
+                                    <p:commandButton value="#{msgs.botonCalcular}" actionListener="#{impresionMasivaValoradosMB.obtenerNroAsigna()}" update=":frmDatosMatricula:txtNroFin,:frmDatosMatricula:msgAsigEspecial" 
+                                                     process="@this,:frmDatosMatricula:txtNroAsig,:frmDatosMatricula:txtNroIni,:frmDatosMatricula:msgAsigEspecial"/>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlAsigEsp2" columns="2" styleClass="centrado-izq" rendered="#{impresionMasivaValoradosMB.flgRenderEsp == true and impresionMasivaValoradosMB.selTipAsigEsp == 1}" >
+                                    <p:outputLabel value="#{msgs.etiquetaNumeroDe}: " />
+                                    <p:inputText id="txtNroIni2" value="#{impresionMasivaValoradosMB.nroIni}" size="5" label="#{msgs.etiquetaNroIni}" />
+                                </h:panelGrid>
+                                <p:messages id="msgAsigEspecial" />
+                            </p:fieldset>
+
+                        </h:panelGrid>
+                        <!-- ESTUDIANTES -->
+                        <h:panelGrid  id="pnlTablaMatricula" styleClass="centrado" >
+                            <p:dataTable id="tblMatricula" value="#{impresionMasivaValoradosMB.listaMatriculaEstudianteMasivoBean}" widgetVar="tblMatricula"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="estudiante" rowKey="#{estudiante}"
+                                         rows="#{impresionMasivaValoradosMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty impresionMasivaValoradosMB.listaMatriculaEstudianteMasivoBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;">
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaEstPosNoMatri}" />   
+                                </f:facet>
+                                <p:column  headerText="N" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                                    <h:outputText value="#{estudiante.estudianteBean.personaBean.idPersona}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                                    <h:outputText value="#{estudiante.estudianteBean.personaBean.nombreCompleto}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaGradoAca}" filterMatchMode="contains" width="12%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.gradoAcademicoVista}" >
+                                    <h:outputText value="#{estudiante.gradoAcademicoVista}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaSeccAbr}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.seccion}" >
+                                    <h:outputText value="#{estudiante.seccion}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.flgMatricula}" >
+                                    <h:outputText value="#{estudiante.flgMatriVista}"/>
+                                </p:column>
+                                <p:column colspan="2" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdSelEve" action="#{impresionMasivaValoradosMB.asignarPorObj(estudiante,1)}"
+                                                   oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" update=":frmDatosMatricula:msgAsign" 
+                                                   process="@this,:frmDatosMatricula:flSelEvento"> 
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdVerPagFil1" actionListener="#{impresionMasivaValoradosMB.obtenerPaganteAsigBefore(estudiante,1)}" 
+                                                   update=":frmPopFicha:pnlPopFicha,:frmPopFicha:pnlPopFichaView" process="@this"
+                                                   oncomplete="PF('popFicha').show();">
+                                        <h:graphicImage value="/resources/images/icons/search2.jpg" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip  for="cmdSelEve" value="#{msgs.mensajeSelect}" />
+                                    <p:tooltip  for="cmdVerPagFil1" value="#{msgs.etiquetaVerAsig}" />
+                                </p:column>
+                            </p:dataTable>
+                            <br></br> 
+                        </h:panelGrid>
+                        <!-- PERSONAL -->
+                        <h:panelGrid  id="pnlTablaPersonal" styleClass="centrado" >
+                            <p:dataTable id="tblPersonal" value="#{impresionMasivaValoradosMB.listaPersonalFiltroBean}" widgetVar="tblPersonal"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="personal" rowKey="#{personal}"
+                                         rows="#{impresionMasivaValoradosMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty impresionMasivaValoradosMB.listaPersonalFiltroBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;"> 
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaPersonales}" />
+                                </f:facet>
+                                <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaCodigoPersonalSol}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{personal.codPer}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{personal.nombreCompleto}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaUnidOrg}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{personal.unidadOrganicaBean.nombreUniOrg}" />
+                                </p:column>
+                                <p:column colspan="2" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdSelEve" action="#{impresionMasivaValoradosMB.asignarPorObj(personal,2)}"
+                                                   oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" update=":frmDatosMatricula:msgAsign" 
+                                                   process="@this,:frmDatosMatricula:flSelEvento"> 
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdVerPagFil2" actionListener="#{impresionMasivaValoradosMB.obtenerPaganteAsigBefore(personal,2)}" 
+                                                   update=":frmPopFicha:pnlPopFicha,:frmPopFicha:pnlPopFichaView" process="@this"
+                                                   oncomplete="PF('popFicha').show();">
+                                        <h:graphicImage value="/resources/images/icons/search2.jpg" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip  for="cmdVerPagFil2" value="#{msgs.etiquetaVerAsig}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <!-- EXTERNO -->
+                        <h:panelGrid  id="pnlTablaExterno" styleClass="centrado" >
+                            <p:dataTable id="tblExterno" value="#{impresionMasivaValoradosMB.listaPersonaFiltroBean}" widgetVar="tblExterno"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="externo" rowKey="#{externo}"
+                                         rows="#{impresionMasivaValoradosMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty impresionMasivaValoradosMB.listaPersonaFiltroBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaExternos}" />
+                                </f:facet>
+                                <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{externo.idPersona}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{externo.nombreCompleto}" />
+                                </p:column>
+                                <p:column colspan="2" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdSelEve" action="#{impresionMasivaValoradosMB.asignarPorObj(externo,3)}"
+                                                   oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" update=":frmDatosMatricula:msgAsign" 
+                                                   process="@this,:frmDatosMatricula:flSelEvento"> 
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdVerPagFil3" actionListener="#{impresionMasivaValoradosMB.obtenerPaganteAsigBefore(externo,3)}" 
+                                                   update=":frmPopFicha:pnlPopFicha,:frmPopFicha:pnlPopFichaView" process="@this"
+                                                   oncomplete="PF('popFicha').show();">
+                                        <h:graphicImage value="/resources/images/icons/search2.jpg" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip  for="cmdVerPagFil3" value="#{msgs.etiquetaVerAsig}" />
+                                </p:column>
+                            </p:dataTable> 
+                        </h:panelGrid>
+                        <!-- ENTIDAD -->
+                        <h:panelGrid  id="pnlTablaEntidad" styleClass="centrado" > 
+                            <p:dataTable id="tblEntidad" value="#{impresionMasivaValoradosMB.listaEntidadFiltroBean}" widgetVar="tblEntidad"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="entidad" rowKey="#{entidad}"
+                                         rows="#{impresionMasivaValoradosMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty impresionMasivaValoradosMB.listaEntidadFiltroBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaEntidadesss}" />
+                                </f:facet>
+                                <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaRuc}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{entidad.ruc}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaEntidad}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{entidad.nombre}" />
+                                </p:column>
+                                <p:column colspan="2" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdSelEve" action="#{impresionMasivaValoradosMB.asignarPorObj(entidad,4)}"
+                                                   oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" update=":frmDatosMatricula:msgAsign" 
+                                                   process="@this,:frmDatosMatricula:flSelEvento"> 
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdVerPagFil4" actionListener="#{impresionMasivaValoradosMB.obtenerPaganteAsigBefore(entidad,4)}" 
+                                                   update=":frmPopFicha:pnlPopFicha,:frmPopFicha:pnlPopFichaView" process="@this"
+                                                   oncomplete="PF('popFicha').show();">
+                                        <h:graphicImage value="/resources/images/icons/search2.jpg" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip  for="cmdVerPagFil4" value="#{msgs.etiquetaVerAsig}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <h:panelGrid styleClass="centrado" >
+                            <p:commandButton id="btnAsignar" value="#{msgs.etiquetaAsignar}" actionListener="#{impresionMasivaValoradosMB.obtenerAsignacion()}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" 
+                                             update="msgAsign"/>
+                        </h:panelGrid>
+                        <p:messages autoUpdate="false" id="msgAsign" closable="true" />
+                    </h:form>
+                </p:layoutUnit>
+                <p:layoutUnit position="center" header="#{msgs.etiquetaFiltroEstAfterValorados}">
+                    <br/><br/>
+                    <h:panelGrid styleClass="centrado" >
+                        <h:form id="frmBuscaPagante" >
+                            <p:panel header="#{msgs.etiquetaPagante}" style="width: 850px;margin: 0 auto;"  >
+                                <h:panelGrid styleClass="centrado" >
+                                    <h:panelGrid id="pnlBuscaPagante"  styleClass="centrado" columns="2" style="padding: 5px;" >
+                                        <h:panelGrid columns="2" styleClass="centrado" >
+                                            <h:outputLabel value="#{msgs.etiquetaEvento}:" class="negrita" style="font-size: 1em"/>
+                                            <p:selectOneMenu id="cboEvento" value="#{impresionMasivaValoradosMB.paganteFiltroBean.eventoBean.idEvento}"  label="#{msgs.etiquetaEvento}" panelStyle="width:275px" required="true" 
+                                                             style="width: 180px;">
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                                <f:selectItems value="#{impresionMasivaValoradosMB.listaAfterEventoBean}" var="evento" itemLabel="#{evento.nombre}" 
+                                                               itemValue="#{evento.idEvento}"/>
+                                                <p:ajax listener="#{impresionMasivaValoradosMB.obtenerTipoPaganteAfter()}" update=":frmBuscaPagante:cboTipPaganteAfter" />
+                                            </p:selectOneMenu>
+                                            <h:outputLabel value="#{msgs.etiquetaTipoPagante}:" class="negrita" style="font-size: 1em"/>                                    
+                                            <p:selectOneMenu id="cboTipPaganteAfter" value="#{impresionMasivaValoradosMB.paganteFiltroBean.tipoPaganteBean.idtipoPagante}"  label="#{msgs.etiquetaTipoPagante}"  panelStyle="width:275px"
+                                                             style="width: 180px;">
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                                <f:selectItems value="#{impresionMasivaValoradosMB.listaAfterEventoTipoPaganteBean}" var="tevento" itemLabel="#{tevento.tipoPaganteBean.nomPagante}" 
+                                                               itemValue="#{tevento.tipoPaganteBean.idtipoPagante}"/>
+                                            </p:selectOneMenu>
+                                            <p:outputLabel value="#{msgs.etiquetaNumeroDe}: " />
+                                            <p:inputText value="#{impresionMasivaValoradosMB.paganteFiltroBean.nroFicha}" size="5" />
+                                        </h:panelGrid>
+                                        <h:panelGrid styleClass="centrado" >
+                                            <p:inputText value="#{impresionMasivaValoradosMB.paganteFiltroBean.nroDoc}" size="59" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaNroDocAbb}" />
+                                            <p:inputTextarea value="#{impresionMasivaValoradosMB.paganteFiltroBean.nomPagante}" cols="60" rows="3" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaPagante}" />
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                    <br/>
+                                    <h:panelGrid columns="2" styleClass="centrado" >
+                                        <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{impresionMasivaValoradosMB.filtrarPaganteMasivo()}" 
+                                                         update=":frmBuscaPagante:pnlTblBuscaPagante,:frmBuscaPagante:msgPagFic,:frmPopFicha:msgPopFichaFil"/>
+                                        <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{impresionMasivaValoradosMB.limpiarFiltroPagante()}" 
+                                                         update=":frmBuscaPagante:pnlBuscaPagante,:frmBuscaPagante:pnlTblBuscaPagante"/>
+                                    </h:panelGrid>
+                                    <p:messages autoUpdate="false" id="msgPagFic"/>
+                                </h:panelGrid>
+                            </p:panel> 
+                            <h:panelGrid id="pnlTblBuscaPagante" styleClass="centrado" >
+                                <p:dataTable id="tblPagante" value="#{impresionMasivaValoradosMB.listaPagantefiltroBean}" widgetVar="tblPagante"
+                                             paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="pagante" rowKey="#{pagante}"
+                                             rows="#{impresionMasivaValoradosMB.numRegistrosTablasPorFiltro}" 
+                                             rendered="#{not empty impresionMasivaValoradosMB.listaPagantefiltroBean}" 
+                                             style="width:1000px; font-size: 10px;font-size:14px !important;" >
+                                    <f:facet name="header" >
+                                        <p:outputLabel value="#{msgs.etiquetaPagantes}" />
+                                    </f:facet>
+                                    <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                        <center>
+                                            <h:outputText value="#{n+1}" />
+                                        </center>
+                                    </p:column>
+                                    <p:column  headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{pagante.nroDoc}" />
+                                    </p:column>
+                                    <p:column  headerText="#{msgs.etiquetaPagante}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{pagante.nomPagante.toUpperCase()}" />
+                                    </p:column>
+                                    <p:column  headerText="#{msgs.etiquetaAsignacion}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{pagante.data}" class="negrita" />
+                                    </p:column>
+                                    <p:column colspan="2" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                        <p:commandLink id="cmdVer" actionListener="#{impresionMasivaValoradosMB.obtenerPorIdPagante(pagante)}"
+                                                       oncomplete="PF('popFicha').show();" update=":frmPopFicha:pnlPopFicha,:frmPopFicha:pnlPopFichaView" >
+                                            <h:graphicImage value="/resources/images/icons/search.png" style="border:0; cursor:pointer;"/>
+                                        </p:commandLink>
+                                        &nbsp;&nbsp;&nbsp;
+                                        <p:commandLink id="cmdAddFicha" actionListener="#{impresionMasivaValoradosMB.asignarFichasEsp(pagante)}" 
+                                                       update=":frmAddFicha:pnlAddFichaPagante" oncomplete="PF('popAddFicha').show();" >
+                                            <h:graphicImage value="/resources/images/icons/ver_detalle.png" style="border:0; cursor:pointer;"/>
+                                        </p:commandLink>
+                                        <p:tooltip id="toolTipVer" for="cmdVer" value="#{msgs.etiquetaVer}" />
+                                        <p:tooltip id="toolTipAdd" for="cmdAddFicha" value="#{msgs.etiquetaAsignar}" />
+                                    </p:column>
+                                </p:dataTable>
+                            </h:panelGrid>
+                        </h:form> 
+                    </h:panelGrid>
+                </p:layoutUnit>
+            </p:layout>
+
+            <p:dialog id="popFicha" header="#{msgs.etiquetaFichaPag}" widgetVar="popFicha" showEffect="fade" hideEffect="explode" resizable="false" modal="true" >
+                <h:form id="frmPopFicha" >
+                    <p:fieldset legend="#{msgs.etiquetaSeleccionar}" styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false">
+                        <h:panelGrid id="pnlPopFichaView" styleClass="centrado" columns="2" >
+                            <p:outputLabel value="#{msgs.etiquetaPagante}:" />
+                            <h:outputText value="#{impresionMasivaValoradosMB.paganteView.nomPagante.toUpperCase()}" class="negrita" /> 
+                        </h:panelGrid>
+                        <h:panelGrid id="pnlPopEstadoficha" styleClass="centrado" columns="2" >
+                            <p:outputLabel value="#{msgs.etiquetaEstado}: " />
+                            <p:selectOneRadio value="#{impresionMasivaValoradosMB.fichaFiltroBean.tipoStatusFicha.idCodigo}" style="width:100%" >
+                                <f:selectItems value="#{impresionMasivaValoradosMB.listaTipoEstadoFiltroFicha}" var="estado" itemLabel="#{estado.codigo}" itemValue="#{estado.idCodigo}" />
+                                <p:ajax event="change" listener="#{impresionMasivaValoradosMB.filtrarEstadoFicha()}" 
+                                        update=":frmPopFicha:pnlPopFicha,:frmPopFicha:msgPopFichaFil" />
+                            </p:selectOneRadio>
+                        </h:panelGrid>
+                        <p:messages id="msgPopFichaFil" showDetail="true" />
+                    </p:fieldset> 
+                    <h:panelGrid id="pnlPopFicha" styleClass="centrado" >
+                        <p:dataTable id="tblPagante" value="#{impresionMasivaValoradosMB.listaFichaAfterBean}" widgetVar="tblFicha"
+                                     paginator="true" selectionMode="single"  paginatorPosition="bottom" 
+                                     rowIndexVar="n" var="ficha" rowKey="#{ficha}" editable="true"
+                                     rows="10" 
+                                     rendered="#{not empty impresionMasivaValoradosMB.listaFichaAfterBean}" 
+                                     style="width:350px; font-size: 10px;font-size:14px !important;" >
+                            <p:ajax  event="rowEdit" listener="#{impresionMasivaValoradosMB.rowEditFicha}" />
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaFichas}" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column> 
+                            <p:column filterBy="#{ficha.nroficha}" headerText="#{msgs.etiquetaNroFicha}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{ficha.nroficha}" />
+                            </p:column>
+                            <p:column id="colEstado" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{ficha.tipoStatusFicha.codigo}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{ficha.tipoStatusFicha.idCodigo}" style="width:100%">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                            <f:selectItems value="#{impresionMasivaValoradosMB.listaTipoEstadoFicha}" var="estado" itemLabel="#{estado.codigo}" itemValue="#{estado.idCodigo}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column> 
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:rowEditor />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                <p:commandLink id="cmdDel" actionListener="#{impresionMasivaValoradosMB.obtenerPorIdFicha(ficha)}"
+                                               oncomplete="PF('popEliminarFicha').show();" update=":frmPopDelFicha:pnlPopDelFicha" >
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipVer" for="cmdDel" value="#{msgs.etiquetaEliminar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                    <h:panelGrid styleClass="centrado" >
+                        <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popFicha').hide();" />
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <p:dialog header="#{msgs.appSiglas}" id="popEliminarFicha" widgetVar="popEliminarFicha" showEffect="fade" hideEffect="explode" resizable="false" modal="true" >
+                <h:form id="frmPopDelFicha" >
+                    <h:panelGrid id="pnlPopDelFicha" styleClass="centrado" columns="2" >
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNroFicha}: #{impresionMasivaValoradosMB.fichaVistaBean.nroficha}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{impresionMasivaValoradosMB.eliminarFicha()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmPopFicha:pnlPopFicha,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarFicha').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarFicha').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </h:form> 
+            </p:dialog>
+
+            <!-- POP ADD FICHA -->
+            <p:dialog header="#{msgs.etiquetaAsignar} #{msgs.etiquetaFichas}" widgetVar="popAddFicha" showEffect="fade" hideEffect="explode" modal="true" closable="false" closeOnEscape="true" >
+                <h:form id="frmAddFicha" >
+                    <p:fieldset id="fieldPaganate" legend="#{msgs.etiquetaPagante}" toggleSpeed="500" toggleable="true" collapsed="false">
+                        <h:panelGrid id="pnlAddFichaPagante" styleClass="centrado" columns="2" >
+                            <p:outputLabel value="#{msgs.etiquetaPagante}: " class="negrita" />
+                            <h:outputText value="#{impresionMasivaValoradosMB.paganteView.nomPagante.toUpperCase()}" class="negrita" />
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:outputLabel value="#{msgs.etiquetaTipoAsig}: " class="negrita" />
+                            <p:selectOneRadio  value="#{impresionMasivaValoradosMB.tipAsignacionFichaPop}" label="#{msgs.etiquetaTipoAsig}" required="true">
+                                <f:selectItem itemValue="1" itemLabel="#{msgs.asigDonacion}"/>
+                                <f:selectItem itemValue="0" itemLabel="#{msgs.asigPendiente}"/>
+                            </p:selectOneRadio>
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid id="pnlAsigEspecial" styleClass="centrado" columns="4" >  
+                            <p:outputLabel value="#{msgs.etiquetaNumeroDe}: " />
+                            <p:inputText id="txtNroIni" value="#{impresionMasivaValoradosMB.nroIni}" size="5" label="#{msgs.etiquetaNroIni}" />
+                            <p:commandButton value="#{msgs.etiquetaAsignar}" actionListener="#{impresionMasivaValoradosMB.obtenerNroAsignaPop()}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}else if(args.donado){PF('popAddFichaDonada').show();}" 
+                                             update=":frmBuscaPagante:pnlTblBuscaPagante,
+                                             :frmAddFicha:msgAddFicha,
+                                             :frmAddFicha:fieldPaganate,
+                                             :frmDatosMatricula:flSelEvento" />
+                            <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popAddFicha').hide();" />
+                        </h:panelGrid> 
+                        <p:messages id="msgAddFicha" showDetail="false" autoUpdate="false" />
+                    </p:fieldset>   
+                </h:form>
+            </p:dialog>
+
+            <!-- PERMITIR FICHA DONADA -->
+            <h:form id="frmAddFichaDonada">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popAddFichaDonada" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosDonado">
+                            <h:outputText value="#{msgs.panelPermitirDonado}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{impresionMasivaValoradosMB.permitirDonado()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmBuscaPagante:pnlTblBuscaPagante,:frmAddFicha:msgAddFicha,
+                                         :frmAddFicha:fieldPaganate,:frmDatosMatricula:flSelEvento,
+                                         :frmAddFichaDonada:msgsDelProc"
+                                         oncomplete="if(args.operacionCorrecta){PF('popAddFichaDonada').hide();PF('popAddFicha').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popAddFichaDonada').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+        </h:body>
+    </ui:define>
+</ui:composition>

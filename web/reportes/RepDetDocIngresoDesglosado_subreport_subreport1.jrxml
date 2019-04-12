@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RepDetDocIngresoDesglosado_subreport_subreport1" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="e11d33b9-f436-4bcc-b3ae-2d9e07e42cdc">
+	<property name="ireport.zoom" value="1.4641000000000006"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+        (case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,tipPag.codigo AS codigo
+        ,(case when tipDoc.codigo = 'Recibo' then 'Rec' when tipDoc.codigo = 'Factura' then 'Fac' when tipDoc.codigo = 'Boleta' then 'Bol.' else '-' end) as codTipDoc
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) then 'PAGO POR MATRÍCULA 2016' else upper(detDocI.referencia) end)
+        else '--'+tipSta.codigo+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto
+        ,detDocI.montoSoles AS montoPagadoSol
+        ,detDocI.montoDolares AS montoPagadoDol
+        FROM MT_CajaGen cajGen
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=docI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=docI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=docI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg='SANJOC' and cajGen.idCajaGen=163 and cajGen.idCaja=52  and tipPag.codigo='Efectivo'
+        and docI.unineg='SANJOC'
+        order by docI.fechaPago]]>
+	</queryString>
+	<field name="cuentaD" class="java.lang.Integer"/>
+	<field name="codTipPag" class="java.lang.String"/>
+	<field name="codTipDoc" class="java.lang.String"/>
+	<field name="serieNroDoc" class="java.lang.String"/>
+	<field name="idDiscente" class="java.lang.String"/>
+	<field name="discente" class="java.lang.String"/>
+	<field name="nomConcepto" class="java.lang.String"/>
+	<field name="montoPagadoSol" class="java.math.BigDecimal"/>
+	<field name="montoPagadoDol" class="java.math.BigDecimal"/>
+	<field name="sumTotSoles" class="java.lang.Double"/>
+	<field name="sumTotDolares" class="java.lang.Double"/>
+	<variable name="discente_1" class="java.lang.Integer" resetType="Column" calculation="Count">
+		<variableExpression><![CDATA[$F{discente}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="36">
+			<rectangle>
+				<reportElement uuid="9462c024-d13d-4b0f-bb3e-f63fe5d3bcc3" positionType="Float" stretchType="RelativeToBandHeight" x="1" y="17" width="553" height="16"/>
+			</rectangle>
+			<textField>
+				<reportElement uuid="cf10ba1e-e6b8-4554-8a68-b74295349f5d" positionType="Float" stretchType="RelativeToBandHeight" x="1" y="2" width="100" height="16"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{codTipPag}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="a6bc01cd-69bd-457e-af98-99fbf22a2f41" positionType="Float" stretchType="RelativeToBandHeight" x="2" y="19" width="54" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cuenta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d77c79e9-6679-44a5-a1f8-61931e342204" positionType="Float" stretchType="RelativeToBandHeight" x="509" y="18" width="35" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dólares]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="990a92cb-ac6d-4d87-95ee-adc96e1661b1" positionType="Float" stretchType="RelativeToBandHeight" x="310" y="17" width="75" height="16"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Concepto]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="21842167-fb04-46a8-a513-f052e4387f62" positionType="Float" stretchType="RelativeToBandHeight" x="141" y="18" width="168" height="16"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Discente]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="fd86efb2-396b-45be-94f7-2f02e7a462d7" positionType="Float" stretchType="RelativeToBandHeight" x="86" y="18" width="58" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[N° de doc.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="562c3cf8-67f3-468a-b1f2-a4240d92cf63" positionType="Float" stretchType="RelativeToBandHeight" x="460" y="18" width="35" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Soles]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="846b59ea-74c4-4532-9d65-19d3561c7be8" positionType="Float" stretchType="RelativeToBandHeight" x="39" y="18" width="46" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipo Doc.]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField>
+				<reportElement uuid="d7ef83f9-4eba-487a-8fc2-4c3a35f253be" x="38" y="0" width="35" height="13"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{codTipDoc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="f996adb6-8776-4afe-9d27-f6c1abfc7c18" x="1" y="0" width="41" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cuentaD}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="6a380032-f1a5-416a-9697-a05334a9f283" x="143" y="0" width="168" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{discente}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="25eaa6df-abb2-4921-87b6-8e5c062c9e0d" x="84" y="0" width="51" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{serieNroDoc}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="7cecaeca-1c2a-43db-8347-c40211a1cf7c" x="500" y="0" width="43" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoDol}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="a9a262bd-6c34-4085-a3aa-fc5c1d428971" x="311" y="0" width="139" height="13" isPrintWhenDetailOverflows="true"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nomConcepto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="2f0c58e5-9c64-4827-a87a-0514fd8bcacc" x="452" y="0" width="43" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoSol}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="21">
+			<textField pattern="#,##0.00">
+				<reportElement uuid="b67a6403-0a0f-46be-b06d-5690c38f1fe1" x="452" y="1" width="42" height="20"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotSoles}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="9cdcf2bf-be1d-4157-814f-8ac7abb06dc0" x="501" y="1" width="42" height="20"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotDolares}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="eaad8db7-9f0e-4f84-aa54-061d8c09feaf" x="380" y="0" width="70" height="20"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SUB TOTAL]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

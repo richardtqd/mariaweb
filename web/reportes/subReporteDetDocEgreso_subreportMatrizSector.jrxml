@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteDocEgreso_subreport1" language="groovy" pageWidth="534" pageHeight="802" columnWidth="534" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="38bb88cc-ac34-4658-9e41-efba3f3d9aa9">
+	<property name="ireport.zoom" value="2.0490403660952117"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["C:\\SigmaFinal\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+        (case
+        when docE.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(docE.idsolicitudcajach), 8)
+        when docE.idtipodocegreso='R' or docE.idtipodocegreso='O'  then right(replicate('0', 8) + rtrim(docE.idcompra), 8)
+        end) as idSolRC,
+        (case
+        when docE.idTipoDocEgreso  = 'A' then
+        (select con.cuentad from MT_SolicitudCajaCh  sol
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)
+        when docE.idTipoDocEgreso = 'R' then
+        (select top 1 con.cuentad from ML_DetRegistroCompra detrc
+        inner join MT_Concepto con on con.idconcepto=detrc.idconcepto
+        where detrc.idregistrocompra=doce.idcompra and doce.unineg=detrc.unineg)
+        when docE.idtipodocegreso='O' then ((select top 1 con.cuentad from ML_DetRequerimiento detreq
+        inner join MT_Concepto con on con.idconcepto=detreq.idconcepto
+        where idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra)))
+        end) as cuentaD,
+        (case
+        when docE.idTipoDocEgreso  = 'A' then
+        (select con.nombre  from MT_SolicitudCajaCh  sol
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)
+        when  docE.idTipoDocEgreso = 'R' then
+        (select top 1 con.nombre from ML_DetRegistroCompra detrc
+        inner join MT_Concepto con on con.idconcepto=detrc.idconcepto
+        where detrc.idregistrocompra=doce.idcompra and detrc.unineg=doce.unineg)
+        when docE.idtipodocegreso='O' then (select top 1 con.nombre from ML_DetRequerimiento detreq
+        inner join MT_Concepto con on con.idconcepto=detreq.idconcepto
+        where idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra))
+        end) as concepto,
+        (case
+        when docE.idtipodocegreso='A' THEN (
+        select top 1 S.motivo from MT_SolicitudCajaCh S
+        where S.idsolicitudcajach=doce.idsolicitudcajach and s.unineg=doce.unineg)
+        when  docE.idTipoDocEgreso = 'R' then
+        (select top 1 rc.glosa from ML_RegistroCompra rc
+
+        where rc.idregistrocompra=doce.idcompra and rc.unineg=doce.unineg)
+        when docE.idtipodocegreso='O' then ((select top 1 req.titulo from ML_Requerimiento req
+        where req.idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra)))+ ' - Adelanto de Servicio'
+        end) as glosa,
+        (case
+        when docE.idtipodocegreso='A' then   (SELECT CONVERT(money, ROUND(isnull(detsol.valor-(doce.valorDetraccion/(select count(*) from MT_DetSolicitudCajaChCR where idsolicitudcajach=doce.idsolicitudcajach)),0), 2, 1)))
+        when docE.idtipodocegreso='R' then (SELECT CONVERT(money, ROUND(isnull(regcr.valor-(doce.valorDetraccion/(select count(*) from ML_DetRegCompraCR where idregistrocompra=doce.idcompra)),0), 2, 1)))
+		 when docE.idtipodocegreso='O' then (SELECT CONVERT(money, ROUND(isnull(regcr.valor-(doce.valorDetraccion/(select count(*) from ML_DetRegCompraCR where idregistrocompra=doce.idcompra)),0), 2, 1)))
+        end) as montoPagado,
+
+        (case
+        when docE.idtipodocegreso='A'
+        then
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then
+        ( case
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )
+        when docE.idtipodocegreso='R'
+        then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        when docE.idTipoDocEgreso = 'O' then
+        (select entiOC.nombre as nombreEntidad2 from MO_Entidad entiOC where entiOC.ruc=docE.ruc and docE.uniNeg=entiOC.uniNeg)
+        end) as nomEnt,
+        E.nombre AS nombreBco,
+        (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg   ) as montoTotal,
+(select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco
+, (case
+        when docE.idTipoDocEgreso  = 'A' then
+        (convert(varchar ,detsol.cr))+ ' '+cr.nombre
+        when  docE.idTipoDocEgreso = 'R' or docE.idtipodocegreso='O'
+        then ((convert(varchar ,regcr.cr))+ ' '+cr.nombre)
+        end) as nombreCR
+        FROM MT_DocEgreso docE
+        INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+        left join MT_DetSolicitudCajaChCR detsol on sol.idsolicitudcajach = detsol.idsolicitudCajach and detsol.unineg=sol.unineg
+        left join ML_FacturaCompra fact on (case when fact.idregistrocompra is not null then fact.idregistrocompra when
+        fact.idregistrocompra is not null   then fact.idregistrocompra end)=docE.idcompra and  fact.unineg=docE.unineg
+        left join ML_DetRegCompraCR regcr on regcr.idregistrocompra=fact.idregistrocompra and regcr.idfacturacompra=fact.idfacturacompra and fact.unineg=regcr.unineg
+        left join MT_CentroResponsabilidad cr on cr.cr= (case when docE.idtipodocegreso='A' then detsol.cr when docE.idtipodocegreso = 'R' or docE.idtipodocegreso='O' then regcr.cr  end)
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg
+		where docE.nroDocEgreso = 26]]>
+	</queryString>
+	<field name="idSolRC" class="java.lang.String"/>
+	<field name="concepto" class="java.lang.String"/>
+	<field name="glosa" class="java.lang.String"/>
+	<field name="montoPagado" class="java.lang.String"/>
+	<field name="nomEnt" class="java.lang.String"/>
+	<field name="nombreBco" class="java.lang.String"/>
+	<field name="montoTotal" class="java.math.BigDecimal"/>
+	<field name="ctabco" class="java.lang.Integer"/>
+	<field name="nombreCR" class="java.lang.String"/>
+	<field name="cuentaD" class="java.lang.String"/>
+	<field name="detraccion" class="java.lang.String"/>
+	<field name="nroNotaCredito" class="java.lang.String"/>
+	<field name="dsctoNotCred" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="11" splitType="Stretch">
+			<textField isStretchWithOverflow="true" pattern="">
+				<reportElement uuid="fb8af25c-8a0d-4866-9946-0f30d11c2ee4" x="362" y="-1" width="40" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagado}==null ? "" : $F{montoPagado}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="485f155f-3911-4bb8-9b13-3176e58921c3" x="54" y="-1" width="186" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCR}==null?"":$F{nombreCR}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="135d0d10-eef2-4997-b454-24adae5addd9" x="469" y="-1" width="40" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{detraccion}==null ? "" : $F{detraccion}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="66ec48c2-0ddb-4c27-8702-22164fc5c41e" x="20" y="-1" width="30" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cuentaD}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="12">
+			<textField>
+				<reportElement uuid="3ab80f35-fb0c-43cf-b34f-de3b1a90d800" x="49" y="0" width="166" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroNotaCredito}==null?"":$F{nroNotaCredito}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="efbc9ec2-98d7-4643-aed2-3a87210fc48a" x="216" y="0" width="100" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dsctoNotCred}==null?"":$F{dsctoNotCred}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

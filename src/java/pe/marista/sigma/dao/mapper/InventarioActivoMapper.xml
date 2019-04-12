@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+  
+<mapper namespace="pe.marista.sigma.dao.InventarioActivoDAO">  
+    <sql id="consultaCampos">
+        SELECT ia.idInventarioActivo
+        ,ia.unineg
+        ,ia.idDetRegistroCompra
+        ,ia.idregistrocompra
+        ,ia.idcatalogo
+        ,ia.fechacompra
+        ,ia.fechaultimaasignacion
+        ,ia.ruc
+        ,ia.idUniOrg
+        ,ia.cuenta
+        ,ia.idtipoActivo
+        ,ia.titulo
+        ,ia.marca
+        ,ia.modelo
+        ,isnull(ia.stockactual,0) as stockactual
+        ,ia.idtipounimed as idTipoUniMed
+        ,ia.idtipomoneda
+        ,ia.idtipocategoria
+        ,ia.preciocompra
+        ,ia.idtipostatusopera
+        ,ia.ubicacion
+        ,ia.idresponsable
+        ,ia.flgdonacion
+        ,ia.creapor
+        ,ia.creaFecha
+        ,cat.idcatalogo
+        ,cat.idtipocategoria
+        ,cat.cuenta
+        ,cat.item
+        ,e.nombre
+        ,como.codigo as tipoMoneda
+        ,como.idcodigo as idTipoMoneda
+        ,couni.codigo as tipoUnidadMedida
+        ,couni.idcodigo as idTipoUnidadMedida
+        ,cocat.codigo as tipoCategoria	
+        ,cocat.idcodigo as idTipoCategoria	
+        ,uni.nombreUniNeg
+        ,uniorg.nombreuniorg
+        ,detre.iddetordencompra as detalleRegis
+        ,re.idregistrocompra as registrocom
+        ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad,
+        (select case 
+        when ia.flgdonacion = 1 then 'SI'
+        when ia.flgdonacion = 0 then 'NO'
+        end)as estado
+        FROM ML_InventarioActivo ia
+        left join ML_Catalogo cat on ia.idcatalogo = cat.idcatalogo
+        left join MO_Entidad e on ia.ruc = e.ruc
+        left join MO_UnidadOrganica uniorg on uniorg.iduniorg = ia.iduniorg
+        left join MO_Codigo como on ia.idtipomoneda = como.idcodigo
+        left join MO_Codigo couni on ia.idtipounimed = couni.idcodigo
+        left join MO_Codigo cocat on ia.idtipocategoria = cocat.idcodigo
+        left join MO_UnidadNegocio uni on ia.unineg = uni.unineg
+        LEFT JOIN ML_DetRegistroCompra detre on ia.iddetregistrocompra = detre.iddetordencompra
+        left join ML_RegistroCompra re on ia.idregistrocompra = re.idregistrocompra
+        left join MO_UnidadNegocio unsol on unsol.unineg= ia.unineg
+        left join MO_Entidad ent on ent.ruc=unsol.ruc
+        left join MO_Pais pa on pa.idpais= ent.idpais
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito
+    </sql>
+    
+    <resultMap id="inventarioActivoResultado" type="pe.marista.sigma.bean.InventarioActivoBean">
+        <id property="idInventarioActivo" column="idInventarioActivo"/>
+        <!-- <result property="unineg" column="unineg"/>-->
+        <result property="codigo" column="codigo"/>
+        <result property="fechacompra" column="fechacompra"/>
+        <result property="fechaultimaasignacion" column="fechaultimaasignacion"/>
+        <result property="titulo" column="titulo"/>
+        <result property="preciocompra" column="preciocompra"/>
+        <result property="ubicacion" column="ubicacion"/>
+        <result property="preciocompra" column="preciocompra"/>
+        <result property="marca" column="marca"/>
+        <result property="modelo" column="modelo"/> 
+        <result property="modelo" column="modelo"/>
+        <result property="stockActual" column="stockActual"/>
+        <result property="flgDonacion" column="flgDonacion"/> 
+        <result property="estado" column="estado"/> 
+        <result property="creapor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="idstatusbien" column="idstatusbien"/>
+        <result property="idstatusopera" column="idstatusopera"/>
+        <result property="idresponsable" column="idresponsable"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="catalogoBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="organicaResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/>
+        <association property="tipoUniMedBean" column="idTipoUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoUniMedResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+        <association property="detRegistroCompraBean" column="idDetRegistroCompra"
+                     javaType="pe.marista.sigma.bean.DetRegistroCompraBean"
+                     resultMap="detRegistroResultado"/>
+        <association property="registroCompraBean" column="idRegistroCompra"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="registroResultado"/>
+    </resultMap>
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadCataResultado"/>
+        <association property="tipoUnidadMedidaBean" column="idTipoUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoUniMedCataResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaCataResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaCataResultado"/>
+    </resultMap>
+    <resultMap id="entidadCataResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombre"/>
+    </resultMap>
+    <resultMap id="tipoUniMedCataResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUniMed"/>
+        <result property="codigo" column="tipoUnidadMedida"/>
+    </resultMap>
+    <resultMap id="tipoMonedaCataResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaCataResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombre"/>
+    </resultMap>
+    <resultMap id="organicaResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap>
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="tipoUniMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUnidadMedida"/>
+        <result property="codigo" column="tipoUnidadMedida"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>
+    <resultMap id="negocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNIResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucUnidad"/>
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultado"/>
+    </resultMap>
+    <resultMap id="distritoUNIDADENTResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distritoUnidad"/>
+    </resultMap>    
+    <resultMap id="paisUNIDADENTResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>
+    <resultMap id="detRegistroResultado" type="pe.marista.sigma.bean.DetRegistroCompraBean">
+        <id property="idDetRegistroCompra" column="detalleRegis"/>
+    </resultMap>
+    <resultMap id="registroResultado" type="pe.marista.sigma.bean.RegistroCompraBean">
+        <id property="idRegistroCompra" column="registrocom"/>
+    </resultMap>
+    
+    <select id="obtenerTodos" resultMap="inventarioActivoResultado">
+        <include refid="consultaCampos" />
+    </select>
+    
+    <select id="obtenerTodosActivos" resultMap="inventarioActivoResultado" parameterType="String">
+        <include refid="consultaCampos" />where ia.uniNeg = #{unidadNegocioBean.uniNeg}  
+    </select>
+    <select id="obtenerPorFiltroIActivo" resultMap="inventarioActivoResultado" parameterType="pe.marista.sigma.bean.InventarioActivoBean">
+        <include refid="consultaCampos" />
+        <where>  
+            ia.unineg =#{unidadNegocioBean.uniNeg} 
+            <if test="catalogoBean.idCatalogo != null and  catalogoBean.idCatalogo != 0 ">
+                and ia.idCatalogo = #{catalogoBean.idCatalogo}
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and ia.fechacompra >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and ia.fechacompra <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by ia.idCatalogo desc
+    </select>
+    
+    <select id="obtenerInventarioPorId" resultMap="inventarioActivoResultado" parameterType="Integer">
+        <include refid="consultaCampos" /> Where ia.idInventarioActivo= #{idInventarioActivo}
+    </select>
+    <select id="obtenerPorCatalogo" resultMap="inventarioActivoResultado" parameterType="pe.marista.sigma.bean.InventarioActivoBean">
+        <include refid="consultaCampos" />where ia.idInventarioActivo = #{idInventarioActivo} and ia.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPorFiltroInventarioActivo" resultMap="inventarioActivoResultado" parameterType="pe.marista.sigma.bean.InventarioActivoBean">
+        <include refid="consultaCampos" /> Where ia.idInventarioActivo= #{idInventarioActivo}
+    </select>
+    
+    <select id="ObtenerIAPorItem" resultMap="inventarioActivoResultado">
+        <include refid="consultaCampos" />
+        Where ia.idcatalogo = #{idCatalogo}
+    </select>
+    
+    <select id="ObtenerPorItem" resultMap="inventarioActivoResultado">
+        <include refid="consultaCampos" />
+        Where ia.idcatalogo = #{idCatalogo}
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.InventarioActivoBean">
+        INSERT INTO ML_InventarioActivo
+        (idinventarioactivo,unineg,idDetRegistroCompra,idregistroCompra,idtipocategoria,idcatalogo,fechacompra,fechaultimaasignacion,ruc ,
+        idUniOrg,cuenta,idtipoActivo ,titulo ,marca,modelo,idtipounimed ,idtipomoneda,preciocompra
+        ,idtipostatusopera ,ubicacion ,idresponsable,flgdonacion ,creapor,creaFecha,stockactual)
+        
+        Values (0,#{unidadNegocioBean.uniNeg},#{detRegistroCompraBean.idDetRegistroCompra},#{registroCompraBean.idRegistroCompra},
+        #{tipoCategoriaBean.idCodigo},#{catalogoBean.idCatalogo},#{fechacompra},
+        #{fechaultimaasignacion},#{entidadBean.ruc},#{unidadOrganicaBean.idUniOrg},
+        #{planContableBean.cuenta},#{idtipoActivo},#{titulo},#{marca},#{modelo},#{tipoUniMedBean.idCodigo},
+        #{tipoMonedaBean.idCodigo}, #{preciocompra},#{idtipostatusopera},#{ubicacion},#{idresponsable},
+        #{flgDonacion},#{creapor},getDate(),#{stockActual})
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.InventarioActivoBean">
+        update ML_InventarioActivo
+        set
+        idtipocategoria = #{tipoCategoriaBean.idCodigo},
+        ruc = #{entidadBean.ruc},
+        marca = #{marca},
+        modelo = #{modelo},
+        fechacompra = #{fechacompra},
+        fechaultimaasignacion = #{fechaultimaasignacion},
+        idtipounimed = #{tipoUniMedBean.idCodigo},
+        idtipomoneda = #{tipoMonedaBean.idCodigo},
+        preciocompra = #{preciocompra}, 
+        flgdonacion = #{flgDonacion},
+        modiPor = #{modiPor},
+        stockactual = #{stockActual}
+        where uniNeg = #{unidadNegocioBean.uniNeg} and  idInventarioActivo = #{idInventarioActivo}
+    </update> 
+    
+    <!--
+    public void obtenerInventarioPorId(Integer idInventarioActivo) throws Exception;
+    public void insertar (InventarioActivoBean inventarioActivoBean) throws Exception;
+    public List<InventarioActivoBean> obtenerTodos() throws Exception;
+    -->
+    
+    <update id="modificarStockActual" parameterType="pe.marista.sigma.bean.InventarioActivoBean">
+        update
+        ML_InventarioActivo
+        set
+        stockActual = #{stockActual}
+        where uniNeg = #{unidadNegocioBean.uniNeg} and  idInventarioActivo = #{idInventarioActivo}
+    </update>
+    
+    <select id="obtenerPorFiltroItem" resultMap="inventarioActivoResultado" parameterType="pe.marista.sigma.bean.InventarioActivoBean">
+        <include refid="consultaCampos" />
+        <where>  
+            ia.unineg =#{unidadNegocioBean.uniNeg}
+            <if test="catalogoBean.item != null ">
+                and cat.item like concat('%',#{catalogoBean.item},'%')
+            </if>  
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and ia.fechaEmision >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and ia.fechaEmision <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by ia.idInventarioActivo desc
+    </select>
+</mapper>

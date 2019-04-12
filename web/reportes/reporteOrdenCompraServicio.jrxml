@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteOrdenCompraServicio" language="groovy" pageWidth="595" pageHeight="842" columnWidth="483" leftMargin="56" rightMargin="56" topMargin="35" bottomMargin="14" uuid="cdd577e0-c510-4bca-b51d-bd3e4b801e5c">
+	<property name="ireport.zoom" value="1.5"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="rutaImagen" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select
+        (case
+        when tm.idcodigo=14901 then 'S/.'
+        when tm.idcodigo=14902 then '$.'
+        else '-'
+        end )as moneda,
+        isnull(orden.atencion,'-') as atencion,
+        ISNULL(orden.nrocotipro,'-') as nroCotiPro,
+        isnull(dr.horaregreso,0) as horaRegreso ,
+        isnull(dr.horasalida,0) as horaSalida,
+        isnull(convert(varchar,dr.fechasalida),'-') as fechaSalida,
+        isnull(dr.destinoservicio,'-') as destinoServicio,
+        isnull(orden.nrocompra,'-') as nroCompra,
+        isnull(concat(p.nombre+', ',p.apepat+' ',p.apemat),'-')  as administradora,
+        (select right(replicate('0', 3) + rtrim(isnull((max(det.idordencompra)),0)+1),3)  from ML_DetOrdenCompra det)  as idOrdenCompra , isnull(convert(varchar,det.anio),'-') as anio, concat(SUBSTRING(UPPER (dis.nombre), 1, 1) + SUbSTRING (LOWER (dis.nombre), 2,50) +', ', ( DateName(day,orden.fechaorden) + ' de ' +DateName(month,orden.fechaorden) + ' de ' +DateName(year,orden.fechaorden))) as fecha,
+        isnull(det.cantidad,'-') as cantidad,
+        isnull(c.item,'-') as item,
+        isnull(det.importe,0) AS importe,
+        isnull(tm.codigo,'-') tipoMoneda,
+        isnull(un.nombreUniNeg,'-') as nombreUniNeg,
+        isnull(tor.codigo,'-') as categoria,
+        isnull(form.codigo,'-') as formaPago, en.ruc as rucOrden,
+        isnull(en.contacto,'-') as nombreOrden,
+        isnull(en.direccion,'-') as direccionOrden,
+        isnull(ent.ruc,'-') as rucUnidad,
+        isnull(ent.nombre,'-') as nombreUnidad,
+        isnull(ent.url,'-') as webUnidad,
+        isnull(ent.correo,'-') as correoUnidad,
+        isnull(ent.telefono,'-') as telefonoUnidad,
+        isnull(ent.direccion,'-') as direccionUnidad,
+        isnull(dis.nombre,'-') as distritoUnidad,
+        isnull(pais.nombre,'-') as paisUnidad,
+        (case
+        when flgadelanto=1 then convert(varchar,convert(int ,importeadelanto))+'%  '+(case
+        when tm.idcodigo=14901 then 'S/.'
+        when tm.idcodigo=14902 then '$.'
+        else '-'
+        end )+convert(varchar,(convert(decimal(8,2),((orden.importepropuesto*orden.importeadelanto)/100)))) +'  Cheque a la firma del contrato. Previo envío de factura. '
+        + 'y el '+(select distinct convert(varchar,convert(int ,(100-importeadelanto))) from ML_OrdenCompra where idordencompra = det.idordencompra  )+'%  '+(case
+        when tm.idcodigo=14901 then 'S/.'
+        when tm.idcodigo=14902 then '$.'
+        else '-'
+        end )+convert(varchar,(convert(decimal(8,2),((orden.importepropuesto*(100-orden.importeadelanto))/100)))) +
+        +'  Cheque al finalizar el servicio, previo envío de la factura.'
+        when flgadelanto is null then isnull(pago.codigo,'-')
+        end ) as importeAdelanto,
+        (select sum(d.importe*d.cantidad) from ML_DetOrdenCompra d
+        where d.idOrdenCompra = det.idordencompra) as sumaImporte,
+        (select case
+        when tor.codigo = 'Activo Fijo' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Material' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Servicio' then (sum(det.importe) + (sum(det.importe*det.cantidad)*18)/100)
+        end
+        from ML_DetOrdenCompra det
+        where det.idOrdenCompra = orden.idOrdenCompra) as sumaImporteFinal,
+        isnull(orden.importepropuesto,0) as importePropuesto,
+        isnull((det.importe*det.cantidad),0)  as montoRef,
+        isnull((det.importe*det.cantidad),0)   as montoCadaUnoMate,
+        isnull((det.importe), 0) as montoCadaUnoSer,
+        isnull(comed.codigo,'-') as tipoUniMed,
+        (select right(replicate('0', 3) + rtrim(isnull((max(det.idordencompra)),0)+1),3)  from ML_DetOrdenCompra det)  as idOrdenCompra , det.anio as anio,
+        ( case
+        when  DATENAME(month, orden.fechaentrega)  = DATENAME(MONTH,orden.fechaentrega)
+        then
+        isnull(dateName(WEEKDAY,orden.fechaentrega)+ ' '+ DateName(day,orden.fechaentrega) +' al '+ dateName(WEEKDAY,orden.fechatermina)+' '+  DateName(day,orden.fechatermina)+ ' de ' +DateName(month,orden.fechaentrega) + ' de ' +DateName(year,orden.fechaentrega),'-')
+        else isnull(dateName(WEEKDAY,orden.fechaentrega)+ ' '+ DateName(day,orden.fechaentrega) + ' de ' +DateName(month,orden.fechaentrega) +' al '+ dateName(WEEKDAY,orden.fechatermina)+' '+  DateName(day,orden.fechatermina)+ '  de ' +DateName(month,orden.fechaentrega) + ' de ' +DateName(year,orden.fechaentrega),'-')
+        end ) as fechaEntregaServicio,
+        isnull(DateName(dw,orden.fechaentrega)+', ' +  DATENAME(day, orden.fechaentrega)+' de '+DateName(month,orden.fechaentrega)+' de '+
+        DateName(year,orden.fechaentrega),'-')  as fechaEntrega,
+        isnull(en.nombrecomercial,'-') as nombreComercial,
+        (case
+        when req.flgautoriza1= 1 then isnull(concat(per1.nombre,+', '+per1.apepat,+' ' +per1.apemat),'-')
+        when req.flgautoriza2= 1 then isnull(concat(per2.nombre,+', '+per2.apepat,+' ' +per2.apemat),'-')
+        when req.flgautoriza3= 1 then isnull(concat(per3.nombre,+', '+per3.apepat,+' ' +per3.apemat),'-')
+        else '-'
+        end) as nombreAutorizador,
+        car.nombre AS cargoAutorizador,
+        isnull(pago.codigo,'-') as tipoPago,
+        isnull(orden.lugarentrega,'-') as lugarEntrega
+        from ML_DetOrdenCompra det
+        inner join ML_OrdenCompra orden on det.idordencompra = orden.idOrdenCompra and orden.uniNeg = det.uniNeg
+        left join MO_Codigo form on orden.idtipoformapago = form.idcodigo
+        left join MO_Codigo tor on orden.idtipocategoria = tor.idcodigo
+        left join MO_Entidad en on orden.ruc = en.ruc
+        left join MO_UnidadNegocio un on un.uniNeg = det.uniNeg
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        inner join ML_DetRequerimiento dr on det.iddetrequerimiento = dr.iddetrequerimiento and dr.uniNeg = det.uniNeg
+        inner join ML_Requerimiento req on det.idrequerimiento = req.idrequerimiento and req.uniNeg = det.uniNeg
+        left join MO_Personal per1 on req.idautoriza1= per1.idpersonal
+        left join MO_Personal per2 on req.idautoriza1= per2.idpersonal
+        left join MO_Personal per3 on req.idautoriza1= per3.idpersonal
+        inner join ML_Catalogo c on det.idcatalogo = c.idcatalogo
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on det.idtipomoneda = tm.idcodigo
+        left join MO_Codigo comed on comed.idcodigo = det.idtipounimed
+        left join MO_Personal P ON P.unineg= DET.unineg
+        left join MO_JefeUniOrg J ON P.idpersonal= J.idpersonal
+        left join MO_PersonalCargo pc on pc.idpersonal = p.idpersonal
+        left join MO_Cargo car on car.idcargo= pc.idcargo
+        left join MO_Codigo pago on pago.idcodigo= orden.idtipopago
+			where det.idOrdenCompra = (select max(idordencompra)from ML_OrdenCompra) AND J.iduniorg=3 AND P.unineg='CHAMPS']]>
+	</queryString>
+	<field name="moneda" class="java.lang.String"/>
+	<field name="atencion" class="java.lang.String"/>
+	<field name="nroCotiPro" class="java.lang.String"/>
+	<field name="horaRegreso" class="java.lang.String"/>
+	<field name="horaSalida" class="java.lang.String"/>
+	<field name="fechaSalida" class="java.lang.String"/>
+	<field name="destinoServicio" class="java.lang.String"/>
+	<field name="nroCompra" class="java.lang.String"/>
+	<field name="administradora" class="java.lang.String"/>
+	<field name="idOrdenCompra" class="java.lang.String"/>
+	<field name="anio" class="java.lang.String"/>
+	<field name="fecha" class="java.lang.String"/>
+	<field name="cantidad" class="java.lang.Integer"/>
+	<field name="item" class="java.lang.String"/>
+	<field name="importe" class="java.math.BigDecimal"/>
+	<field name="tipoMoneda" class="java.lang.String"/>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="categoria" class="java.lang.String"/>
+	<field name="formaPago" class="java.lang.String"/>
+	<field name="rucOrden" class="java.lang.String"/>
+	<field name="nombreOrden" class="java.lang.String"/>
+	<field name="direccionOrden" class="java.lang.String"/>
+	<field name="rucUnidad" class="java.lang.String"/>
+	<field name="nombreUnidad" class="java.lang.String"/>
+	<field name="webUnidad" class="java.lang.String"/>
+	<field name="correoUnidad" class="java.lang.String"/>
+	<field name="telefonoUnidad" class="java.lang.String"/>
+	<field name="direccionUnidad" class="java.lang.String"/>
+	<field name="distritoUnidad" class="java.lang.String"/>
+	<field name="paisUnidad" class="java.lang.String"/>
+	<field name="importeAdelanto" class="java.lang.String"/>
+	<field name="sumaImporte" class="java.math.BigDecimal"/>
+	<field name="sumaImporteFinal" class="java.math.BigDecimal"/>
+	<field name="importePropuesto" class="java.math.BigDecimal"/>
+	<field name="montoRef" class="java.math.BigDecimal"/>
+	<field name="montoCadaUnoMate" class="java.math.BigDecimal"/>
+	<field name="montoCadaUnoSer" class="java.math.BigDecimal"/>
+	<field name="tipoUniMed" class="java.lang.String"/>
+	<field name="fechaEntregaServicio" class="java.lang.String"/>
+	<field name="fechaEntrega" class="java.lang.String"/>
+	<field name="nombreComercial" class="java.lang.String"/>
+	<field name="nombreAutorizador" class="java.lang.String"/>
+	<field name="cargoAutorizador" class="java.lang.String"/>
+	<field name="tipoPago" class="java.lang.String"/>
+	<field name="lugarEntrega" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="171" splitType="Stretch">
+			<textField>
+				<reportElement uuid="64dcf29a-bce0-4155-a10b-4ed91fc8b7e6" x="73" y="2" width="307" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5eb0d2fc-4025-445e-b3a8-2445ac14773f" x="22" y="77" width="77" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SEÑORES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1ce8f9ae-9f26-4193-aeca-a9da30bbe2ea" x="22" y="105" width="77" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Presente.-]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="3ea1503b-c5cf-4d85-b9f5-64ef03bb4475" x="22" y="91" width="216" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreOrden}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="755ddd41-768e-4bc3-86ef-bf0412808ba9" x="22" y="45" width="82" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="false" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[O/C-SERVICIO -]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="4cd95d10-b025-48c2-a050-cfffc2dcd335" x="22" y="61" width="322" height="16"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{fecha}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="f4922829-eb44-4eeb-b7e7-a2174a289f34" x="121" y="45" width="43" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font size="10" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{anio}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="37347fd9-0d95-4c73-aa0a-998216ff618c" x="110" y="45" width="14" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="false" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="8390da06-70f3-497b-95c8-b1e58eaf9f9e" x="99" y="45" width="88" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroCompra}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="290853df-088f-45d6-8972-9cc09a55d767" x="160" y="151" width="225" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{nroCotiPro}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="da4df134-d9aa-4568-9bcb-2828be0c642e" x="22" y="124" width="461" height="47"/>
+				<textElement verticalAlignment="Top">
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[Estimados señores:                                                                                                                                                                                                       Por la presente nos es grato saludarlos cordialmente y a la vez hacerles llegar nuestro requerimiento de movilidad para lo siguiente:]]></text>
+			</staticText>
+			<image>
+				<reportElement uuid="e1ee90d7-4708-4552-9a5d-0a36ff8003e2" x="23" y="2" width="50" height="39"/>
+				<imageExpression><![CDATA[$P{rutaImagen}+"\\resources\\images\\logosanluis.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="23" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="035edf6d-8905-4795-b0d2-463a1f5e01ca" positionType="Float" x="323" y="2" width="66" height="21"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[PRECIO UNITARIO]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="9e200c8b-435d-46af-b318-365b06117f2c" positionType="Float" x="4" y="1" width="477" height="22"/>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="91d8d5cd-4062-42a1-a482-81b50762641c" positionType="Float" x="0" y="1" width="50" height="22"/>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="cb9fe1b2-3f62-4286-8093-872d99ea8da3" positionType="Float" x="50" y="1" width="249" height="22"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="dd2cfe60-ae2c-484c-9c45-e5d61c4bf191" positionType="Float" x="2" y="3" width="48" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[FECHA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="488e739e-4a43-44d0-8785-82d3c1e3155b" positionType="Float" x="50" y="1" width="171" height="22"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[DESTINO]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="ab4c5eb8-8535-45c9-a282-592e0ea7c508" positionType="Float" x="226" y="1" width="79" height="22"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="eeaab4fb-b5e8-4526-9282-8a342e60174f" positionType="Float" x="226" y="1" width="79" height="22"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[CANTIDAD PASAJEROS Y BUSES POR DIA]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="3f016f5d-e317-4ee8-b89b-0c35def909a2" positionType="Float" x="407" y="1" width="76" height="22"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="4e7389c2-b5d5-43a6-b668-eb840d02049b" positionType="Float" x="407" y="0" width="62" height="23"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[PRECIO TOTAL (Inc.     IGV)]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="7c103ea3-49f4-4f60-ae1e-860e9f3ae62a" positionType="Float" x="305" y="1" width="103" height="22"/>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="9c05ce05-e180-4933-9f30-db43f611c643" positionType="Float" x="305" y="14" width="49" height="9"/>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="b24f3f4b-53e3-4c5a-ace5-b91b49903982" positionType="Float" x="353" y="14" width="55" height="9"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="af617162-745b-4bcf-a038-ec75a9eea5c9" positionType="Float" x="352" y="13" width="55" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[LLEGADA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="39c0eece-b8a5-4b38-b1f3-4d0e4d3a4c43" positionType="Float" x="306" y="14" width="48" height="9"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[SALIDA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="bb69ce1e-e398-4677-b4d3-ace66de98bc0" positionType="Float" x="306" y="0" width="102" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[HORARIO DE TRASLADO]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="acc16577-a03d-4278-b2a1-ec21271b8c89" x="469" y="2" width="14" height="21"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{moneda}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="16" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="69ab125b-11c3-4c92-bff0-c13ea1c57745" stretchType="RelativeToBandHeight" x="0" y="0" width="50" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fechaSalida}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="###0.00;-###0.00">
+				<reportElement uuid="5149c864-8001-4108-a59a-b8e542fb5ac0" stretchType="RelativeToBandHeight" x="406" y="0" width="77" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importe}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="49cd61d3-b2fd-4263-ad43-404bdec638c1" stretchType="RelativeToBandHeight" x="305" y="0" width="48" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{horaSalida}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="06dadda6-8e2c-4550-8a8d-0bd039498560" stretchType="RelativeToBandHeight" x="353" y="0" width="54" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{horaRegreso}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="6f62e9c3-d61a-442f-8b77-173f8c82b53a" stretchType="RelativeToBandHeight" x="226" y="0" width="79" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{item}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="0336aaa2-32c8-431f-93dc-28cd6f587ce6" stretchType="RelativeToBandHeight" x="56" y="0" width="165" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{destinoServicio}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="a9f323c6-88e8-42f6-a62b-f74695ed8f9b" positionType="Float" x="0" y="15" width="483" height="1"/>
+			</line>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="54" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="50db0d20-cac5-4a2c-9412-217a826f8619" x="4" y="3" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<textField evaluationTime="Report">
+				<reportElement uuid="3311317d-4257-4ed7-8f6d-71b08ec8510d" x="52" y="3" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="1c597aa4-bc7d-4712-8e8b-099321becaa0" x="24" y="3" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5d094681-055f-4118-a8c1-b56ad7536983" x="37" y="3" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e580af2b-b7e8-4b06-9525-c6b0e8758798" x="19" y="34" width="53" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[e-mail.:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="62d2bf8d-fbb6-4670-bba5-21e0ee614b85" x="403" y="13" width="33" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Telf.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="713a1dc9-abb2-401a-9071-dfe0361cd314" x="72" y="34" width="182" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{correoUnidad}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="d8e8147a-77ff-49bb-adfb-01a668a600a1" x="1" y="15" width="184" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{direccionUnidad}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="57d770f7-7c90-41fb-beee-6b778fdba67a" x="1" y="14" width="482" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="e111ac7b-5aa2-4112-a913-c69303e6e80e" x="254" y="34" width="60" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[web Site:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="6a59f1f7-6e76-4ae8-a1d2-2f6c0ef69ae2" x="436" y="13" width="49" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{telefonoUnidad}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="5bb9d1d6-bf8b-431f-9e58-93b2519a2db0" x="314" y="34" width="160" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{webUnidad}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="01767549-cab4-47ba-bba7-cdf6c0c771e0" x="253" y="13" width="150" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{distritoUnidad}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="7c4fb351-a440-429a-91ea-3f8eda7ef16b" x="184" y="14" width="70" height="21"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{paisUnidad}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="414" splitType="Immediate">
+			<rectangle>
+				<reportElement uuid="13744aa8-f945-431d-bbd3-3a3b6118c60c" positionType="Float" x="0" y="0" width="424" height="12"/>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="ae27ee6d-04ca-4b15-afa4-2574255ba541" positionType="Float" x="0" y="0" width="483" height="12"/>
+			</rectangle>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement uuid="e7483dda-52f6-43ee-a889-98d3cb3dd8d9" positionType="Float" x="424" y="0" width="59" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumaImporte}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="07c97039-1113-4111-8404-d33a83cdcdd0" positionType="Float" x="0" y="0" width="415" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="53d6e731-d591-4906-9302-f14e6b577f80" positionType="Float" x="183" y="221" width="212" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{rucUnidad}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="62e452ef-ee47-4976-8f84-c6f0202cbfdc" positionType="Float" x="29" y="20" width="454" height="37" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[Considerar 60 minutos de anticipación para cada salida a fin de realizar la constración de documentos y verificación in-situ de las unidades, debiendo contar con lo siguientes documentos:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="26fb5d0f-2a3c-4162-9be8-37a2310f09a2" positionType="Float" x="48" y="87" width="354" height="15"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[3. Revisiones Técnicas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c5cbd91c-7b05-4849-bf5a-f81e6e947168" positionType="Float" x="49" y="147" width="354" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[7. Record de papeletas emitidas por el SOAT con 24 horas de anticipacion de la fecha de viaje.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f2856a15-a33e-4ced-93d7-6e2984e127da" positionType="Float" x="49" y="102" width="354" height="15"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[4. SOAT vigente ]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="810605df-5eb4-4290-8e4c-37ff9bab1c96" positionType="Float" x="183" y="241" width="260" height="20"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{direccionUnidad}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="502baf79-5b37-4e69-b5e5-ecf941226110" positionType="Float" x="49" y="132" width="354" height="15"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[6. Licencia de conducir vigente, según categoría y DNI]]></text>
+			</staticText>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement uuid="84bf84d2-e321-4e08-822c-fec47251d856" positionType="Float" x="184" y="165" width="299" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importeAdelanto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="82ab7dd3-a09c-4c78-acac-68722aa49cbc" positionType="Float" x="47" y="57" width="356" height="15"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[1. Tarjeta de Propiedad]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="df7318ba-0ebb-439f-baef-6f8e834247e5" positionType="Float" x="30" y="185" width="453" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[Sírvase emitir su factura con los siguientes datos:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6c1a922b-902b-4b66-ad44-90047cd36fec" positionType="Float" x="30" y="241" width="153" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[Dirección 		       : ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="54559597-fba0-48ed-b2f0-7ca00b209866" positionType="Float" x="30" y="201" width="153" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[RAZÓN SOCIAL                        :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1560f5de-5bc8-42b6-944d-e52ad0f9d8bb" positionType="Float" x="49" y="117" width="354" height="15"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[5. Póliza de accidentes]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3678a26c-7600-45ff-a4ea-539714fc8245" positionType="Float" x="48" y="72" width="354" height="15"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[2. Tarjeta de Circulación Terrestre ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="eb06e9b3-9859-4870-a249-6d6087ddb31d" positionType="Float" x="30" y="165" width="153" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Importe de Adelanto                  :]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="d951b9cc-5d8d-4436-a1a6-b9a8833e09b2" positionType="Float" x="183" y="201" width="212" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUnidad}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="3fe444c1-1bee-4f65-837d-f966acf84968" positionType="Float" x="30" y="221" width="153" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[R.U.C.                                       :]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="3a2d19f5-dcb1-4252-8042-e43a9d5da697" x="30" y="354" width="232" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{nombreAutorizador}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="8b604172-c22a-4460-956c-786c40ce3fce" x="30" y="374" width="232" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{cargoAutorizador}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="1769c0ad-f3f6-4fa7-b96a-ba6221fd9d0d" x="30" y="281" width="151" height="20"/>
+				<textElement/>
+				<text><![CDATA[Atentamente,]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

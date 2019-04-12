@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>
+            <center>
+                <h:outputText value="#{msgs.etiquetaImpresionRec}" class="tituloPantalla" style="margin: auto !important;font-size: 16px"/>
+            </center> 
+            <h:form id="frmDatosFiltroEst">
+                <p:panel style="width: 950px" class="centrado" >
+                    <h:panelGrid class="centrado" columns="1" id="pnlGeneral">   
+                        <h:panelGrid class="centrado" columns="2">   
+                            <p:panel style="width: 450px" header="#{msgs.tituloBusFiltro}" toggleable="true" toggleSpeed="500" closeSpeed="500"> 
+                                <h:panelGrid columns="3" styleClass="centrado" id="pnlFiltro2" cellpadding="0">  
+
+                                    <h:outputLabel value="#{msgs.etiquetaAlum}"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:inputText value="#{impresionRecMB.nombre}" size="28" maxlength="30">  
+                                    </p:inputText>   
+                                    <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="titulo"  /> 
+                                    <h:outputLabel value=" " class="requerido" />
+                                    <p:spinner id="minMaxPeriodo" value="#{impresionRecMB.periodo}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="5" required="true">
+                                    </p:spinner>
+                                    <h:outputLabel value="#{msgs.etiquetaRecibos}" />
+                                    <h:outputText value=""  class="requerido"/>
+                                    <p:selectOneRadio  value="#{impresionRecMB.flgRecImpr}" label="#{msgs.etiquetaRecibos}" required="true"  >
+                                        <f:selectItem itemValue="1" itemLabel="#{msgs.comboRecNoImp}"/>
+                                        <f:selectItem itemValue="2" itemLabel="#{msgs.comboRecImp}"/>
+                                        <f:selectItem itemValue="3" itemLabel="#{msgs.comboAmbos}" />
+                                        <p:ajax event="change" listener="#{impresionRecMB.obtenerFlg(impresionRecMB.flgRecImpr)}"/>
+                                    </p:selectOneRadio>
+                                    <h:outputLabel value="#{msgs.etiquetaOrdenar}" class="titulo"  />
+                                    <h:outputLabel value=" " class="requerido" />
+                                    <p:selectOneMenu effect="fold" value="#{impresionRecMB.orden}"  class="resetSelect" style="width:250px" panelStyle="width:125px" required="false" label="#{msgs.etiquetaOrdenar}">
+                                        <f:selectItems value="#{impresionRecMB.listaOrden}"/>
+                                    </p:selectOneMenu>
+                                    <br></br>
+                                </h:panelGrid> 
+                            </p:panel>  
+                        </h:panelGrid>  
+                        <h:panelGrid class="centrado" columns="2"> 
+                            <p:commandButton value="#{msgs.botonBuscar}" 
+                                             action="#{impresionRecMB.obtenerRecibosTalleres()}" 
+                                             update=":frmDatosRec:pnlTablaRecibo,msg,:frmDatosRec:btnImprimir,pnlGeneral"/>
+                            <p:commandButton actionListener="#{impresionRecMB.limpiarFiltros()}" 
+                                             update="msg,:frmDatosRec:pnlTablaRecibo,msg,:frmDatosRec:btnImprimir,pnlGeneral"  
+                                             value="#{msgs.botonLimpiar}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages autoUpdate="false" id="msg" />
+                    </h:panelGrid>
+                </p:panel>
+            </h:form>
+            <h:panelGrid styleClass="centrado" >
+                <h:form id="frmDatosRec">
+                    <h:panelGrid  id="pnlTablaRecibo">
+                        <p:dataTable id="tblRecibos" value="#{impresionRecMB.listaTalleresWebBean}" widgetVar="tblRecibos"
+                                     paginator="false" scrollable="true" scrollHeight="250"  
+                                     selection="#{impresionRecMB.docIngresoBean}"
+                                     var="recibo" rowKey="#{recibo.idDocIngreso}" rowIndexVar="n" 
+                                     rendered="#{not empty impresionRecMB.listaTalleresWebBean}"  
+                                     style="width: 900px; font-size: 10px">
+                            <f:facet name="header" >
+                                <h:outputText value="Recibos" />   
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column> 
+                            <p:column sortBy="#{recibo.serieNroDoc}" headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="4%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{recibo.serieNroDoc}" />
+                            </p:column> 
+                            <p:column filterBy="#{recibo.nombreDiscente}"  sortBy="#{recibo.nombreDiscente}" headerText="#{msgs.etiquetaAlum}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 ">
+                                <h:outputText value="#{recibo.nombreDiscente}" />
+                            </p:column>     
+                            <p:column sortBy="#{recibo.fechaPago}" headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{recibo.fechaPagoVista}" />
+                            </p:column> 
+                            <p:column class="centrado" filterMatchMode="contains" width="20" styleClass="siseFont1">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaSeleccionar}"/><br/>
+                                    <p:selectBooleanCheckbox value="#{impresionRecMB.valAdmTodos}">
+                                        <p:ajax event="change" listener="#{impresionRecMB.cambiarValAdmTodos(impresionRecMB.valAdmTodos)}" update=":frmDatosRec:pnlTablaRecibo"/>
+                                    </p:selectBooleanCheckbox>
+                                </f:facet>
+                                <center>
+                                    <p:selectBooleanCheckbox value="#{recibo.flgImpresionMasiva}">
+                                        <p:ajax event="change" listener="#{impresionRecMB.cambiarPdfUnico()}" update=":frmDatosRec:btnImprimir"/>
+                                    </p:selectBooleanCheckbox>
+                                </center>
+                            </p:column>
+                        </p:dataTable>  
+                    </h:panelGrid>  
+                    <h:panelGrid id="btnImprimir" class="centrado" style="font-size: 1em" columns="2" >
+                        <h:commandLink action="#{impresionRecMB.imprimirRecibosPdfTalleres()}"
+                                       disabled="#{impresionRecMB.flgBtnImp}" target="_blank" id="imprimir">
+                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                        </h:commandLink>
+                        <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImprRecibos}" rendered="#{impresionRecMB.flgBtnImp}"/>
+
+                        <h:commandLink action="#{impresionRecMB.imprimirListadoRecibosPdf()}"
+                                       disabled="#{impresionRecMB.flgBtnImp}" target="_blank" id="imprimir2">
+                            <h:graphicImage value="/resources/images/icons/listado.png" width="48" height="50" />
+                        </h:commandLink>
+                    </h:panelGrid> 
+                </h:form>
+            </h:panelGrid> 
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone2" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExitoNewMensaje}"/> 
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

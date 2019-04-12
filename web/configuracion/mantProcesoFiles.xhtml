@@ -1,0 +1,731 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>  
+            <h:form id="frmProcesoFiles" >
+                <p:panel header="Mantenimiento de Archivos" style="width: 500px;margin: 0 auto;" >
+                    <h:panelGrid id="pnlProcesoFiles" style="margin: 0 auto;" >
+                        <h:panelGrid columns="2"   >
+                            <p:outputLabel value="#{msgs.EtiquetaNombre}" />
+                            <p:inputText value="#{procesoFilesMB.procesoFilesBean.nombre}" size="32" label="#{msgs.EtiquetaNombre}" required="true"   />
+                            <p:outputLabel value="#{msgs.etiquetaBanco}"/>
+                            <p:selectOneMenu value="#{procesoFilesMB.procesoFilesBean.entidadBean.ruc}" label="#{msgs.etiquetaBanco}" required="true" style="width: 200px;">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                <f:selectItems value="#{procesoFilesMB.listaEntidadBean}" var="ent" itemLabel="#{ent.nombre}" itemValue="#{ent.ruc}"/>
+                            </p:selectOneMenu>
+                            <p:outputLabel/>
+                            <p:inputTextarea value="#{procesoFilesMB.procesoFilesBean.descripcion}" rows="5" cols="25" placeholder="Ingresar Descripcion" />
+                        </h:panelGrid>
+                        <h:panelGrid columns="2"  >
+                            <h:outputLabel value="#{msgs.etiquetaFlgConsPunto}:" class="negrita"/> 
+                            <p:inputSwitch value="#{procesoFilesMB.procesoFilesBean.flgConsiderarPunto}" onLabel="#{msgs.etiquetaSi}" offLabel="#{msgs.etiquetaNo}"/>
+                            <h:outputLabel value="#{msgs.etiquetaFlgConsMora}:" class="negrita"/> 
+                            <p:inputSwitch value="#{procesoFilesMB.procesoFilesBean.flgRestarMora}" onLabel="#{msgs.etiquetaSi}" offLabel="#{msgs.etiquetaNo}"/>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" style="margin: 0 auto;padding: 5px;" >
+                            <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{procesoFilesMB.guardarFiles()}" 
+                                             update=":frmTblProcesoFiles:pnlTblProcesoFiles,:frmProcesoFiles:pnlProcesoFiles,:frmProcesoFiles:msgsProFiles" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" />
+                            <p:commandButton value="#{msgs.botonNuevo}" actionListener="#{procesoFilesMB.limpiarProcesoFiles()}"
+                                             update=":frmProcesoFiles:pnlProcesoFiles" process="@this"/>
+                        </h:panelGrid>
+                        <p:messages id="msgsProFiles" showDetail="true" closable="true" />
+                    </h:panelGrid>
+                </p:panel> 
+            </h:form>
+            <h:form id="frmTblProcesoFiles" > 
+                <h:panelGrid id="pnlTblProcesoFiles" style="width: 700px;margin: 0 auto;" >
+                    <p:dataTable value="#{procesoFilesMB.listaProcesoFilesBean}" var="files"
+                                 rendered="#{not empty procesoFilesMB.listaProcesoFilesBean}" 
+                                 selection="#{procesoFilesMB.procesoFilesBean}" paginator="true"
+                                 paginatorPosition="bottom" selectionMode="single" rowKey="#{files}">
+                        <p:ajax event="rowSelect" listener="#{procesoFilesMB.obtenerSuperFile}" update=":frmProcesoFiles:pnlProcesoFiles" process="@this" />
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                        </f:facet>
+                        <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.EtiquetaNombre} File" />
+                            </f:facet>
+                            <h:outputText value="#{files.nombre}" />
+                        </p:column> 
+                        <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaDescrip} File" />
+                            </f:facet>
+                            <h:outputText value="#{files.descripcion}" />
+                        </p:column>
+                        <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaBanco}" />
+                            </f:facet>
+                            <h:outputText value="#{files.entidadBean.nombre}" />
+                        </p:column>
+                        <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaFlgConsPunto}" />
+                            </f:facet>
+                            <h:outputText value="#{files.flgConsiderarPuntoVista}" />
+                        </p:column>
+                        <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaFlgConsMora}" />
+                            </f:facet>
+                            <h:outputText value="#{files.flgRestarMoraVista}" />
+                        </p:column>
+                        <p:column filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <center>
+                                <p:commandLink id="cmdEditarFile" actionListener="#{procesoFilesMB.obtenerDetallesFile(files,0)}" 
+                                               update=":frmPopDetFile:pnlPopDetFile,:frmTblProcesoFilesDeta:pnlTblProcesoFilesDeta,:frmPopDetFile"
+                                               oncomplete="PF('modalFilePro').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/ver_detalle.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink> 
+                                &nbsp;&nbsp;&nbsp;
+                                <p:commandLink id="cmdEliminarFile" update=":frmEliminaFile:pnlDatosElimina"  actionListener="#{procesoFilesMB.obtenerSuper(files)}"
+                                               oncomplete="PF('popEliminar').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                            </center> 
+                            <p:tooltip for="cmdEditarFile" value="#{msgs.etiquetaVerDeta}" />
+                            <p:tooltip for="cmdEliminarFile" value="#{msgs.mensajeEliminar}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+
+            <!-- Archivo de Vuelta -->
+            <p:dialog id="popNewDetFile" header="#{msgs.etiquetaConfigArchivo}" widgetVar="popNewDetFile" modal="true" width="800" closeOnEscape="true" >
+                <h:form id="frmPopDetFile"> 
+                    <p:panel header="#{procesoFilesMB.nombreFilePadre}" >
+                        <h:panelGrid columns="1" style="margin: 0 auto" > 
+                            <h:panelGrid id="pnlPopDetFile" columns="1" style="margin: 0 auto;padding: 5px;"  > 
+                                <h:panelGrid styleClass="centrado" columns="2" >
+                                    <h:panelGrid columns="2" style="margin: 0 auto;" >
+                                        <p:outputLabel value="#{msgs.EtiquetaNombre}: " />
+                                        <p:inputText value="#{procesoFilesMB.procesoFilesDetaBean.nombre}" style="width: 195px;" required="true" label="#{msgs.EtiquetaNombre}" >
+                                            <p:ajax event="change" listener="#{procesoFilesMB.ponerNombreDes()}" /> 
+                                        </p:inputText>  
+                                        <p:outputLabel value="#{msgs.etiquetaLongitud}" />
+                                        <p:inputText value="#{procesoFilesMB.procesoFilesDetaBean.longitud}" style="width: 195px;" label="#{msgs.etiquetaLongitud}" >
+                                            <p:ajax event="change" listener="#{procesoFilesMB.ponerLong()}" />
+                                        </p:inputText>
+                                        <p:outputLabel value="#{msgs.etiquetaValorDefecto}" />
+                                        <p:selectOneMenu id="cboDefecto" value="#{procesoFilesMB.procesoFilesDetaBean.idDefecto}" label="#{msgs.etiquetaValorDefecto}" required="true" style="width: 200px;" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoDefecto}" var="tipDefecto" itemLabel="#{tipDefecto.codigo}" itemValue="#{tipDefecto.idCodigo}"/>
+                                            <p:ajax event="change" listener="#{procesoFilesMB.ponerDefecto()}" />
+                                        </p:selectOneMenu>
+                                        <p:outputLabel value="#{msgs.etiquetaTipoRegistro}: " />
+                                        <p:selectOneMenu value="#{procesoFilesMB.procesoFilesDetaBean.file}" label="#{msgs.etiquetaTipoRegistro}" required="true" style="width: 200px;">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoFile}" var="tipFile" itemLabel="#{tipFile.codigo}" itemValue="#{tipFile.idCodigo}"/>
+                                            <p:ajax event="change" listener="#{procesoFilesMB.ponerFile()}" />
+                                        </p:selectOneMenu>   
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="2" styleClass="centrado" >
+                                        <p:outputLabel value="#{msgs.etiquetaTipoValor}: "/> 
+                                        <p:selectOneMenu id="cbo" value="#{procesoFilesMB.procesoFilesDetaBean.dato}" label="#{msgs.etiquetaTipoValor}" required="true" style="width: 200px;" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoArchivo}" var="tipArc" itemLabel="#{tipArc.codigo}" itemValue="#{tipArc.idCodigo}"/>
+                                            <p:ajax event="change" listener="#{procesoFilesMB.ponerDato()}" />
+                                        </p:selectOneMenu>
+                                        <p:outputLabel value="#{msgs.etiquetaPosItem}:" />
+                                        <p:selectOneRadio id="ckPosicion" value="#{procesoFilesMB.procesoFilesDetaBean.posicionValor}" label="#{msgs.etiquetaValorEstado}" style="width: 200px;">
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaIzq}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaDer}" />
+                                        </p:selectOneRadio>
+                                        <p:outputLabel value="#{msgs.etiquetaCom}" />
+                                        <p:selectOneRadio  id="ckComplemento" value="#{procesoFilesMB.procesoFilesDetaBean.complemento}" label="#{msgs.etiquetaCom}" required="true" style="width: 200px;">
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaConEspacios}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaConCeros}" />
+                                        </p:selectOneRadio>
+                                        <p:outputLabel value="#{msgs.etiquetaValorEstado}:" />
+                                        <p:selectOneRadio id="ckTipoVal" value="#{procesoFilesMB.procesoFilesDetaBean.tipoValorEstado}" label="#{msgs.etiquetaValorEstado}" required="true" style="width: 200px;">
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaCons}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaNoCons}" />
+                                            <p:ajax listener="#{procesoFilesMB.ponerCons}" update=":frmPopDetFile:txtConstante"/>
+                                        </p:selectOneRadio>
+                                        <p:outputLabel value="Ingresar #{msgs.etiquetaValor}:" />  
+                                        <p:inputText id="txtConstante" value="#{procesoFilesMB.procesoFilesDetaBean.constante}" disabled="#{procesoFilesMB.procesoFilesDetaBean.posicionValorItem}" />
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                                <h:panelGrid columns="2" style="margin: 0 auto;padding-top: 10px;" >
+                                    <p:outputLabel/>
+                                    <p:inputTextarea value="#{procesoFilesMB.procesoFilesDetaBean.descripcion}" rows="5" cols="80" placeholder="Ingresar Descripcion" required="true" label="#{msgs.etiquetaDescrip}" >
+                                        <p:ajax event="change" listener="#{procesoFilesMB.ponerDescrip()}" /> 
+                                    </p:inputTextarea> 
+                                    <p:outputLabel/>
+                                    <h:panelGrid style="margin: 0 auto;padding: 2px;" columns="2" >
+                                        <p:commandButton value="#{msgs.botonGrabar}" oncomplete="PF('popConfirmFile').show();"/>
+                                        <p:commandButton value="#{msgs.botonNuevo}" actionListener="#{procesoFilesMB.limpiarFilesDeta()}" 
+                                                         update=":frmPopDetFile:pnlPopDetFile" process="@this" />
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                            </h:panelGrid> 
+                        </h:panelGrid>
+                        <p:messages id="msgsFilesDeta" showDetail="true" closable="true" />
+                    </p:panel> 
+                </h:form>
+                <h:form id="frmTblProcesoFilesDeta" >
+                    <p:growl id="msgs" showDetail="true" />
+                    <h:panelGrid id="pnlTblProcesoFilesDeta" style="margin: 0 auto;width: 770px;" >
+                        <h:panelGrid columns="2" style="margin: 0 auto;" >
+                            <p:panel header="Cabecera de Archivo" style="width: 350px;margin: 0 auto;" rendered="#{not empty procesoFilesMB.listaProcesoFilesDetBean}" > 
+                                <h:panelGrid columns="1" style="margin: 0 auto;" >
+                                    <p:orderList id="olProcesoFiles" value="#{procesoFilesMB.listaProcesoFilesDetBean}" var="filesDet" controlsLocation="none" itemValue="#{filesDet.idFile}"  > 
+                                        <f:facet name="caption">
+                                            <p:outputLabel value="Cabecera" style="text-align: center;" />
+                                        </f:facet>
+                                        <f:facet name="caption">
+                                            <p:commandLink id="cmdFileCab" style="float: left;" actionListener="#{procesoFilesMB.obtenerProcesoFile(1)}" oncomplete="PF('popFilesCab').show()" 
+                                                           update=":frmFilesCab:pnlFilesCab">
+                                                <h:graphicImage value="/resources/images/icons/edit.gif" style="width: 15px;height: 15px;" />
+                                            </p:commandLink>
+                                            <p:tooltip value="#{msgs.etiquetaEdit}" for="cmdFileCab" />
+                                        </f:facet> 
+                                        <p:column style="width:50px;margin: 0 auto;">
+                                            <h:outputText value="#{filesDet.nombre}" style="text-align: right;" />
+                                        </p:column> 
+                                    </p:orderList> 
+                                </h:panelGrid> 
+                                <center>
+                                    <p:commandButton value="Posicionar" style="float: top; " actionListener="#{procesoFilesMB.posicionarFileCab()}" 
+                                                     update=":frmTblProcesoFilesDeta:pnlTblProcesoFilesDeta" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" />
+                                </center> 
+                            </p:panel>  
+                            <p:panel header="Intermedio de Archivo" style="width: 350px;" rendered="#{not empty procesoFilesMB.listaProcesoFilesIntDetBean}" >
+                                <h:panelGrid id="pnlTblProcesoIntDeta" columns="1" style="margin: 0 auto;" >
+                                    <p:orderList value="#{procesoFilesMB.listaProcesoFilesIntDetBean}" var="filesInt" controlsLocation="none" itemValue="#{filesInt.idFile}" >
+                                        <f:facet name="caption">
+                                            <p:outputLabel value="Intermedio" style="text-align: center;" />
+                                        </f:facet>
+                                        <f:facet name="caption">
+                                            <p:commandLink id="cmdFileInt" style="float: left;"  actionListener="#{procesoFilesMB.obtenerProcesoFile(2)}" oncomplete="PF('popFilesInt').show()"
+                                                           update=":frmFilesInt:pnlFilesInt">
+                                                <h:graphicImage value="/resources/images/icons/edit.gif" style="width: 15px;height: 15px;" />
+                                            </p:commandLink>
+                                            <p:tooltip value="#{msgs.etiquetaEdit}" for="cmdFileInt" />
+                                        </f:facet> 
+                                        <p:column style="width:50px;margin: 0 auto;">
+                                            <h:outputText value="#{filesInt.nombre}" style="text-align: right;" />
+                                        </p:column>
+                                    </p:orderList>
+                                </h:panelGrid>
+                                <center>
+                                    <p:commandButton value="Posicionar" style="float: top; " actionListener="#{procesoFilesMB.posicionarFileInt()}" 
+                                                     update=":frmTblProcesoFilesDeta:pnlTblProcesoIntDeta" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" />
+                                </center> 
+                            </p:panel> 
+                            <p:panel header="Detalles de Archivo" style="width: 350px;" rendered="#{not empty procesoFilesMB.listaProcesoFilesDetDetBean}"> 
+                                <h:panelGrid id="pnlTblProcesoFilesDetaDeta" columns="1" style="margin: 0 auto;" >
+                                    <p:orderList value="#{procesoFilesMB.listaProcesoFilesDetDetBean}" var="filesDetalles" controlsLocation="none" itemValue="#{filesDetalles.idFile}" > 
+                                        <f:facet name="caption">
+                                            <p:outputLabel value="Detalles" style="text-align: center;" />
+                                        </f:facet>
+                                        <f:facet name="caption">
+                                            <p:commandLink id="cmdFileDet" style="float: left;"  actionListener="#{procesoFilesMB.obtenerProcesoFile(0)}" oncomplete="PF('popFilesDet').show()"
+                                                           update=":frmFilesDet:pnlFilesDet">
+                                                <h:graphicImage value="/resources/images/icons/edit.gif" style="width: 15px;height: 15px;" />
+                                            </p:commandLink>
+                                            <p:tooltip value="#{msgs.etiquetaEdit}" for="cmdFileDet" />
+                                        </f:facet> 
+                                        <p:column style="width:50px;margin: 0 auto;">
+                                            <h:outputText value="#{filesDetalles.nombre}" style="text-align: right;" />
+                                        </p:column> 
+                                    </p:orderList>
+                                </h:panelGrid>
+                                <center>
+                                    <p:commandButton value="Posicionar" style="float: top; "  actionListener="#{procesoFilesMB.posicionarFileDet()}"
+                                                     update=":frmTblProcesoFilesDeta:pnlTblProcesoFilesDetaDeta" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" />
+                                </center> 
+                            </p:panel>
+                        </h:panelGrid>  
+                    </h:panelGrid> 
+                </h:form>
+            </p:dialog>
+            <!-- End -->
+
+            <!-- Lista de Files -->
+            <p:dialog id="popFilesCab" widgetVar="popFilesCab" showEffect="fade" hideEffect="explode" modal="true" closeOnEscape="true" >
+                <h:form id="frmFilesCab" > 
+                    <h:panelGrid id="pnlFilesCab" >
+                        <p:growl id="msgsCab" showDetail="true"/>
+                        <p:dataTable value="#{procesoFilesMB.listaCabecera}" var="cabecera" paginator="true" paginatorPosition="bottom" 
+                                     rendered="#{not empty procesoFilesMB.listaCabecera}" style="width: 900px;" rows="6" 
+                                     editable="true" selection="#{procesoFilesMB.procesoFilesDetaBean}" >
+                            <p:ajax event="rowEdit" listener="#{procesoFilesMB.onRowEditCab}" update=":frmFilesCab:msgsCab" />
+                            <p:ajax event="rowEditCancel" listener="#{procesoFilesMB.onRowCancelCab}" update=":frmFilesCab:msgsCab" />
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                            </f:facet> 
+                            <p:column headerText="#{msgs.etiquetaPosicion}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{cabecera.posicionItem}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.EtiquetaNombre} File" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.nombre}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{cabecera.nombre}" style="width:100%"/></f:facet>
+                                </p:cellEditor> 
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaDescrip} File" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.descripcion}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{cabecera.descripcion}" style="width:100%"/></f:facet>
+                                </p:cellEditor> 
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValorDefecto}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.nomDefecto}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{cabecera.idDefecto}" style="width:100%" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoDefecto}" var="tipoDefecto" itemLabel="#{tipoDefecto.codigo}" itemValue="#{tipoDefecto.idCodigo}"/>
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaTipoDat}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.tipoDato.codigo}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{cabecera.tipoDato.idCodigo}" style="width:100%" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoArchivo}" var="tipArc" itemLabel="#{tipArc.codigo}" itemValue="#{tipArc.idCodigo}"/>
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaUbicacion}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.alineacion}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{cabecera.posicionValor}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaIzq}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaDer}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValorEstado}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.valoracion}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{cabecera.tipoValorEstado}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaCons}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaNoCons}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValor}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.constante}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{cabecera.constante}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCom}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.valorComplemento}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{cabecera.complemento}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaConEspacios}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaConCeros}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPosicion} Inicial" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" > 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.posicionIni}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{cabecera.posicionIni}" style="width:100%"/></f:facet>
+                                </p:cellEditor> 
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaPosicion} Final" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{cabecera.posicionFin}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{cabecera.posicionFin}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column> 
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaLongitud}" />
+                                </f:facet>
+                                <h:outputText value="#{cabecera.longitud}" />
+                            </p:column>
+                            <p:column colspan="2" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:rowEditor style="margin: 0 auto;" />   
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <p:commandLink id="cmdDelCab" actionListener="#{procesoFilesMB.obtenerFileId(cabecera)}" oncomplete="PF('popEliminarDeta').show()"
+                                                   update=":frmEliminaDetaFile:pnlDatosDetaElimina" >
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                </center>
+                                <p:tooltip for="cmdDelCab" value="#{msgs.mensajeEliminar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>  
+            <p:dialog id="popFilesInt" widgetVar="popFilesInt" showEffect="fade" hideEffect="explode" modal="true" closeOnEscape="true" >
+                <h:form id="frmFilesInt" > 
+                    <h:panelGrid id="pnlFilesInt" >
+                        <p:growl id="msgsCab" showDetail="true"/>
+                        <p:dataTable value="#{procesoFilesMB.listaIntermedio}" var="internemdio" paginator="true" paginatorPosition="bottom" 
+                                     rendered="#{not empty procesoFilesMB.listaIntermedio}" style="width: 900px;" rows="6" 
+                                     editable="true" selection="#{procesoFilesMB.procesoFilesDetaBean}" >
+                            <p:ajax event="rowEdit" listener="#{procesoFilesMB.onRowEditCab}" update=":frmFilesCab:msgsCab" />
+                            <p:ajax event="rowEditCancel" listener="#{procesoFilesMB.onRowCancelCab}" update=":frmFilesCab:msgsCab" />
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetaPosicion}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{internemdio.posicionItem}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.EtiquetaNombre} File" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.nombre}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{internemdio.nombre}" style="width:100%"/></f:facet>
+                                </p:cellEditor> 
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaDescrip} File" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.descripcion}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{internemdio.descripcion}" style="width:100%"/></f:facet>
+                                </p:cellEditor> 
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaValorDefecto}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.nomDefecto}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{internemdio.idDefecto}" style="width:100%" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoDefecto}" var="tipDef" itemLabel="#{tipDef.codigo}" itemValue="#{tipDef.idCodigo}"/>
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValorDefecto}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.nomDefecto}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{internemdio.idDefecto}" style="width:100%" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoDefecto}" var="tipoDefecto" itemLabel="#{tipoDefecto.codigo}" itemValue="#{tipoDefecto.idCodigo}"/>
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaTipoArchivo}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.tipoDato.codigo}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{internemdio.tipoDato.idCodigo}" style="width:100%" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoArchivo}" var="tipArc" itemLabel="#{tipArc.codigo}" itemValue="#{tipArc.idCodigo}"/>
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaUbicacion}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.alineacion}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{internemdio.posicionValor}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaIzq}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaDer}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValorEstado}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.valoracion}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{internemdio.tipoValorEstado}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaCons}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaNoCons}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValor}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.constante}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{internemdio.constante}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCom}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.valorComplemento}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{internemdio.complemento}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaConEspacios}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaConCeros}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPosicion} Inicial" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.posicionIni}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{internemdio.posicionIni}" style="width:100%"/></f:facet>
+                                </p:cellEditor> 
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaPosicion} Final" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{internemdio.posicionFin}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{internemdio.posicionFin}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaLongitud}" />
+                                </f:facet>
+                                <h:outputText value="#{internemdio.longitud}" />
+                            </p:column>
+                            <p:column colspan="2" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" > 
+                                <p:rowEditor style="margin: 0 auto;" />   
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <p:commandLink id="cmdDelCab" actionListener="#{procesoFilesMB.obtenerFileId(internemdio)}" oncomplete="PF('popEliminarDeta').show()"
+                                                   update=":frmEliminaDetaFile:pnlDatosDetaElimina" >
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                </center>
+                                <p:tooltip for="cmdDelCab" value="#{msgs.mensajeEliminar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog> 
+            <p:dialog id="popFilesDet" widgetVar="popFilesDet" showEffect="fade" hideEffect="explode" modal="true" closeOnEscape="true" > 
+                <h:form id="frmFilesDet" > 
+                    <h:panelGrid id="pnlFilesDet" >
+                        <p:dataTable value="#{procesoFilesMB.listaDetalle}" var="detalle" paginator="true" paginatorPosition="bottom" 
+                                     rendered="#{not empty procesoFilesMB.listaDetalle}" style="width: 900px;" rows="6" 
+                                     selection="#{procesoFilesMB.procesoFilesDetaBean}" editable="true">
+                            <p:ajax event="rowEdit" listener="#{procesoFilesMB.onRowEditCab}" update=":frmFilesCab:msgsCab" />
+                            <p:ajax event="rowEditCancel" listener="#{procesoFilesMB.onRowCancelCab}" update=":frmFilesCab:msgsCab" />
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetaPosicion}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{detalle.posicionItem}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.EtiquetaNombre} File" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.nombre}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{detalle.nombre}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaDescrip} File" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">  
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.descripcion}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{detalle.descripcion}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValorDefecto}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.nomDefecto}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{detalle.idDefecto}" style="width:100%" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoDefecto}" var="tipoDefecto" itemLabel="#{tipoDefecto.codigo}" itemValue="#{tipoDefecto.idCodigo}"/>
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="Tipo Dato" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.tipoDato.codigo}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{detalle.tipoDato.idCodigo}" style="width:100%" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoFilesMB.listaTipoArchivo}" var="tipArc" itemLabel="#{tipArc.codigo}" itemValue="#{tipArc.idCodigo}"/>
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaUbicacion}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.alineacion}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{detalle.posicionValor}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaIzq}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaDer}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValorEstado}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.valoracion}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{detalle.tipoValorEstado}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaCons}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaNoCons}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaValor}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.constante}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{detalle.constante}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCom}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.valorComplemento}" /></f:facet>
+                                    <f:facet name="input">
+                                        <h:selectOneMenu value="#{detalle.complemento}" style="width:100%" >
+                                            <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaNin}" />
+                                            <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaConEspacios}" />
+                                            <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaConCeros}" />
+                                        </h:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPosicion} Inicial" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.posicionIni}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{detalle.posicionIni}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaPosicion} Final" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                <p:cellEditor>
+                                    <f:facet name="output"><h:outputText value="#{detalle.posicionFin}" /></f:facet>
+                                    <f:facet name="input"><p:inputText value="#{detalle.posicionFin}" style="width:100%"/></f:facet>
+                                </p:cellEditor>
+                            </p:column> 
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaLongitud}" />
+                                </f:facet>
+                                <h:outputText value="#{detalle.longitud}" />
+                            </p:column>
+                            <p:column colspan="2" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" > 
+                                <p:rowEditor style="margin: 0 auto;" />   
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <p:commandLink id="cmdDelCab" actionListener="#{procesoFilesMB.obtenerFileId(detalle)}" oncomplete="PF('popEliminarDeta').show()"
+                                                   update=":frmEliminaDetaFile:pnlDatosDetaElimina" >
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                </center>
+                                <p:tooltip for="cmdDelCab" value="#{msgs.mensajeEliminar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog> 
+            <!-- End -->
+            <!-- Elimina File Padre -->
+            <h:form id="frmEliminaFile">  
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{procesoFilesMB.procesoFilesBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoFilesMB.eliminarFile()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTblProcesoFiles:pnlTblProcesoFiles"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+            <!-- Elimina Deta File -->
+            <h:form id="frmEliminaDetaFile">     
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarDeta" resizable="false" modal="true" closeOnEscape="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosDetaElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{procesoFilesMB.fileDetaBean.nombre}"/>
+                        </h:panelGrid> 
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoFilesMB.eliminarFileDeta()}"  styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmFilesCab:pnlFilesCab,:frmFilesDet:pnlFilesDet,:frmFilesInt:pnlFilesInt,:frmTblProcesoFilesDeta"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarDeta').hide();PF('popFilesInt').hide();PF('popFilesCab').hide();PF('popFilesDet').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarDeta').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+            <!-- Modal de Tipo File -->
+            <p:dialog id="modalFilePro" widgetVar="modalFilePro" showEffect="fade" hideEffect="explode" closeOnEscape="true" modal="true" width="300" >
+                <h:form id="frmFilePro" >
+                    <h:panelGrid columns="2" style="margin: 0 auto;padding: 5px;" >
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1">
+                            <h:outputText value="Que archivo desea editar ? "/> 
+                        </h:panelGrid> 
+                    </h:panelGrid>
+                    <h:panelGrid style="margin: 0 auto;padding: 10px;" columns="2" >
+                        <p:commandButton value="Vuelta" oncomplete="PF('modalFilePro').hide();PF('popNewDetFile').show();" actionListener="#{procesoFilesMB.obtenerResource(1)}" 
+                                         update=":frmPopDetFile:pnlPopDetFile,:frmTblProcesoFilesDeta:pnlTblProcesoFilesDeta,:frmPopDetFile"/>
+                        <p:commandButton value="Envio" oncomplete="PF('modalFilePro').hide();PF('popNewDetFile').show();" actionListener="#{procesoFilesMB.obtenerResource(2)}" 
+                                         update=":frmPopDetFile:pnlPopDetFile,:frmTblProcesoFilesDeta:pnlTblProcesoFilesDeta,:frmPopDetFile"/>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <p:dialog id="popConfirmFile" header="#{msgs.appSiglas}" widgetVar="popConfirmFile" showEffect="fade" hideEffect="explode" closeOnEscape="true" modal="true" width="600">
+                <h:form>
+                    <h:panelGrid columns="2" style="margin: 0 auto;padding: 5px;">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosDetaElimina">
+                            <h:outputText value="#{msgs.panelEliminacionArchivo}"/> 
+                        </h:panelGrid> 
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" style="margin: 0 auto;padding: 5px;" >
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoFilesMB.cambiarFile()}" styleClass="ui-confirmdialog-yes" icon="ui-icon-check"
+                                         update=":frmTblProcesoFilesDeta:pnlTblProcesoFilesDeta,:frmPopDetFile:msgsFilesDeta,:frmPopDetFile:pnlPopDetFile,
+                                         :frmTblProcesoFilesDeta:pnlTblProcesoIntDeta"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirmFile').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" oncomplete="PF('popConfirmFile').hide();"
+                                         styleClass="ui-confirmdialog-no" icon="ui-icon-close"/>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog> 
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+
+

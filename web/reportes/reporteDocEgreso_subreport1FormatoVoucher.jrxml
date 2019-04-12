@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteDocEgreso_subreport1" language="groovy" pageWidth="534" pageHeight="802" columnWidth="534" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="38bb88cc-ac34-4658-9e41-efba3f3d9aa9">
+	<property name="ireport.zoom" value="1.9965000000000037"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\SIGMA_SVN_GLAM\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT  	distinct
+        (case
+        when docE.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(docE.idsolicitudcajach), 8)
+        when docE.idtipodocegreso='R' or docE.idtipodocegreso='O'  then right(replicate('0', 8) + rtrim(docE.idcompra), 8)
+        end) as idSolRC,
+        (case
+        when docE.idTipoDocEgreso  = 'A' then
+        (select con.cuentad from MT_SolicitudCajaCh  sol
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)
+        when docE.idTipoDocEgreso = 'R' then
+        (select top 1 con.cuentad from ML_DetRegistroCompra detrc
+        inner join MT_Concepto con on con.idconcepto=detrc.idconcepto
+        where detrc.idregistrocompra=doce.idcompra and doce.unineg=detrc.unineg)
+        when docE.idtipodocegreso='O' then ((select top 1 con.cuentad from ML_DetRequerimiento detreq
+        inner join MT_Concepto con on con.idconcepto=detreq.idconcepto
+        where idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra)))
+        end) as cuentaD,
+        (case
+        when docE.idTipoDocEgreso  = 'A' then
+        (select con.nombre from MT_SolicitudCajaCh  sol
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)
+        when  docE.idTipoDocEgreso = 'R' then
+        (select top 1 con.nombre from ML_DetRegistroCompra detrc
+        inner join MT_Concepto con on con.idconcepto=detrc.idconcepto
+        where detrc.idregistrocompra=doce.idcompra and detrc.unineg=doce.unineg)
+        when docE.idtipodocegreso='O' then (select top 1 con.nombre from ML_DetRequerimiento detreq
+        inner join MT_Concepto con on con.idconcepto=detreq.idconcepto
+        where idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra))
+        end) as concepto,
+        (case
+        when docE.idtipodocegreso='A' THEN (
+        select top 1 S.motivo from MT_SolicitudCajaCh S
+        where S.idsolicitudcajach=doce.idsolicitudcajach and s.unineg=doce.unineg)
+        when  docE.idTipoDocEgreso = 'R' then
+        (select top 1 rc.glosa from ML_FacturaCompra rc
+
+        where rc.idregistrocompra=doce.idcompra and rc.unineg=doce.unineg)
+        when docE.idtipodocegreso='O' then ((select top 1 req.titulo from ML_Requerimiento req
+        where req.idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra)))+ ' - Adelanto de Servicio'
+        end) as glosa,
+
+        (case
+        when docE.idtipodocegreso='A'
+        then
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then
+        ( case
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )
+        when docE.idtipodocegreso='R'
+        then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        when docE.idTipoDocEgreso = 'O' then
+        (select entiOC.nombre as nombreEntidad2 from MO_Entidad entiOC where entiOC.ruc=docE.ruc and docE.uniNeg=entiOC.uniNeg)
+        end) as nomEnt,
+        E.nombre+ ' '+(CASE WHEN ISNULL(DOCE.idtipomoneda,14901) = 14901 THEN 'SOLES' ELSE 'DÓLARES' END) AS nombreBco,
+        (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg) as montoTotal,
+        (select isnull(cta.ctacontbco,'') from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco
+                ,(select isnull(nombre,'') from MT_PlanContable where cuenta in ((select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ))) as nombreCtaBco
+		,isnull(docE.montopagado,0)+isnull(doce.valordetraccion,0) as montoPagadoTot
+        ,(case when isnull(docE.valordetraccion,0)>0 then 1 else 0 end)as detra
+        FROM MT_DocEgreso docE
+        INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+        left join MT_DetSolicitudCajaChCR detsol on sol.idsolicitudcajach = detsol.idsolicitudCajach and detsol.unineg=sol.unineg
+        left join ML_FacturaCompra fact on (case when fact.idregistrocompra is not null then fact.idregistrocompra when
+        fact.idregistrocompra is not null   then fact.idregistrocompra end)=docE.idcompra and  fact.unineg=docE.unineg
+        left join ML_DetRegCompraCR regcr on regcr.idregistrocompra=fact.idregistrocompra and regcr.idfacturacompra=fact.idfacturacompra and fact.unineg=regcr.unineg
+        left join MT_CentroResponsabilidad cr on cr.cr= (case when docE.idtipodocegreso='A' then detsol.cr when docE.idtipodocegreso = 'R' or docE.idtipodocegreso='O' then regcr.cr  end)
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg
+        where docE.nroDocEgreso = 385 and docE.unineg='sanlui']]>
+	</queryString>
+	<field name="idSolRC" class="java.lang.String"/>
+	<field name="cuentaD" class="java.lang.String"/>
+	<field name="concepto" class="java.lang.String"/>
+	<field name="glosa" class="java.lang.String"/>
+	<field name="nomEnt" class="java.lang.String"/>
+	<field name="nombreBco" class="java.lang.String"/>
+	<field name="montoTotal" class="java.math.BigDecimal"/>
+	<field name="ctabco" class="java.lang.String"/>
+	<field name="nombreCtaBco" class="java.lang.String"/>
+	<field name="montoPagadoTot" class="java.math.BigDecimal"/>
+	<field name="detra" class="java.lang.Integer"/>
+	<field name="listaDetDetDocEgresoRepBean" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<field name="montoPagadoTotCta" class="java.math.BigDecimal"/>
+	<field name="montoPagadoTotConDet" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="29" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="c642beac-2732-4719-a5b8-8ddfe3a050d4" x="8" y="0" width="30" height="17"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cuentaD}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="4a447fa5-1834-476a-b909-27a35df888c0" x="41" y="0" width="187" height="17"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{concepto}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="0118cee3-0fac-433a-9b0a-0457bbe8ea1e" x="227" y="0" width="178" height="17"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true" isStrikeThrough="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{glosa}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="04eacf42-859c-45ae-878f-9174d84e17bf" x="402" y="0" width="41" height="17"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoTotCta}]]></textFieldExpression>
+			</textField>
+			<subreport isUsingCache="false" runToBottom="false">
+				<reportElement uuid="8df62531-41ef-49d2-898d-3b30ce9217c2" positionType="Float" x="0" y="14" width="534" height="15" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaDetDetDocEgresoRepBean}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "subReporteDetDocEgreso_subreport.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<summary>
+		<band height="49">
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="f80cb74b-fce5-4c84-b164-b2eff13fbd34" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="39" y="14" width="204" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nomEnt}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="476cd968-a45c-40db-b949-6f4b58bf3b49" stretchType="RelativeToBandHeight" x="243" y="0" width="160" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreBco}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00">
+				<reportElement uuid="216bd6c5-43ce-427b-b7ba-31cb1bb99715" x="450" y="0" width="47" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoTotal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="05c72556-39f3-40be-8dd6-e305559d8eea" x="404" y="0" width="41" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoTot}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="7625df20-5202-423f-a6f9-46985fe44b12" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="39" y="0" width="204" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCtaBco}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="fd747df8-52ed-4df8-9530-163809a3cfe5" x="7" y="0" width="31" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ctabco}==null? "":$F{ctabco}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="false">
+				<reportElement uuid="5ae94b02-1f4d-4ae3-a9de-989e68f6e223" mode="Transparent" x="404" y="12" width="41" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="7" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoTotConDet}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="false">
+				<reportElement uuid="83e85835-be46-4251-9557-5fda77a13090" mode="Transparent" x="450" y="12" width="47" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="7" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoTotConDet}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

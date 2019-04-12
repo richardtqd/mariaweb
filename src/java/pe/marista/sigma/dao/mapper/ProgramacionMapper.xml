@@ -1,0 +1,800 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ProgramacionDAO">  
+    <sql id="consultaProgramacion">
+        Select
+        progra.uniNeg,
+        progra.idProgramacion,
+        progra.idConcepto,
+        con.nombre as nombreConcepto, 
+        upper(progra.descripProgramacion) as descripProgramacion,
+        cat.idTipoConcepto,
+        con.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        con.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH,
+        progra.idProceso,
+        pro.descripcion as descripcionPro,
+        pro.anio as anioProceso,
+        pro.idTipoProceso,
+        cod.codigo as codigoTipo,
+        progra.idAmbiente,
+        amb.nombre as nombreAmbiente,
+        amb.aforo,
+        progra.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        progra.anio,
+        progra.precio,
+        progra.fecIni,
+        progra.fecFin,
+        progra.max,
+        progra.min,
+        progra.cr,
+        progra.uniNeg,
+        progra.horario,
+        progra.status,
+        progra.seccion,
+        progra.idGradoAcademico,
+        GA.idGradoAcademico as  idGA,
+        GA.nombre as nombreGA,
+        progra.grupo,
+        progra.creaPor,
+        progra.creaFecha,
+        (select count(m.idMatricula) from MX_Matricula m 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and m.idprogramacion=prog.idprogramacion) as ocupados,
+
+        progra.max - (select count(m.idMatricula) from MX_Matricula m 
+        inner join MX_Programacion prog on
+        progra.idprogramacion=prog.idProgramacion  and prog.unineg=progra.unineg and m.idprogramacion=prog.idprogramacion) as disponibles,
+
+
+        (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=progra.idprogramacion) as ocupadosCT,
+        progra.max - (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=prog.idprogramacion) as disponiblesCT,
+
+ 
+        (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) as ocupadosAdm,
+		 
+        progra.max - (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) as disponiblesAdm,
+        isnull(progra.cupos,0) as cupos,
+        isnull(progra.glosa,'') as glosa
+        From MX_Programacion progra  
+        Left Join MT_Concepto con ON progra.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MT_PlanContable plnD ON con.cuentad = plnD.cuenta
+        Left Join MT_PlanContable plnH ON con.cuentah = plnH.cuenta
+        Left Join MO_Codigo mon ON mon.idCodigo = progra.idTipoMoneda
+        Left Join MX_Proceso pro ON progra.idProceso = pro.idProceso and progra.uniNeg = pro.uniNeg and pro.anio=pro.anio
+        Left Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Left Join MX_Ambiente amb ON progra.idAmbiente = amb.idAmbiente and progra.uniNeg= amb.uniNeg
+        Left JOIN MX_GradoAcademico GA on progra.idGradoAcademico=GA.idGradoAcademico
+    </sql>
+    <sql id="consultaProgramacionVer2">
+        Select
+        progra.uniNeg,
+        progra.idProgramacion,
+        progra.idConcepto,
+        con.nombre as nombreConcepto,
+        upper(progra.descripProgramacion) as descripProgramacion,
+        cat.idTipoConcepto,
+        con.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        con.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH,
+        progra.idProceso,
+        pro.descripcion as descripcionPro,
+        pro.anio as anioProceso,
+        pro.idTipoProceso,
+        cod.codigo as codigoTipo,
+        progra.idAmbiente,
+        amb.nombre as nombreAmbiente,
+        amb.aforo,
+        progra.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        progra.anio,
+        progra.precio,
+        progra.fecIni,
+        progra.fecFin,
+        progra.max,
+        progra.min,
+        progra.cr,
+        progra.uniNeg,
+        progra.horario,
+        progra.status,
+        progra.seccion,
+        progra.idGradoAcademico,
+        GA.idGradoAcademico as  idGA,
+        GA.nombre as nombreGA,
+        progra.grupo,
+        progra.creaPor,
+        progra.creaFecha,
+        isnull(progra.cupos,0) as cupos,
+        isnull(progra.glosa,'') as glosa
+        From MX_Programacion progra  
+        Left Join MT_Concepto con ON progra.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MT_PlanContable plnD ON con.cuentad = plnD.cuenta
+        Left Join MT_PlanContable plnH ON con.cuentah = plnH.cuenta
+        Left Join MO_Codigo mon ON mon.idCodigo = progra.idTipoMoneda
+        Left Join MX_Proceso pro ON progra.idProceso = pro.idProceso and progra.uniNeg = pro.uniNeg and pro.anio=pro.anio
+        Left Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Left Join MX_Ambiente amb ON progra.idAmbiente = amb.idAmbiente and progra.uniNeg= amb.uniNeg
+        Left JOIN MX_GradoAcademico GA on progra.idGradoAcademico=GA.idGradoAcademico
+    </sql>
+    <select id="obtenerProgramacion" resultMap="programacionResultado" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        <include refid="consultaProgramacion"/>Where progra.uniNeg=#{conceptoUniNegBean.unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerProgramacionActivos" resultMap="programacionResultado" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        <include refid="consultaProgramacion"/>Where progra.status = 1 
+        and progra.uniNeg=#{conceptoUniNegBean.unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerProgramacionImput" resultMap="programacionResultado" parameterType="map">
+        select*from MX_Programacion p
+        where  idprogramacion not in(select idprogramacion from MX_DetProgramacionDscto  where idprogramaciondscto=#{idProgramacionDscto} 
+        and unineg=#{uniNeg})and 
+        status=1
+    </select>
+    <select id="obtenerProgramacionOutput" resultMap="programacionResultado" parameterType="map">
+        select*from MX_Programacion p
+        where  idprogramacion in(select idprogramacion from MX_DetProgramacionDscto where idprogramaciondscto=#{idProgramacionDscto}
+        and unineg=#{uniNeg})and  
+        status=1
+    </select>
+    <resultMap id="programacionResultado" type="pe.marista.sigma.bean.ProgramacionBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idProgramacion" column="idProgramacion"/>
+        <result property="anio" column="anio"/>
+        <result property="precio" column="precio"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="max" column="max"/>
+        <result property="min" column="min"/>
+        <result property="horario" column="horario"/>
+        <result property="status" column="status"/>
+        <result property="seccion" column="seccion"/>
+        <result property="grupo" column="grupo"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="ocupados" column="ocupados"/>
+        <result property="disponibles" column="disponibles"/>
+        <result property="ocupadosCT" column="ocupadosCT"/>
+        <result property="disponiblesCT" column="disponiblesCT"/>
+        <result property="ocupadosAdm" column="ocupadosAdm"/>
+        <result property="disponiblesAdm" column="disponiblesAdm"/>
+        <result property="mesProg" column="mesProg"/>
+        <result property="descripProgramacion" column="descripProgramacion"/>
+        <result property="cupos" column="cupos"/>
+        <result property="glosa" column="glosa"/>
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniNegBeanResultado"/>
+        <association property="procesoBean" column="idProceso"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="procesoResultado"/>
+        <association property="ambienteBean" column="idAmbiente"
+                     javaType="pe.marista.sigma.bean.AmbienteBean"
+                     resultMap="ambienteResultado"/>
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResponsabilidadResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="idTipoMoneda" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/> 
+        <association property="gradoAcademicoBean" column="idGradoAcademico" 
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean" 
+                     resultMap="gradoAcademicoResultado"/>
+        
+    </resultMap>
+    <!--ConceptoUniNeg-->
+    <resultMap id="conceptoUniNegBeanResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean">
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <!--Concepto-->
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <result property="descrip" column="descrip"/>
+        <association property="planContableCuentaDBean" column="cuentad"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultado"/>
+        <association property="planContableCuentaHBean" column="cuentah"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultado"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultado"/>
+    </resultMap>
+    <resultMap id="planContableDResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentad"/>
+        <result property="nombre" column="nombreCuentaD"/>
+    </resultMap>
+    <resultMap id="planContableHResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentah"/>
+        <result property="nombre" column="nombreCuentaH"/>
+    </resultMap>
+    <resultMap id="tipoConceptoResultado" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+    </resultMap>
+    <!--Proceso-->
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBean">
+        <id property="idProceso" column="idProceso"/>
+        <result property="descripcion" column="descripcionPro"/>
+        <result property="anio" column="anioProceso"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <association property="codigoBean" column="idTipoProceso"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoProcesoResultado"/>
+        
+    </resultMap>
+    <resultMap id="tipoProcesoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoProceso"/>
+        <result property="codigo" column="codigo"/>
+        <association property="tipoCodigoBean" column="idTipoCodigo"
+                     javaType="pe.marista.sigma.bean.TipoCodigoBean"
+                     resultMap="tipoCodigoResultado"/>
+    </resultMap>
+    <resultMap id="tipoCodigoResultado" type="pe.marista.sigma.bean.TipoCodigoBean">
+        <id property="idTipoCodigo" column="idTipoCodigo"/>
+        <result property="descripcion" column="descripcion"/>  
+    </resultMap>
+    <!--Codigo-->
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="codigoMoneda"/>
+    </resultMap>
+    <!--Ambiente-->
+    <resultMap id="ambienteResultado" type="pe.marista.sigma.bean.AmbienteBean">
+        <id property="idAmbiente" column="idAmbiente"/>
+        <result property="nombre" column="nombreAmbiente"/>
+        <result property="aforo" column="aforo"/>
+    </resultMap>
+    <!--Centro de Responsabilidad-->
+    <resultMap id="centroResponsabilidadResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombre"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="nivel" column="nivel"/>
+        <result property="tipoNivelCR" column="idtipogrupocr"/>
+    </resultMap>
+    
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>   
+    <!-- Grado Academico -->
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGA"/>
+        <result property="nombre" column="nombreGA"/> 
+    </resultMap>
+    <select id="obtenerPrograPorId" resultMap="programacionResultado" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        Select
+        progra.uniNeg,
+        progra.idProgramacion,
+        progra.idConcepto,
+        con.nombre as nombreConcepto,
+        upper(progra.descripProgramacion) as descripProgramacion,
+        cat.idTipoConcepto,
+        con.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        con.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH,
+        progra.idProceso,
+        pro.descripcion as descripcionPro,
+        pro.anio as anioProceso,
+        pro.idTipoProceso,
+        cod.codigo as codigoTipo,
+        progra.idAmbiente,
+        amb.nombre as nombreAmbiente,
+        amb.aforo,
+        progra.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        progra.anio,
+        progra.precio,
+        progra.fecIni,
+        progra.fecFin,
+        progra.max,
+        progra.min,
+        progra.cr,
+        progra.uniNeg,
+        progra.horario,
+        progra.status,
+        progra.seccion,
+        progra.idGradoAcademico,
+        GA.idGradoAcademico as  idGA,
+        GA.nombre as nombreGA,
+        progra.grupo, 
+        isnull(progra.cupos,0) as cupos,
+        isnull(progra.glosa,'') as glosa
+        From MX_Programacion progra  
+        Left Join MT_Concepto con ON progra.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MT_PlanContable plnD ON con.cuentad = plnD.cuenta
+        Left Join MT_PlanContable plnH ON con.cuentah = plnH.cuenta
+        Left Join MO_Codigo mon ON mon.idCodigo = progra.idTipoMoneda
+        Left Join MX_Proceso pro ON progra.idProceso = pro.idProceso and progra.uniNeg = pro.uniNeg and pro.anio=pro.anio
+        Left Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Left Join MX_Ambiente amb ON progra.idAmbiente = amb.idAmbiente and progra.uniNeg= amb.uniNeg
+        Left JOIN MX_GradoAcademico GA on progra.idGradoAcademico=GA.idGradoAcademico
+        WHERE  progra.uniNeg=#{unidadNegocioBean.uniNeg} and progra.idProgramacion = #{idProgramacion} 
+    </select>
+    <select id="obtenerCupoPrograPorId" resultType="Integer" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        Select 
+        isnull( progra.cupos,0) 
+        From MX_Programacion progra   
+        WHERE  progra.uniNeg=#{unidadNegocioBean.uniNeg} and progra.idProgramacion = #{idProgramacion} 
+    </select>
+    <select id="obtenerPrograPorTipo" resultMap="programacionResultado" parameterType="map">
+        <include refid="consultaProgramacion" />WHERE cod.codigo = #{codigo} and progra.uniNeg=#{uniNeg} and progra.status = 1
+    </select>
+    <select id="obtenerPrograAdmisionUniNeg" resultMap="programacionResultado" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        <include refid="consultaProgramacion" />
+        WHERE progra.uniNeg=#{unidadNegocioBean.uniNeg} and cod.codigo = #{procesoBean.codigoBean.codigo} and progra.status = 1
+    </select>
+    <insert id="insertarProgramacion" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        INSERT INTO MX_Programacion (idConcepto,idProceso,idAmbiente,anio,idTipoMoneda,precio,fecIni,fecFin,max,min,cr,uniNeg,horario,status,seccion,grupo,creaPor,creaFecha,idGradoAcademico,idtipoproceso,descripProgramacion,cupos,glosa)
+        Values (#{conceptoUniNegBean.conceptoBean.idConcepto},#{procesoBean.idProceso},#{ambienteBean.idAmbiente},#{anio},#{idTipoMoneda.idCodigo},#{precio},#{fecIni},#{fecFin},#{max},#{min},#{centroResponsabilidadBean.cr},
+        #{conceptoUniNegBean.unidadNegocioBean.uniNeg},#{horario},#{status},#{seccion},#{grupo},#{creaPor},getDate(),#{gradoAcademicoBean.idGradoAcademico},#{procesoBean.codigoBean.idCodigo},#{descripProgramacion},#{cupos},#{glosa})
+    </insert> 
+    <update id="modificarProgramacion" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        UPDATE MX_Programacion SET 
+        idConcepto = #{conceptoUniNegBean.conceptoBean.idConcepto},
+        idProceso = #{procesoBean.idProceso},
+        idAmbiente = #{ambienteBean.idAmbiente},
+        anio = #{anio},
+        idTipoMoneda = #{idTipoMoneda.idCodigo},
+        precio = #{precio},
+        fecIni = #{fecIni},
+        fecFin = #{fecFin},
+        max = #{max},
+        min = #{min},
+        cr = #{centroResponsabilidadBean.cr},
+        uniNeg = #{conceptoUniNegBean.unidadNegocioBean.uniNeg},
+        horario = #{horario},
+        status = #{status},
+        seccion = #{seccion},
+        grupo = #{grupo},
+        idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico},
+        descripProgramacion=#{descripProgramacion},
+        cupos=#{cupos},
+        glosa=#{glosa},
+        modiPor = #{modiPor}
+        Where idProgramacion = #{idProgramacion} and  uniNeg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarProgramacionCupos" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        UPDATE MX_Programacion SET 
+        cupos=isnull(cupos,0)-1
+        Where idProgramacion = #{idProgramacion} and  uniNeg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <delete id="eliminarProgramacion" parameterType="Integer">
+        Delete From MX_Programacion Where idProgramacion = #{idProgramacion} and  uniNeg=#{unidadNegocioBean.uniNeg}
+    </delete>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.ProgramacionBean">
+        Update MX_Programacion set
+        status = #{status}
+        Where idProgramacion = #{idProgramacion}  and  uniNeg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <select id="obtenerProgPorTipoPorAnioPorUniNeg" resultMap="programacionResultado" parameterType="map">
+        <include refid="consultaProgramacion" />
+        WHERE progra.anio>=#{anio} and
+        progra.uniNeg=#{uniNeg}    and 
+        pro.idTipoProceso=(Select idCodigo from MO_Codigo Where codigo = #{codigo} and idTipoCodigo=#{tipoCodigo}) and 
+        progra.status = 1
+        order by progra.anio 
+    </select>
+    <select id="obtenerProgPorTipoActivos" resultMap="programacionResultado" parameterType="String">
+        Select
+        progra.uniNeg,
+        progra.idProgramacion,
+        progra.idConcepto,
+        con.nombre as nombreConcepto,
+        cat.idTipoConcepto,
+        con.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        con.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH,
+        progra.idProceso,
+        pro.descripcion as descripcionPro,
+        pro.anio as anioProceso,
+        pro.idTipoProceso,
+        cod.codigo as codigoTipo,
+        progra.idAmbiente,
+        amb.nombre as nombreAmbiente,
+        amb.aforo,
+        progra.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        progra.anio,
+        progra.precio,
+        progra.fecIni,
+        progra.fecFin,
+        progra.max,
+        progra.min,
+        progra.cr,
+        progra.uniNeg,
+        progra.horario,
+        progra.status,
+        progra.seccion,
+        progra.idGradoAcademico,
+        GA.idGradoAcademico as  idGA,
+        GA.nombre as nombreGA,
+        isnull(progra.grupo, '-') as grupo,
+        progra.creaPor,
+        progra.creaFecha, 
+        (case
+        when pro.idtipoproceso=12803 then  (progra.max - (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=prog.idprogramacion and ct.unineg=progra.unineg))
+        when pro.idtipoproceso=12801 then    (progra.max - (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) ) 
+        end 
+        ) as disponibles,
+       
+        (case
+        when pro.idtipoproceso=12803 then  ( (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=progra.idprogramacion))
+        when pro.idtipoproceso=12801 then    (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) 
+        end 
+        ) as ocupados 
+        ,(case 
+        when datepart(mm,progra.fecini)=1 then 'ENERO' 
+        when datepart(mm,progra.fecini)=2 then 'FEBRERO' 
+        when datepart(mm,progra.fecini)=3 then 'MARZO' 
+        when datepart(mm,progra.fecini)=4 then 'ABRIL' 
+        when datepart(mm,progra.fecini)=5 then 'MAYO' 
+        when datepart(mm,progra.fecini)=6 then 'JUNIO' 
+        when datepart(mm,progra.fecini)=7 then 'JULIO' 
+        when datepart(mm,progra.fecini)=8 then 'AGOSTO' 
+        when datepart(mm,progra.fecini)=9 then 'SEPTIEMBRE' 
+        when datepart(mm,progra.fecini)=10 then 'OCTUBRE' 
+        when datepart(mm,progra.fecini)=11 then 'NOVIEMBRE' 
+        when datepart(mm,progra.fecini)=12 then 'DICIEMBRE' 
+        END) as mesProg,
+        upper(progra.descripProgramacion) as descripProgramacion,        
+        isnull(progra.cupos,0) as cupos,
+        isnull(progra.glosa,'') as glosa
+        From MX_Programacion progra  
+        Left Join MT_Concepto con ON progra.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MT_PlanContable plnD ON con.cuentad = plnD.cuenta
+        Left Join MT_PlanContable plnH ON con.cuentah = plnH.cuenta
+        Left Join MO_Codigo mon ON mon.idCodigo = progra.idTipoMoneda
+        Left Join MX_Proceso pro ON progra.idProceso = pro.idProceso and progra.uniNeg = pro.uniNeg-- and pro.idtipoproceso=progra.idtipoproceso
+        Left Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Left Join MX_Ambiente amb ON progra.idAmbiente = amb.idAmbiente and progra.uniNeg= amb.uniNeg
+        Left JOIN MX_GradoAcademico GA on progra.idGradoAcademico=GA.idGradoAcademico
+        where pro.idtipoproceso!=12802   and progra.unineg=#{uniNeg} and progra.status=1
+        order by pro.anio desc 
+    </select>
+    <select id="obtenerProgPorTipoActivosDocIngFor" resultMap="programacionResultado" parameterType="String">
+        Select
+        progra.uniNeg,
+        progra.idProgramacion,
+        progra.idConcepto,
+        con.nombre as nombreConcepto,
+        cat.idTipoConcepto,
+        con.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        con.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH,
+        progra.idProceso,
+        pro.descripcion as descripcionPro,
+        pro.anio as anioProceso,
+        pro.idTipoProceso,
+        cod.codigo as codigoTipo,
+        progra.idAmbiente,
+        amb.nombre as nombreAmbiente,
+        amb.aforo,
+        progra.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        progra.anio,
+        progra.precio,
+        progra.fecIni,
+        progra.fecFin,
+        progra.max,
+        progra.min,
+        progra.cr,
+        progra.uniNeg,
+        progra.horario,
+        progra.status,
+        progra.seccion,
+        progra.idGradoAcademico,
+        GA.idGradoAcademico as  idGA,
+        GA.nombre as nombreGA,
+        isnull(progra.grupo, '-') as grupo,
+        progra.creaPor,
+        progra.creaFecha, 
+        (case
+        when pro.idtipoproceso=12803 then  (progra.max - (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=prog.idprogramacion and ct.unineg=progra.unineg))
+        when pro.idtipoproceso=12801 then    (progra.max - (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) ) 
+        end 
+        ) as disponibles,
+       
+        (case
+        when pro.idtipoproceso=12803 then  ( (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=progra.idprogramacion))
+        when pro.idtipoproceso=12801 then    (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) 
+        end 
+        ) as ocupados 
+        ,(case 
+        when datepart(mm,progra.fecini)=1 then 'ENERO' 
+        when datepart(mm,progra.fecini)=2 then 'FEBRERO' 
+        when datepart(mm,progra.fecini)=3 then 'MARZO' 
+        when datepart(mm,progra.fecini)=4 then 'ABRIL' 
+        when datepart(mm,progra.fecini)=5 then 'MAYO' 
+        when datepart(mm,progra.fecini)=6 then 'JUNIO' 
+        when datepart(mm,progra.fecini)=7 then 'JULIO' 
+        when datepart(mm,progra.fecini)=8 then 'AGOSTO' 
+        when datepart(mm,progra.fecini)=9 then 'SEPTIEMBRE' 
+        when datepart(mm,progra.fecini)=10 then 'OCTUBRE' 
+        when datepart(mm,progra.fecini)=11 then 'NOVIEMBRE' 
+        when datepart(mm,progra.fecini)=12 then 'DICIEMBRE' 
+        END) as mesProg,
+        upper(progra.descripProgramacion) as descripProgramacion
+        , isnull(progra.cupos,0) as cupos
+        ,isnull(progra.glosa,'') as glosa
+        From MX_Programacion progra  
+        Left Join MT_Concepto con ON progra.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MT_PlanContable plnD ON con.cuentad = plnD.cuenta
+        Left Join MT_PlanContable plnH ON con.cuentah = plnH.cuenta
+        Left Join MO_Codigo mon ON mon.idCodigo = progra.idTipoMoneda
+        Left Join MX_Proceso pro ON progra.idProceso = pro.idProceso and progra.uniNeg = pro.uniNeg-- and pro.idtipoproceso=progra.idtipoproceso
+        Left Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Left Join MX_Ambiente amb ON progra.idAmbiente = amb.idAmbiente and progra.uniNeg= amb.uniNeg
+        Left JOIN MX_GradoAcademico GA on progra.idGradoAcademico=GA.idGradoAcademico
+        where pro.idtipoproceso!=12802   and progra.unineg=#{uniNeg} and progra.status=1 and progra.idconcepto=#{idConcepto}
+        and progra.idprogramacion not in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        order by pro.anio desc 
+    </select>
+    <select id="obtenerProgPorTipoActivosPorConcepto" resultMap="programacionResultado" parameterType="map">
+        Select
+        progra.uniNeg,
+        progra.idProgramacion,
+        progra.idConcepto,
+        con.nombre as nombreConcepto,
+        cat.idTipoConcepto,
+        con.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        con.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH,
+        progra.idProceso,
+        pro.descripcion as descripcionPro,
+        pro.anio as anioProceso,
+        pro.idTipoProceso,
+        cod.codigo as codigoTipo,
+        progra.idAmbiente,
+        amb.nombre as nombreAmbiente,
+        amb.aforo,
+        progra.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        progra.anio,
+        progra.precio,
+        progra.fecIni,
+        progra.fecFin,
+        progra.max,
+        progra.min,
+        progra.cr,
+        progra.uniNeg,
+        progra.horario,
+        progra.status,
+        progra.seccion,
+        progra.idGradoAcademico,
+        GA.idGradoAcademico as  idGA,
+        GA.nombre as nombreGA,
+        isnull(progra.grupo, '-') as grupo,
+        progra.creaPor,
+        progra.creaFecha, 
+        (case
+        when pro.idtipoproceso=12803 then  (progra.max - (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=prog.idprogramacion and ct.unineg=progra.unineg))
+        when pro.idtipoproceso=12801 then    (progra.max - (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) )
+        when pro.idtipoproceso=12804 then  (progra.max - (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=prog.idprogramacion and ct.unineg=progra.unineg)) 
+        end 
+        ) as disponibles,
+       
+        (case
+        when pro.idtipoproceso=12803 then  ( (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=progra.idprogramacion))
+        when pro.idtipoproceso=12801 then    (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) 
+        end 
+        ) as ocupados 
+        ,(case 
+        when datepart(mm,progra.fecini)=1 then 'ENERO' 
+        when datepart(mm,progra.fecini)=2 then 'FEBRERO' 
+        when datepart(mm,progra.fecini)=3 then 'MARZO' 
+        when datepart(mm,progra.fecini)=4 then 'ABRIL' 
+        when datepart(mm,progra.fecini)=5 then 'MAYO' 
+        when datepart(mm,progra.fecini)=6 then 'JUNIO' 
+        when datepart(mm,progra.fecini)=7 then 'JULIO' 
+        when datepart(mm,progra.fecini)=8 then 'AGOSTO' 
+        when datepart(mm,progra.fecini)=9 then 'SEPTIEMBRE' 
+        when datepart(mm,progra.fecini)=10 then 'OCTUBRE' 
+        when datepart(mm,progra.fecini)=11 then 'NOVIEMBRE' 
+        when datepart(mm,progra.fecini)=12 then 'DICIEMBRE' 
+        END) as mesProg,
+        upper(progra.descripProgramacion) as descripProgramacion,
+        
+        isnull(progra.cupos,0) as cupos,
+        isnull(progra.glosa,'') as glosa
+        From MX_Programacion progra  
+        Left Join MT_Concepto con ON progra.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MT_PlanContable plnD ON con.cuentad = plnD.cuenta
+        Left Join MT_PlanContable plnH ON con.cuentah = plnH.cuenta
+        Left Join MO_Codigo mon ON mon.idCodigo = progra.idTipoMoneda
+        Left Join MX_Proceso pro ON progra.idProceso = pro.idProceso 
+        -- and progra.uniNeg = pro.uniNeg and pro.idtipoproceso=progra.idtipoproceso
+        Left Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Left Join MX_Ambiente amb ON progra.idAmbiente = amb.idAmbiente and progra.uniNeg= amb.uniNeg
+        Left JOIN MX_GradoAcademico GA on progra.idGradoAcademico=GA.idGradoAcademico
+        where pro.idtipoproceso!=12802   and progra.unineg=#{uniNeg} and progra.status=1 and progra.idconcepto=#{idConcepto}
+        order by pro.anio desc 
+    </select>
+    <select id="obtenerCuposPrograPorIdFor" resultType="Integer" parameterType="map">
+        select case when count(*)>0 then 0  else 1 end 
+        from MX_Programacion where idprogramacion in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and cupos=0 and unineg=#{uniNeg} 
+    </select>
+    <select id="obtenerProgRegPorDiscente" resultType="Integer" parameterType="map">       
+        declare @iddiscente varchar(20),@unineg varchar(6)
+        set @iddiscente=#{idDiscente}
+        set @unineg=#{uniNeg}
+        select distinct  isnull(idprogramacion,0) from MT_PagoBanco pb
+        left join MO_Codigo c on c.idcodigo=pb.idtipostatuspagobanco
+        where iddiscente in (@iddiscente) and c.codigo in ('emitido','pagado') and pb.unineg=@unineg
+        union all
+        select distinct isnull(idprogramacion,0) from MT_DetDocIngreso d
+        inner join MT_DocIngreso doc on doc.iddocingreso=d.iddocingreso and d.unineg=doc.unineg
+        inner join MO_Codigo cod on cod.idcodigo=doc.idtipostatusdocing
+        where iddiscente in (@iddiscente) and cod.codigo in ('pagado') and doc.unineg=@unineg
+        and d.idprogramacion is not null and idprogramacion not in (
+        select distinct  isnull(idprogramacion,0) from MT_PagoBanco pb
+        left join MO_Codigo c on c.idcodigo=pb.idtipostatuspagobanco
+        where iddiscente in (@iddiscente) and c.codigo in ('emitido','pagado') and pb.unineg=@unineg
+        )
+    </select>
+    <!-- FILTRO REPORTE DE TALLER -->
+    <select id="obtenerProgPorTipoActivosRef" resultMap="programacionResultado" parameterType="String">
+        Select
+        progra.uniNeg,
+        progra.idProgramacion,
+        progra.idConcepto,
+        con.nombre as nombreConcepto,
+        cat.idTipoConcepto,
+        con.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        con.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH,
+        progra.idProceso,
+        pro.descripcion as descripcionPro,
+        pro.anio as anioProceso,
+        pro.idTipoProceso,
+        cod.codigo as codigoTipo,
+        progra.idAmbiente,
+        amb.nombre as nombreAmbiente,
+        amb.aforo,
+        progra.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        progra.anio,
+        progra.precio,
+        progra.fecIni,
+        progra.fecFin,
+        progra.max,
+        progra.min,
+        progra.cr,
+        progra.uniNeg,
+        progra.horario,
+        progra.status,
+        progra.seccion,
+        progra.idGradoAcademico,
+        GA.idGradoAcademico as  idGA,
+        GA.nombre as nombreGA,
+        isnull(progra.grupo, '-') as grupo,
+        progra.creaPor,
+        progra.creaFecha, 
+        (case
+        when pro.idtipoproceso=12803 then  (progra.max - (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=prog.idprogramacion and ct.unineg=progra.unineg))
+        when pro.idtipoproceso=12801 then    (progra.max - (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) ) 
+        end 
+        ) as disponibles,
+       
+        (case
+        when pro.idtipoproceso=12803 then  ( (select count(ct.idCursoTaller) from MX_CursoTaller ct 
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and ct.idprogramacion=progra.idprogramacion))
+        when pro.idtipoproceso=12801 then    (select count(a.idadmision) from MX_Admision a
+        inner join MX_Programacion prog on 
+        progra.idprogramacion=prog.idProgramacion and progra.unineg=prog.unineg and a.idprogramacion=progra.idprogramacion) 
+        end 
+        ) as ocupados 
+        ,(case 
+        when datepart(mm,progra.fecini)=1 then 'ENERO' 
+        when datepart(mm,progra.fecini)=2 then 'FEBRERO' 
+        when datepart(mm,progra.fecini)=3 then 'MARZO' 
+        when datepart(mm,progra.fecini)=4 then 'ABRIL' 
+        when datepart(mm,progra.fecini)=5 then 'MAYO' 
+        when datepart(mm,progra.fecini)=6 then 'JUNIO' 
+        when datepart(mm,progra.fecini)=7 then 'JULIO' 
+        when datepart(mm,progra.fecini)=8 then 'AGOSTO' 
+        when datepart(mm,progra.fecini)=9 then 'SEPTIEMBRE' 
+        when datepart(mm,progra.fecini)=10 then 'OCTUBRE' 
+        when datepart(mm,progra.fecini)=11 then 'NOVIEMBRE' 
+        when datepart(mm,progra.fecini)=12 then 'DICIEMBRE' 
+        END) as mesProg,
+        upper(progra.descripProgramacion) as descripProgramacion
+        From MX_Programacion progra  
+        Left Join MT_Concepto con ON progra.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MT_PlanContable plnD ON con.cuentad = plnD.cuenta
+        Left Join MT_PlanContable plnH ON con.cuentah = plnH.cuenta
+        Left Join MO_Codigo mon ON mon.idCodigo = progra.idTipoMoneda
+        Left Join MX_Proceso pro ON progra.idProceso = pro.idProceso and progra.uniNeg = pro.uniNeg-- and pro.idtipoproceso=progra.idtipoproceso
+        Left Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Left Join MX_Ambiente amb ON progra.idAmbiente = amb.idAmbiente and progra.uniNeg= amb.uniNeg
+        Left JOIN MX_GradoAcademico GA on progra.idGradoAcademico=GA.idGradoAcademico
+        where pro.idtipoproceso!=12802   and progra.unineg=#{unidadNegocioBean.uniNeg} and progra.status=#{statusProgramacion}
+        <if test="descripProgramacion != null and descripProgramacion != '' " >
+            and progra.descripprogramacion like CONCAT('%',#{descripProgramacion},'%')
+        </if>
+        order by pro.anio desc 
+    </select>
+    <select id="obtenerTodos" resultType="pe.marista.sigma.bean.ProgramacionBean"> 
+        select idprogramacion ,descripProgramacion from MX_Programacion
+        order by idprogramacion
+    </select> 
+</mapper>

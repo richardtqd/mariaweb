@@ -1,0 +1,753 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PresupuestoDAO">
+    <sql id="consultaCampos" >
+        SELECT 
+        p.idPresupuesto
+        ,p.unineg as uniNegPres
+        ,p.anio
+        <!--,p.idtipopresupuesto-->
+        <!--,p.nombrepresupuesto-->
+        <!--,p.descpresupuesto-->
+        ,p.presupuestoprog
+        ,isnull(p.presupuestoejec,0) as presupuestoEjec
+        ,p.presupuestotope
+        ,p.cuenta as cuentaPres
+        ,p.creapor
+        ,p.creafecha
+        ,p.modipor
+        ,p.modiver
+        ,pl.cuenta as cuentaContable
+        ,pl.nombre as nomCuentaContable
+        ,pl.nivel as nivelPlanContable
+        ,pl.idTipoCuenta as idTipoCuentaContable
+        ,pl.idtipogrupocta as idTipoGrupoCuentaCon
+        ,pl.idTipoCuenta 
+        ,pl.idtipogrupocta
+        ,c1.idcodigo as idTipoCuenta
+        ,c1.codigo as tipoCuenta
+        ,c2.idcodigo as idTipoGpoCuenta
+        ,c2.codigo as tipoGpoCuenta
+        ,CAST(isnull((ISNULL(p.presupuestoprog,0) - isnull(p.presupuestoejec,0)),0) AS money) as saldo 
+        <!--
+        ,CAST(isnull((case 
+            when (((ISNULL(p.presupuestoprog,0) - ISNULL(p.presupuestoejec,0)) / ISNULL(p.presupuestoprog,0)) * 100) <![CDATA[ < ]]> 0 then 0 
+            else (((ISNULL(p.presupuestoprog,0) - ISNULL(p.presupuestoejec,0)) / ISNULL(p.presupuestoprog,0)) * 100) end),0) 
+        AS money) as porcentajeSaldo
+        -->
+        ,(case
+            when ISNULL(p.presupuestoprog,0) <![CDATA[ <> ]]> 0 then (CAST(isnull((case              
+                    when (((ISNULL(p.presupuestoprog,0) - ISNULL(p.presupuestoejec,0)) / ISNULL(p.presupuestoprog,0)) * 100) <![CDATA[ < ]]> 0 then 0              
+                else (((ISNULL(p.presupuestoprog,0) - ISNULL(p.presupuestoejec,0)) / ISNULL(p.presupuestoprog,0)) * 100) end),0)          
+            AS money))
+                else CAST(0.00 as money) 
+        end) as porcentajeSaldo 
+        <!--
+        ,tipoPres.idcodigo as idTipoPres
+        ,tipoPres.codigo as tipoPres
+        -->
+        FROM ME_Presupuesto p
+        left join MT_PlanContable pl on p.cuenta = pl.cuenta
+        left join MO_Codigo c1 on pl.idtipocuenta = c1.idcodigo
+        left join MO_Codigo c2 on pl.idtipogrupocta = c2.idcodigo
+        
+        <!--left join MO_Codigo tipoPres on p.idtipopresupuesto = tipoPres.idcodigo-->
+    </sql>
+    
+    <resultMap id="presupuestoResultado" type="pe.marista.sigma.bean.PresupuestoBean" >
+        <result property="idPresupuesto" column="idPresupuesto" />
+        <result property="anio" column="anio" /> 
+        <result property="uniNeg" column="uniNegPres" /> 
+        <result property="presupuestoProg" column="presupuestoProg" />
+        <result property="presupuestoEjec" column="presupuestoEjec" />
+        <result property="presupuestoTope" column="presupuestoTope" />
+        <result property="nombrePresupuesto" column="nombrePresupuesto" />  
+        <result property="cuenta" column="cuentaPres" />  
+        <result property="creaPor" column="creapor" />
+        <result property="creaFecha" column="creafecha" />
+        <result property="modiPor" column="modipor" />
+        <result property="modiVer" column="modiver" />
+        <result property="saldo" column="saldo" />
+        <result property="porcentajeSaldo" column="porcentajeSaldo" />
+        <association property="planContableBean" column="cuenta" 
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planResultado"/>
+        <association property="codigoBean" column="idtipopresupuesto"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPresupestoResultado"/> 
+    </resultMap>
+    
+    <!--Plan Contable Resultado-->
+    <resultMap id="planResultado" type="pe.marista.sigma.bean.PlanContableBean" >
+        <id property="cuenta" column="cuentaContable"/>
+        <result property="nombre" column="nomCuentaContable"/>
+        <result property="nivel" column="nivelPlanContable"/>
+        <association property="idTipoCuenta" column="idTipoCuenta"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCuentaResultado"/>
+        <association property="idTipoGrupoCta" column="idtipogrupocta"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoGrupoCuentaResultado"/> 
+    </resultMap> 
+    <!--Tipo Cuenta-->
+    <resultMap id="tipoCuentaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCuenta"/>  
+        <result property="codigo" column="tipoCuenta"/>  
+    </resultMap>
+    <!--Tipo Grupo Cuenta-->
+    <resultMap id="tipoGrupoCuentaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoGpoCuenta"/> 
+        <result property="codigo" column="tipoGpoCuenta"/>  
+    </resultMap>
+    
+    <!--Tipo Presupuesto Resultado-->
+    <resultMap id="tipoPresupestoResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoPres" />
+        <result property="codigo" column="tipoPres" />
+    </resultMap>
+    
+    <!--Metodos-->
+    <select id="obtenerPresupesto" resultMap="presupuestoResultado" parameterType="String">
+        <include refid="consultaCampos" /> WHERE p.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+     
+    <select id="obtenerPorId" resultMap="presupuestoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE p.idPresupuesto = #{idPresupuesto}
+    </select>
+    
+    <select id="obtenerPresPorId" resultMap="presupuestoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE p.cuenta = #{cuenta} and p.uniNeg = #{uniNeg} and p.anio=#{anio}
+    </select>
+     
+    <select id="obtenerListaPresID" resultMap="presupuestoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE p.idPresupuesto = #{idPresupuesto}
+    </select>
+     
+    <select id="obtenerPresupuestoCuenta" resultMap="presupuestoResultado" parameterType="map" >
+        <include refid="consultaCampos" />WHERE p.cuenta = #{cuenta} and p.uniNeg = #{uniNeg} and p.anio = #{anio}
+        <!-- Cambio -->
+    </select>
+    
+    <select id="obtenerPorCuenta" resultMap="presupuestoResultado" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        <include refid="consultaCampos" />
+        WHERE p.cuenta = #{planContableBean.cuenta} and p.uniNeg = #{unidadNegocioBean.uniNeg} 
+    </select>
+    
+    <select id="filtrarPresupuesto" resultMap="presupuestoResultado" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        <include refid="consultaCampos" />
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="planContableBean.cuenta != null" >
+                and p.cuenta = #{planContableBean.cuenta}
+            </if>
+            <if test="anio != null" >
+                and p.anio = #{anio}
+            </if>
+            order by 2 asc
+        </where>
+    </select>
+    <select id="execProPres" resultType="object" parameterType="map" >
+        exec PRO_UPDATE_PRESUPUESTO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="obtenerPresExec" resultType="Integer" parameterType="map" >
+        select (
+        (select sum(dd.montopagado) from MT_DetDocIngreso dd 
+        inner join MT_PlanContable cd on dd.cuentad = cd.cuenta
+        inner join MT_PlanContable ch on dd.cuentah = ch.cuenta
+        WHERE cd.cuenta = #{cuenta} and dd.unineg = #{uniNeg}
+        group by cd.cuenta,cd.nombre)
+        +
+        (select sum(montopagado) from MT_CtasxCobrar
+        WHERE cuentad = #{cuenta} and unineg = #{uniNeg}
+        group by cuentad))
+    </select>
+    
+    <insert id="insertarPresupesto" parameterType="pe.marista.sigma.bean.PresupuestoBean">
+        INSERT INTO ME_Presupuesto
+        (unineg
+        <!--,idpresupuesto-->
+        ,anio
+        ,idtipopresupuesto
+        ,nombrepresupuesto
+        <!--,descpresupuesto-->
+        ,presupuestoprog
+        ,presupuestoejec
+        ,presupuestotope
+        ,cuenta
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        <!--(select (isnull(max(idpresupuesto),0) + 1) as idpresupuesto from ME_Presupuesto where unineg = #{unidadNegocioBean.uniNeg}),-->
+        #{anio},
+        #{codigoBean.idCodigo},
+        #{nombrePresupuesto},
+        <!--#{descPresupuesto},-->
+        #{presupuestoProg},
+        #{presupuestoEjec},
+        #{presupuestoTope},
+        #{planContableBean.cuenta},
+        #{creaPor}, 
+        getDate())
+    </insert>
+    
+    <insert id="insertarPresupestoPlan" parameterType="pe.marista.sigma.bean.PresupuestoBean">
+        INSERT INTO ME_Presupuesto
+        (unineg
+        ,anio  
+        <!--,descpresupuesto-->
+        ,presupuestoprog 
+        ,cuenta
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{anio},  
+        <!--#{descPresupuesto},-->
+        #{presupuestoProg}, 
+        #{cuenta},
+        #{creaPor}, 
+        getDate())
+    </insert>
+    
+    <update id="modificarPresupesto" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        UPDATE ME_Presupuesto
+        SET  
+        anio = #{anio},
+        idtipopresupuesto = #{codigoBean.idCodigo},
+        nombrepresupuesto = #{nombrePresupuesto},
+        descpresupuesto = #{descPresupuesto},  
+        presupuestoprog = #{presupuestoProg},
+        presupuestoejec = #{presupuestoEjec},
+        presupuestotope = #{presupuestoTope},
+        cuenta = #{planContableBean.cuenta},
+        modipor = #{modiPor}
+        WHERE idPresupuesto = #{idPresupuesto}
+    </update>
+    
+    <update id="modificarPresupestoPlan" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        UPDATE ME_Presupuesto
+        SET        
+        presupuestoprog = #{presupuestoProg},
+        modipor = #{modiPor}
+        <!--WHERE idPresupuesto = #{idPresupuesto} -->
+        WHERE 
+        <!-- unineg=#{unidadNegocioBean.uniNeg} -->
+        unineg=#{uniNeg} 
+        and anio=#{anio}
+        and cuenta=#{cuenta}
+    </update>
+    
+    <update id="modificarDatosPresupuesto" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        UPDATE ME_Presupuesto
+        SET
+        presupuestoprog = #{presupuestoProg}, 
+        presupuestotope = #{presupuestoTope},
+        modiPor = #{modiPor}
+        WHERE idPresupuesto = #{idPresupuesto}
+    </update>
+    
+    <update id="modificarPresupuestoExec" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        UPDATE ME_Presupuesto
+        SET
+        presupuestoejec = #{presupuestoEjec}
+        WHERE  
+        uniNeg = #{uniNeg} and 
+        anio = #{anio} and 
+        cuenta = #{planContableBean.cuenta}
+    </update>
+    
+    <delete id="eliminarPresupesto" parameterType="Integer" >
+        DELETE FROM ME_Presupuesto
+        WHERE 
+        idPresupuesto = #{idPresupuesto}
+        uniNeg = #{uniNeg} and 
+        anio = #{anio} and 
+        cuenta = #{planContableBean.cuenta}
+    </delete>
+    
+    <delete id="eliminarPresupestoNuevo" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        DELETE FROM ME_Presupuesto
+        WHERE 
+        idPresupuesto = #{idPresupuesto} and
+        uniNeg = #{unidadNegocioBean.uniNeg} and 
+        anio = #{anio} and 
+        cuenta = #{planContableBean.cuenta}
+    </delete>
+     
+    <delete id="eliminarPresupestoProg" parameterType="pe.marista.sigma.bean.PresupuestoBean">
+        DELETE FROM ME_Presupuesto
+        WHERE  
+        uniNeg = #{uniNeg} and 
+        anio = #{anio} and 
+        cuenta = #{planContableBean.cuenta}
+    </delete>
+     
+    <select id="obtenerPresupuestoFiltro" resultMap="presupuestoResultado" parameterType="pe.marista.sigma.bean.PresupuestoBean">
+        <include refid="consultaCampos"/>
+        <where>
+            <if test="planContableBean.cuenta != null and planContableBean.cuenta != 0 ">  
+                upper(pl.cuenta) like concat('%',#{planContableBean.cuenta},'%')
+            </if>
+            <if test="planContableBean.idTipoCuenta.idCodigo != null and planContableBean.idTipoCuenta.idCodigo != '' "> 
+                and upper(pl.idTipoCuenta) like concat('%',#{planContableBean.idTipoCuenta.idCodigo},'%') 
+            </if>  
+            <if test="planContableBean.idTipoGrupoCta.idCodigo != null and planContableBean.idTipoGrupoCta.idCodigo != '' "> 
+                and upper(pl.idtipogrupocta) like concat('%',#{planContableBean.idTipoGrupoCta.idCodigo},'%')
+            </if> 
+        </where>  
+    </select>
+    
+    <select id="obtenerListaCuentaFiltro" resultType="pe.marista.sigma.bean.reporte.CuentaRepBean" parameterType="pe.marista.sigma.bean.reporte.CuentaRepBean" >
+        <if test="flgFiltro != null and flgFiltro == 1" >
+            declare @valor Integer = #{digit}
+            declare @anio Integer = #{anio}
+            ;with lista as (
+            select 
+            ROW_NUMBER() over(PARTITION BY l.cuenta order by l.cuenta) as id,
+            l.nombreUniNeg, 
+            l.rucUniNeg, 
+            l.titulo, 
+            l.fecha, l.cuenta, 
+            ISNULL(l.nomCuenta,'-----') as nomCuenta, 
+            ISNULL(l.cr,'-----') as cr, 
+            ISNULL(l.nombreCr,'-----') as nombreCr, 
+            (case 
+            when l.presupuestoprog = 0 then 'NO PPTO' 
+            else 'PPTO' 
+            end) as dato, 
+            l.contCr,
+            <!-- ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float)/CAST(l.contCr as float))),4) as precuentad, -->
+            (case
+            when l.contCr <![CDATA[ <> ]]> 0 then ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float)/CAST(l.contCr as float))),4)
+            when l.contCr = 0 then ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float))),4)
+            end) as precuentad, 
+            <!-- l.prog-(ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float)/CAST(l.contCr as float))),4) * l.contCr) as resta, -->
+            (case
+            when l.contCr <![CDATA[ <> ]]> 0 then (l.prog-(ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float)/CAST(l.contCr as float))),4) * l.contCr))
+            when l.contCr = 0 then (l.prog-(ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float))),4) * l.contCr))
+            end) as resta,
+            CONVERT(varchar(100),isnull(l.presupuestoprog,0)) as montoPresVista, 
+            CONVERT(varchar, CAST(isnull(l.presupuestoexec,0) AS money), 1) as monto, 
+            CONVERT(varchar(100),ISNULL(l.presupuestoexec,0)) as montoExecVista, 
+            CONVERT(varchar, CAST(isnull((ISNULL(l.presupuestoprog,0) - isnull(l.presupuestoexec,0)),0) AS money), 1) as saldo, 
+            CONVERT(varchar(100),isnull((ISNULL(l.presupuestoprog,0) - ISNULL(l.presupuestoexec,0)),0)) as montoSaldoVista, 
+            CONVERT(varchar, CAST(isnull((l.presupuestoexec/l.presupuestoprog) * 100,0) AS money), 1) as porcentajeExec, 
+            CONVERT(varchar, CAST(isnull((case 
+            when (((ISNULL(l.presupuestoprog,0) - ISNULL(l.presupuestoexec,0)) / ISNULL(l.presupuestoprog,0)) * 100) <![CDATA[ < ]]> 0 then 0 
+            else (((ISNULL(l.presupuestoprog,0) - ISNULL(l.presupuestoexec,0)) / ISNULL(l.presupuestoprog,0)) * 100) end),0) AS money), 1) as porcentajeSald
+            from(
+            select
+            pe.unineg,
+            (case
+            when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1)
+            when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1)
+            when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2)
+            end) as valor, 
+            upper(ENTU.nombre) as nombreUniNeg,
+            convert(varchar,uni.ruc) as rucUniNeg, 
+            (case
+            when @valor = 1 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Nivel ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+            when @valor = 2 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Unidad Org. ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+            when @valor = 3 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Nivel / Unidad Org. ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+            end) as titulo,
+            GETDATE() as fecha,
+            ISNULL(pl.cuenta,0) as cuenta,
+            pl.nombre as nomCuenta,
+            cr.nombre as nombreCr,
+            (case
+            when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1) + ' - ' + convert(varchar,a.cr) 
+            when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1) + ' - ' + convert(varchar,a.cr) 
+            when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2) + ' - ' + convert(varchar,a.cr) 
+            end) as cr,
+            a.cr as crvista,
+            pl.nombre as nombrePlan,
+            (case
+            when (select ISNULL(COUNT(asi.cuentad),0) from(
+            select asi.cuentad,asi.cr from MT_Asiento asi 
+            where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta and asi.anio = @anio
+            <!--and asi.idtipoope = 0-->
+            group by asi.cr,asi.cuentad) as asi) <![CDATA[ <> ]]> 0 then isnull((ISNULL(pe.presupuestoprog,0) /(select ISNULL(COUNT(asi.cuentad),0) from(
+            select asi.cuentad,asi.cr from MT_Asiento asi 
+            where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta and asi.anio = @anio
+            <!--and asi.idtipoope = 0-->
+            group by asi.cr,asi.cuentad) as asi)),0)
+
+            when (select ISNULL(COUNT(asi.cuentad),0) from(
+            select asi.cuentad,asi.cr from MT_Asiento asi 
+            where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta and asi.anio = @anio
+            <!--and asi.idtipoope = 0-->
+            group by asi.cr,asi.cuentad) as asi) = 0 then ISNULL(pe.presupuestoprog,0)
+            end)as presupuestoprog,
+            cr.nombre,
+            sum(a.monto) as presupuestoexec,
+            (select ISNULL(COUNT(asi.cuentad),0) from(
+            select asi.cuentad,asi.cr from MT_Asiento asi 
+            where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta and asi.anio = @anio
+            group by asi.cr,asi.cuentad) as asi) as contCr,
+            pe.presupuestoprog as prog
+            from ME_Presupuesto pe
+            left join MT_Asiento a on pe.cuenta = a.cuentad and pe.unineg = a.unineg and pe.anio = a.anio
+            inner join MT_PlanContable pl on pe.cuenta = pl.cuenta
+            left join MT_CentroResponsabilidad cr on a.cr = cr.cr
+            inner join MO_UnidadNegocio uni on pe.unineg = uni.unineg
+            inner join MO_Entidad ENTU on uni.RUC = ENTU.ruc and uni.unineg = ENTU.unineg
+            where pe.unineg = #{uniNeg} and pe.anio = @anio
+            <!--and a.idtipoope = 0-->
+            <if test="cuentaIni != null" >
+                and pe.cuenta <![CDATA[ >= ]]> #{cuentaIni}
+            </if>
+            <if test="cuentaFin != null" >
+                and pe.cuenta <![CDATA[ <= ]]> #{cuentaFin}
+            </if> 
+            <if test="cuentaExec != null" >
+                and pe.cuenta not like concat('%',#{cuentaExec},'%')
+            </if>
+            <if test="crDigit != null" >
+                and (case 
+                when @valor = 1 
+                then (case when SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,1) = 0 then #{crDigit} else SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,1) end) 
+                when @valor = 2 
+                then (case when SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),2,1) = 0 then #{crDigit} else SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),2,1) end) 
+                when @valor = 3 
+                then (case when SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,2) = 0 then #{crDigit} else SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,2) end) 
+                end) <![CDATA[ >= ]]> #{crDigit}
+            </if> 
+            <if test="crDigitFin != null" >
+                and (case
+                when @valor = 1 then SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,1)
+                when @valor = 2 then SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),2,1)
+                when @valor = 3 then SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,2)
+                end) <![CDATA[ <= ]]> #{crDigitFin}
+            </if> 
+            group by pe.unineg,pl.nombre,pl.cuenta,pe.presupuestoprog,a.cr,cr.nombre,ENTU.nombre,uni.ruc) as l)
+            <!-- order by l.cuenta,l.cr -->
+            select distinct li.id,li.nombreUniNeg,li.rucUniNeg,li.rucUniNeg,li.fecha,li.cuenta,li.nomCuenta,li.cr,li.nombreCr,li.dato,(case
+            when li.id = (select l.id from lista l where l.cuenta = li.cuenta and l.id = li.contCr) then (li.precuentad + li.resta)
+            else li.precuentad
+            end) as precuentad,
+            <!--li.montoPresVista,-->
+            (case
+            when li.id = (select l.id from lista l where l.cuenta = li.cuenta and l.id = li.contCr) then convert(varchar(100),(li.precuentad + li.resta)) 
+            else convert(varchar(100),li.precuentad) 
+            end) as montoPresVista,
+            li.monto,li.montoExecVista,li.saldo,
+            li.montoSaldoVista,li.porcentajeExec,li.porcentajeSald
+            from lista li
+            order by li.cuenta,li.cr,li.id
+        </if>
+        <if test="flgFiltro == null" >
+            declare @anio Integer = #{anio}
+            select 
+            l.nombreUniNeg,
+            l.rucUniNeg,
+            l.titulo,
+            l.fecha,
+            l.cuenta,
+            l.nombre as nomCuenta,
+            (case
+            when l.presupuestoprog = 0 then 'NO PPTO'
+            else 'PPTO'
+            end) as dato,
+            CONVERT(varchar, CAST(isnull(l.presupuestoprog,0) AS money), 1) as precuentad,
+            CONVERT(varchar(100),l.presupuestoprog) as montoPresVista,
+            CONVERT(varchar, CAST(isnull(l.presupuestoexec,0) AS money), 1) as monto,
+            CONVERT(varchar(100),l.presupuestoexec) as montoExecVista,
+            CONVERT(varchar, CAST(isnull((l.presupuestoprog - l.presupuestoexec),0) AS money), 1) as saldo,
+            CONVERT(varchar(100),(l.presupuestoprog - l.presupuestoexec)) as montoSaldoVista,
+            CONVERT(varchar, CAST(isnull((l.presupuestoexec/l.presupuestoprog) * 100,0) AS money), 1) as porcentajeExec,
+            CONVERT(varchar, CAST(isnull((case
+            when (((l.presupuestoprog - l.presupuestoexec) / l.presupuestoprog) * 100) <![CDATA[ < ]]> 0 then 0
+            else (((l.presupuestoprog - l.presupuestoexec) / l.presupuestoprog) * 100)
+            end),0) AS money), 1) as porcentajeSald
+            from(
+            select distinct
+            upper(ENTU.nombre) as nombreUniNeg,
+            convert(varchar,uni.ruc) as rucUniNeg,
+            'Presupuesto de cuenta ' + convert(varchar,#{cuentaIni}) + ' - ' + convert(varchar,#{cuentaFin}) as titulo,
+            GETDATE() as fecha,
+            pl.cuenta,pl.nombre,p.presupuestoprog,
+            isnull((select sum(a.monto) 
+            from ME_Presupuesto pe
+            inner join MT_Asiento a on pe.cuenta = a.cuentad and pe.unineg = a.unineg and a.anio = pe.anio 
+            inner join MT_PlanContable pl on pe.cuenta = pl.cuenta
+            where pe.unineg = p.unineg and pe.anio = p.anio 
+            <!-- and a.idtipoope = 0 -->
+            and pe.cuenta = p.cuenta
+            group by pl.nombre,pe.cuenta,pe.presupuestoprog,pe.presupuestoejec),0) as presupuestoexec 
+            from ME_Presupuesto p
+            inner join MT_PlanContable pl on p.cuenta = pl.cuenta
+            inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+            inner join MO_Entidad ENTU on uni.RUC = ENTU.ruc and uni.unineg = ENTU.unineg
+            where p.unineg = #{uniNeg} and p.anio = @anio
+            <if test="cuentaIni != null" >
+                and p.cuenta <![CDATA[ >= ]]> #{cuentaIni}
+            </if>
+            <if test="cuentaFin != null" >
+                and p.cuenta <![CDATA[ <= ]]> #{cuentaFin}
+            </if>
+            <if test="cuentaExec != null" >
+                and p.cuenta not like concat('%',#{cuentaExec},'%')
+            </if>) as l
+            order by l.cuenta
+        </if> 
+        <if test="flgFiltro != null and flgFiltro == 2" >
+            declare @valor Integer = #{digit}
+            declare @tableCuenta as table(nombreUniNeg varchar(100),
+            rucUniNeg varchar(100),
+            titulo varchar(100),
+            fecha date,
+            cuenta varchar(100),
+            nomCuenta varchar(100),
+            nombreCr varchar(100),
+            precuentad varchar(100),
+            monto varchar(100),
+            saldo varchar(100),
+            dato varchar(20),
+            cr varchar(20),
+            porcentajeSald varchar(100),
+            porcentajeExec varchar(100),
+            montoPresVista varchar(100),
+            montoExecVista varchar(100),
+            montoSaldoVista varchar(100))
+            insert into @tableCuenta(nombreUniNeg,rucUniNeg,titulo,fecha,cuenta,nomCuenta,nombreCr,precuentad,monto,saldo,dato,
+            cr,porcentajeSald,porcentajeExec,montoPresVista,montoExecVista,montoSaldoVista)
+            select 
+            upper(ENTU.nombre) as nombreUniNeg,
+            convert(varchar,uni.ruc) as rucUniNeg, 
+            (case
+            when @valor = 1 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Nivel ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+            when @valor = 2 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Unidad Org. ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+            when @valor = 3 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Nivel / Unidad Org. ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+            end) as titulo,
+            GETDATE() as fecha,
+            ISNULL(pld.cuenta,0) as cuenta,
+            pld.nombre as nomCuenta,
+            cr.nombre as nombreCr,
+            CONVERT(varchar, CAST(isnull((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta),0) AS money), 1) as precuentad, 
+            CONVERT(varchar, CAST(isnull(sum(a.monto),0) AS money), 1) as monto,
+            CONVERT(varchar, CAST(isnull(((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)-sum(a.monto)),0) AS money), 1) as saldo,
+            (case
+            when (select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta) is null then 'NO PPTO'
+            when (select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta) is not null then 'PPTO'
+            end) as dato,
+            (case
+            when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1) + ' - ' + convert(varchar,a.cr) 
+            when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1) + ' - ' + convert(varchar,a.cr) 
+            when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2) + ' - ' + convert(varchar,a.cr) 
+            end) as cr,
+            convert(varchar,(((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)-sum(a.monto))/(select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta))) as porcentajeSald,
+            convert(varchar,(sum(a.monto)/(select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta))) as porcentajeExec,
+            ISNULL(CONVERT(varchar(100),(select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)),0) as montoPresVista,
+            CONVERT(varchar(100),isnull(sum(a.monto),0)) as montoExecVista,
+            CONVERT(varchar(100),(isnull((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta),0)) - ISNULL(sum(a.monto),0)) as montoSaldoVista
+            from ME_Presupuesto p 
+            inner join MT_PlanContable pld on p.cuenta = pld.cuenta
+            left join MT_Asiento a on a.cuentad = p.cuenta and a.unineg = p.unineg 
+            inner join MT_CentroResponsabilidad cr on a.cr = cr.cr
+            inner join MO_UnidadNegocio uni on a.unineg = uni.unineg
+            inner join MO_Entidad ENTU on uni.RUC = ENTU.ruc and uni.unineg = ENTU.unineg
+            where a.unineg = #{uniNeg} and a.idtipoope = 0 and a.cuentad = pld.cuenta
+            and (case
+            when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1)
+            when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1)
+            when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2)
+            end) <![CDATA[ >= ]]> #{crDigit}
+            and (case
+            when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1)
+            when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1)
+            when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2)
+            end) <![CDATA[ <= ]]> #{crDigitFin}
+            <if test="cuentaIni != null" >
+                and a.cuentad <![CDATA[ >= ]]> #{cuentaIni}
+            </if>
+            <if test="cuentaFin != null" >
+                and a.cuentad <![CDATA[ <= ]]> #{cuentaFin}
+            </if>
+            <if test="cuentaExec != null" >
+                and a.cuentad not like concat('%',#{cuentaExec},'%')
+            </if> 
+            group by a.unineg,a.cuentad,a.cuentah,pld.nombre,pld.cuenta,a.cr,cr.nombre,ENTU.nombre,uni.ruc
+            select * from(
+            select 
+            tc.titulo,
+            tc.nombreUniNeg,
+            tc.rucUniNeg,
+            tc.titulo,
+            tc.fecha,
+            '' as cuenta,
+            '' as nomCuenta,
+            tc.nombreCr as nombreCr,
+            sum(CONVERT(money,tc.precuentad)) as precuentad,
+            sum(CONVERT(money,tc.monto)) as monto,
+            sum(CONVERT(money,tc.saldo)) as saldo,
+            tc.dato as dato,
+            tc.cr as cr,
+            sum(CONVERT(money,tc.porcentajeSald)) * 100 as porcentajeSald,
+            sum(CONVERT(money,tc.porcentajeExec)) * 100 as porcentajeExec,
+            sum(CONVERT(money,tc.montoPresVista)) as montoPresVista,
+            sum(CONVERT(money,tc.montoExecVista)) as montoExecVista,
+            sum(CONVERT(money,tc.montoSaldoVista)) as montoSaldoVista
+            from @tableCuenta tc
+            group by tc.cr,tc.nombreCr,tc.nombreUniNeg,tc.rucUniNeg,tc.fecha,tc.dato) as l
+            order by l.cr,l.cuenta desc,l.monto 
+        </if>
+    </select>
+    
+    <select id="obtenerListaCuentaFiltroRep" resultType="pe.marista.sigma.bean.reporte.CuentaRepBean" parameterType="pe.marista.sigma.bean.reporte.CuentaRepBean" >
+        declare @valor Integer = #{digit}
+        ;with lista as (
+        select 
+        ROW_NUMBER() over(PARTITION BY l.cuenta order by l.cuenta) as id,
+        l.nombreUniNeg, 
+        l.rucUniNeg, 
+        l.titulo, 
+        l.fecha, l.cuenta, 
+        ISNULL(l.nomCuenta,'-----') as nomCuenta, 
+        ISNULL(l.cr,'-----') as cr, 
+        ISNULL(l.nombreCr,'-----') as nombreCr, 
+        (case 
+        when l.presupuestoprog = 0 then 'NO PPTO' 
+        else 'PPTO' 
+        end) as dato, 
+        l.contCr,
+        (case
+        when l.contCr <![CDATA[ <> ]]> 0 then ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float)/CAST(l.contCr as float))),4)
+        when l.contCr = 0 then ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float))),4)
+        end) as precuentad, 
+        (case
+        when l.contCr <![CDATA[ <> ]]> 0 then (l.prog-(ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float)/CAST(l.contCr as float))),4) * l.contCr))
+        when l.contCr = 0 then (l.prog-(ROUND(CONVERT(decimal(30,18),(CAST(l.prog as float))),4) * l.contCr))
+        end) as resta,
+        CONVERT(varchar(100),isnull(l.presupuestoprog,0)) as montoPresVista, 
+        CONVERT(varchar, CAST(isnull(l.presupuestoexec,0) AS money), 1) as monto, 
+        CONVERT(varchar(100),ISNULL(l.presupuestoexec,0)) as montoExecVista, 
+        CONVERT(varchar, CAST(isnull((ISNULL(l.presupuestoprog,0) - isnull(l.presupuestoexec,0)),0) AS money), 1) as saldo, 
+        CONVERT(varchar(100),isnull((ISNULL(l.presupuestoprog,0) - ISNULL(l.presupuestoexec,0)),0)) as montoSaldoVista, 
+        CONVERT(varchar, CAST(isnull((l.presupuestoexec/l.presupuestoprog) * 100,0) AS money), 1) as porcentajeExec, 
+        CONVERT(varchar, CAST(isnull((case 
+        when (((ISNULL(l.presupuestoprog,0) - ISNULL(l.presupuestoexec,0)) / ISNULL(l.presupuestoprog,0)) * 100) <![CDATA[ < ]]> 0 then 0 
+        else (((ISNULL(l.presupuestoprog,0) - ISNULL(l.presupuestoexec,0)) / ISNULL(l.presupuestoprog,0)) * 100) end),0) AS money), 1) as porcentajeSald
+        from(
+        select
+        pe.unineg,
+        (case
+        when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1)
+        when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1)
+        when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2)
+        end) as valor, 
+        upper(ENTU.nombre) as nombreUniNeg,
+        convert(varchar,uni.ruc) as rucUniNeg, 
+        (case
+        when @valor = 1 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Nivel ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+        when @valor = 2 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Unidad Org. ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+        when @valor = 3 then 'Presupuesto de cuenta ' + CONCAT(convert(varchar,#{cuentaIni}),'-',convert(varchar,#{cuentaFin})) + concat(' y Dígito de Nivel / Unidad Org. ',convert(varchar,#{crDigit}),'-',convert(varchar,#{crDigitFin})) 
+        end) as titulo,
+        GETDATE() as fecha,
+        ISNULL(pl.cuenta,0) as cuenta,
+        pl.nombre as nomCuenta,
+        cr.nombre as nombreCr,
+        (case
+        when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1) + ' - ' + convert(varchar,a.cr) 
+        when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1) + ' - ' + convert(varchar,a.cr) 
+        when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2) + ' - ' + convert(varchar,a.cr) 
+        end) as cr,
+        a.cr as crvista,
+        pl.nombre as nombrePlan,
+        (case
+        when (select ISNULL(COUNT(asi.cuentad),0) from(
+        select asi.cuentad,asi.cr from MT_Asiento asi 
+        where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta
+        group by asi.cr,asi.cuentad) as asi) <![CDATA[ <> ]]> 0 then isnull((ISNULL(pe.presupuestoprog,0) /(select ISNULL(COUNT(asi.cuentad),0) from(
+        select asi.cuentad,asi.cr from MT_Asiento asi 
+        where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta
+        group by asi.cr,asi.cuentad) as asi)),0)
+
+        when (select ISNULL(COUNT(asi.cuentad),0) from(
+        select asi.cuentad,asi.cr from MT_Asiento asi 
+        where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta            
+        group by asi.cr,asi.cuentad) as asi) = 0 then ISNULL(pe.presupuestoprog,0)
+        end)as presupuestoprog,
+        cr.nombre,
+        sum(a.monto) as presupuestoexec,
+        (select ISNULL(COUNT(asi.cuentad),0) from(
+        select asi.cuentad,asi.cr from MT_Asiento asi 
+        where asi.unineg = #{uniNeg} and asi.cuentad = pl.cuenta 
+        group by asi.cr,asi.cuentad) as asi) as contCr,
+        pe.presupuestoprog as prog
+        from ME_Presupuesto pe
+        left join MT_Asiento a on pe.cuenta = a.cuentad and pe.unineg = a.unineg
+        inner join MT_PlanContable pl on pe.cuenta = pl.cuenta
+        left join MT_CentroResponsabilidad cr on a.cr = cr.cr
+        inner join MO_UnidadNegocio uni on pe.unineg = uni.unineg
+        inner join MO_Entidad ENTU on uni.RUC = ENTU.ruc and uni.unineg = ENTU.unineg
+        where pe.unineg = #{uniNeg} 
+        <if test="cuentaIni != null" >
+            and pe.cuenta <![CDATA[ >= ]]> #{cuentaIni}
+        </if>
+        <if test="cuentaFin != null" >
+            and pe.cuenta <![CDATA[ <= ]]> #{cuentaFin}
+        </if> 
+        <if test="cuentaExec != null" >
+            and pe.cuenta not like concat('%',#{cuentaExec},'%')
+        </if>
+        <if test="crDigit != null" >
+            and (case 
+            when @valor = 1 
+            then (case when SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,1) = 0 then #{crDigit} else SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,1) end) 
+            when @valor = 2 
+            then (case when SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),2,1) = 0 then #{crDigit} else SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),2,1) end) 
+            when @valor = 3 
+            then (case when SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,2) = 0 then #{crDigit} else SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,2) end) 
+            end) <![CDATA[ >= ]]> #{crDigit}
+        </if> 
+        <if test="crDigitFin != null" >
+            and (case
+            when @valor = 1 then SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,1)
+            when @valor = 2 then SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),2,1)
+            when @valor = 3 then SUBSTRING(CONVERT(varchar,ISNULL(a.cr,0)),1,2)
+            end) <![CDATA[ <= ]]> #{crDigitFin}
+        </if> 
+        group by pe.unineg,pl.nombre,pl.cuenta,pe.presupuestoprog,a.cr,cr.nombre,ENTU.nombre,uni.ruc) as l)
+        select * from(
+        select distinct li.id,li.nombreUniNeg,li.rucUniNeg,li.fecha,li.cuenta,li.nomCuenta,li.cr,li.nombreCr,li.dato,(case
+        when li.id = (select l.id from lista l where l.cuenta = li.cuenta and l.id = li.contCr) then (li.precuentad + li.resta)
+        else li.precuentad
+        end) as precuentad,
+        <!--li.montoPresVista,-->
+        (case
+        when li.id = (select l.id from lista l where l.cuenta = li.cuenta and l.id = li.contCr) then convert(varchar(100),(li.precuentad + li.resta)) 
+        else convert(varchar(100),li.precuentad) 
+        end) as montoPresVista,
+        li.monto,li.montoExecVista,li.saldo,
+        li.montoSaldoVista,li.porcentajeExec,li.porcentajeSald
+        from lista li
+        union all
+        select distinct '' as id,l.nombreUniNeg,l.rucUniNeg,l.fecha,l.cuenta,null,null,null,'TOTALES =>',
+        ROUND(ISNULL(sum(CONVERT(money,l.precuentad)),0),1) as precuentad,
+        ROUND(ISNULL(sum(CONVERT(money,l.precuentad)),0),0) as montoPresVista,
+        ISNULL(SUM(CONVERT(money,l.monto)),0) as monto,
+        ISNULL(SUM(CONVERT(money,l.montoExecVista)),0) as montoExecVista,
+        ISNULL(SUM(CONVERT(money,l.saldo)),0) as saldo,
+        ISNULL(SUM(CONVERT(money,l.montoSaldoVista)),0) as montoSaldoVista,
+        ISNULL(SUM(CONVERT(money,l.porcentajeExec)),0) as porcentajeExec,
+        ISNULL(SUM(CONVERT(money,l.porcentajeSald)),0) as porcentajeSald
+        from lista l
+        group by l.nombreUniNeg,l.rucUniNeg,l.rucUniNeg,l.fecha,l.cuenta,l.contCr) as form
+        order by form.cuenta
+    </select>
+    
+    <!-- PRO_PRESUPUESTO -->
+    <select id="execPresupuesto" resultType="object" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        exec PRO_PRESUPUESTO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN}, 
+        @@anio = #{anio,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@cuenta = #{planContableBean.cuenta,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+     
+</mapper>

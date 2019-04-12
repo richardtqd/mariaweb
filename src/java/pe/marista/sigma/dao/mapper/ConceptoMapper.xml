@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ConceptoDAO">  
+    <sql id="consultaCampos">
+        Select  
+        con.idConcepto,
+        con.nombre,
+        con.descrip,
+        con.idTipoConcepto,
+        con.cuentad,
+        con.cuentah,
+        con.flgShowEstudiante,
+        con.flgShowExAlumno,
+        con.flgShowExterno,
+        con.flgProgramacion,
+        con.flgPrecio,
+        con.status,
+        con.creaPor,
+        con.creaFecha,
+        cat.idTipoConcepto,
+        cat.nombre as nombreTipo,
+        isnull(con.flgTieneCr,1) as flgTieneCr,
+        (case when isnull(con.flgTieneCr,1)=1 then 'Sí' else 'No' end) as flgTieneCrVista
+        From MT_Concepto con  
+        Left Join MT_TipoConcepto cat ON  con.idTipoConcepto=cat.idTipoConcepto
+        Left Join MT_PlanContable planD On con.cuentad=planD.cuenta
+        Left Join MT_PlanContable planH On con.cuentah=planH.cuenta
+    </sql>
+    <sql id="condultaAlternativa" >
+        select distinct idTipoConcepto from MT_Concepto
+    </sql>
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/>
+        <result property="nombre" column="nombre"/>
+        <result property="descrip" column="descrip"/>
+        <result property="flgShowEstudiante" column="flgShowEstudiante"/>
+        <result property="flgShowExAlumno" column="flgShowExAlumno"/>
+        <result property="flgShowExterno" column="flgShowExterno"/>
+        <result property="flgProgramacion" column="flgProgramacion"/>
+        <result property="flgPrecio" column="flgPrecio"/>
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="flgTieneCr" column="flgTieneCr"/>
+        <result property="flgTieneCrVista" column="flgTieneCrVista"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultado"/>
+        <association property="planContableCuentaDBean" column="cuentad"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableCuentaDResultado"/>
+        <association property="planContableCuentaHBean" column="cuentah"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableCuentaHResultado"/>
+    </resultMap>
+    <resultMap id="planContableCuentaDResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentad"/>
+    </resultMap>
+    <resultMap id="planContableCuentaHResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentah"/>
+    </resultMap>
+    <resultMap id="tipoConceptoResultado" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+        <result property="nombre" column="nombreTipo"/>
+        <result property="flgIngreso" column="flgIngreso"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+    </resultMap>
+    <select id="obtenerPorTipo" parameterType="pe.marista.sigma.bean.TipoConceptoBean" resultMap="conceptoResultado">
+        <include refid="consultaCampos" />Where con.idTipoConcepto = #{idTipoConcepto}
+    </select>
+    <select id="obtenerConceptoPorId" resultMap="conceptoResultado" parameterType="pe.marista.sigma.bean.ConceptoBean">
+        <include refid="consultaCampos" />WHERE con.idConcepto = #{idConcepto}  and con.idTipoConcepto= #{tipoConceptoBean.idTipoConcepto}
+    </select>
+    <select id="obtenerConceptoDesc" resultType="Integer" parameterType="Integer">
+        select
+        distinct idtipoconcepto
+        from MT_Concepto
+        WHERE idConcepto = #{idConcepto}   
+    </select>
+    <select id="obtenerConceptoCuentasPorId" resultMap="conceptoResultado" parameterType="pe.marista.sigma.bean.ConceptoBean">
+        Select  
+        con.idConcepto, 
+        con.cuentad,
+        con.cuentah,
+        (case when isnull(con.flgTieneCr,1)=1 then 'Sí' else 'No' end) as flgTieneCrVista
+        From MT_Concepto con    
+        WHERE con.idConcepto = #{idConcepto}  and con.idTipoConcepto= #{tipoConceptoBean.idTipoConcepto}
+    </select>
+    <select id="obtenerConcepto" resultMap="conceptoResultado">
+        <include refid="consultaCampos" />
+    </select>
+    <select id="obtenerConceptoNotIn" resultMap="conceptoResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        where   con.idconcepto NOT IN (Select idconcepto from MT_ConceptoUniNeg where uniNeg=#{uniNeg})
+    </select>
+    <select id="obtenerTodosEgresos" resultMap="conceptoResultado">
+        <include refid="consultaCampos" />
+        where cat.nombre='CONCEPTOS DE EGRESOS'
+    </select>
+    <insert id="insertarConcepto" parameterType="pe.marista.sigma.bean.ConceptoBean">
+        INSERT INTO MT_Concepto ( 
+        nombre,
+        descrip,
+        idTipoConcepto,
+        cuentad,
+        cuentah,
+        flgShowEstudiante,
+        flgShowExAlumno,
+        flgShowExterno,
+        flgProgramacion,
+        flgPrecio,
+        status,
+        creaPor,
+        creaFecha,flgTieneCr)
+        Values ( 
+        #{nombre},
+        #{descrip},
+        #{tipoConceptoBean.idTipoConcepto},
+        #{planContableCuentaDBean.cuenta},
+        #{planContableCuentaHBean.cuenta},
+        #{flgShowEstudiante},
+        #{flgShowExAlumno},
+        #{flgShowExterno},
+        #{flgProgramacion},
+        #{flgPrecio},
+        #{status},
+        #{creaPor},
+        getDate(),#{flgTieneCr})
+        <selectKey keyProperty="idConcepto" order="AFTER" resultType="Integer">
+            SELECT max(idConcepto) FROM MT_Concepto  where idtipoconcepto= #{tipoConceptoBean.idTipoConcepto}
+        </selectKey>
+    </insert> 
+    <update id="modificarConcepto" parameterType="pe.marista.sigma.bean.ConceptoBean">
+        UPDATE MT_Concepto
+        SET 
+        nombre = #{nombre},
+        descrip = #{descrip},
+        cuentad=#{planContableCuentaDBean.cuenta},
+        cuentah= #{planContableCuentaHBean.cuenta},
+        flgShowEstudiante = #{flgShowEstudiante},
+        flgShowExAlumno = #{flgShowExAlumno},
+        flgShowExterno = #{flgShowExterno},
+        flgProgramacion = #{flgProgramacion},
+        flgPrecio = #{flgPrecio},
+        status = #{status},
+        flgTieneCr=#{flgTieneCr}
+        Where idConcepto = #{idConcepto} and idTipoConcepto= #{tipoConceptoBean.idTipoConcepto}
+    </update>
+    <delete id="eliminarConcepto" parameterType="pe.marista.sigma.bean.ConceptoBean">
+        Delete From MT_Concepto Where idConcepto = #{idConcepto}  and idTipoConcepto= #{tipoConceptoBean.idTipoConcepto}
+    </delete>
+    <delete id="cambiarEstado" parameterType="pe.marista.sigma.bean.ConceptoBean">
+        UPDATE MT_Concepto
+        SET 
+        status = #{status}
+        Where idConcepto = #{idConcepto}  and idTipoConcepto= #{tipoConceptoBean.idTipoConcepto}
+    </delete>
+    <delete id="eliminarPorTipo" parameterType="pe.marista.sigma.bean.TipoConceptoBean">
+        Delete From MT_Concepto Where idTipoConcepto = #{tipoConceptoBean.idTipoConcepto}
+    </delete>
+     
+    <!--Ayuda--> 
+    <sql id="consultaGeneral" >
+        SELECT s.TABLE_NAME AS table_name, s.COLUMN_NAME   
+        from INFORMATION_SCHEMA.COLUMNS s
+    </sql>
+    
+    <select id="obtenerPresupuestoTipo" resultMap="tipoConceptoResultado" parameterType="map">
+        <include refid="consultaGeneral" />WHERE s.COLUMN_NAME like upper('%idConcepto%') and SUBSTRING(s.TABLE_NAME,0,3) = #{mod}
+    </select>
+    <select id="obtenerGradoAcaPorIdConcepto" resultType="Integer" parameterType="Integer">
+        select idGradoAcademico from MT_Concepto where idconcepto =#{idConcepto} and idgradoacademico is not null
+    </select>
+    <select id="validarSiTieneCr" resultType="String" parameterType="Integer">
+        select (case when isnull(con.flgTieneCr,1)=1 then 'true' else 'false' end) as flg from MT_Concepto con
+        where con.idconcepto =#{idConcepto}  
+    </select>
+</mapper>

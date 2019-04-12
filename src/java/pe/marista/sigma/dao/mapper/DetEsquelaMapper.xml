@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.DetEsquelaDAO"> 
+
+    <sql id="consultaCampos" >
+        SELECT
+        de.iddetesquela
+        ,de.idesquela
+        ,de.unineg
+        ,de.idestudiante
+        ,de.asunto
+        ,de.status
+        ,de.creapor
+        ,de.creafecha
+        ,de.mensaje as mensajeDeta
+        ,CONVERT(varchar,de.creafecha,105) as fecha  
+        ,de.modipor
+        ,de.modiver
+        ,es.idestudiante as codEstudiante
+        ,pe.idpersona
+        ,pe.nombre
+        ,pe.apepat
+        ,pe.apemat
+        ,pe.correo
+        ,esq.titulo
+        ,esq.mensaje
+        ,esq.idtipoesquela
+        ,(case
+        when esq.flgenvioapo = 1 then 'Destino Padre'
+        when esq.flgenviomama = 1 then 'Destino Madre'
+        when esq.flgenviopapa = 1 then 'Destino Apoderado'
+        when esq.flgenviorespago = 1 then 'Destino Resp. Pago'
+        end) as destino
+        ,(case
+        when esq.flgenvioapo = 1 
+        then (select CONCAT(p.apepat,' ',p.apemat,',',p.nombre) as nombre from MX_Estudiante e
+        left join MX_Persona p on e.idapoderado = p.idpersona and e.unineg = p.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviomama = 1 
+        then (select CONCAT(pe.apepat,' ',pe.apemat,',',pe.nombre) as nombre from MX_Estudiante e 
+        left join MX_Familia fa on e.idfamilia = fa.idfamilia and e.unineg = fa.unineg 
+        left join MX_Persona pe on fa.idmadre = pe.idpersona and fa.unineg = pe.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviopapa = 1 
+        then (select CONCAT(p.apepat,' ',p.apemat,',',p.nombre) as nombre from MX_Estudiante e 
+        left join MX_Familia fa on e.idfamilia = fa.idfamilia and e.unineg = fa.unineg
+        left join MX_Persona p on fa.idpadre = p.idpersona and fa.unineg = p.unineg 
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviorespago = 1 
+        then (select CONCAT(p.apepat,' ',p.apemat,',',p.nombre) as nombre from MX_Estudiante e
+        left join MX_Persona p on e.idresppago  = p.idpersona and e.unineg = p.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        end) as destinoPer
+        ,CONVERT(varchar,getDate(),105) as fechaActual 
+        ,(case
+        when esq.flgenvioapo = 1 
+        then (select ISNULL(p.correo,'SIN CORREO') as correo from MX_Estudiante e
+        left join MX_Persona p on e.idapoderado = p.idpersona and e.unineg = p.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviomama = 1 
+        then (select ISNULL(pe.correo,'SIN CORREO') as correo from MX_Estudiante e 
+        left join MX_Familia fa on e.idfamilia = fa.idfamilia and e.unineg = fa.unineg 
+        left join MX_Persona pe on fa.idmadre = pe.idpersona and fa.unineg = pe.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviopapa = 1 
+        then (select ISNULL(p.correo,'SIN CORREO') as correo from MX_Estudiante e 
+        left join MX_Familia fa on e.idfamilia = fa.idfamilia and e.unineg = fa.unineg
+        left join MX_Persona p on fa.idpadre = p.idpersona and fa.unineg = p.unineg 
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviorespago = 1 
+        then (select ISNULL(pe.correo,'SIN CORREO') as correo from MX_Estudiante e
+        left join MX_Persona p on e.idresppago  = p.idpersona and e.unineg = p.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        end) as correo 
+        FROM MM_DetEsquela de
+        left join MX_Estudiante es on de.idestudiante = es.idestudiante
+        left join MX_Persona pe on es.idestudiante = pe.idpersona
+        left join MM_Esquela esq on esq.idesquela = de.idesquela
+    </sql>
+    
+    <sql id="consultaCampos2">
+        <!--
+        select iddetesquela,uniNeg,COUNT(CONCAT(datepart(YEAR,creafecha),datepart(YEAR,creafecha),datepart(DAY,creafecha))) as fechaFull,creafecha 
+        from MM_DetEsquela 
+        -->
+        <!--
+        select distinct COUNT(CONCAT(datepart(YEAR,CONVERT(varchar,creafecha,105)),datepart(YEAR,CONVERT(varchar,creafecha,105)),
+        datepart(DAY,CONVERT(varchar,creafecha,105))))  as fechaFull ,
+        CONVERT(varchar,creafecha,105) as creaFecha 
+        from MM_DetEsquela
+        -->
+        SELECT COUNT(CONCAT(datepart(DAY,creafecha),'-',datepart(MONTH,creafecha),'-',datepart(year,creafecha))) as fechaFull , CONVERT(varchar,creafecha,105) as fecha 
+        from MM_DetEsquela  
+    </sql>
+    
+    <sql id="consultaCampos3" >
+        select distinct es.idesquela,es.titulo,es.mensaje
+        from MM_DetEsquela de 
+        inner join MM_Esquela es on de.idesquela = es.idesquela  
+    </sql>
+    
+    <resultMap id="detEsquelaResultado2" type="pe.marista.sigma.bean.DetEsquelaBean">
+        <id property="idDetEsquela" column="idDetEsquela" />
+        <result property="fechaFull" column="fechaFull" />
+        <result property="creaFecha" column="creaFecha" />
+    </resultMap>
+    
+    <resultMap id="detEsquelaResultado" type="pe.marista.sigma.bean.DetEsquelaBean" >
+        <id property="idDetEsquela" column="idDetEsquela" />
+        <result property="status" column="status" />
+        <result property="fechaFull" column="fechaFull" />
+        <result property="fecha" column="fecha" />
+        <result property="mensaje" column="mensajeDeta" />
+        <result property="fechaActual" column="fechaActual"/>
+        <result property="destino" column="destino"/>
+        <result property="destinoPer" column="destinoPer"/>
+        <result property="correo" column="correo"/>
+        <result property="asunto" column="asunto"/>
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="estudianteBean" column="idestudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="esquelaBean" column="idEsquela"
+                     javaType="pe.marista.sigma.bean.EsquelaBean"
+                     resultMap="esquelaResultado"/>
+    </resultMap>
+    
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="codEstudiante" />
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado2"/>
+    </resultMap>
+    
+    <resultMap id="personaResultado2" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombrePersona" />
+        <result property="apepat" column="apePat" />
+        <result property="apemat" column="apeMat" />
+        <result property="sexo" column="sexo" />
+        <result property="correo" column="correo" />
+    </resultMap>
+    
+    <!--<resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean" >
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+    </resultMap>-->
+    
+    <resultMap id="esquelaResultado" type="pe.marista.sigma.bean.EsquelaBean" >
+        <id property="idEsquela" column="idesquela" />
+        <result property="titulo" column="titulo" />
+        <result property="mensaje" column="mensaje" /> 
+        <result property="mes" column="mes" />
+        <result property="destino" column="destino" />
+        <association property="tipoEsquelaBean" column="idtipoesquela" 
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoEsquelaResultado"/>
+    </resultMap>
+    
+    <resultMap id="tipoEsquelaResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idCodigo" />
+        <result property="codigo" column="codigo" />
+        <result property="descripcion" column="descripcion" />
+    </resultMap>
+    
+    <select id="obtenerTodos" resultMap="detEsquelaResultado" parameterType="String" >
+        <include refid="consultaCampos" /> WHERE de.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerPorId" resultMap="detEsquelaResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE de.iddetesquela=#{idDetEsquela} 
+    </select> 
+    
+    <select id="obtenerPorTitulo" resultMap="detEsquelaResultado" parameterType="map" >
+        <include refid="consultaCampos3" /> WHERE es.titulo = #{titulo}
+    </select> 
+    
+    <select id="obtenerListaOk" resultMap="detEsquelaResultado" parameterType="map" >
+        <include refid="consultaCampos" />  
+        WHERE de.status = 1 and de.uniNeg = #{uniNeg} and de.idesquela = #{idEsquela}
+        <!-- and CONVERT(varchar,de.creafecha,105) = #{fecha} -->
+    </select>
+    
+    <select id="obtenerListaFail" resultMap="detEsquelaResultado" parameterType="map">
+        <include refid="consultaCampos" /> 
+        WHERE de.status = 0 and de.uniNeg = #{uniNeg} and de.idesquela = #{idEsquela}
+        <!-- and de.creafecha = #{creaFecha} -->
+    </select>
+    
+    <select id="obtenerTotalPorDia" resultType="Integer" parameterType="String" >
+        select COUNT(CONCAT(datepart(YEAR,creafecha),datepart(YEAR,creafecha),datepart(DAY,creafecha))) from MM_DetEsquela
+        WHERE unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerDetalles" resultMap="detEsquelaResultado" parameterType="String">
+        <include refid="consultaCampos2" />  
+        WHERE uniNeg = #{unidadNegocioBean.uniNeg} and idesquela in (select idesquela from MM_Esquela where unineg = #{unidadNegocioBean.uniNeg})
+        group by uniNeg , 
+        CONVERT(varchar,creafecha,105) , 
+        datepart(MONTH,creafecha) 
+        order by datepart(MONTH,creafecha)
+        <!--WHERE uniNeg = #{unidadNegocioBean.uniNeg} group by iddetesquela,creafecha,uniNeg-->
+    </select>
+    
+    <select id="obtenerPorFecha" resultMap="detEsquelaResultado" parameterType="map" >
+        <include refid="consultaCampos" /> 
+        <!--WHERE de.creafecha = #{creaFecha} and de.uniNeg=#{uniNeg} and -->
+        WHERE CONVERT(varchar,de.creafecha,105) = #{fecha} and de.uniNeg=#{uniNeg} and de.status = #{status}
+    </select>
+    
+    <select id="obtenerPorFechaMen" resultMap="detEsquelaResultado" parameterType="map" >
+        <include refid="consultaCampos3" />  
+        where de.idesquela in (select idesquela from MM_Esquela where unineg = #{uniNeg}) and de.unineg = #{uniNeg} and CONVERT(varchar,de.creafecha,105) = #{fecha}
+    </select>
+    
+    <select id="obtenerMaxId" parameterType="String" resultType="Integer" >
+        select max(idDetEsquela) from MM_DetEsquela
+        WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <!-- Reporte de Esquela -->
+    <resultMap id="esquelaReporteResultado" type="pe.marista.sigma.bean.reporte.MasivoCartaUnoBean" >
+        <id property="id" column="idctasxcobrar" />
+        <result property="asunto" column="asunto" />
+        <result property="mensaje" column="mensaje" />
+        <result property="fecha" column="fecha" />
+        <result property="direccion" column="direccion" />
+        <result property="distrito" column="distrito" />
+        <result property="nombreFamilia" column="nombreFamilia" />
+        <result property="titulo" column="titulo" />
+    </resultMap>
+    
+    <select id="obtenerListaEsquelaRep" parameterType="pe.marista.sigma.bean.DetEsquelaBean" resultMap="esquelaReporteResultado" >
+        SELECT    
+        es.idestudiante as codEstudiante
+        ,pe.idpersona 
+        ,es.idestudiante  
+        ,esq.titulo as asunto
+        ,esq.mensaje  
+        ,CONVERT(varchar,GETDATE(),107) as fecha
+        ,(case
+        when esq.flgenvioapo = 1 
+        then (select CONCAT(p.apepat,' ',p.apemat,',',p.nombre) as nombre from MX_Estudiante e
+        left join MX_Persona p on e.idapoderado = p.idpersona and e.unineg = p.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviomama = 1 
+        then (select CONCAT(pe.apepat,' ',pe.apemat,',',pe.nombre) as nombre from MX_Estudiante e 
+        left join MX_Familia fa on e.idfamilia = fa.idfamilia and e.unineg = fa.unineg 
+        left join MX_Persona pe on fa.idmadre = pe.idpersona and fa.unineg = pe.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviopapa = 1 
+        then (select CONCAT(p.apepat,' ',p.apemat,',',p.nombre) as nombre from MX_Estudiante e 
+        left join MX_Familia fa on e.idfamilia = fa.idfamilia and e.unineg = fa.unineg
+        left join MX_Persona p on fa.idpadre = p.idpersona and fa.unineg = p.unineg 
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        when esq.flgenviorespago = 1 
+        then (select CONCAT(p.apepat,' ',p.apemat,',',p.nombre) as nombre from MX_Estudiante e
+        left join MX_Persona p on e.idresppago  = p.idpersona and e.unineg = p.unineg
+        where e.unineg = de.unineg and e.idestudiante = de.idestudiante)
+        end) as nombreFamilia
+        ,ISNULL(es.viadomi,'SIN DIRECCION') as direccion
+        ,uni.nombreUniNeg as uniNegPer,en.iddistrito,di.nombre as distrito
+        ,'Carta de Notificación' as titulo
+        FROM MM_DetEsquela de
+        left join MX_Estudiante es on de.idestudiante = es.idestudiante
+        left join MX_Persona pe on es.idestudiante = pe.idpersona
+        left join MM_Esquela esq on esq.idesquela = de.idesquela
+        inner join MO_UnidadNegocio uni on de.unineg = uni.unineg
+        inner join MO_Entidad en on uni.RUC = en.ruc and uni.unineg = en.unineg
+        inner join MO_Distrito di on en.iddistrito = di.iddistrito
+        where de.unineg = #{unidadNegocioBean.uniNeg} and de.idesquela = #{esquelaBean.idEsquela}
+    </select>
+    
+    
+    <!-- SubReporte Esquela -->
+    <resultMap id="cuentaDeudaResultado" type="pe.marista.sigma.bean.reporte.SubReporteMasivoCartaUno" >
+        <id property="id" column="idctasxcobrar" />
+        <result property="mes" column="mes" />
+        <result property="importe" column="importe" />
+        <result property="mora" column="mora" />
+        <result property="deuda" column="deuda" />
+        <result property="anio" column="anio" />
+        <result property="total" column="total" />
+    </resultMap>
+    
+    <select id="obtenerListaDeuda" parameterType="map" resultMap="cuentaDeudaResultado" >
+        ;with lista as(
+        select idctasxcobrar as id,
+        unineg,
+        idestudiante,
+        (case
+        when mes = 1 then 'ENERO'
+        when mes = 2 then 'FEBRERO'
+        when mes = 3 then 'MARZO'
+        when mes = 4 then 'ABRIL'
+        when mes = 5 then 'MAYO'
+        when mes = 6 then 'JUNIO'
+        when mes = 7 then 'JULIO'
+        when mes = 8 then 'AGOSTO'
+        when mes = 9 then 'SETIEMBRE'
+        when mes = 10 then 'OCTUBRE'
+        when mes = 11 then 'NOVIEMBRE'
+        when mes = 12 then 'DICIEMBRE'
+        end) as mes,
+        anio as anio,
+        monto as importe,
+        mora,
+        (monto + mora) as deuda 
+        from MT_CtasxCobrar 
+        where unineg = #{uniNeg} and idtipostatusctacte = 19401 
+        and mes in 
+        <foreach item="item" index="index" collection="listaMeses" open="(" separator=" , " close=")" >
+            #{item}
+        </foreach>  
+        and idestudiante = #{idEstudiante} and anio = #{anio})
+        select ll.id,ll.mes,ll.anio,ll.importe,ll.mora,ll.deuda,
+        (select sum(deuda) from lista l where l.unineg=ll.unineg and l.idestudiante = ll.idestudiante and l.anio=ll.anio) as total 
+        from lista ll
+    </select>
+    
+    <select id="obtenerMaxEsquela" parameterType="String" resultType="Integer" >
+        select isnull(max(idesquela),0) from MM_DetEsquela where unineg = #{uniNeg}
+    </select>
+    
+    <insert id="insertarDetEsquela" parameterType="pe.marista.sigma.bean.DetEsquelaBean" >
+        INSERT INTO MM_DetEsquela
+        (idesquela
+        ,unineg
+        ,idestudiante
+        ,status
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{esquelaBean.idEsquela},
+        #{unidadNegocioBean.uniNeg},
+        #{estudianteBean.idEstudiante},
+        #{status},
+        #{creaPor},
+        getDate())
+    </insert>
+    
+    <update id="modificarDetMensaje" parameterType="pe.marista.sigma.bean.DetEsquelaBean" >
+        update MM_DetEsquela
+        SET
+        mensaje = #{mensaje}
+        where idDetEsquela = #{idDetEsquela}
+    </update>
+    
+    <delete id="eliminarDetEsquela" parameterType="Integer" >
+        DELETE FROM MM_DetEsquela
+        where idDetEsquela = #{idDetEsquela} 
+    </delete>
+    
+    <insert id="insertarEnvioMasivo" parameterType="pe.marista.sigma.bean.DetEsquelaBean" >
+        insert into mm_detEsquela(unineg,idobjeto,idTipoRemitente,status,asunto,mensaje,idestudiante,creapor,creafecha,idTipoEstado)
+        values(#{unidadNegocioBean.uniNeg},#{idObjeto},#{idTipoRemitente},#{status},#{asunto},#{mensaje},#{estudianteBean.idEstudiante},#{creaPor},getDate(),1)
+    </insert>
+    
+    <!-- METODOS MASIVOS -->
+    <select id="obtenerMensajesPorTipo" parameterType="pe.marista.sigma.bean.DetEsquelaBean" resultMap="detEsquelaResultado" >
+        <include refid="consultaCampos" />
+        where de.unineg = #{unidadNegocioBean.uniNeg} and de.idTipoEstado = #{idTipoEstado} and de.creapor = #{creaPor}
+    </select>
+    
+    <!-- PROCEDURE ENVIO MASIVO -->
+    <select id="execProEsquelaMasivo" parameterType="map" resultType="Object" >
+        exec PRO_ESQUELA_MASIVO
+        @@unineg = #{unineg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idestudiante = #{idestudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@anio = #{anio,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@mes = #{mes,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@mensaje = #{mensaje,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <update id="modificarEstadoBorrador" parameterType="pe.marista.sigma.bean.DetEsquelaBean" >
+        UPDATE mm_detEsquela set idTipoEstado = #{idTipoEstado} , modipor = #{modiPor}
+        where iddetesquela = #{idDetEsquela} and unineg = #{unidadNegocioBean.uniNeg}
+    </update>
+    
+</mapper>

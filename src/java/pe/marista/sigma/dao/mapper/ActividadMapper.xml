@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.ActividadDAO">  
+    
+    <sql id="consultaCampos">
+        SELECT
+        a.uniNeg as UNact
+        ,a.idUniOrg as UOact
+        ,a.anio as anioAct
+        ,a.idObjOperativo
+        ,a.idActividad
+        ,a.idIndicador
+        ,a.idTipoUnimed
+        ,a.codigo
+        ,a.nombre
+        ,a.idTipoTarea
+        ,a.responsable
+        ,isnull(a.egreso,0) as egreso
+        ,isnull(a.ingreso,0) as ingreso
+        ,a.meta
+        ,a.iduniorg as idActUO
+        ,a.anio as nomActUO
+        ,a.metaProgramada
+        ,a.metaEjecutada
+        ,oo.idObjOperativo
+        ,oo.nombre as nomOO
+        ,po.nombre as nonPO 
+        ,uo.iduniorg as idUO
+        ,uo.nombreuniorg as nomUo
+        ,odt.idobjestrategicodet
+        ,odt.responsable as responsableDet
+        ,ple.idplanestrategico
+        ,ple.nombre as nombrePlan
+        ,li.idlinea
+        ,li.nombre as nombreLinea
+        ,obj.idobjestrategico
+        ,obj.nombre as nombreObj
+        ,ind.idindicador
+        ,ind.nombre as nombreIndicador
+        ,ini.idindicador as idInd
+        ,ini.nombre as nomInd
+        ,ini.meta as metaInd
+        ,valor.idcodigo as idTipoVal
+        ,valor.codigo as codigoVal
+        ,convert(varchar, getdate(), 103) as creaFechaAc
+        ,convert(varchar, getdate(), 8) as creaHoraAc
+        ,uoa.iduniorg     as idUniOrgAct
+        ,uoa.nombreuniorg as nomUniOrgAct
+        ,(case
+        when tipoImporte = 1 then 'INGRESO'
+        when tipoImporte = 2 then 'EGRESO'
+        else ''
+        end) as labelTipoImporte
+        FROM ME_Actividad a
+        LEFT JOIN MO_UnidadNegocio UN ON UN.unineg = A.unineg
+        left join ME_ObjOperativo oo on a.idobjoperativo = oo.idobjoperativo AND UN.unineg =OO.unineg
+        left join ME_PlanOperativo po on oo.iduniorg= po.iduniorg AND UN.unineg = PO.unineg
+        left join MO_UnidadOrganica uo on po.iduniorg = uo.iduniorg 
+        left join ME_Indicador ini on a.idindicador = ini.idindicador  
+        left join MO_Codigo valor on ini.idtipovalor = valor.idcodigo 
+        left join ME_ObjEstrategicoDet odt on oo.idobjestrategicodet = odt.idobjestrategicodet and oo.unineg = odt.unineg 
+        left join ME_PlanEstrategico ple on odt.idplanestrategico = ple.idplanestrategico and odt.unineg = ple.unineg 
+        left join ME_Linea li on odt.idlinea = li.idlinea and li.unineg = odt.unineg 
+        left join ME_ObjEstrategico obj on odt.idobjestrategico = obj.idobjestrategico and odt.unineg = obj.unineg 
+        left join ME_Indicador ind on odt.idindicador = ind.idindicador 
+        left join MO_UnidadOrganica uoa on a.iduniorg = uoa.iduniorg 
+    </sql>
+    
+    <sql id="consultaPresupuestoAct" >
+        SELECT 
+        uno.iduniorg,a.uniNeg as UNact ,a.idUniOrg as UOact ,a.anio as anioAct ,a.idObjOperativo ,a.idActividad ,
+        a.idIndicador ,a.idTipoUnimed ,a.codigo ,a.nombre ,a.idTipoTarea ,a.responsable ,a.egreso ,a.ingreso ,
+        a.meta ,a.iduniorg as idActUO ,a.anio as nomActUO ,a.metaProgramada ,a.metaEjecutada ,oo.idObjOperativo ,
+        oo.nombre as nomOO ,po.nombre as nonPO ,uo.iduniorg as idUO ,uo.nombreuniorg as nomUo ,odt.idobjestrategicodet ,
+        odt.responsable as responsableDet ,ple.idplanestrategico ,ple.nombre as nombrePlan ,li.idlinea ,
+        li.nombre as nombreLinea ,obj.idobjestrategico ,obj.nombre as nombreObj ,ind.idindicador ,
+        ind.nombre as nombreIndicador ,ini.idindicador as idInd ,ini.nombre as nomInd ,ini.meta as metaInd ,
+        valor.idcodigo as idTipoVal ,valor.codigo as codigoVal ,convert(varchar, getdate(), 103) as creaFechaAc ,
+        convert(varchar, getdate(), 8) as creaHoraAc ,uoa.iduniorg as idUniOrgAct ,uoa.nombreuniorg as nomUniOrgAct 
+        FROM ME_Actividad a 
+        left join ME_ObjOperativo oo on a.idobjoperativo = oo.idobjoperativo 
+        left join MO_UnidadOrganica uno on oo.iduniorg = uno.iduniorg
+        left join ME_PlanOperativo po on oo.iduniorg= po.iduniorg 
+        left join MO_UnidadOrganica uo on po.iduniorg = uo.iduniorg 
+        left join ME_Indicador ini on a.idindicador = ini.idindicador 
+        left join MO_Codigo valor on ini.idtipovalor = valor.idcodigo 
+        left join ME_ObjEstrategicoDet odt on oo.idobjestrategicodet = odt.idobjestrategicodet and oo.unineg = odt.unineg 
+        left join ME_PlanEstrategico ple on odt.idplanestrategico = ple.idplanestrategico and odt.unineg = ple.unineg 
+        left join ME_Linea li on odt.idlinea = li.idlinea and li.unineg = odt.unineg 
+        left join ME_ObjEstrategico obj on odt.idobjestrategico = obj.idobjestrategico and odt.unineg = obj.unineg left join ME_Indicador ind on odt.idindicador = ind.idindicador
+        left join MO_UnidadOrganica uoa on a.iduniorg = uoa.iduniorg
+    </sql>
+    
+    <resultMap id="actividadResultado" type="pe.marista.sigma.bean.ActividadBean"> 
+        <id property="idActividad" column="idActividad"/>  
+        <result property="codigo" column="codigo"/>
+        <result property="anio" column="anioAct"/>
+        <result property="nombre" column="nombre"/>
+        <result property="responsable" column="responsable"/> 
+        <result property="idUniOrg" column="UOact"/> 
+        <result property="egreso" column="egreso"/>
+        <result property="ingreso" column="ingreso"/>
+        <result property="meta" column="meta"/>
+        <result property="metaProgramada" column="metaProgramada"/>
+        <result property="pro_01" column="pro_01"/>
+        <result property="pro_02" column="pro_02"/>
+        <result property="pro_03" column="pro_03"/>
+        <result property="pro_04" column="pro_04"/>
+        <result property="pro_05" column="pro_05"/>
+        <result property="pro_06" column="pro_06"/>
+        <result property="pro_07" column="pro_07"/>
+        <result property="pro_08" column="pro_08"/>
+        <result property="pro_09" column="pro_09"/>
+        <result property="pro_10" column="pro_10"/>
+        <result property="pro_11" column="pro_11"/>
+        <result property="pro_12" column="pro_12"/>
+        <result property="eje_01" column="eje_01"/>
+        <result property="eje_02" column="eje_02"/>
+        <result property="eje_03" column="eje_03"/>
+        <result property="eje_04" column="eje_04"/>
+        <result property="eje_05" column="eje_05"/>
+        <result property="eje_06" column="eje_06"/>
+        <result property="eje_07" column="eje_07"/>
+        <result property="eje_08" column="eje_08"/>
+        <result property="eje_09" column="eje_09"/>
+        <result property="eje_10" column="eje_10"/>
+        <result property="eje_11" column="eje_11"/>
+        <result property="eje_12" column="eje_12"/>
+        <result property="creaFechaAc" column="creaFechaAc"/>
+        <result property="creaHoraAc" column="creaHoraAc"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="modiVer" column="modiVer"/>
+        <result property="labelTipoImporte" column="labelTipoImporte"/>
+        <association property="objOperativoBean" column="idObjOperativo"
+                     javaType="pe.marista.sigma.bean.ObjOperativoBean"
+                     resultMap="objResultado"/> 
+        <association property="indicadorBean" column="idIndicador"
+                     javaType="pe.marista.sigma.bean.IndicadorBean"
+                     resultMap="indicadorResultado"/> 
+        <association property="tipoTareaBean" column="idTipoTarea"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoTareaResultado"/> 
+        <association property="tipoUniMedBean" column="idTipoUniMed"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoUniMedResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadOrganicaResultado"/>
+        <association property="anioBean" column="anio"
+                     javaType="pe.marista.sigma.bean.AnioBean"
+                     resultMap="anioResultado"/>
+        <association property="objOperativoBean.planOperativoBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.PlanOperativoBean"
+                     resultMap="planResultado"/> 
+    </resultMap>
+    
+    <resultMap id="indicadorResultado" type="pe.marista.sigma.bean.IndicadorBean">
+        <id property="idIndicador" column="idInd"/>
+        <result property="nombre" column="nomInd"/>
+        <result property="meta" column="metaInd"/>
+        <association property="codigoTipoValor" column="idtipoValor"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoValorResultado"/>
+    </resultMap>  
+    <resultMap id="codigoValorResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoVal" />
+        <result property="codigo" column="codigoVal" />
+    </resultMap>
+        
+    <resultMap id="tipoTareaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoTarea"/>
+        <result property="codigo" column="codigoTarea"/>
+    </resultMap> 
+    
+    <resultMap id="tipoUniMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUniMed"/>
+        <result property="codigo" column="codigoUniMed"/>
+    </resultMap>
+    
+    <resultMap id="objResultado" type="pe.marista.sigma.bean.ObjOperativoBean">
+        <id property="idObjOperativo" column="idObjOperativo"/>
+        <result property="nombre" column="nomOO"/>
+        <association property="objetivoEstrategicoDetBean" column="idObjEstrategicoDet" 
+                     javaType="pe.marista.sigma.bean.ObjetivoEstrategicoDetBean"
+                     resultMap="objEstrategicoDetResultado"/>
+        <association property="planOperativoBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.PlanOperativoBean"
+                     resultMap="planResultado2"/>
+    </resultMap>
+    
+    <resultMap id="planResultado2" type="pe.marista.sigma.bean.PlanOperativoBean">
+        <result property="anio" column="anio" />
+        <result property="codigoPlanOperativo" column="codigoPlanOperativo"/>
+        <result property="nombre" column="nombrePlanOperativo"/>
+        <association property="unidadOrganicaBean" column="idUniOrg" 
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean" 
+                     resultMap="uniOrgResultado2"/>
+    </resultMap>
+    
+    <!--Unidada Organica-->
+    <resultMap id="uniOrgResultado2" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUO" />
+        <result property="nombreUniOrg" column="nomUo" />
+    </resultMap>
+    
+    <resultMap id="objEstrategicoDetResultado" type="pe.marista.sigma.bean.ObjetivoEstrategicoDetBean">
+        <id property="idObjEstrategicoDet" column="idObjEstrategicoDet" />
+        <result property="responsable" column="responsableDet" />
+        <result property="meta" column="meta" />
+        <association property="planEstrategicoBean" column="idPlanEstrategico" 
+                     javaType="pe.marista.sigma.bean.PlanEstrategicoBean" 
+                     resultMap="planEstrategicoResultado"/>
+        <association property="objetivoEstrategicaBean" column="idObjEStrategico"
+                     javaType="pe.marista.sigma.bean.ObjetivoEstrategicaBean"
+                     resultMap="objEstResultado"/>
+        <association property="lineaEstrategicaBean" column="idLinea"
+                     javaType="pe.marista.sigma.bean.LineaEstrategicaBean"
+                     resultMap="lineaResultado"/>
+        <association property="indicadorBean" column="idIndicador"
+                     javaType="pe.marista.sigma.bean.IndicadorBean"
+                     resultMap="indicadorResultado2"/>
+    </resultMap>
+    
+    <!--Plan Estrategico Resultado-->
+    <resultMap id="planEstrategicoResultado" type="pe.marista.sigma.bean.PlanEstrategicoBean">
+        <id property="idPlanEstrategico" column="idPlanEstrategico" />
+        <result property="nombre" column="nombrePlan" />
+        <result property="anioInicio" column="anioInicio" />
+        <result property="anioTermino" column="anioTermino" />
+    </resultMap>
+     
+    <!--Obj Estrategico Resultado-->
+    <resultMap id="objEstResultado" type="pe.marista.sigma.bean.ObjetivoEstrategicaBean" >
+        <id property="idObjEstrategico" column="idObjEstrategico" />
+        <result property="nombre" column="nombreObj" /> 
+    </resultMap>
+    
+    <!--ResultMap Linea Estrategica-->
+    <resultMap id="lineaResultado" type="pe.marista.sigma.bean.LineaEstrategicaBean" >
+        <id property="idLinea" column="idLinea" />  
+        <result property="nombre" column="nombreLinea" />
+    </resultMap>
+    
+    <!--Resultado Indicador-->
+    <resultMap id="indicadorResultado2" type="pe.marista.sigma.bean.IndicadorBean" >
+        <id property="idIndicador" column="idIndicador" />
+        <result property="nombre" column="nombreIndicador" />
+    </resultMap>
+     
+    <!--Unidad de Organica-->
+    <resultMap id="unidadOrganicaResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrgAct"/>
+        <result property="nombreUniOrg" column="nomUniOrgAct"/>
+    </resultMap>
+    <!--Anio Resultado-->
+    <resultMap id="anioResultado" type="pe.marista.sigma.bean.AnioBean">
+        <id property="anio" column="anio" />
+        <result property="nombre" column="nombre" /> 
+    </resultMap>
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    <!--Plan Operativo-->
+    <resultMap id="planResultado" type="pe.marista.sigma.bean.PlanOperativoBean">
+        <id property="idUniOrg" column="idUniOrg" />
+        <result property="nombre" column="nonPO" />
+    </resultMap>
+    <select id="obtenerTodos" resultMap="actividadResultado">
+        <include refid="consultaCampos" />
+        order by 2
+    </select>
+    
+    <select id="obtenerPorUnidadNegocio" parameterType="String" resultMap="actividadResultado">
+        <include refid="consultaCampos" /> where a.unineg = #{uniNeg}
+    </select>
+    <select id="obtenerPorUnidadNegocioUniOrg" parameterType="map" resultMap="actividadResultado">
+        <include refid="consultaCampos" /> where a.unineg = #{uniNeg} and  a.idUniOrg = #{idUniOrg}
+    </select>
+   
+    <select id="obtenerPorId" resultMap="actividadResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where idActividad = #{idActividad}
+    </select>
+    
+    <select id="obtenerObjPorId" resultMap="actividadResultado" parameterType="pe.marista.sigma.bean.ActividadBean" >
+        <include refid="consultaCampos" />where a.idActividad = #{idActividad} and a.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerObjPorAnio" resultMap="actividadResultado" parameterType="pe.marista.sigma.bean.ActividadBean" >
+        <include refid="consultaCampos" />
+        where a.uniNeg = #{unidadNegocioBean.uniNeg} and a.anio = #{anio}
+    </select>
+    
+    <select id="obtenerListaPorId" resultMap="actividadResultado" parameterType="map" >
+        <include refid="consultaCampos" />where a.idActividad = #{idActividad} and a.uniNeg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerPorPlanOperativo" parameterType="map" resultMap="actividadResultado" >
+        <include refid="consultaCampos" /> WHERE a.iduniorg = #{idUniOrg} and a.uniNeg = #{uniNeg} order by a.idActividad
+    </select>
+    
+    <select id="obtenerPorObjOperativo" parameterType="Integer" resultMap="actividadResultado" >
+        <include refid="consultaCampos" /> WHERE a.idObjOperativo = #{objOperativoBean.idObjOperativo} and a.idActividad = #{idActividad}
+    </select>
+    
+    <select id="obtenerMaxId" resultType="Integer" parameterType="String" >
+        SELECT max(idActividad) from ME_Actividad
+        where uniNeg = #{uniNeg} 
+    </select>
+    
+    <select id="obtenerPorObjOpe" resultMap="actividadResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE a.idObjOperativo = #{objOperativoBean.idObjOperativo}  
+    </select>
+    
+    <select id="obtenerPorUnidadOrganica" resultMap="actividadResultado" parameterType="map" >
+        <include refid="consultaPresupuestoAct" />
+        where oo.iduniorg = uno.iduniorg and uno.iduniorg = #{idUniOrg} and a.unineg = #{uniNeg} and a.anio = #{anio}
+    </select>
+    
+    <select id="obtenerActExec" resultType="String" parameterType="map" > 
+        SELECT 
+        CASE 
+        WHEN (
+        (select ISNULL(sum(ISNULL(da.importe,0)),0) as importe from ME_DetActividad da
+        left join ME_Actividad a on da.idactividad = a.idactividad
+        left join ME_ObjOperativo obj on a.idobjoperativo = obj.idobjoperativo
+        where a.idactividad = #{idActividad} and da.unineg = #{uniNeg}) 
+        <![CDATA[ > ]]>
+        (SELECT(
+        (select ISNULL(SUM(ISNULL(dd.montopagado,0)),0) as montopagado from MT_DetDocIngreso dd
+        inner join ME_DetActividad da on da.cuenta = dd.cuentah
+        inner join ME_Actividad a on da.idactividad = a.idactividad
+        where dd.cuentah in (select cuenta from ME_DetActividad where idactividad = #{idActividad} and unineg = #{uniNeg}))
+        +(select ISNULL(SUM(ISNULL(cc.montopagado,0)),0) as montopagado from MT_CtasxCobrar cc
+        inner join ME_DetActividad da on cc.cuentah = da.cuenta
+        inner join ME_Actividad a on da.idactividad = a.idactividad
+        WHERE cc.unineg = #{uniNeg} and a.idactividad = #{idActividad})))
+        )THEN 'no cumplio'
+
+        WHEN (
+        (select ISNULL(sum(ISNULL(da.importe,0)),0) as importe from ME_DetActividad da
+        left join ME_Actividad a on da.idactividad = a.idactividad
+        left join ME_ObjOperativo obj on a.idobjoperativo = obj.idobjoperativo
+        where a.idactividad = #{idActividad} and da.unineg = #{uniNeg}) 
+        <![CDATA[ < ]]>
+        (SELECT(
+        (select ISNULL(SUM(ISNULL(dd.montopagado,0)),0) as montopagado from MT_DetDocIngreso dd
+        inner join ME_DetActividad da on da.cuenta = dd.cuentah
+        inner join ME_Actividad a on da.idactividad = a.idactividad
+        where dd.cuentah in (select cuenta from ME_DetActividad where idactividad = #{idActividad} and unineg = #{uniNeg}))
+        +(select ISNULL(SUM(ISNULL(cc.montopagado,0)),0) as montopagado from MT_CtasxCobrar cc
+        inner join ME_DetActividad da on cc.cuentah = da.cuenta
+        inner join ME_Actividad a on da.idactividad = a.idactividad
+        WHERE cc.unineg = #{uniNeg} and a.idactividad = #{idActividad})))
+        )THEN 'cumplio'
+
+        WHEN (
+        (select ISNULL(sum(ISNULL(da.importe,0)),0) as importe from ME_DetActividad da
+        left join ME_Actividad a on da.idactividad = a.idactividad
+        left join ME_ObjOperativo obj on a.idobjoperativo = obj.idobjoperativo
+        where a.idactividad = #{idActividad} and da.unineg = #{uniNeg})
+        <![CDATA[ = ]]> 
+        (SELECT(
+        (select ISNULL(SUM(ISNULL(dd.montopagado,0)),0) as montopagado from MT_DetDocIngreso dd
+        inner join ME_DetActividad da on da.cuenta = dd.cuentah
+        inner join ME_Actividad a on da.idactividad = a.idactividad
+        where dd.cuentah in (select cuenta from ME_DetActividad where idactividad = #{idActividad} and unineg = #{uniNeg}))
+        +(select ISNULL(SUM(ISNULL(cc.montopagado,0)),0) as montopagado from MT_CtasxCobrar cc
+        inner join ME_DetActividad da on cc.cuentah = da.cuenta
+        inner join ME_Actividad a on da.idactividad = a.idactividad
+        WHERE cc.unineg = #{uniNeg} and a.idactividad = #{idActividad})))
+        )THEN 'no cumplio'
+        END as resultado
+    </select>
+    
+    <select id="obtenerImporteActividad" parameterType="pe.marista.sigma.bean.ActividadBean" resultType="BigDecimal" >
+        select isnull(ingreso,0) from ME_Actividad 
+        where unineg = #{unidadNegocioBean.uniNeg} and idactividad = #{idActividad}
+    </select>
+    <insert id="insertarActividad" parameterType="pe.marista.sigma.bean.ActividadBean" >
+        INSERT INTO ME_Actividad
+        (idactividad
+        ,unineg
+        ,iduniorg
+        ,anio
+        ,idobjoperativo 
+        ,idindicador
+        ,idtipounimed 
+        ,nombre
+        ,idtipotarea
+        ,responsable
+        ,egreso
+        ,ingreso 
+        ,meta
+        ,creapor
+        ,creafecha
+        ,tipoImporte)
+        VALUES(0,
+        #{unidadNegocioBean.uniNeg},
+        #{unidadOrganicaBean.idUniOrg},
+        #{anio},
+        #{objOperativoBean.idObjOperativo},
+        #{indicadorBean.idIndicador},
+        #{objOperativoBean.codigoBean1.idCodigo},
+        #{nombre},
+        #{tipoTareaBean.idCodigo},
+        #{responsable},
+        #{egreso},
+        #{ingreso},
+        #{indicadorBean.meta},
+        #{creaPor},
+        getDate(),
+        #{tipoImporte}) 
+    </insert>
+    <!--#{objOperativoBean.objetivoEstrategicoDetBean.responsable},-->
+    <update id="actualizarActividad" parameterType="pe.marista.sigma.bean.ActividadBean" >
+        UPDATE ME_Actividad
+        SET 
+        <!--iduniorg = #{objOperativoBean.planOperativoBean.unidadOrganicaBean.idUniOrg},   
+        anio =  #{objOperativoBean.planOperativoBean.anio},
+        idobjoperativo =  #{objOperativoBean.idObjOperativo},-->
+        <!--idindicador =  #{objOperativoBean.objetivoEstrategicoDetBean.indicadorBean.idIndicador},-->
+        idindicador = #{indicadorBean.idIndicador},
+        idtipounimed =  #{objOperativoBean.codigoBean1.idCodigo},
+        nombre =  #{nombre},
+        idtipotarea = #{tipoTareaBean.idCodigo},
+        responsable = #{responsable}, 
+        egreso =  #{egreso},
+        ingreso = #{ingreso},   
+        modipor =  #{modiPor},
+        tipoImporte = #{tipoImporte},
+        meta = #{meta}
+        WHERE idActividad = #{idActividad} 
+    </update>
+    
+    <delete id="eliminarActividad" parameterType="Integer" >
+        DELETE FROM ME_Actividad
+        WHERE idActividad = #{idActividad} 
+    </delete>
+    
+</mapper>

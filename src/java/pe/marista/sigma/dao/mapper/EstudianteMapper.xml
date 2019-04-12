@@ -1,0 +1,2115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteDAO">  
+    <sql id="consultaEstudiante">
+        Select  
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        (case 
+        when est.anioIngreso is null or est.anioIngreso = 0 then YEAR(GETDATE())
+        when est.anioIngreso is not null and est.anioIngreso <![CDATA[ <> ]]> 0 then est.anioIngreso
+        end) as anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca, 
+        est.fechaStatusEst,
+        (CASE WHEN fechastatusest IS NULL THEN '-' 
+        when codStaEst.codigo='Activo' then '-'
+        ELSE 'FECHA RETIRO: '+(convert(varchar,fechastatusest,103)) END) as fechaStatusEstAyuda,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        graPos.idgradoacademico as idGradoPostula,
+        graPos.nombre as nomGradoPostula
+        From MX_Estudiante est
+        Left join MX_Matricula m on m.idestudiante=est.idestudiante
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg=per.unineg
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idGradoAcademico=m.idgradoacademico
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), est.idRespPago)=perRes.idPersona and perRes.unineg=est.unineg
+        Left Join MX_GradoAcademico graPos On per.idGradoAcademico=graPos.idgradoacademico
+       
+    </sql>
+    <sql id="consultaEstudianteMat">
+        Select  
+        (case
+        when m.flgmatricula=1 then 'Matriculado'
+        when m.flgmatricula=0 then codStaEst.codigo
+        end  
+        )as statusEst,
+        (CASE
+        WHEN M.flgmatricula=1 THEN M.modipor
+        WHEN M.flgmatricula=0 THEN '-'
+        END
+        ) AS usuarioMatricula,
+        m.fechamatricula as fechaMatricula,
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        (case 
+        when est.anioIngreso is null or est.anioIngreso = 0 then YEAR(GETDATE())
+        when est.anioIngreso is not null and est.anioIngreso <![CDATA[ <> ]]> 0 then est.anioIngreso
+        end) as anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca, 
+        est.fechaStatusEst,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        graPos.idgradoacademico as idGradoPostula,
+        graPos.nombre as nomGradoPostula,
+        m.creaPor as creaPorAyuda
+        From MX_Estudiante est
+        inner join MX_Matricula m on est.idestudiante=m.idestudiante 
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg=per.unineg
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idGradoAcademico=m.idGradoAcademico
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), est.idRespPago)=perRes.idPersona and perRes.unineg=est.unineg
+        Left Join MX_GradoAcademico graPos On per.idGradoAcademico=graPos.idgradoacademico 
+    </sql>
+    <sql id="consultaEstudianteMatFichaEst">
+        Select  
+        <!-- (case
+        when m.flgmatricula=1 then 'Matriculado'
+        when m.flgmatricula=0 then codStaEst.codigo
+        end  
+        )as statusEst,
+        (CASE
+        WHEN M.flgmatricula=1 THEN M.creapor
+        WHEN M.flgmatricula=0 THEN '-'
+        END
+        ) AS usuarioMatricula,
+        m.fechamatricula as fechaMatricula,-->
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        (case 
+        when est.anioIngreso is null or est.anioIngreso = 0 then YEAR(GETDATE())
+        when est.anioIngreso is not null and est.anioIngreso <![CDATA[ <> ]]> 0 then est.anioIngreso
+        end) as anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca, 
+        est.fechaStatusEst,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        graPos.idgradoacademico as idGradoPostula,
+        graPos.nombre as nomGradoPostula
+        <!-- ,m.creaPor as creaPorAyuda-->
+        From MX_Estudiante est
+        inner join MX_Matricula mat on mat.idestudiante=est.idestudiante
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg=per.unineg
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idGradoAcademico=mat.idGradoAcademico
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), est.idRespPago)=perRes.idPersona and perRes.unineg=est.unineg
+        Left Join MX_GradoAcademico graPos On per.idGradoAcademico=graPos.idgradoacademico
+        <!--  inner join MX_Matricula m on est.idestudiante=m.idestudiante -->
+    </sql>
+    <!--Consulta de Estudiantes Matriculados-->
+    <sql id="consultaEstudiantePost"> 
+        EXCEPT
+        Select 
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        est.anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca,
+        est.fechaStatusEst,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        graPos.idgradoacademico as idGradoPostula,
+        graPos.nombre as nomGradoPostula
+        From MX_Estudiante est
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona
+        Inner Join MX_Matricula mat On est.idEstudiante=mat.idEstudiante
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idgradoacademico = est.idGradoHabilitado
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), idRespPago)=perRes.idPersona
+        Left Join MX_GradoAcademico graPos On per.idGradoAcademico=graPos.idgradoacademico
+    </sql>
+    <!--Consulta de Prospectos-->
+    <sql id="consultaEstudiantePros"> 
+        EXCEPT
+        Select 
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        est.anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca,
+        est.fechaStatusEst,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        graPos.idgradoacademico as idGradoPostula,
+        graPos.nombre as nomGradoPostula
+        From MX_Estudiante est
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona
+        Inner Join MX_Admision adm On est.idEstudiante=adm.idEstudiante
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idgradoacademico = est.idGradoHabilitado
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), idRespPago)=perRes.idPersona
+        Left Join MX_GradoAcademico graPos On per.idGradoAcademico=graPos.idgradoacademico
+        EXCEPT
+        Select 
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        est.anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca,
+        est.fechaStatusEst,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        graPos.idgradoacademico as idGradoPostula,
+        graPos.nombre as nomGradoPostula
+        From MX_Estudiante est
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona
+        Inner Join MX_Matricula mat On est.idEstudiante=mat.idEstudiante
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idgradoacademico = est.idGradoHabilitado
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), idRespPago)=perRes.idPersona
+        Left Join MX_GradoAcademico graPos On per.idGradoAcademico=graPos.idgradoacademico
+    </sql>
+    <select id="obtenerEstudiante" resultMap="estudianteResultado">
+        <include refid="consultaEstudiante"/>
+    </select>
+    <select id="obtenerEstudiantePost" resultMap="estudianteResultado">
+        <include refid="consultaEstudiante"/>
+        <include refid="consultaEstudiantePost"/>
+    </select>
+    <select id="obtenerEstudiantePorUniNeg" resultMap="estudianteResultado" parameterType="String">
+        <include refid="consultaEstudiante"/>Where per.uniNeg = #{uniNeg}
+    </select>
+    <select id="obtenerEstudiantePostPorUniNeg" resultMap="estudianteResultado" parameterType="String">
+        <include refid="consultaEstudiante"/>
+        <include refid="consultaEstudiantePost"/>
+        Where per.uniNeg = #{uniNeg}
+    </select> 
+    <select id="obtenerAlumnoMatricula" resultType="pe.marista.sigma.bean.reporte.EstudianteMatriculaRepBean" parameterType="map">
+        declare @unineg varchar(6),@idestudiante varchar(15),@anio integer
+        set @unineg=#{uniNeg}
+        set @idestudiante=#{idEstudiante}
+        set @anio=#{anio}
+        select
+        <!-- Datos personales -->
+        uni.nombreUniNeg as nombreColegio,
+        concat('Ficha de Estudiante - Matricula ',' '+convert(varchar,m.anio)) as titulo,
+        isnull(concat(pest.apepat,' '+pest.apemat,', '+pest.nombre),'-') as nombreCompleto,
+        isnull(( case when pest.sexo=1 then 'Masculino' when pest.sexo=0 then 'Femenino' end),'-') as sexo,
+        isnull(docEst.codigo,'-') as tipoDocEst,
+        isnull(pest.nrodoc,pest.idpersona) as nroDoc,
+        isnull(e.codigo,'-') as codigoColegio,
+        isnull(g.nombre,'-') as grado,
+        isnull(convert(varchar,pest.fecnac,105),'-') as fecNac,
+        isnull(dest.nombre,'-') as deparNaci,
+        isnull(proest.nombre,'-') as provinciaNaci,
+        isnull(disest.nombre,'-') as distritoNaci, 
+        <!-- Domicilio y telefono -->
+        isnull(via.codigo,'-') as tipoViaDomi,
+        isnull(e.viadomi,'-') as direccion,
+        isnull(e.telefono1domi,'-') as telfDomi,
+        isnull(disdomi.nombre,'-') as distritoDomi,
+        isnull(e.refedomi,'-') as refDomi,
+        isnull(e.telefono2domi,'-') as telfRef,
+        isnull(vivecon.codigo,'-') as viveCon,
+        <!-- Datos Padre -->
+        isnull(perpa.nrodoc,'-') as nroDocPapa,
+        isnull(concat(perpa.apepat,' '+perpa.apemat,', '+perpa.nombre),'-') as nombrePapa,
+        isnull(docpa.codigo,'-') as tipoDocPapa,
+        isnull(perpa.nrodoc,'-') as nroDocPapa,
+        isnull(convert(varchar,perpa.fecnac,105),'-') as fecNaciPapa,
+        isnull(perpa.correo,'-') as correoPapa,
+        isnull(fampa.direccion,'-') as direccionPapa,
+        isnull(fampa.telefonocelular,'-') as celPapa,
+        isnull((case when fampa.flgvive=1 then 'Sí' when fampa.flgvive=0 then 'No' end),'-') as vivePapa, 
+        <!-- Datos Mamá  -->
+        isnull(perma.nrodoc,'-') as nroDocMama,
+        isnull(concat(perma.apepat,' '+perma.apemat,', '+perma.nombre),'-') as nombreMama,
+        isnull(docma.codigo,'-') as tipoDocMama,
+        isnull(perma.nrodoc,'-') as nroDocMama,
+        isnull(convert(varchar,perma.fecnac,105),'-') as fecNaciMama,
+        isnull(perma.correo,'-') as correoMama,
+        isnull(famma.direccion,'-') as direccionMama,
+        isnull(famma.telefonocelular,'-') as celMama,
+        isnull((case when famma.flgvive=1 then 'Sí' when famma.flgvive=0 then 'No' end),'-') as viveMama,
+        <!-- Datos Apoderado -->
+        isnull(perapo.idpersona,'-') as nroDocApo,
+        isnull(concat(perapo.apepat,' '+perapo.apemat,', '+perapo.nombre),'-') as nombreApo,
+        isnull(docapo.codigo,'-') as tipoDocApo,
+        isnull(perapo.nrodoc,'-') as nroDocApo,
+        isnull(convert(varchar,perapo.fecnac,105),'-') as fecNaciApo,
+        isnull(perapo.correo,'-') as correoApo,
+        isnull(famapo.direccion,'-') as direccionApo,
+        isnull(famapo.telefonocelular,'-') as celApo,
+        isnull((case when famapo.flgvive=1 then 'Sí' when famapo.flgvive=0 then 'No' end),'-') as viveApo
+        from MX_Matricula m 
+        <!-- Datos personales -->
+        inner join MO_UnidadNegocio uni on uni.unineg=m.unineg
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante
+        inner join MX_Persona pest on pest.idpersona=e.idestudiante
+        left join MO_Codigo docEst on docEst.idcodigo=pest.idtipodocper
+        inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+        left join MO_Distrito disest on disest.iddistrito=e.iddistritonaci
+        left join MO_Provincia proest on proest.idprovincia=disest.idprovincia
+        left join MO_Departamento dest on dest.iddepartamento=proest.iddepartamento 
+        <!-- Domicilio y telefono -->
+        left join MO_Codigo via on via.idcodigo=e.idtipoviadomi
+        left join MO_Distrito disdomi on disdomi.iddistrito=e.iddistritodomi
+        inner join MX_EstudianteInfo einfo on einfo.idestudiante=e.idestudiante
+        left join MO_Codigo vivecon on vivecon.idcodigo=einfo.idtipovivecon 
+        <!-- Datos Padre -->
+        left join MX_FamiliarEstudiante faestPa on faestPa.idestudiante=e.idestudiante and faestPa.idtipoparentesco=12402
+        left join MX_Familiar fampa  on fampa.idfamiliar=faestPa.idfamiliar
+        left join MX_Persona perpa on perpa.idpersona=fampa.idfamiliar
+        left join MO_Codigo docpa on docpa.idcodigo=perpa.idtipodocper 
+        <!-- Datos Mamá  -->
+        left join MX_FamiliarEstudiante faestMa on faestMa.idestudiante=e.idestudiante and faestma.idtipoparentesco=12403
+        left join MX_Familiar famma  on famma.idfamiliar=faestMa.idfamiliar
+        left join MX_Persona perma on perma.idpersona=famma.idfamiliar
+        left join MO_Codigo docma on docma.idcodigo=perma.idtipodocper 
+        <!-- Datos Apoderado -->
+        left join MX_FamiliarEstudiante faestapo on faestapo.idestudiante=e.idestudiante and faestapo.idtipoparentesco=12401
+        left join MX_Familiar famapo  on famapo.idfamiliar=faestapo.idfamiliar
+        left join MX_Persona perapo on perapo.idpersona=famapo.idfamiliar
+        left join MO_Codigo docapo on docapo.idcodigo=perapo.idtipodocper
+        where m.anio=@anio and m.idestudiante=@idestudiante and uni.unineg=@unineg
+    </select>
+    
+    <select id="obtenerFiltroEstudiante" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudianteMat"/>
+        <where>
+            per.unineg = #{personaBean.unidadNegocioBean.uniNeg}  and est.idTipoStatusEst not in (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion})
+            and anio=#{anio}
+            <!--  and m.anio=#{anio}-->
+            <if test="codigo != null and codigo != ''">obtenerEstPorId
+                and est.codigo = #{codigo}
+            </if>
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and est.idEstudiante = #{personaBean.idPersona}
+            </if>
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                <!-- and upper(per.apepat) like concat(#{personaBean.apepat},'%')-->
+                and REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(upper(per.apepat),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u') like  concat(#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                <!--and upper(per.apemat) like concat(#{personaBean.apemat},'%')-->
+                and REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(upper(per.apemat),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u') like  concat(#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                <!--and upper(per.nombre) like concat(#{personaBean.nombre},'%')-->
+                and REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(upper(per.nombre),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u') like  concat(#{personaBean.nombre},'%')
+            </if>
+            <if test="tipoStatusEst.idCodigo != null and tipoStatusEst.idCodigo != 0">
+                and est.idTipoStatusEst = #{tipoStatusEst.idCodigo}
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoIngresoEst = #{tipoIngresoEst.idCodigo}
+            </if>
+            <if test="anio != null and anio != 0">
+                and m.anio = #{anio}
+            </if> 
+        </where>
+        order by concat(per.apepat+' ',per.apemat+', ',per.nombre) asc
+    </select>
+    <select id="obtenerEstudiantePorCodigo" resultMap="estudianteResultado" parameterType="map">
+        <include refid="consultaEstudiante"/>
+        <where>
+            per.unineg = #{uniNeg} and est.codigo = #{codigo}      
+        </where> 
+    </select>
+    <select id="obtenerFiltroEstudianteFicha" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudianteMatFichaEst"/>
+        <where>
+            per.unineg = #{personaBean.unidadNegocioBean.uniNeg}  and est.idTipoStatusEst not in (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion})
+     
+            <!--  and m.anio=#{anio}-->
+            <if test="codigo != null and codigo != ''">
+                and est.codigo = #{codigo}
+            </if>
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and est.idEstudiante = #{personaBean.idPersona}
+            </if>
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                <!-- and upper(per.apepat) like concat(#{personaBean.apepat},'%')-->
+                and REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(upper(per.apepat),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u') like  concat(#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                <!--and upper(per.apemat) like concat(#{personaBean.apemat},'%')-->
+                and REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(upper(per.apemat),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u') like  concat(#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                <!--and upper(per.nombre) like concat(#{personaBean.nombre},'%')-->
+                and REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(upper(per.nombre),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u') like  concat(#{personaBean.nombre},'%')
+            </if>
+            <if test="tipoStatusEst.idCodigo != null and tipoStatusEst.idCodigo != 0">
+                and est.idTipoStatusEst = #{tipoStatusEst.idCodigo}
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoIngresoEst = #{tipoIngresoEst.idCodigo}
+            </if>
+            <if test="anioIngreso != null and anioIngreso != 0">
+                and est.anioIngreso = #{anioIngreso}
+            </if> 
+        </where>
+        order by  graAca.idnivelacademico asc, graAca.idgradoacademico desc
+    </select>
+    <select id="obtenerFiltroEstudianteActivo" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudiante"/>
+        <where>
+            idTipoStatusEst IN (#{idTipoStatusEst1},#{idTipoStatusEst2}) and per.unineg = #{personaBean.unidadNegocioBean.uniNeg} 
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and est.idEstudiante = #{personaBean.idPersona}
+            </if>
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personaBean.nombre},'%')
+            </if>
+            <if test="tipoStatusEst.idCodigo != null and tipoStatusEst.idCodigo != 0">
+                or est.idTipoStatusEst = #{tipoStatusEst.idCodigo}
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoIngresoEst = #{tipoIngresoEst.idCodigo}
+            </if>
+            <if test="anioIngreso != null and anioIngreso != 0">
+                and est.anioIngreso = #{anioIngreso}
+            </if>
+        </where>
+    </select>
+    <!--Ayuda para el excel -->
+    <select id="obtenerFiltroMatriculadosPorUsuario" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudianteMat"/>
+        <where> 
+            m.uniNeg = #{unidadNegocioBean.uniNeg} and m.flgMatricula=1 
+            <if test="creaPorAyuda != null and creaPorAyuda != ''">
+                and upper(m.creaPor) like concat(#{creaPor},'%')
+            </if> 
+            <if test="fechaMatricula != null" >
+                <![CDATA[
+                and m.fechaMatricula = #{fechaMatricula}
+                ]]>
+            </if>
+            <if test="anio != null and anio != 0">
+                and m.anio = #{anio}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerFiltroEstudiantePros" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudiante"/>
+        <!--include refid="consultaEstudiantePros"/-->
+        <where>
+            per.unineg = #{personaBean.unidadNegocioBean.uniNeg} and est.idtipostatusest= (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion})
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and est.idEstudiante = #{personaBean.idPersona}
+            </if>
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personaBean.nombre},'%')
+            </if>
+            <if test="personaBean.gradoAcademicoBean.idGradoAcademico != null and personaBean.gradoAcademicoBean.idGradoAcademico != 0">
+                and per.idGradoAcademico = #{personaBean.gradoAcademicoBean.idGradoAcademico}
+            </if>  
+        </where>
+        order by graPos.idNivelAcademico desc,graPos.idgradoacademico,graPos.nombre desc
+    </select>
+    <select id="obtenerFiltroEstudiantePost" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudiante"/>
+        inner JOIN MX_Admision adm on est.idEstudiante=adm.idestudiante and est.unineg=adm.unineg
+        <where>
+            per.unineg = #{personaBean.unidadNegocioBean.uniNeg} and est.idTipoStatusEst = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion})
+            and est.idestudiante in (select idestudiante from MX_Admision   where   unineg =#{personaBean.unidadNegocioBean.uniNeg})
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and est.idEstudiante = #{personaBean.idPersona}
+            </if>
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personaBean.nombre},'%')
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoStatusEst = #{tipoIngresoEst.idCodigo}
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoIngresoEst = #{tipoIngresoEst.idCodigo}
+            </if>
+            <if test="anioIngreso != null and anioIngreso != 0">
+                and adm.anio = #{anioIngreso}
+            </if>
+            order by graPos.idNivelAcademico desc,graPos.idgradoacademico,graPos.nombre desc
+        </where>
+    </select>
+    <!--<select id="obtenerFiltroEstudiantePost" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudiante"/>
+        <where>
+            per.unineg = #{personaBean.unidadNegocioBean.uniNeg} 
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and est.idEstudiante = #{personaBean.idPersona}
+            </if>
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personaBean.nombre},'%')
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoStatusEst = #{tipoIngresoEst.idCodigo}
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoIngresoEst = #{tipoIngresoEst.idCodigo}
+            </if>
+            <if test="anioIngreso != null and anioIngreso != 0">
+                and est.anioIngreso = #{anioIngreso}
+            </if>
+        </where>
+        <include refid="consultaEstudiantePost"/>
+        <where>
+            per.unineg = #{personaBean.unidadNegocioBean.uniNeg} 
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and est.idEstudiante = #{personaBean.idPersona}
+            </if>
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personaBean.nombre},'%')
+            </if>
+            <if test="tipoStatusEst.idCodigo != null and tipoStatusEst.idCodigo != 0">
+                and est.idTipoStatusEst = #{tipoStatusEst.idCodigo}
+            </if>
+            <if test="tipoIngresoEst.idCodigo != null and tipoIngresoEst.idCodigo != 0">
+                and est.idTipoIngresoEst = #{tipoIngresoEst.idCodigo}
+            </if>
+        </where>
+    </select>
+    -->
+    <select id="obtenerEstPorIdFamilia" resultType="Integer" parameterType="map">
+        select idfamilia from MX_Estudiante where idestudiante=#{idEstudiante} and unineg=#{uniNeg}
+    </select>
+    <select id="obtenerEstPorId" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudiante"/>
+        Where est.idEstudiante = #{personaBean.idPersona} and est.uniNeg = #{personaBean.unidadNegocioBean.uniNeg}
+        order by  graAca.idnivelacademico asc, graAca.idgradoacademico desc
+    </select>
+    <select id="obtenerEstPorIdMatricula" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudiante"/>
+        Where est.idEstudiante = #{personaBean.idPersona} and est.uniNeg = #{personaBean.unidadNegocioBean.uniNeg}
+        and m.anio=#{anio}
+    </select>
+    <!-- inicio masivo 
+   <select id="obtenerFiltroEstudianteMasivo" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+       Select  
+       est.uniNeg,
+       est.idEstudiante,
+       per.nombre,
+       per.apepat,
+       per.apemat,
+       per.sexo,
+       per.nroDoc, 
+       est.codigo,
+       est.idTipoStatusEst,
+       codStaEst.Codigo as codigoStatusEst, 
+       est.idGradoHabilitado,
+       graAca.nombre as nombreGraAca, 
+       na.idNivelAcademico,
+       na.nombre as nomNA, 
+       mat.anio,
+       mat.flgMatricula,
+       mat.seccion
+       From MX_Estudiante est
+       Inner Join MX_Persona per On est.idEstudiante=per.idPersona        
+       inner Join MX_GradoAcademico graAca On graAca.idGradoAcademico=est.idGradoHabilitado
+       inner join MX_NivelAcademico na on graAca.idNivelAcademico = na.idNivelAcademico
+       inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst   
+       inner join MX_Matricula mat on mat.idEstudiante=est.idEstudiante 
+       <where>
+           per.uniNeg=#{personaBean.unidadNegocioBean.uniNeg} and mat.flgMatricula=1 and mat.anio=2015 and graAca.idGradoAcademico!=11
+           <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+               and est.idEstudiante = #{personaBean.idPersona}
+           </if> 
+           <if test="gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+               and na.idNivelAcademico = #{gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+           </if> 
+           <if test="gradoHabilitado.idGradoAcademico != null and gradoHabilitado.idGradoAcademico != 0">
+               and graAca.idGradoAcademico = #{gradoHabilitado.idGradoAcademico}
+           </if>  
+           <if test="seccion !=null and seccion!=''">
+               and mat.seccion=#{seccion}
+           </if>  
+       </where> 
+       order by graAca.nombre desc, per.apepat
+   </select>
+    fin masivo -->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="personaBean.idPersona" column="idEstudiante"/>
+        <id property="personaBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="respPagoBean.idPersona" column="idRespPago"/>
+        <id property="respPagoBean.nombre" column="nombreResp"/>
+        <id property="respPagoBean.apepat" column="apepatResp"/>
+        <id property="respPagoBean.apemat" column="apematResp"/>
+        <result property="codigo" column="codigo"/>
+        <result property="familiaBean.idFamilia" column="idFamilia"/> 
+        <result property="fechaStatusEst"  column="fechaStatusEst"/>
+        <result property="motivoStatusEst" column="motivoStatusEst"/>
+        <result property="anioIngreso" column="anioIngreso"/>
+        <result property="fechaIngreso" column="fechaIngreso"/>
+        <result property="foto" column="foto"/>
+        <result property="refeLugarNaci" column="refeLugarNaci"/>
+        <result property="viaDomi" column="viaDomi"/>
+        <result property="nroDomi" column="nroDomi"/>
+        <result property="urbDomi" column="urbDomi"/>
+        <result property="refeDomi" column="refeDomi"/>
+        <result property="telefono1Domi"  column="telefono1Domi"/>
+        <result property="telefono2Domi"  column="telefono2Domi"/>
+        <result property="factorSanguineo" column="factorSanguineo"/>
+        <result property="grupoSanguineo"  column="grupoSanguineo"/> 
+        <result property="nivelAcademico"  column="nivelAcademico"/> 
+        <result property="creaPor" column="creaPor"/> 
+        <result property="seccion" column="seccion"/> 
+        <result property="modiPor" column="modiPor"/>   
+        <result property="creaFecha" column="creaFecha" jdbcType="DATE"/>
+        <result property="statusEst" column="statusEst" />
+        <result property="sexoEstudiante" column="sexoEstudiante" />
+        <result property="usuarioMatricula" column="usuarioMatricula" />
+        <result property="fechaMatricula" column="fechaMatricula" />
+        <result property="creaPorAyuda" column="creaPorAyuda" />
+        <result property="fechaStatusEstAyuda" column="fechaStatusEstAyuda" />
+        <!--1. idEstudiante (Persona)-->
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+        <!--2. idFamilia (Familia) -->
+        <association property="familiaBean" column="idFamilia"
+                     javaType="pe.marista.sigma.bean.FamiliaBean"
+                     resultMap="familiaResultado"/>
+        <!--3. idTipoStatusEst (Codigo)  -->
+        <association property="tipoStatusEst" column="idTipoStatusEst"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusEstResultado"/>
+        <!--4. idTipoIngresoEst (Codigo)-->
+        <association property="tipoIngresoEst" column="idTipoIngresoEst"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoIngresoEstResultado"/>
+        <!--5. idGradoIngreso (Grado Academico)-->
+        <association property="gradoAcademicoBean" column="idGradoIngreso"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoResultado"/> 
+        <!--6. idGradoHabilitado (Grado Academico)-->
+        <association property="gradoHabilitado" column="idGradoHabilitado"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoHabilitadoResultado"/> 
+        <!--7. idDistritoNaci (Distrito)-->
+        <association property="idDistritoNaci" column="idDistritoNaci"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoNaciResultado"/>
+        <!--8. idPaisNaci (Pais)-->
+        <association property="paisNaciBean" column="idPaisNaci"
+                     javaType="pe.marista.sigma.bean.PaisBean"
+                     resultMap="paisNaciResultado"/>
+        <!--9. idTipoIdioma (Codigo)-->
+        <association property="tipoIdioma" column="idTipoIdioma"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoIdiomaResultado"/>
+        <!--10. idDistritoDomi (Distrito)-->
+        <association property="idDistritoDomi" column="idDistritoDomi"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoDomiResultado"/>
+        <!--11. idTipoViaDomi (Codigo)-->
+        <association property="idTipoViaDomi" column="idTipoViaDomi"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="viaDomiResultado"/>      
+        <!--12. idFamiliarEmergencia (Famliar)-->
+        <association property="familiarBean" column="idFamiliarEmergencia"
+                     javaType="pe.marista.sigma.bean.FamiliarBean"
+                     resultMap="famiPerResultado"/>
+        <!--13. idApoderado (Famliar) -->
+        <association property="apoderadoBean" column="idApoderado"
+                     javaType="pe.marista.sigma.bean.FamiliarBean"
+                     resultMap="famiApoResultado"/>
+        <!--14. idRespPago (Famliar)-->
+        <association property="respPagoBean" column="idRespPago"
+                     javaType="pe.marista.sigma.bean.FamiliarBean"
+                     resultMap="famiRespPagoResultado"/>
+        <!--15. idTipoRespPago (Codigo)-->
+        <association property="tipoRespPago" column="idTipoRespPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoRespPagoResultado"/> 
+        <!--16. idTipoMovilidad (Codigo)-->
+        <association property="tipoMovilidad" column="idTipoMovilidad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMovilidadResultado"/>  
+    </resultMap>
+    <!--1. idEstudiante(Persona)-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+        <association property="idTipoDocPer" column="idTipoDocPer"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocPerResultado"/>
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcaResultado"/>
+        <association property="paisBean" column="idNacionalidad"
+                     javaType="pe.marista.sigma.bean.PaisBean"
+                     resultMap="paisResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap> 
+    <!--idTipoDocPer-->
+    <resultMap id="tipoDocPerResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDocPer"/>
+        <result property="codigo" column="codigo1"/> 
+    </resultMap>
+    <!--idGradoAcademico-->
+    <resultMap id="gradoAcaResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoPostula"/> 
+        <result property="nombre" column="nomGradoPostula"/>
+    </resultMap>
+    <!--idNacionalidad-->
+    <resultMap id="paisResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idNacionalidad"/>
+        <result property="codigo" column="codigoPais"/>
+        <result property="nombre" column="nombrePais"/>
+        <result property="nacionalidad" column="nacionalidad"/>
+    </resultMap>
+    <!--uniNeg-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>
+    
+    <!--2. idFamilia (Familia) -->
+    <resultMap id="familiaResultado" type="pe.marista.sigma.bean.FamiliaBean">
+        <id property="idFamilia" column="idFamilia" />
+        <result property="nombre" column="nombre" />
+        <result property="padreBean.personaBean.idPersona" column="idPadre"/>
+        <result property="madreBean.personaBean.idPersona" column="idMadre"/> 
+        <result property="status" column="status" />
+        <result property="placa" column="placa" />
+        <result property="marca" column="marca" /> 
+    </resultMap> 
+    <!--3. idTipoStatusEst (Codigo)  -->
+    <resultMap id="tipoStatusEstResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusEst"/>
+        <result property="codigo" column="codigoStatusEst"/> 
+        <association property="tipoCodigoBean" column="idTipoCodigo"
+                     javaType="pe.marista.sigma.bean.TipoCodigoBean"
+                     resultMap="tipoCodigoResultado"/>
+    </resultMap>
+    <resultMap id="tipoCodigoResultado" type="pe.marista.sigma.bean.TipoCodigoBean">
+        <id property="idTipoCodigo" column="idTipoCodigo"/>
+        <result property="descripcion" column="descripcion"/>  
+    </resultMap>
+    <!--4. idTipoIngresoEst (Codigo)-->
+    <resultMap id="tipoIngresoEstResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoIngresoEst"/>
+        <result property="codigo" column="codigoIngEst"/> 
+        <association property="tipoCodigoBean" column="idTipoCodigo"
+                     javaType="pe.marista.sigma.bean.TipoCodigoBean"
+                     resultMap="tipoCodigoIngresoResultado"/>
+    </resultMap>
+    <resultMap id="tipoCodigoIngresoResultado" type="pe.marista.sigma.bean.TipoCodigoBean">
+        <id property="idTipoCodigo" column="idTipoCodigoIng"/>
+        <result property="descripcion" column="descripcionTipIng"/>  
+    </resultMap>
+    <!--5. idGradoIngreso (Grado Academico)-->
+    <resultMap id="gradoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoIngreso"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreGraIng"/>
+    </resultMap> 
+    <!--6. idGradoHabilitado (Grado Academico)-->
+    <resultMap id="gradoHabilitadoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoHabilitado"/>
+        <result property="nombre" column="nombreGraAca"/>
+        <association property="nivelAcademicoBean" column="idNivelAcademico"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultado"/>
+    </resultMap> 
+    <resultMap id="nivelResultado" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNivelAcademico"/>
+        <result property="nombre" column="nomNA"/> 
+    </resultMap>
+    <!--7. idDistritoNaci (Distrito)-->
+    <resultMap id="distritoNaciResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistritoNaci"/>
+        <result property="nombre" column="nombreDistritoNaci"/>
+        <association property="provinciaBean" column="idProvinciaNaci"
+                     javaType="pe.marista.sigma.bean.ProvinciaBean"
+                     resultMap="provinciaNaciResultado"/>
+    </resultMap> 
+    <resultMap id="provinciaNaciResultado" type="pe.marista.sigma.bean.ProvinciaBean">
+        <id property="idProvincia" column="idProvinciaNaci"/>
+        <result property="nombre" column="nombreProvinciaNaci"/>
+        <association property="departamentoBean" column="idDepartamentoNaci"
+                     javaType="pe.marista.sigma.bean.DepartamentoBean"
+                     resultMap="departamentoNaciResultado"/>
+    </resultMap>
+    <resultMap id="departamentoNaciResultado" type="pe.marista.sigma.bean.DepartamentoBean">
+        <id property="idDepartamento" column="idDepartamentoNaci"/>
+        <result property="nombre" column="nombreDepartamentoNaci"/>
+    </resultMap>
+    <!--8. idPaisNaci (Pais)-->
+    <resultMap id="paisNaciResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPaisNaci"/> 
+        <result property="nombre" column="nomPaisNaci"/>
+    </resultMap>
+    <!--9. idTipoIdioma (Codigo)-->
+    <resultMap id="tipoIdiomaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoIdioma"/>
+        <result property="codigo" column="codigo1"/> 
+    </resultMap>
+    <!--10. idDistritoDomi (Distrito)-->
+    <resultMap id="distritoDomiResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistritoDomi"/>
+        <result property="nombre" column="nombre"/>
+        <association property="provinciaBean" column="idProvinciaDomi"
+                     javaType="pe.marista.sigma.bean.ProvinciaBean"
+                     resultMap="provinciaDomiResultado"/>
+    </resultMap>
+    <resultMap id="provinciaDomiResultado" type="pe.marista.sigma.bean.ProvinciaBean">
+        <id property="idProvincia" column="idProvinciaDomi"/>
+        <association property="departamentoBean" column="idDepartamentoDomi"
+                     javaType="pe.marista.sigma.bean.DepartamentoBean"
+                     resultMap="departamentoDomiResultado"/>
+    </resultMap>
+    <resultMap id="departamentoDomiResultado" type="pe.marista.sigma.bean.DepartamentoBean">
+        <id property="idDepartamento" column="idDepartamentoDomi"/>
+    </resultMap>
+    <!--11. idTipoViaDomi (Codigo)-->
+    <resultMap id="viaDomiResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoViaDomi"/>
+        <result property="codigo" column="codigo1"/> 
+    </resultMap>
+    <!--12. idFamiliarEmergencia (Famliar)-->
+    <resultMap id="famiPerResultado" type="pe.marista.sigma.bean.FamiliarBean"> 
+        <id property="idFamiliar" column="idFamiliar"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaFamiliaResultado"/>
+    </resultMap> 
+    <!--familairBean(Persona)-->
+    <resultMap id="personaFamiliaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona"  column="idPersona"/>
+        <result property="nombre" column="nombreFamEmer"/>
+        <result property="apepat" column="apepatFamEmer"/>
+        <result property="apemat" column="apematFamEmer"/>
+        <result property="sexo"   column="sexoFamEmer"/>
+        <result property="nroDoc" column="nroDocFamEmer"/>
+        <result property="fecNac" column="fecNacFamEmer"/>
+        <result property="correo" column="correoFamEmer"/>
+    </resultMap>  
+    <!--13. idApoderado (Famliar) -->
+    <resultMap id="famiApoResultado" type="pe.marista.sigma.bean.FamiliarBean">
+        <id property="idFamiliar" column="idFamiliar"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaApoderadoResultado"/>
+    </resultMap>
+    <!--idApoderado(Persona)-->
+    <resultMap id="personaApoderadoResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombreApo"/>
+        <result property="apepat" column="apepatApo"/>
+        <result property="apemat" column="apematApo"/>
+        <result property="sexo" column="sexoApo"/>
+        <result property="nroDoc" column="nroDocApo"/>
+        <result property="fecNac" column="fecNacApo"/>
+        <result property="correo" column="correoApo"/>
+    </resultMap>   
+    <!--14. idRespPago (Famliar)-->
+    <resultMap id="famiRespPagoResultado" type="pe.marista.sigma.bean.FamiliarBean">
+        <id property="idFamiliar" column="idFamiliar"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaRespPagoResultado"/>
+    </resultMap>
+    <!--idRespPago(Persona)-->
+    <resultMap id="personaRespPagoResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombreRespPago"/>
+        <result property="apepat" column="apepatRespPago"/>
+        <result property="apemat" column="apematRespPago"/>
+        <result property="sexo" column="sexoRespPago"/>
+        <result property="nroDoc" column="nroDocRespPago"/>
+        <result property="fecNac" column="fecNacRespPago"/>
+        <result property="correo" column="correoRespPago"/>
+    </resultMap>  
+    <!--15. idTipoRespPago (Codigo)-->
+    <resultMap id="tipoRespPagoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoRespPago"/>
+        <result property="codigo" column="codTipRespPago"/>
+        <result property="valor" column="valorTipRespPago"/>
+    </resultMap> 
+    <!--16. idTipoMovilidad (Codigo)-->
+    <resultMap id="tipoMovilidadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMovilidad"/>
+        <result property="codigo" column="codTipMovilidad"/> 
+    </resultMap> 
+    <select id="obtenerPersPorId" resultMap="estudianteResultado" parameterType="Integer">
+        <include refid="consultaEstudiante" />WHERE idEstudiante = #{idEstudiante}
+    </select>
+    <select id="obtenerIdTipoResp" resultType="Integer" parameterType="map">
+        SELECT idtiporesppago as idTipoRespPago FROM MX_Estudiante
+        WHERE idestudiante= #{idEstudiante}
+    </select>
+    <select id="obtenerIdResPago" resultType="String" parameterType="map">
+        SELECT idfamiliar FROM MX_FamiliarEstudiante
+        WHERE idestudiante=#{idEstudiante} AND idtipoparentesco=#{idTipoParentesco}
+    </select>
+    <select id="obtenerSiAlumnoEsMatriculado" resultType="Integer" parameterType="map">
+        select
+        (case when flgmatricula =1  then 1 else 0 end)
+        from MX_Matricula
+        where anio=#{anio}  and idestudiante=#{idEstudiante}
+    </select>
+    <select id="obtenerEstudianteGradoAca" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        select 
+        est.uniNeg,
+        est.idEstudiante, 
+        na.nombre as nivelAcademico,
+        gra.nombre as nombreGraAca
+        from MX_Estudiante est
+        inner join MX_Persona per on per.idpersona = est.idestudiante and per.unineg=est.unineg
+        left join MX_GradoAcademico gra on gra.idgradoacademico=est.idgradohabilitado
+        left JOIN MX_NivelAcademico NA ON NA.idnivelacademico=GRA.idnivelacademico  
+        where per.uniNeg=#{personaBean.unidadNegocioBean.uniNeg} and per.idpersona=#{personaBean.idPersona}
+    </select>
+    <insert id="insertarEstudiante" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        INSERT INTO MX_Estudiante
+        (uniNeg, idEstudiante,codigo,idFamilia,idTipoStatusEst
+        ,fechaStatusEst,motivoStatusEst,idTipoIngresoEst,idGradoIngreso,anioIngreso
+        ,fechaIngreso,idGradoHabilitado,foto,idDistritoNaci,refeLugarNaci
+        ,idTipoIdioma,idDistritoDomi,idTipoViaDomi,viaDomi,nroDomi
+        ,urbDomi,refeDomi,telefono1Domi,telefono2Domi,factorSanguineo
+        ,grupoSanguineo,idFamiliarEmergencia,idApoderado,idRespPago,idTipoRespPago
+        ,creaPor,creaFecha,idPaisNaci,idTipoMovilidad,seccion,dniestudiante)
+        Values 
+        (#{personaBean.unidadNegocioBean.uniNeg},#{personaBean.idPersona},#{codigo},#{familiaBean.idFamilia},(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion})
+        ,#{fechaStatusEst},#{motivoStatusEst},#{tipoIngresoEst.idCodigo},#{gradoAcademicoBean.idGradoAcademico},#{anioIngreso}
+        ,#{fechaIngreso},#{gradoHabilitado.idGradoAcademico},#{foto},#{idDistritoNaci.idDistrito},#{refeLugarNaci}
+        ,#{tipoIdioma.idCodigo},#{idDistritoDomi.idDistrito},#{idTipoViaDomi.idCodigo},#{viaDomi},#{nroDomi}
+        ,#{urbDomi},#{refeDomi},#{telefono1Domi},#{telefono2Domi},#{factorSanguineo}
+        ,#{grupoSanguineo},#{familiarBean.personaBean.idPersona},#{apoderadoBean.personaBean.idPersona},#{respPagoBean.idPersona},#{tipoRespPago.idCodigo}
+        ,#{creaPor},getDate(),#{paisNaciBean.idPais},#{tipoMovilidad.idCodigo},#{seccion},#{dniEstudiante})        
+    </insert> 
+    <update id="modificarEstudiante" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET 
+        codigo = #{codigo},
+        idFamilia=#{familiaBean.idFamilia},
+        idTipoStatusEst = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion}),
+        fechaStatusEst=#{fechaStatusEst},
+        motivoStatusEst=#{motivoStatusEst}, 
+        idTipoIngresoEst = #{tipoIngresoEst.idCodigo},
+        idGradoIngreso = #{gradoAcademicoBean.idGradoAcademico},
+        anioIngreso=#{anioIngreso},
+        fechaIngreso=#{fechaIngreso}, 
+        idGradoHabilitado = #{gradoHabilitado.idGradoAcademico},
+        <!--foto = #{foto},-->
+        idDistritoNaci = #{idDistritoNaci.idDistrito},
+        refeLugarNaci = #{refeLugarNaci},
+        idTipoIdioma = #{tipoIdioma.idCodigo},
+        idDistritoDomi = #{idDistritoDomi.idDistrito},
+        idTipoViaDomi = #{idTipoViaDomi.idCodigo},
+        viaDomi = #{viaDomi},
+        nroDomi = #{nroDomi},
+        urbDomi = #{urbDomi},
+        refeDomi = #{refeDomi},
+        telefono1Domi = #{telefono1Domi},
+        telefono2Domi = #{telefono2Domi},
+        factorSanguineo = #{factorSanguineo},
+        grupoSanguineo = #{grupoSanguineo},
+        idFamiliarEmergencia = #{familiarBean.personaBean.idPersona},
+        idApoderado = #{apoderadoBean.personaBean.idPersona},
+        idRespPago = #{respPagoBean.idPersona},
+        idTipoRespPago = #{tipoRespPago.idCodigo},
+        idPaisNaci=#{paisNaciBean.idPais},
+        idTipoMovilidad=#{tipoMovilidad.idCodigo},
+        seccion=#{seccion},
+        modiPor= #{modiPor},
+        dniestudiante =#{dniEstudiante}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <update id="modificarEstudianteRespMat" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET   
+        idRespPago = #{respPagoBean.idPersona},
+        idTipoRespPago = #{tipoRespPago.idCodigo}, 
+        modiPor= #{modiPor}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <update id="modificarSoloDniRespPago" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET   
+        idRespPago = #{respPagoBean.idPersona}, 
+        modiPor= #{modiPor}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <update id="modificarEstudianteSeccion" parameterType="map">
+        UPDATE MX_Estudiante
+        SET  
+        seccion=#{seccion}  
+        Where idEstudiante = #{idEstudiante}
+    </update>
+    <update id="modificarEstudianteSeccionyRetiro" parameterType="map">
+        UPDATE MX_Estudiante
+        SET  
+        <!--<seccion=#{seccion} ,-->
+        fechastatusest=#{fechaStatusEst},
+        motivostatusest=#{motivoStatusEst}
+        Where idEstudiante = #{idEstudiante}
+    </update>
+    <update id="cambiarDatosIngresoEstudiante" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET  
+        idTipoStatusEst = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion}),
+        idTipoIngresoEst = (Select idCodigo from MO_Codigo Where codigo = #{tipoIngresoEst.codigo} and idTipoCodigo=#{tipoIngresoEst.tipoCodigoBean.descripcion}), 
+        idGradoIngreso = #{gradoAcademicoBean.idGradoAcademico},
+        idGradoHabilitado = #{gradoHabilitado.idGradoAcademico},
+        anioIngreso=#{anioIngreso},
+        fechaIngreso=#{fechaIngreso},  
+        modiPor= #{modiPor}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <update id="cambiarDatosEgresoEstudiante" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET  
+        idTipoStatusEst = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusEst.codigo} and idTipoCodigo=#{tipoStatusEst.tipoCodigoBean.descripcion}),
+        modiPor= #{modiPor}
+        Where idEstudiante = #{personaBean.idPersona} and unineg= #{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="generarCodigoChamp" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        select 
+        (case 
+        when max(SUBSTRING(codigo,5,8)) is null 
+        then 0
+        else
+        max(SUBSTRING(codigo,5,8))
+        end) as  contador
+        from MX_Estudiante where uniNeg = #{unidadNegocioBean.uniNeg} AND SUBSTRING(codigo,1,4) = #{periodo}
+    </update>
+    <update id="generarCodigoSanjoH" parameterType="pe.marista.sigma.bean.EstudianteBean">         
+        select 
+        (case 
+        when max(5) is null 
+        then
+        right(replicate('0', 6) + rtrim(1), 6)  
+        else
+        right(replicate('0', 6) + rtrim(max(isnull(codigo,0)+1)), 6)  		  
+        end) as  contador  
+        from MX_Estudiante where uniNeg = #{unidadNegocioBean.uniNeg} 
+    </update>
+    <select id="generarCodigoOtros" parameterType="pe.marista.sigma.bean.EstudianteBean" resultType="Integer">
+        select 
+        (case 
+        when max(SUBSTRING(codigo,5,7)) is null 
+        then 0
+        else
+        max(SUBSTRING(codigo,5,7))
+        end) as  contador
+        from MX_Estudiante where uniNeg = #{unidadNegocioBean.uniNeg} AND SUBSTRING(codigo,1,4) = #{periodo}
+    </select>
+    <update id="insertarCodigo" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        Update MX_Estudiante set codigo = #{codigo} Where idEstudiante = #{personaBean.idPersona} 
+    </update>
+    <select id="existeCodigo" parameterType="pe.marista.sigma.bean.EstudianteBean" resultType="String">
+        Select codigo From MX_Estudiante where idEstudiante = #{personaBean.idPersona} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <update id="cambiarGradoAcademico" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET  
+        idGradoHabilitado = #{gradoHabilitado.idGradoAcademico}, 
+        modiPor= #{modiPor}
+        Where idEstudiante = #{personaBean.idPersona} and uniNeg=#{personaBean.unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarEstFam" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET 
+        idFamilia=#{familiaBean.idFamilia},
+        modiPor= #{modiPor}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <update id="actualizarGrupoSanguineo" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET  
+        factorSanguineo = #{factorSanguineo},
+        grupoSanguineo  = #{grupoSanguineo}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <delete id="eliminarEstudiante" parameterType="String">
+        Delete From MX_Estudiante Where idEstudiante = #{personaBean.idPersona}
+    </delete>
+    <!--Estudiante Info-->
+    <sql id="consultaEstudianteInfo">
+        Select 
+        (case
+        when m.flgmatricula=1 then 'Matriculado'
+        when m.flgmatricula=0 then c.codigo
+        end  
+        )as statusEst,
+        (CASE
+        WHEN per.sexo=1 THEN 'Masculino'
+        when per.sexo=0 then 'Femenino'
+        end) as sexoEstudiante,
+        info.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        info.flgBautizo,
+        info.flgPrimeraComunion,
+        info.flgVidaReligiosa, 
+        info.flgConfirmacion,  
+        info.aniosColegioProcedencia,
+        info.idTipoMotivoCambio,
+        codTipMotCam.codigo as  codMotCam,
+        info.idTipoCambioColegio, 
+        codTipCamCol.codigo as  codCamCole,
+        info.anioRetiro,
+        info.idGradoAcademicoCambio,
+        graAcaCam.nombre as gradoCambio,
+        info.nroHermanos,
+        info.nroHermanas,
+        info.nroHermano,
+        info.refeFamiliar,
+        info.idTipoEstadoCivilPadres, 
+        codEstCiv.idcodigo as idTipoEstCiv,
+        codEstCiv.codigo as codEstCivil,
+        info.idTipoViveCon,
+        codVivCon.codigo as  codViveCon,
+        info.nombreViveCon,
+        info.fecIniViveCon, 
+        info.ingPadBruto,
+        info.ingPadNeto,
+        info.ingMadBruto,
+        info.ingMadNeto,
+        info.ingFam1Bruto,
+        info.ingFam1Neto,
+        info.ingFam2Bruto,
+        info.ingFam2Neto,
+        info.idTipoparentescoFam1,
+        codParF1.codigo as codParentescoFam1,
+        info.idTipoparentescoFam2,  
+        codParF2.codigo as codParentescoFam2,
+        info.pensionColegioProce,
+        info.obsFamiliar,
+        info.parroquiaBautizo,
+        info.parroquiaAsiste,
+        info.colegioProcedencia
+        ,info.fechahemoglobina as fechaHemoglobina
+        ,info.resultado as resultado
+        ,info.diabetespadres as diabetesPadres
+        ,info.hipertensionpadres as hipertensionPadres
+        ,info.tbcpadres as tbcPadres, 
+        disNac.nombre as nombreDistritoNaci,
+        proNac.nombre as nombreProvinciaNaci,
+        depNac.nombre as nombredepartamentoNaci,  
+        <!-- info.flgseguroaccidente as flgSeguroAccidente,
+        info.flgseguropadre as flgSeguroPadre,
+        info.flgseguromadre as flgSeguroMadre,-->
+        res.idcodigo as idTipoRespPago,
+        res.codigo as codTipRespPago,
+        se.idcodigo as idTipoSeguro,
+        se.codigo as tipoSeguro,
+        info.codigomodularal as codigoModularAl,
+        info.codigomodularcol as codigoModularCol
+        From MX_EstudianteInfo info
+        Inner Join MX_Persona per On info.idEstudiante=per.idPersona   
+        left Join MO_Codigo codEstCiv on info.idTipoEstadoCivilPadres=codEstCiv.idCodigo
+        left Join MO_Codigo codVivCon on info.idTipoViveCon=codVivCon.idCodigo
+        left Join MO_Codigo codTipCamCol on info.idTipoCambioColegio = codTipCamCol.idCodigo
+        left Join MO_Codigo codTipMotCam on info.idTipoMotivoCambio = codTipMotCam.idCodigo
+        left Join MX_GradoAcademico graAcaCam on info.idGradoAcademicoCambio = graAcaCam.idGradoAcademico  
+        left Join MO_Codigo codParF1 on info.idTipoParentescoFam1=codParF1.idCodigo      
+        left Join MO_Codigo codParF2 on info.idTipoParentescoFam1=codParF2.idCodigo      
+        inner join MX_Estudiante est on est.idestudiante=info.idestudiante
+        left join MO_Codigo res on res.idcodigo = est.idtiporesppago
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        inner join MX_Matricula m on info.idestudiante=m.idestudiante 
+        inner join MO_Codigo c on c.idcodigo=est.idtipostatusest 
+        left join MO_Codigo se on se.idcodigo=info.idtiposeguro
+    </sql> 
+    <resultMap id="estudianteInfoResultado" type="pe.marista.sigma.bean.EstudianteInfoBean">
+        <result property="codigoModularAl" column="codigoModularAl"/>
+        <result property="codigoModularCol" column="codigoModularCol"/>
+        <result property="viveConVista" column="viveConVista"/>
+        <result property="flgBautizo" column="flgBautizo"/>
+        <result property="flgPrimeraComunion" column="flgPrimeraComunion"/>
+        <result property="flgVidaReligiosa" column="flgVidaReligiosa"/>
+        <result property="flgConfirmacion" column="flgConfirmacion"/>
+        <result property="aniosColegioProcedencia" column="aniosColegioProcedencia"/>
+        <result property="anioRetiro" column="anioRetiro"/>
+        <result property="nroHermanos" column="nroHermanos"/>
+        <result property="nroHermanas" column="nroHermanas"/>
+        <result property="nroHermano" column="nroHermano"/>
+        <result property="refeFamiliar" column="refeFamiliar"/>
+        <result property="nombreViveCon" column="nombreViveCon"/>
+        <result property="fecIniViveCon" column="fecIniViveCon"/>
+        <result property="ingPadBruto" column="ingPadBruto"/>
+        <result property="ingPadNeto" column="ingPadNeto"/>
+        <result property="ingMadBruto" column="ingMadBruto"/>
+        <result property="ingMadNeto" column="ingMadNeto"/>
+        <result property="ingFam1Bruto" column="ingFam1Bruto"/>
+        <result property="ingFam1Neto" column="ingFam1Neto"/>
+        <result property="ingFam2Bruto" column="ingFam2Bruto"/>
+        <result property="ingFam2Neto" column="ingFam2Neto"/> 
+        <result property="pensionColegioProce" column="pensionColegioProce"/>
+        <result property="obsFamiliar" column="obsFamiliar"/>
+        <result property="parroquiaAsiste" column="parroquiaAsiste"/>
+        <result property="parroquiaBautizo" column="parroquiaBautizo"/> 
+        <result property="colegioProcedencia" column="colegioProcedencia"/> 
+        <result property="fechaHemoglobina" column="fechaHemoglobina"/> 
+        <result property="resultado" column="resultado"/> 
+        <result property="hipertensionPadres" column="hipertensionPadres"/> 
+        <result property="diabetesPadres" column="diabetesPadres"/> 
+        <result property="tbcPadres" column="tbcPadres"/> 
+        <result property="sexoEstudiante" column="sexoEstudiante"/> 
+        <!--    <result property="flgSeguroAccidente" column="flgSeguroAccidente"/> 
+        <result property="flgSeguroPadre" column="flgSeguroPadre"/> 
+        <result property="flgSeguroMadre" column="flgSeguroMadre"/> -->
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>  
+        <association property="tipoCambioColegio" column="idTipoCambioColegio"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCambioColegioResultado"/>
+        <association property="tipoMotivoCambio" column="idTipoMotivoCambio"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMotivoCambioResultado"/>
+        <association property="gradoAcademicoCambioBean" column="idGradoAcademicoCambio"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoCambioResultado"/>
+        <association property="estadoCivilPadres" column="idTipoEstadoCivilPadres"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="estadoCivilResultado"/>
+        <association property="viveCon" column="idTipoViveCon"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="viveConResultado"/> 
+        <association property="tipoParentescoFam1" column="idTipoParentescoFam1"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoParentescoFam1Resultado"/> 
+        <association property="tipoParentescoFam2" column="idTipoParentescoFam2"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoParentescoFam2Resultado"/>   
+        <association property="tipoSeguroBean" column="idTipoSeguro"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoSeguroResultado"/> 
+    </resultMap>  
+    <resultMap id="tipoCambioColegioResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCambioColegio"/>
+        <result property="codigo" column="codCamCole"/> 
+    </resultMap>
+    <resultMap id="tipoMotivoCambioResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMotivoCambio"/>
+        <result property="codigo" column="codMotCam"/> 
+    </resultMap>
+    <resultMap id="gradoCambioResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademicoCambio"/> 
+        <result property="nombre" column="gradoCambio"/>
+    </resultMap>
+    <resultMap id="estadoCivilResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoEstCiv"/>
+        <result property="codigo" column="codEstCivil"/> 
+    </resultMap>
+    <resultMap id="viveConResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoViveCon"/>
+        <result property="codigo" column="codViveCon"/> 
+    </resultMap> 
+    <resultMap id="tipoParentescoFam1Resultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoParentescoFam1"/>
+        <result property="codigo" column="codParentescoFam1"/> 
+    </resultMap> 
+    <resultMap id="tipoParentescoFam2Resultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoParentescoFam2"/>
+        <result property="codigo" column="codParentescoFam2"/> 
+    </resultMap>   
+    <resultMap id="tipoSeguroResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoSeguro"/>
+        <result property="codigo" column="tipoSeguro"/> 
+    </resultMap>
+    <select id="obtenerEstudianteInfoPorId" resultMap="estudianteInfoResultado" parameterType="String">
+        <include refid="consultaEstudianteInfo"/>
+        Where info.idEstudiante = #{idEstudiante}  <!--and m.anio=DATEPART(year,GETDATE())-->
+    </select> 
+    <insert id="insertarEstudianteInfo" parameterType="pe.marista.sigma.bean.EstudianteInfoBean">
+        Insert Into MX_EstudianteInfo
+        (uniNeg,idEstudiante,flgBautizo,flgPrimeraComunion,flgVidaReligiosa,flgConfirmacion,aniosColegioProcedencia,
+        idTipoCambioColegio,idTipoMotivoCambio,anioRetiro,idGradoAcademicoCambio,nroHermanos,
+        nroHermanas,nroHermano,refeFamiliar,idTipoEstadoCivilPadres,idTipoViveCon,nombreViveCon,fecIniViveCon,ingPadBruto,
+        ingPadNeto,ingMadBruto,ingMadNeto,ingFam1Bruto,ingFam1Neto,ingFam2Bruto,ingFam2Neto,
+        idTipoParentescoFam1,idTipoParentescoFam2,pensionColegioProce,obsFamiliar,parroquiaBautizo,parroquiaAsiste,colegioProcedencia,creaPor,creaFecha,fechahemoglobina,resultado
+        ,diabetespadres,hipertensionpadres,tbcpadres,idTipoSeguro,codigomodularal,codigomodularcol,dniEstudiante) 
+        Values 
+        (#{estudianteBean.personaBean.unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona},#{flgBautizo},#{flgPrimeraComunion},#{flgVidaReligiosa},#{flgConfirmacion},#{aniosColegioProcedencia},
+        #{tipoCambioColegio.idCodigo},#{tipoMotivoCambio.idCodigo},#{anioRetiro},#{gradoAcademicoCambioBean.idGradoAcademico},#{nroHermanos},
+        #{nroHermanas},#{nroHermano},#{refeFamiliar},#{estadoCivilPadres.idCodigo},#{viveCon.idCodigo},#{nombreViveCon},#{fecIniViveCon},#{ingPadBruto},
+        #{ingPadNeto},#{ingMadBruto},#{ingMadNeto},#{ingFam1Bruto},#{ingFam1Neto},#{ingFam2Bruto},#{ingFam2Neto},
+        #{tipoParentescoFam1.idCodigo},#{tipoParentescoFam2.idCodigo},#{pensionColegioProce},#{obsFamiliar},#{parroquiaBautizo},#{parroquiaAsiste},#{colegioProcedencia},#{creaPor},getDate()
+        ,#{fechaHemoglobina},#{resultado},#{diabetesPadres},#{hipertensionPadres},#{tbcPadres},#{tipoSeguroBean.idCodigo},#{codigoModularAl},#{codigoModularCol},
+        #{dniEstudiante})
+    </insert>
+    <update id="modificarEstudianteInfo" parameterType="pe.marista.sigma.bean.EstudianteInfoBean">
+        Update MX_EstudianteInfo set
+        codigomodularal=#{codigoModularAl},
+        codigomodularcol=#{codigoModularCol},
+        flgBautizo = #{flgBautizo},
+        flgPrimeraComunion = #{flgPrimeraComunion},
+        flgVidaReligiosa = #{flgVidaReligiosa}, 
+        flgConfirmacion = #{flgConfirmacion},
+        aniosColegioProcedencia = #{aniosColegioProcedencia}, 
+        idTipoCambioColegio = #{tipoCambioColegio.idCodigo},
+        idTipoMotivoCambio = #{tipoMotivoCambio.idCodigo},
+        anioRetiro = #{anioRetiro},
+        idGradoAcademicoCambio = #{gradoAcademicoCambioBean.idGradoAcademico},
+        nroHermanos = #{nroHermanos},
+        nroHermanas = #{nroHermanas},
+        nroHermano = #{nroHermano},
+        refeFamiliar = #{refeFamiliar},
+        idTipoEstadoCivilPadres = #{estadoCivilPadres.idCodigo},
+        idTipoViveCon = #{viveCon.idCodigo},
+        nombreViveCon = #{nombreViveCon},
+        <!--fecIniViveCon = #{fecIniViveCon}, -->
+        <if test="fecIniViveCon != null"> 
+            fecIniViveCon = #{fecIniViveCon}
+        </if>
+        ingPadBruto = #{ingPadBruto},
+        ingPadNeto = #{ingPadNeto},
+        ingMadBruto = #{ingMadBruto},
+        ingMadNeto = #{ingMadNeto},
+        ingFam1Bruto= #{ingFam1Bruto},
+        ingFam1Neto= #{ingFam1Neto},
+        ingFam2Bruto= #{ingFam2Bruto},
+        ingFam2Neto= #{ingFam2Neto}, 
+        idTipoParentescoFam1=#{tipoParentescoFam1.idCodigo},
+        idTipoParentescoFam2=#{tipoParentescoFam2.idCodigo},
+        pensionColegioProce = #{pensionColegioProce},
+        obsFamiliar = #{obsFamiliar},
+        parroquiaBautizo = #{parroquiaBautizo},
+        parroquiaAsiste = #{parroquiaAsiste},
+        colegioProcedencia = #{colegioProcedencia},
+        modiPor= #{modiPor} 
+        <if test="fechaHemoglobina != null"> 
+            ,fechahemoglobina = #{fechaHemoglobina}
+        </if> 
+        ,resultado = #{resultado}
+        ,diabetespadres = #{diabetesPadres}
+        ,hipertensionpadres = #{hipertensionPadres}
+        ,tbcpadres = #{tbcPadres},
+        <!--  flgSeguroAccidente= #{flgSeguroAccidente},
+        flgSeguroPadre=#{flgSeguroPadre},
+        flgSeguroMadre=#{flgSeguroMadre},-->
+        idTipoSeguro= #{tipoSeguroBean.idCodigo}
+        Where idEstudiante = #{estudianteBean.personaBean.idPersona} 
+    </update>
+    <update id="modificarDNIEstudianteInfo" parameterType="pe.marista.sigma.bean.EstudianteInfoBean">
+        Update MX_EstudianteInfo set
+        dniestudiante=#{dniEstudiante}
+        Where idEstudiante = #{estudianteBean.personaBean.idPersona} 
+    </update>
+    <delete id="eliminarEstudianteInfo" parameterType="pe.marista.sigma.bean.EstudianteInfoBean">
+        Delete from MX_EstudianteInfo Where idEstudiante = #{idEstudiante}
+    </delete>
+    <!--Filtro de Admision-->
+    <sql id="consultaEstudianteAdm">
+        EXCEPT
+        Select  
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        est.anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca,
+        est.fechaStatusEst,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        graPos.idgradoacademico as idGradoPostula,
+        graPos.nombre as nomGradoPostula
+        From MX_Estudiante est
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona
+        Inner Join MX_Admision adm On est.idEstudiante=adm.idEstudiante
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idgradoacademico = est.idGradoHabilitado
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), idRespPago)=perRes.idPersona
+        Left Join MX_GradoAcademico graPos On per.idGradoAcademico=graPos.idgradoacademico
+    </sql>    
+    <sql id="consultaCodigoColegio">
+        SELECT  n.unineg as uniNeg,
+        n.nombreUniNeg as nombreUniNeg
+        ,c.codigo as codigo,
+        c.codigoactual as codigoActual
+        ,c.anio as anio
+        ,c.creapor as creaPor
+        ,c.creafecha as creaFecha
+        ,c.modipor  as modiPor
+        FROM MO_CodigoColegio c
+        inner join MO_UnidadNegocio n on c.unineg=n.unineg
+        <!--inner join MX_Estudiante e on e.codigo= e.codigo-->
+    </sql>    
+    <select id="obtenerEstudianteAminPorUniNeg" resultMap="estudianteResultado" parameterType="String">
+        <include refid="consultaEstudiante"/>
+        <include refid="consultaEstudiantePost"/>
+        <include refid="consultaEstudianteAdm"/>
+        Where per.uniNeg = #{uniNeg}
+    </select>
+    <!-- Filtros de Matricula -->
+    <select id="obtenerEstudianteMatPorUniNeg" resultMap="estudianteResultado" parameterType="map">
+        <include refid="consultaEstudiante"/>
+        Inner Join MX_Admision adm On est.idEstudiante=adm.idEstudiante
+        Inner Join MO_Codigo cod On adm.idtipostatuspostulante=cod.idcodigo
+        Where cod.codigo = #{parms.codAdmi} and per.uniNeg = #{parms.uniNeg}
+    </select>  
+    <!--Reportes-->
+    <select id="obtenerEstudianteActivoProspecto" resultType="Boolean" parameterType="map">
+        SELECT 
+        (CASE WHEN idestudiante IS NOT NULL THEN 'TRUE' ELSE 'FALSE' END)
+        FROM MX_Estudiante
+        WHERE idtipostatusest=18004 AND idestudiante=#{idEstudiante} AND unineg=#{uniNeg}
+    </select>
+    
+    <select id="obtenerEstudianteRepPorId" resultType="pe.marista.sigma.bean.reporte.EstudianteRepBean" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        Select
+        est.uniNeg,
+        est.idEstudiante,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.nroDoc,
+        per.correo,
+        per.fecNac,
+        pai.nacionalidad,
+        DATEPART(d,per.fecNac) as diaFecNac,
+        DATEPART(m,per.fecNac) as mesFecNac,
+        DATEPART(yy,per.fecNac) as anioFecNac,
+        est.codigo,
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        est.idTipoIngresoEst,
+        codIngEst.Codigo as codigoIngEst,
+        est.idGradoIngreso,
+        graIng.nombre as nombreGraIng,
+        est.anioIngreso,
+        est.fechaIngreso,
+        est.foto,
+        est.idDistritoNaci,
+        proNac.idProvincia as idProvinciaNaci,
+        depNac.idDepartamento as idDepartamentoNaci,
+        depNac.nombre as depNac,
+        proNac.nombre as proNac,
+        disNac.nombre as disNac,
+        est.refeLugarNaci,
+        est.idTipoIdioma,
+        codIdi.codigo as desIdioma,
+        est.idDistritoDomi,
+        proDomi.idProvincia as idProvinciaDomi,
+        depDomi.idDepartamento as idDepartamentoDomi,
+        disDomi.nombre as disDomi,
+        est.idTipoViaDomi,
+        est.viaDomi,
+        est.nroDomi,
+        est.urbDomi,
+        est.refeDomi,
+        est.telefono1Domi,
+        est.telefono2Domi,
+        est.factorSanguineo,
+        est.grupoSanguineo,
+        est.idFamiliarEmergencia,
+        est.idGradoHabilitado,
+        est.seccion,
+        graAca.nombre as nombreGraAca,
+        est.fechaStatusEst,
+        est.motivoStatusEst,
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp,
+        uni.nombreUniNeg,
+        uniCo.codigo as codUni,
+        estInf.flgbautizo,
+        estInf.flgprimeracomunion,
+        estInf.parroquiabautizo,
+        estInf.parroquiaasiste,
+        estInf.flgvidareligiosa,
+        estInf.colegioprocedencia
+        From MX_Estudiante est
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg=per.unineg
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idGradoAcademico=est.idGradoHabilitado
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), idRespPago)=perRes.idPersona and perRes.unineg=est.unineg
+        Inner Join MO_UnidadNegocio uni On est.unineg=uni.unineg
+        Inner Join MO_Codigo uniCo On uni.idtipoUniNeg=uniCo.idCodigo
+        Left Join MO_Pais pai ON per.idnacionalidad=pai.idpais
+        Left Join MO_Codigo codIdi On est.idtipoidioma=codIdi.idcodigo
+        Left Join MX_EstudianteInfo estInf On est.idestudiante=estInf.idestudiante
+        Where est.idestudiante = #{personaBean.idPersona} and est.uniNeg = #{personaBean.unidadNegocioBean.uniNeg} 
+    </select>  
+    <update id="modificarTipoStatusEst" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        Update MX_Estudiante set
+        idtipostatusest = #{tipoStatusEst.idCodigo}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <!--FichaEstudiante -->
+    <select id="obtenerFichaEstudianteCabecera" resultType="pe.marista.sigma.bean.reporte.FichaEstudianteRepBean" parameterType="map">
+        Select top 1
+        est.idEstudiante as idEstudiante,
+        uni.nombreUniNeg as uniNeg,
+        ISNULL(concat(per.apepat+' ',per.apemat),'-') as familia,
+        ISNULL(est.refedomi,'-') as direccion,
+        ISNULL(disDomi.nombre,'-') as distrito,
+        ISNULL(est.telefono1domi,'-') as telefono1,
+        ISNULL(est.telefono2domi,'-') as telefono2,
+        ISNULL(per.apepat,'-') as apellidoPaterno,
+        ISNULL(per.apemat,'-') as apellidoMaterno,
+        ISNULL(per.nombre,'-') as nombres,
+        ISNULL(paisNaci.nombre,'-') as paisNacimiento,
+        ISNULL(depNac.nombre,'-') as departamentoNacimiento,
+        ISNULL(disNac.nombre,'-') as distritoNacimiento,
+        convert(varchar,per.fecnac,103) as fechaNacimiento,
+        ISNULL(CONCAT((case
+        when PER.idtipodocper=10701 then 'DNI: '
+        when per.idtipodocper=10702 then 'C.E.: '
+        when per.idtipodocper=10703 then 'PAS.: '
+        END )+'',est.idestudiante),'-') AS documento,
+        ISNULL(case
+        when per.sexo= 1 then 'Masculino'
+        when per.sexo= 0 then 'Femenino'
+        END,'-') AS sexo,
+        ISNULL(pai.nacionalidad,'-') as nacionalidad,
+        ISNULL(case
+        when viveCon.idcodigo= 14602 then 'SI'
+        when viveCon.idcodigo!= 14602 then 'NO'
+        END,'-') AS viveConPadre,
+        ISNULL(case
+        when viveCon.idcodigo= 14603 then 'SI'
+        when viveCon.idcodigo!= 14603 then 'NO'
+        END,'-') AS viveConMadre,
+        ISNULL(per.correo,'-') as correo,
+        ISNULL(estInf.nrohermano,'-') as nroHermano,
+        ISNULL(estInf.colegioprocedencia,'-') as colegioProcedencia,
+        ISNULL((select sum(estInf.nrohermanas+estInf.nrohermano)from MX_EstudianteInfo estInf where est.idestudiante=estInf.idestudiante),'-') as nroHermanos,
+        ISNULL(est.refedomi,'-') as direccion,
+        ISNULL(disDomi.nombre,'-') as distrito,
+        ISNULL(est.telefono1domi,'-') as telefono1,
+        ISNULL(est.telefono2domi,'-') as telefono2,
+        ISNULL(est.telefono1domi,'-') as telefonoEmergencia
+        From MX_Estudiante est
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg=per.unineg
+        Left Join MO_Distrito disNac On est.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        Left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        Left Join MO_Distrito disDomi On est.idDistritoDomi=disDomi.idDistrito
+        Left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        Left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        Left Join MX_GradoAcademico graAca On graAca.idGradoAcademico=est.idGradoHabilitado
+        Left Join MX_GradoAcademico graIng On graIng.idGradoAcademico=est.idGradoIngreso
+        left join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left join MO_Codigo codIngEst on codIngEst.idCodigo = est.idTipoIngresoEst
+        Left Join MX_Persona perRes On CONVERT(varchar(15), idRespPago)=perRes.idPersona and perRes.unineg=est.unineg
+        Inner Join MO_UnidadNegocio uni On est.unineg=uni.unineg
+        Inner Join MO_Codigo uniCo On uni.idtipoUniNeg=uniCo.idCodigo
+        Left Join MO_Pais pai ON per.idnacionalidad=pai.idpais
+        Left Join MO_Codigo codIdi On est.idtipoidioma=codIdi.idcodigo
+        Left Join MX_EstudianteInfo estInf On est.idestudiante=estInf.idestudiante
+        left join MO_Codigo viveCon On estInf.idtipovivecon=viveCon.idcodigo
+        left join MO_Pais paisNaci on paisNaci.idpais=est.idpaisnaci
+        WHERE est.idestudiante=#{idEstudiante}  and est.unineg=#{uniNeg}
+    </select>     
+    <select id="obtenerDetPadres" resultType="pe.marista.sigma.bean.reporte.FamiliarEstudianteRepBean" parameterType="map">
+        SELECT f.idfamiliar,'Padre'  as tipoParentesco FROM MX_FamiliarEstudiante f
+        WHERE idestudiante=#{idEstudiante}  AND idtipoparentesco IN (12402)  and f.unineg=#{uniNeg}
+
+        UNION ALL
+        SELECT f.idfamiliar,'Madre'  as tipoParentesco FROM MX_FamiliarEstudiante f
+        WHERE idestudiante=#{idEstudiante}  AND idtipoparentesco IN (12403)  and f.unineg=#{uniNeg}
+
+        UNION ALL
+        SELECT f.idfamiliar,'Apoderado'  as tipoParentesco FROM MX_FamiliarEstudiante f 
+        WHERE idestudiante=#{idEstudiante} AND  idfamiliar=(	SELECT idapoderado FROM MX_Estudiante WHERE idestudiante=#{idEstudiante})   and f.unineg=#{uniNeg}
+        
+        UNION ALL 
+        SELECT ISNULL(F.idapoderado,'00000000' ) ,'Apoderado' as tipoParentesco FROM MX_ESTUDIANTE f  
+        WHERE F.idestudiante=#{idEstudiante} and f.unineg=#{uniNeg}
+        
+        UNION ALL
+        SELECT ISNULL(fa.idfamiliar,'00000000') ,'Madre' as tipoParentesco FROM MX_ESTUDIANTE f 
+        LEFT JOIN MX_FamiliarEstudiante FA ON FA.idestudiante= F.idestudiante
+        WHERE F.idestudiante=#{idEstudiante} and f.unineg=#{uniNeg} AND idtipoparentesco IN (12403) and fa.idfamiliar is null
+        
+        UNION ALL
+        SELECT ISNULL(fa.idfamiliar,'00000000') ,'Padre' as tipoParentesco FROM MX_ESTUDIANTE f 
+        LEFT JOIN MX_FamiliarEstudiante FA ON FA.idestudiante= F.idestudiante
+        WHERE F.idestudiante=#{idEstudiante} and f.unineg=#{uniNeg} AND idtipoparentesco IN (12402) and fa.idfamiliar is null
+
+    </select>
+    <select id="obtenerResponEconomico" resultType="pe.marista.sigma.bean.reporte.ResponsableEconomicoRepBean" parameterType="map">
+        SELECT distinct 
+        isnull(p.apepat, ' -') as apePat,
+        isnull(p.apemat, ' -') as apeMat,
+        isnull(p.nombre,'-') AS nombres,
+        isnull(convert(varchar,p.fecnac,103),'-') as fecNac,
+        ISNULL(CONCAT((case
+        when P.idtipodocper=10701 then 'DNI: '
+        when p.idtipodocper=10702 then 'C.E.: '
+        when p.idtipodocper=10703 then 'PAS.: '
+        END )+'',p.idpersona),'-') as documento,
+        isnull(pa.nombre,'-') as pais,
+        isnull(depNac.nombre,'-') as departamento,
+        isnull(disNac.nombre,'-') as distrito,
+        isnull(fa.direccion,'-') as direccion
+        FROM mx_estudiante e
+        left join MX_Persona p on p.idpersona=e.idresppago 
+        left join MX_Familiar fa on fa.idfamiliar=p.idpersona 
+        left join MO_PAIS pa on pa.idpais=p.idnacionalidad
+        left Join MO_Distrito disNac On e.idDistritoNaci=disNac.idDistrito
+        left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento 
+        WHERE e.idestudiante=#{idEstudiante}  and e.unineg=#{uniNeg}
+    </select>
+    <select id="obtenerFichaClinicaEstudiante" resultType="pe.marista.sigma.bean.reporte.FichaClinicaEstudianteRepBean" parameterType="map">
+        select
+        isnull(uni.nombreUniNeg,'-') as uniNeg,
+        isnull(concat(p.apepat+' ', p.apemat+', ',p.nombre),'-') as alumno
+        ,isnull(concat(graAca.nombre+' ',(+'"'+e.seccion+'"')),'-') as gradoAcademico
+        ,isnull(concat(pa.nombre+', ',disNac.nombre+'s, ',de.nombre+', ', p.fecnac),'-') as LugarFecNac
+        ,isnull( DATEDIFF(yy, p.fecnac,GETDATE()),'-') AS edad
+        ,ISNULL(CONCAT((case
+        when P.idtipodocper=10701 then 'DNI: '
+        when p.idtipodocper=10702 then 'C.E: '
+        when p.idtipodocper=10703 then 'PAS: '
+        END )+'',p.idpersona),'-') AS documento
+        ,isnull(e.refedomi,'-') as domicilio
+        ,isnull(e.telefono1domi,'-') as telefonoDomi
+        ,isnull(faPadre.telefonocelular,'-') as celularPadre
+        ,isnull(faMadre.telefonocelular,'-') as celularMadre
+        ,isnull(concat(e.gruposanguineo+' - ',e.factorsanguineo),'-') as sanguineo
+        ,isnull(entse.nombre,'-') as nombreSeguro
+        ,isnull(convert(varchar,va.fechahemoglobina,103),'-') as fechaHemoglobina
+        ,isnull(va.resultado,'-') as resultado
+        from MX_Estudiante e
+        left join MO_UnidadNegocio uni on uni.unineg=e.unineg
+        left join MX_Persona p on p.idpersona= e.idestudiante
+        Left Join MX_GradoAcademico graAca On graAca.idGradoAcademico=p.idgradoacademico
+        left join MO_Pais pa on pa.idpais= e.idpaisnaci
+        Left Join MO_Distrito disNac On e.idDistritoNaci=disNac.idDistrito
+        Left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        left join MO_Departamento de on de.iddepartamento = proNac.iddepartamento
+        left join MX_Familia fam on fam.idfamilia= e.idfamilia
+        Left join MX_Familiar faPadre on faPadre.idfamiliar = fam.idpadre
+        left join MX_Familiar faMadre on faMadre.idfamiliar=fam.idmadre
+        left join MX_EstudianteSeguro se on se.idestudiante=e.idestudiante
+        left join MO_Entidad entse on entse.ruc=se.ruc
+        left join MX_EstudianteInfo va on va.idestudiante= e.idestudiante
+        WHERE e.idestudiante=#{idEstudiante}  and e.unineg=#{uniNeg}
+    </select>
+    <select id="obtenerEstudianteInfoEnfPadres" resultType="pe.marista.sigma.bean.reporte.EstudianteEnfermedadPadresRepBean" parameterType="map">
+        select
+        isnull(
+        case 
+        when inf.diabetespadres=1 then 'SI'
+        when inf.diabetespadres=0 then 'NO'
+        end,'-') as diabetesPadres
+        ,isnull(
+        CASE
+        when inf.hipertensionpadres=1 then 'SI'
+        when inf.hipertensionpadres=0 then 'NO'
+        end,'-') as hipertensionPadres
+        ,isnull(
+        CASE
+        when inf.tbcpadres=1 then 'SI'
+        when inf.tbcpadres=0 then 'NO'
+        end,'-') as tbcPadres
+        from MX_Estudiante e 
+        left join MX_EstudianteInfo inf on inf.idestudiante = e.idestudiante
+        WHERE e.idestudiante=#{idEstudiante}  and e.unineg=#{uniNeg}
+    </select>
+    <!-- OBTENER POR CODIGO -->
+    <select id="obtenerEstPorCodigo" resultMap="estudianteResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaEstudiante"/>
+        Where est.codigo = #{codigo} and est.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <!-- PRO-BLOQUEOS -->
+    <select id="execProBloqueo" resultType="Object" parameterType="pe.marista.sigma.bean.BloqueoBean" >
+        exec PRO_BLOQUEOSESTUDIANTE
+        @@uniNeg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@anio = #{anio,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @@objFile = #{objFile,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    <!-- LIBERA BLOQUEOS -->
+    <select id="execProBloqueoLibera" resultType="Object" parameterType="pe.marista.sigma.bean.BloqueoBean" >
+        exec PRO_BLOQUEOSESTUDIANTE_LIBERA
+        @@uniNeg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@anio = #{anio,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @@objFile = #{objFile,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select  id="SP_actualizarEstadoEst" parameterType="pe.marista.sigma.bean.EstudianteBean" resultType="Object">
+        exec actualizarEstadoEst 
+        @idEstudiante = #{personaBean.idPersona,javaType=String,jdbcType=VARCHAR,mode=IN}, 
+        @uniNeg = #{personaBean.unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN} 
+    </select>
+    <select id="execProUnirFamilia" parameterType="String" resultType="Object" >
+        EXEC PRO_UNINR_FAMILIA
+        @uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN} 
+    </select>
+    <select id="obtenerCodigoPorFiltro" resultMap="codigoColegioResultado" parameterType="pe.marista.sigma.bean.CodigoColegioBean">
+        <include refid="consultaCodigoColegio" />
+        <where>  
+            c.uniNeg= #{unidadNegocioBean.uniNeg} 
+        </where>
+        order by c.codigo desc
+    </select> 
+    <resultMap id="codigoColegioResultado" type="pe.marista.sigma.bean.CodigoColegioBean">
+        <id property="codigo" column="codigo"/> 
+        <result property="codigoActual" column="codigoActual"/> 
+        <result property="anio" column="anio"/> 
+        <result property="creaPor"  column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/> 
+        <!--1. idEstudiante (Persona)-->
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioCodigoResultado"/> 
+    </resultMap>
+    <resultMap id="unidadNegocioCodigoResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>
+    <insert id="insertarCodigoColegio" parameterType="pe.marista.sigma.bean.CodigoColegioBean">
+        Insert Into  MO_CodigoColegio
+        (unineg,codigo,codigoactual,anio,creapor,creafecha)
+        Values 
+        (#{unidadNegocioBean.uniNeg},#{codigo},#{codigoActual},#{anio},#{creaPor},getdate())
+    </insert>
+    <update id="modificarCodigoColegio" parameterType="pe.marista.sigma.bean.CodigoColegioBean">
+        Update MO_CodigoColegio Set 
+        codigo = #{codigo},     
+        codigoactual = #{codigoActual},   
+        anio = #{anio},   
+        modiPor = #{modiPor}
+        Where 
+        uniNeg = #{unidadNegocioBean.uniNeg} and codigo=#{codigo} 
+    </update>
+    <select id="obtenerCodigoColegioPorId" resultMap="codigoColegioResultado" parameterType="pe.marista.sigma.bean.CodigoColegioBean">
+        SELECT top 1 n.unineg as uniNeg,
+        n.nombreUniNeg as nombreUniNeg
+        ,c.codigo as codigo,
+        c.codigoactual as codigoActual
+        ,c.anio as anio
+        ,c.creapor as creaPor
+        ,c.creafecha as creaFecha
+        ,c.modipor  as modiPor
+        FROM MO_CodigoColegio c
+        inner join MO_UnidadNegocio n on c.unineg=n.unineg
+        inner join MX_Estudiante e on e.codigo= e.codigo
+        Where 
+        c.uniNeg = #{unidadNegocioBean.uniNeg} and c.anio=#{anio}
+        order by creafecha  
+    </select>  
+    <!--  <select id="obtenerCodigoPorAnioAdmision" resultMap="codigoColegioResultado" parameterType="pe.marista.sigma.bean.CodigoColegioBean">
+        SELECT  c.codigo as codigo,
+        c.codigoactual as codigoActual
+        ,c.anio as anio
+        ,c.creapor as creaPor
+        ,c.creafecha as creaFecha
+        ,c.modipor  as modiPor
+        FROM MO_CodigoColegio c 
+        Where 
+        c.uniNeg = #{unidadNegocioBean.uniNeg} and c.codigo=#{codigo}
+        order by creafecha  
+    </select>  -->
+    <select id="obtenerCodigoColegioPorCodigo" resultMap="codigoColegioResultado" parameterType="pe.marista.sigma.bean.CodigoColegioBean">
+        SELECT top 1 n.unineg as uniNeg,
+        n.nombreUniNeg as nombreUniNeg
+        ,c.codigo as codigo,
+        c.codigoactual as codigoActual
+        ,c.anio as anio
+        ,c.creapor as creaPor
+        ,c.creafecha as creaFecha
+        ,c.modipor  as modiPor
+        FROM MO_CodigoColegio c
+        inner join MO_UnidadNegocio n on c.unineg=n.unineg
+        inner join MX_Estudiante e on e.codigo= e.codigo
+        Where 
+        c.uniNeg = #{unidadNegocioBean.uniNeg} and c.codigo=#{codigo}
+        order by creafecha  
+    </select>   
+    <select id="obtenerCodigoColegioPorCodigoSanjoh" resultMap="codigoColegioResultado" parameterType="pe.marista.sigma.bean.CodigoColegioBean">
+        SELECT top 1 n.unineg as uniNeg,
+        n.nombreUniNeg as nombreUniNeg
+        ,c.codigo as codigo,
+        c.codigoactual as codigoActual
+        ,c.anio as anio
+        ,c.creapor as creaPor
+        ,c.creafecha as creaFecha
+        ,c.modipor  as modiPor
+        FROM MO_CodigoColegio c
+        inner join MO_UnidadNegocio n on c.unineg=n.unineg
+        inner join MX_Estudiante e on e.codigo= e.codigo 
+        order by creafecha  
+    </select>  
+    <delete id="eliminarCodigoColegio" parameterType="pe.marista.sigma.bean.CodigoColegioBean" >
+        DELETE from MO_CodigoColegio
+        WHERE unineg = #{unidadNegocioBean.uniNeg} 
+        and codigo = #{codigo} 
+    </delete>
+    <update id="modificarFamiliaEstudiante" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        Update MX_Estudiante Set 
+        idfamilia = #{familiaBean.idFamilia},
+        modiPor = #{modiPor}
+        Where 
+        uniNeg = #{unidadNegocioBean.uniNeg} and idestudiante=#{idEstudiante} 
+    </update>
+</mapper>

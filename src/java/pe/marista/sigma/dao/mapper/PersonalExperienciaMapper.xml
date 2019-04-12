@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PersonalExperienciaDAO">
+    <sql id="consultaCampos">
+        SELECT
+        PEXP.idPersonalExperiencia,
+        PEXP.uniNeg as uniNegP,
+        PEXP.idPersonal,
+        PEXP.empresa,
+        PEXP.industria,
+        PEXP.area,
+        PEXP.cargo,
+        PEXP.mesIni,
+        PEXP.mesFin,
+        PEXP.anoIni,
+        PEXP.anoFin,
+        PEXP.funcion,
+        PEXP.obs 
+        FROM MO_PersonalExperiencia  PEXP 
+        INNER Join  MO_Personal     PE      on  PEXP.idPersonal = PE.idPersonal  and PEXP.unineg=pe.unineg
+    </sql>
+    <resultMap id="personalExperienciaResultado" type="pe.marista.sigma.bean.PersonalExperienciaBean">
+        <id property="idPersonalExperiencia" column="idPersonalExperiencia" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="industria" column="industria" />
+        <result property="empresa" column="empresa" />
+        <result property="area" column="area" />
+        <result property="cargo" column="cargo" />
+        <result property="mesIni" column="mesIni" />
+        <result property="mesFin" column="mesFin" />
+        <result property="anioIni" column="anoIni" />
+        <result property="anioFin" column="anoFin" />
+        <result property="funcion" column="funcion" />
+        <result property="obs" column="obs" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" /> 
+        <result property="modiPor" column="modiPor" />
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+         
+    </resultMap>
+   
+    <!--1 idPersonal-->         
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+    </resultMap>
+     
+    <select id="obtenerPersonalExperienciaPorPersonal" resultMap="personalExperienciaResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />
+        where PEXP.idPersonal=#{idPersonal} and pexp.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonalExperienciaPorId" resultMap="personalExperienciaResultado" parameterType="pe.marista.sigma.bean.PersonalExperienciaBean">
+        <include refid="consultaCampos" />
+        where PEXP.idPersonalExperiencia=#{idPersonalExperiencia}  and pexp.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+     
+    <insert id="insertarPersonalExperiencia" parameterType="pe.marista.sigma.bean.PersonalExperienciaBean">
+        INSERT INTO  MO_PersonalExperiencia
+        (unineg,idPersonal,empresa,industria,area,cargo,mesIni,
+        mesFin,anoIni,anoFin,funcion,obs,creaPor)
+        
+        Values (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{empresa},#{industria},#{area},#{cargo},#{mesIni},
+        #{mesFin},#{anioIni}, #{anioFin},#{funcion},#{obs},#{creaPor})
+    </insert>                                                                                                       
+     
+    <update id="modificarPersonalExperiencia" parameterType="pe.marista.sigma.bean.PersonalExperienciaBean">
+        Update MO_PersonalExperiencia set
+        empresa=#{empresa},
+        industria=#{industria},
+        area=#{area},
+        cargo=#{cargo},
+        mesIni=#{mesIni},
+        mesFin=#{mesFin},
+        anoIni=#{anioIni},
+        anoFin=#{anioFin},
+        funcion=#{funcion},
+        obs=#{obs},
+        modiPor=#{modiPor}
+        Where idPersonalExperiencia=#{idPersonalExperiencia}  and  unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+     
+    <delete id="eliminarPersonalExperiencia" parameterType="pe.marista.sigma.bean.PersonalExperienciaBean">
+        Delete From MO_PersonalExperiencia Where idPersonalExperiencia = #{idPersonalExperiencia}  and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+    <select  id="obtenerExperienciaPorPersonalRep" parameterType="map" resultType="pe.marista.sigma.bean.reporte.PersonalExperienciaRepBean">
+        SELECT   
+        ISNULL(Pexp.empresa,'') AS empresa,
+        ISNULL(Pexp.industria,'') AS industria,
+        ISNULL(Pexp.cargo,'') AS cargo,
+        ISNULL(Pexp.funcion,'') AS funcion,
+        concat(convert(varchar(2),right(replicate('0', 1) + rtrim(isnull(Pexp.mesini,0)), 2)),'/',convert(varchar(4),isnull(Pexp.anoini,'')) ,' - ' ,convert(varchar(2),right(replicate('0', 1) + rtrim(isnull(Pexp.mesfin,0)), 2)),'/',convert(varchar(4),isnull(Pexp.anofin,''))) as periodo
+        FROM MO_PersonalExperiencia Pexp   
+        where Pexp.idpersonal=#{idPersonal} and Pexp.unineg=#{uniNeg}      
+        order by 5 desc        
+    </select>      
+</mapper>

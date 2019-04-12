@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.EventoTipoPaganteDAO">
+    <sql id="consultaCampos" >
+        select 
+        etp.unineg,
+        etp.idevento,
+        etp.nroasignaciones,
+        etp.nroIni,
+        etp.nroFin,
+        etp.idtipopagante,
+        etp.creapor,
+        etp.creafecha,
+        etp.modipor,
+        etp.modifecha,
+        etp.modiver,
+        tp.nompagante as nomPagante,
+        e.nombre as nombreEvento,
+        u.unineg,
+        u.nombreUniNeg,
+        u.ruc,
+        u.fecfundacion
+        from MT_EventoTipoPagante etp
+        inner join MO_TipoPagante tp on etp.idtipopagante = tp.idtipopagante and tp.unineg = etp.unineg
+        inner join MO_Evento e on etp.idevento = e.idevento and e.unineg = etp.unineg
+        inner join MO_UnidadNegocio u on etp.unineg = u.unineg
+    </sql>
+    
+    <resultMap id="eventoTipoPaganteResultado" type="pe.marista.sigma.bean.EventoTipoPaganteBean" >        
+        <result property="nroAsignaciones" column="nroasignaciones" />
+        <result property="nroIni" column="nroIni" />
+        <result property="nroFin" column="nroFin" />
+        <result property="creaPor" column="creapor" />
+        <result property="creaFecha" column="creafecha" />
+        <result property="modiPor" column="modipor" />
+        <result property="modiFecha" column="modifecha" />
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="tipoPaganteBean" column="idTipoPagante"
+                     javaType="pe.marista.sigma.bean.TipoPaganteBean"
+                     resultMap="tipoPaganteResultado"/>
+        <association property="eventoBean" column="idevento"
+                     javaType="pe.marista.sigma.bean.EventoBean"
+                     resultMap="eventoResultado"/>
+    </resultMap>
+    
+    <!-- UNIDAD DE NEGOCIO RESULTADO -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>
+    
+    <!-- EVENTO -->
+    <resultMap id="eventoResultado" type="pe.marista.sigma.bean.EventoBean">
+        <id property="idEvento" column="idevento" />
+        <result property="nombre" column="nombreEvento" />
+    </resultMap>
+    
+    <!-- TIPO PAGANTE -->
+    <resultMap id="tipoPaganteResultado" type="pe.marista.sigma.bean.TipoPaganteBean">
+        <id property="idtipoPagante" column="idtipopagante" />
+        <result property="nomPagante" column="nomPagante" />
+    </resultMap>
+    
+    <select id="obtener" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" resultMap="eventoTipoPaganteResultado" >
+        <include refid="consultaCampos" />
+        WHERE etp.unineg = #{unidadNegocioBean.uniNeg} and etp.idtipopagante = #{tipoPaganteBean.idTipoPagante}
+    </select>
+    
+    <select id="obtenerPorEvento" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" resultMap="eventoTipoPaganteResultado" >
+        <include refid="consultaCampos" />
+        WHERE etp.unineg = #{unidadNegocioBean.uniNeg} and etp.idEvento = #{eventoBean.idEvento}
+    </select>
+    
+    <select id="obtenerPorIdEventoTip" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" resultMap="eventoTipoPaganteResultado" >
+        <include refid="consultaCampos" />
+        WHERE etp.unineg = #{unidadNegocioBean.uniNeg} and etp.idEvento = #{eventoBean.idEvento} and etp.idtipopagante = #{tipoPaganteBean.idtipoPagante} 
+    </select>
+     
+    <select id="obtenerNumeroAsig" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" resultType="Integer" >
+        select isnull(nroasignaciones,0) as nroasignaciones from MT_EventoTipoPagante
+        where unineg = #{unidadNegocioBean.uniNeg} and idevento = #{eventoBean.idEvento} and idtipopagante = #{tipoPaganteBean.idtipoPagante}
+    </select>
+     
+    <select id="obtenerNumeroIni" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" resultType="Integer" >
+        select isnull(nroini,0) as nroIni from MT_EventoTipoPagante
+        where unineg = #{unidadNegocioBean.uniNeg} and idevento = #{eventoBean.idEvento} and idtipopagante = #{tipoPaganteBean.idtipoPagante}
+    </select> 
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" >
+        INSERT INTO [MT_EventoTipoPagante]
+        ([unineg]
+        ,[idevento]
+        ,[idtipopagante]
+        ,[nroini]
+        ,[nrofin]
+        ,[nroasignaciones]
+        ,[creapor]
+        ,[creafecha])
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{eventoBean.idEvento},
+        #{tipoPaganteBean.idtipoPagante},
+        #{nroIni},
+        #{nroFin},
+        #{nroAsignaciones},
+        #{creaPor},
+        getdate())
+    </insert>
+    
+    <update id="modificar" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" >
+        UPDATE [MT_EventoTipoPagante]
+        set 
+        [idevento] = #{eventoBean.idEvento},
+        [idtipopagante] = #{tipoPaganteBean.idtipoPagante},
+        [nroini] = #{nroIni},
+        [nrofin] = #{nroFin},
+        [nroasignaciones] = #{nroAsignaciones}
+        where 
+        unineg = (#{unidadNegocioBean.uniNeg} and 
+        [idevento] = #{eventoBean.idEvento} and 
+        [idtipopagante] = #{tipoPaganteBean.idtipoPagante}
+    </update>
+    
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.EventoTipoPaganteBean" >
+        delete from [MT_EventoTipoPagante]
+        where 
+        unineg = (#{unidadNegocioBean.uniNeg} and 
+        [idevento] = #{eventoBean.idEvento} and 
+        [idtipopagante] = #{tipoPaganteBean.idtipoPagante}
+    </delete>
+     
+</mapper> 

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ChequeDAO">  
+    <sql id="consultaCampos"> 
+        SELECT
+        che.uniNeg
+        ,cb.unineg as  uniNegCuenta
+        ,che.idCheque
+        ,che.rucBanco
+        ,che.numCuenta 
+        ,che.nombre   as nombreCheque
+        ,che.status
+        ,che.inicio
+        ,che.fin
+        ,che.actual
+        ,che.obs
+        ,che.creaPor
+        ,che.creafecha
+        ,cb.rucBanco   as rucBancoCB
+        ,cb.numCuenta  as numCuenta
+        ,ent.nombre    as nombreEntBanco
+        ,cb.numCuenta  
+        FROM MT_Cheque che
+        inner join MT_CuentaBanco cb on che.uniNeg=cb.uniNeg and che.rucBanco=cb.rucBanco and che.numCuenta=cb.numCuenta
+        inner join MO_Entidad ent on cb.rucBanco=ent.ruc
+    </sql>
+    <resultMap id="chequeResultado" type="pe.marista.sigma.bean.ChequeBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idCheque" column="idCheque"/> 
+        
+        <result property="nombre" column="nombreCheque"/> 
+        <result property="inicio" column="inicio"/> 
+        <result property="fin" column="fin"/> 
+        <result property="actual" column="actual"/> 
+        <result property="status" column="status"/> 
+        
+        <result property="obs" column="obs"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="cuentaBancoBean" column="numCuenta"
+                     javaType="pe.marista.sigma.bean.CuentaBancoBean"
+                     resultMap="cuentaBancoResultado"/>
+        
+    </resultMap> 
+    <!-- UNI NEG -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    
+    <!-- RUC BANCO -->  
+    <resultMap id="cuentaBancoResultado" type="pe.marista.sigma.bean.CuentaBancoBean">
+        <id property="numCuenta" column="numCuenta"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="entidadBancoBean.ruc" column="rucBancoCB"/> 
+        <!-- unidad negocio de cuenta banco -->
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultadoCB"/> 
+        <association property="entidadBancoBean" column="rucBancoCB"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadBancoResultado"/> 
+        
+    </resultMap>
+    <!-- unidad negocio de entidad  -->
+    <resultMap id="unidadNegocioResultadoCB" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCuenta" />
+        <id property="nombre" column="nombreCuenta" />
+    </resultMap>
+    
+    <!--entidad Banco   -->
+    <resultMap id="entidadBancoResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucBancoCB" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegBanco"/>
+        <result property="nombre" column="nombreEntBanco" />
+        <!--   unidad negocio de entidad -->
+        <association property="unidadNegocioBean" column="uniNegBanco" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultadoBanco"/> 
+    </resultMap>
+    <!--   unidad negocio de cuenta banco -->
+    <resultMap id="unidadNegocioResultadoBanco" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegBanco" />
+        <id property="nombre" column="nombreBanco" />
+    </resultMap>
+    
+    <insert id="insertarCheque" parameterType="pe.marista.sigma.bean.ChequeBean">
+        Insert Into  MT_Cheque
+        (unineg,rucBanco,numcuenta
+        ,nombre,inicio,fin,actual,status,obs,creapor,creafecha)
+        Values 
+        (#{unidadNegocioBean.uniNeg},#{cuentaBancoBean.entidadBancoBean.ruc},#{cuentaBancoBean.numCuenta}
+        ,#{nombre},#{inicio},#{fin},#{actual},#{status},#{obs},#{creaPor},getdate())
+    </insert>
+    <update id="modificarCheque" parameterType="pe.marista.sigma.bean.ChequeBean">
+        Update MT_Cheque Set
+        rucBanco = #{cuentaBancoBean.entidadBancoBean.ruc},  
+        numcuenta = #{cuentaBancoBean.numCuenta},  
+        nombre = #{nombre},   
+        inicio = #{inicio},   
+        fin    = #{fin},   
+        actual = #{actual},   
+        status = #{status},   
+        obs    = #{obs},     
+        modiPor = #{modiPor}
+        Where 
+        uniNeg = #{unidadNegocioBean.uniNeg} and idcheque=#{idCheque} 
+    </update>
+    <update id="aumentarSecuenciaCheque" parameterType="pe.marista.sigma.bean.ChequeBean">
+        Update MT_Cheque Set 
+        actual = #{actual}
+        Where 
+        uniNeg = #{unidadNegocioBean.uniNeg} and idcheque=#{idCheque} 
+    </update>
+    <delete id="eliminarCheque" parameterType="pe.marista.sigma.bean.ChequeBean">
+        Delete From MT_Cheque 
+        Where 
+        uniNeg = #{unidadNegocioBean.uniNeg} and idcheque=#{idCheque} 
+    </delete> 
+    <select id="obtenerChequePorFiltro" resultMap="chequeResultado" parameterType="pe.marista.sigma.bean.ChequeBean">
+        <include refid="consultaCampos" />
+        <where>  
+            che.uniNeg= #{unidadNegocioBean.uniNeg}
+            <if test="cuentaBancoBean.numCuenta != null and cuentaBancoBean.numCuenta != 0 ">
+                and cb.numCuenta=#{cuentaBancoBean.numCuenta}
+            </if> 
+            <if test="nombre != null and nombre != '' "> 
+                and upper(che.nombre) like concat('%',#{nombre},'%')
+            </if> 
+        </where>
+        order by che.idcheque desc
+    </select> 
+    <select id="obtenerChequePorId" resultMap="chequeResultado" parameterType="pe.marista.sigma.bean.ChequeBean">
+        <include refid="consultaCampos" />
+        Where 
+        che.uniNeg = #{unidadNegocioBean.uniNeg} and che.idcheque=#{idCheque} 
+    </select> 
+    <select id="obtenerChequeActivos" resultMap="chequeResultado" parameterType="pe.marista.sigma.bean.ChequeBean">
+        <include refid="consultaCampos" />
+        Where 
+        che.uniNeg = #{unidadNegocioBean.uniNeg} and che.status=1
+    </select> 
+    <select id="obtenerUltimoChequeMasUno" resultMap="chequeResultado" 
+            parameterType="pe.marista.sigma.bean.ChequeBean"  resultType="pe.marista.sigma.bean.ChequeBean">
+        <!--
+        SELECT top 1 CONVERT(varchar,right(replicate('0', len(actual)) + rtrim(actual+1), len(actual)))  as actual 
+        from mt_cheque
+        where  uniNeg = #{unidadNegocioBean.uniNeg} and idcheque=#{idCheque}   
+        --> 
+        <!--
+        SELECT top 1 CONVERT(varchar,right(replicate('0', len(c.actual))
+        + rtrim(c.actual+1), len(c.actual)))  as actual ,c.idCheque
+        from mt_cheque C
+        INNER JOIN MT_Impresora IMP ON IMP.idcheque=C.idcheque
+        INNER JOIN MT_CuentaBanco CTA ON CTA.numcuenta=C.numcuenta AND C.unineg=CTA.unineg
+        where  C.uniNeg = #{uniNeg} and cta.idtipomoneda=#{idTipoMoneda} and imp.impresora=#{impresora}
+        order by actual desc 
+        SELECT top 1 CONVERT(varchar,right(rtrim(c.actual+1), len(c.actual)))  as actual ,c.idCheque
+        from mt_cheque C
+        INNER JOIN MT_Impresora IMP ON IMP.idcheque=C.idcheque
+        INNER JOIN MT_CuentaBanco CTA ON CTA.numcuenta=C.numcuenta AND C.unineg=CTA.unineg
+        where  C.uniNeg = #{uniNeg} and cta.idtipomoneda=#{idTipoMoneda} and imp.impresora=#{impresora}
+        order by actual desc-->
+        SELECT top 1 CONCAT(REPLICATE('0',8-LEN(CONVERT(INT,c.actual))),C.actual + 1)  as actual ,c.idCheque
+        from mt_cheque C
+        INNER JOIN MT_Impresora IMP ON IMP.idcheque=C.idcheque
+        INNER JOIN MT_CuentaBanco CTA ON CTA.numcuenta=C.numcuenta AND C.unineg=CTA.unineg
+        where  C.uniNeg = #{uniNeg} and cta.idtipomoneda=#{idTipoMoneda} and imp.impresora=#{impresora}
+        order by actual desc
+    </select>
+    <select id="obtenerUltimoChequeCorrelativo" resultMap="chequeResultado" parameterType="map" resultType="pe.marista.sigma.bean.ChequeBean" >
+        <!--
+        DECLARE @CK INTEGER = 0
+        set @CK = (SELECT top 1 CONVERT(varchar,right(replicate('0', len(c.actual))
+        + rtrim(c.actual+1), len(c.actual)))  as actual,c.idCheque
+        from mt_cheque C
+        INNER JOIN MT_Impresora IMP ON IMP.idcheque=C.idcheque
+        INNER JOIN MT_CuentaBanco CTA ON CTA.numcuenta=C.numcuenta AND C.unineg=CTA.unineg
+        where  C.uniNeg = #{uniNeg} and cta.idtipomoneda= #{idTipoMoneda} and imp.impresora=#{impresora}
+        order by actual desc)
+        SELECT CONCAT(REPLICATE('0',LEN(@CK)),@CK) as actual
+       
+        SELECT top 1 CONVERT(varchar,right(replicate('0', len(c.actual))
+        + rtrim(c.actual+1), len(c.actual)))   as actual ,c.idCheque
+        from mt_cheque C
+        INNER JOIN MT_Impresora IMP ON IMP.idcheque=C.idcheque
+        INNER JOIN MT_CuentaBanco CTA ON CTA.numcuenta=C.numcuenta AND C.unineg=CTA.unineg
+        where  C.uniNeg = #{uniNeg} and cta.idtipomoneda=#{idTipoMoneda} and imp.impresora=#{impresora}
+        order by actual desc-->
+        SELECT top 1 CONCAT(REPLICATE('0',8-LEN(CONVERT(INT,c.actual))),C.actual + 1)    as actual ,c.idCheque
+        from mt_cheque C
+        INNER JOIN MT_Impresora IMP ON IMP.idcheque=C.idcheque
+        INNER JOIN MT_CuentaBanco CTA ON CTA.numcuenta=C.numcuenta AND C.unineg=CTA.unineg
+        where  C.uniNeg = #{uniNeg} and cta.idtipomoneda=#{idTipoMoneda} and imp.impresora=#{impresora}
+        order by actual desc
+    </select>
+</mapper>

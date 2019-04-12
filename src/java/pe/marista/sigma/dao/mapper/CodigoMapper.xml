@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.CodigoDAO"> 
+     
+    <sql id="consultaCampos">
+        Select
+        row_number() over (order by codigo) as nroItem,  
+        idCodigo,
+        idTipo,
+        idTipoCodigo,
+        codigo,
+        orden,
+        valor
+        From MO_Codigo    
+    </sql>
+    
+    <sql id="consultaCampos2">
+        select mm.idmovimientomotivo,mm.motivo 
+        from ML_MovimientoMotivo mm   
+    </sql>
+    <sql id="consultaCamposDuracion">
+        select
+        mm.idmovimientomotivo,co.idcodigo,coti.codigo as tipomov,mm.motivo,
+        mm.idtipomovactivo
+        from ML_MovimientoMotivo mm   
+        left join MO_Codigo co on co.idcodigo = mm.idtipoduracion
+        left join MO_Codigo coti on coti.idcodigo = mm.idtipomovactivo  
+    </sql>    
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="nroItem" column="nroItem"/>
+        <result property="idCodigo" column="idCodigo"/>
+        <result property="idTipo" column="idTipo"/>
+        <result property="codigo" column="codigo"/>
+        <result property="orden" column="orden"/>
+        <result property="valor" column="valor"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="tipoCodigoBean" column="idTipoCodigo"
+                     javaType="pe.marista.sigma.bean.TipoCodigoBean"
+                     resultMap="tipoCodigoResultado"/>
+         
+    </resultMap>
+    
+    <resultMap id="tipoCodigoResultado" type="pe.marista.sigma.bean.TipoCodigoBean">
+        <id property="idTipoCodigo" column="idTipoCodigo"/>
+        <result property="tipoCodigo" column="tipoCodigo"/>
+        <result property="descripTipoCodigo" column="descripTipoCodigo"/>
+    </resultMap>
+     
+    
+    <select id="obtenerPorTipo" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo}
+        order by orden
+    </select>
+    <select id="obtenerPorTipoRecibo" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and valor='rec'
+        order by orden
+    </select>
+    <select id="obtenerPorTipoSoles" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo like'sol%'
+        order by orden
+    </select>
+    <select id="obtenerPorTipoSeguro" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Seguro del Colegio')
+        order by orden
+    </select>
+    
+    <select id="obtenerPorTipoEst" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and idcodigo not like '14402'
+        order by orden
+    </select>
+    
+    <select id="obtenerPorTipoOpe" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and idcodigo not like '14401'
+        order by orden
+    </select>
+    
+    <select id="funcionObtenerPorTipo" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        SELECT  * from  [dbo].[Codigo](#{idTipoCodigo})  
+        order by flgdefault desc
+    </select>  
+    <select id="funcionObtenerPorTipoSoloInsc" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Inscrito')
+        order by flgdefault desc
+    </select>  
+    <select id="obtenerPorTipoDocumento" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Doc.Nacional de Identidad','Carné de Extranjería')
+        order by flgdefault desc
+    </select>
+    <select id="obtenerPorTipoCat" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Activo Fijo','Material','Servicio')
+    </select>
+    <select id="obtenerPorTipoMamaApoVive" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Mamá','Apoderado')
+    </select>
+    <select id="obtenerPorTipoPapaApoVive" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Papá','Apoderado')
+    </select>
+    <select id="obtenerPorTipoPapaMamaVive" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Mamá','Papá')
+    </select>
+    <select id="obtenerPorTipoPapaVive" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Papá')
+    </select>
+    <select id="obtenerPorTipoMamaVive" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Mamá')
+    </select>
+    <select id="obtenerPorTipoApoVive" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Apoderado')
+    </select> 
+    <select id="obtenerPorTipoNingunoVive" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('')
+    </select> 
+    
+    <select id="obtenerPorTipoSol" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Borrador','Anulado','Pendiente')
+    </select>
+    <select id="obtenerPorStatusEst" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo not in ('Bloqueado','Activo')
+    </select>
+    <select id="obtenerPorStatusEstModificaciones" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Retirado','Activo')
+    </select>
+    
+    <select id="obtenerPorTipoDes" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Proceso','Atendido','Autorizado','Comprado')
+    </select>
+    
+    <select id="obtenerPorTipoDespacho" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />
+        Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Nada','Asignado Parcial','Asignado Total')
+    </select>
+    
+    <select id="obtenerMotivoPorMov" parameterType="Integer" resultType="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <include refid="consultaCamposDuracion" /> where mm.idtipomovactivo = #{codigoBean.idCodigo}
+    </select>
+    
+    <select id="obtenerMotivoPorId" parameterType="Integer" resultType="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <include refid="consultaCampos2" /> where mm.idmovimientomotivo = #{idMovimientoMotivo}
+    </select>    
+    <select id="obtenerMotivoPorDuracion" parameterType="Integer" resultType="pe.marista.sigma.bean.CodigoBean">
+        <include refid="consultaCampos" /> where idCodigo = #{idCodigo}
+    </select>    
+    <select id="obtenerTemporal" resultType="pe.marista.sigma.bean.CodigoBean">
+        <include refid="consultaCampos"/>  Where idCodigo = 10801
+    </select>    
+    <select id="obtenerPermanente" resultType="pe.marista.sigma.bean.CodigoBean">
+        <include refid="consultaCampos"/>  Where idCodigo = 10802
+    </select>    
+    
+    <select id="obtenerPorId" resultMap="codigoResultado" parameterType="pe.marista.sigma.bean.CodigoBean">
+        <include refid="consultaCampos" />WHERE idCodigo = #{idCodigo}
+    </select>
+    <select id="obtenerPorIdLista" resultMap="codigoResultado" parameterType="String">
+        <include refid="consultaCampos" />WHERE codigo = #{codigo}
+    </select>
+    
+    <select id="obtenerPorCodigo" resultMap="codigoResultado" parameterType="pe.marista.sigma.bean.CodigoBean">
+        <include refid="consultaCampos" />
+        where codigo = #{codigo} and idtipocodigo = #{tipoCodigoBean.idTipoCodigo}
+    </select>
+    <select id="obtenerPorCodigoDisCR" resultMap="codigoResultado" parameterType="map">
+        select top 1 detCR.idtipodistribucion as idCodigo,cod.codigo from MT_DetSolicitudCajaChCR detCR 
+        inner join MO_Codigo cod on detCR.idtipodistribucion=cod.idcodigo
+        where detCR.idsolicitudCajach=#{id} and detCR.unineg=#{uniNeg}
+    </select>
+    <select id="obtenerPorCodigoDisCRReq" resultMap="codigoResultado" parameterType="map">
+        select top 1 detCR.idtipodistribucion as idCodigo,cod.codigo 
+        from ML_DETRequerimientoCR detCR 
+        inner join MO_Codigo cod on detCR.idtipodistribucion=cod.idcodigo 
+        where detCR.idrequerimiento=#{id} and detCR.unineg=#{uniNeg}
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.CodigoBean">
+        INSERT INTO MO_Codigo (idCodigo,idTipoCodigo,idTipo,codigo,valor,creaPor,creaFecha)
+        Values (0,#{tipoCodigoBean.idTipoCodigo},#{idTipo},#{codigo},#{valor},#{creaPor},getDate())
+    </insert> 
+    
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.CodigoBean">
+        UPDATE MO_Codigo
+        SET 
+        codigo = #{codigo},
+        valor = #{valor},
+        modiPor= #{modiPor}
+        Where idCodigo = #{idCodigo}
+    </update>
+    
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.CodigoBean">
+        Delete From MO_Codigo Where idCodigo = #{idCodigo}
+    </delete>
+    
+    <delete id="eliminarPorTipo" parameterType="pe.marista.sigma.bean.TipoCodigoBean">
+        Delete From MO_Codigo Where idTipoCodigo = #{idTipoCodigo}
+    </delete>
+    
+    <select id="obtenerTodos" resultType="pe.marista.sigma.bean.CodigoBean">
+        <include refid="consultaCampos" />
+    </select>
+    
+    <!--Lista Parentesco sin papa y mama -->
+    <select id="obtenerParentescoSinPadres" resultMap="codigoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where codigo != #{parms.padre} and codigo!=#{parms.madre} and  idTipoCodigo=#{parms.tipParentesco}
+        <!--order by codigo-->
+    </select> 
+    <!--Lista Parentesco con papa, mama y apoderado -->
+    <select id="obtenerParentescoConTodo" resultMap="codigoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where idTipoCodigo=#{parms.tipParentesco} and  (codigo = #{parms.padre} OR codigo=#{parms.madre} OR codigo=#{parms.apoderado}  )
+        <!--order by codigo-->
+    </select> 
+    <select id="obtenerCodigoDocIngreso" parameterType="map" resultMap="codigoResultado">
+        <include refid="consultaCampos" />
+        Where     codigo in( #{parms.efectivo} , #{parms.pos} ,#{parms.ambos} ,#{parms.banco} ) and idTipoCodigo=#{parms.tipModoPago}
+        order by  idCodigo
+    </select>  
+    <select id="obtenerCodigoDocEgreso" parameterType="map" resultMap="codigoResultado">
+        <include refid="consultaCampos" />
+        Where   idTipoCodigo=#{parms.tipModoPago} and codigo not in (#{parms.pos} ,#{parms.ambos},#{parms.banco})
+        order by idcodigo  
+    </select> 
+    <select id="obtenerCodigoStatusPost" parameterType="map" resultMap="codigoResultado">
+        <include refid="consultaCampos" />
+        Where   idTipoCodigo=#{parms.tipStatusEst} and codigo != #{parms.post} 
+    </select> 
+    <select id="obtenerPorTipoDependiente" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />
+        Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Hijo(a)')
+    </select>
+    <select id="obtenerPorTipoOtrosDependiente" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />
+        Where idTipoCodigo = #{idTipoCodigo} and codigo not in ('Apoderado','Hijo(a)','Representante Legal')
+    </select>
+    <select id="obtenerPorTipoStatusCtaCte" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado">
+        <include refid="consultaCampos" />Where idTipoCodigo = #{idTipoCodigo} and codigo in ('Pagado','Sin Servicio','Pendiente')
+    </select>
+</mapper>

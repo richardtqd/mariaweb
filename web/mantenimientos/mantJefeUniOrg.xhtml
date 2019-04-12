@@ -1,0 +1,264 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>
+            <h:form id="frmDatosJefeUO">
+                <p:panel>
+                    <h:panelGrid columns="1" class="centrado">         
+                        <p:commandButton value="#{msgs.botonNuevo}" action="#{jefeUniOrgMB.limpiarJefeUniOrg()}" update=":frmMantJefe:pnlDatosJefe" 
+                                         oncomplete="PF('popJefeUO').show();"/>
+                    </h:panelGrid>
+                </p:panel>
+                <h:panelGrid styleClass="centrado" id="pnlTablaJefeUO" >
+                    <p:dataTable id="tblUniOrg" value="#{jefeUniOrgMB.listaUnidadOrganicaPorUniNeg}" widgetVar="tblUniOrgs"
+                                 paginator="true"  scrollable="true" 
+                                 paginatorPosition="bottom"
+                                 var="uniOrg" rowKey="#{uniOrg}" rows="15" 
+                                 rendered="#{not empty jefeUniOrgMB.listaUnidadOrganicaPorUniNeg}" 
+                                 style="width: 500px; overflow-x: auto;font-size:14px !important;"  >
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaUniOrg}" />  
+                        </f:facet>
+                        <p:column filterBy="#{uniOrg.unidadOrganicaBean.nombreUniOrg}" sortBy="#{uniOrg.unidadOrganicaBean.nombreUniOrg}" headerText="#{msgs.etiquetaUniOrg}" filterMatchMode="contains" width="200" styleClass="nombre2Filtro siseFontTable3">
+                            <h:outputText value="#{uniOrg.unidadOrganicaBean.nombreUniOrg}"/>
+                        </p:column>
+
+                        <p:column filterBy="#{uniOrg.status}" headerText="#{msgs.etiquetaStatus}" filterMatchMode="exact" width="100" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="filter">
+                                <p:selectOneMenu onchange="PF('tblUniOrgs').filter()" style="width: 100px" >
+                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.comboActivo}"/>
+                                    <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.comboInactivo}"/>
+                                </p:selectOneMenu>
+                            </f:facet> 
+                            <h:outputText value="#{uniOrg.statusVista}" />
+                        </p:column> 
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet> 
+                            <p:commandLink id="cmdEditar" actionListener="#{jefeUniOrgMB.obtenerUniOrgPorId(uniOrg.unidadOrganicaBean.idUniOrg)}" update=":frmMantJefe" 
+                                           oncomplete="PF('popJefeUO').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                            <p:tooltip id="toolTipEdit" for="cmdEditar" value="#{msgs.mensajeModCargo}" />
+                        </p:column>
+                    </p:dataTable>
+                    <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmMantJefe">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popJefeUO" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <p:panel header="#{msgs.tituloInserModJefes}" style="margin-bottom:1px;width: 750px" toggleable="true" toggleSpeed="500" closeSpeed="500" collapsed="false" styleClass="centrado">
+                        <h:panelGrid columns="1" id="pnlDatosJefe" cellpadding="1" styleClass="siseFont2 centrado">
+                            <h:panelGrid columns="3" style="font-size: 1em">  
+                                <h:outputLabel value="#{msgs.etiquetaUnidOrg}" class="black"/>
+                                <h:outputText  class="requerido" value="*"/>
+                                <h:outputLabel   value="#{jefeUniOrgMB.jefeUniOrgBean.unidadOrganicaBean.nombreUniOrg}" class="black"/>
+
+                                <h:outputLabel value="#{msgs.etiquetaColaborador}" class="negrita"  />
+                                <h:outputText value="*" class="requerido"/>
+                                <h:panelGrid columns="3" class="siseFontGrid5" id="pnlSoli">
+                                    <p:inputText id="txtSolicitante" value="#{jefeUniOrgMB.jefeUniOrgBean.personalBean.nombreCompleto}" 
+                                                 label="#{msgs.etiquetaColaborador}" size="35"  required="true"/> 
+                                    <p:commandLink id="btnBuscarAutoPer1" actionListener="#{legajoMB.limpiarPersonalFiltro()}" oncomplete="PF('popJefe').show();" process="@this"
+                                                   update=":frmBuscarPersonal:pnlFiltro,:frmBuscarPersonal:pnlTablaAutoPer1" >
+                                        <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                    </p:commandLink> 
+                                    <h:inputHidden value="#{jefeUniOrgMB.jefeUniOrgBean.personalBean.idPersonal}"/>
+                                    <h:inputHidden value="#{jefeUniOrgMB.jefeUniOrgBean.personalBean.unidadOrganicaBean.idUniOrg}"/>
+                                </h:panelGrid>
+                                <h:outputLabel value="#{msgs.etiquetaUnidOrg}" class="negrita"/>
+                                <h:outputText  class="requerido" value="*"/>
+                                <p:inputText id="txtUniOrg" value="#{jefeUniOrgMB.jefeUniOrgBean.personalBean.unidadOrganicaBean.nombreUniOrg}" readonly="true"/>
+
+                                <h:outputLabel value="#{msgs.etiquetaCargo}" class="negrita"/>
+                                <h:outputText  class="requerido" value=""/>
+                                <h:panelGrid columns="3" class="siseFontGrid5" id="pnlCar">
+                                    <p:inputText id="txtCargo" value="#{jefeUniOrgMB.jefeUniOrgBean.cargoBean.nombre}" readonly="true"/>
+                                    <h:inputHidden value="#{jefeUniOrgMB.jefeUniOrgBean.cargoBean.idCargo}"/>
+                                </h:panelGrid> 
+                                <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="negrita"/>
+                                <h:outputText  class="requerido" value=""/>
+                                <h:panelGrid columns="3" class="siseFontGrid3" cellpadding="3">
+                                    <p:calendar id="fecVigencia"  showOn="button" value="#{jefeUniOrgMB.jefeUniOrgBean.fecIni}" pattern="dd/MM/yyyy" locale="es" required="false" navigator="true" effect="fadeIn" size="7" >
+                                        <p:ajax event="dateSelect" update="fecTermino" />
+                                    </p:calendar>
+                                    <h:outputText value="&nbsp;&nbsp;al&nbsp;&nbsp;"/>
+                                    <p:calendar id="fecTermino"  showOn="button" value="#{jefeUniOrgMB.jefeUniOrgBean.fecTer}" mindate="#{jefeUniOrgMB.jefeUniOrgBean.fecTer}" pattern="dd/MM/yyyy" locale="es" required="false" navigator="true" effect="fadeIn" size="7" />
+                                </h:panelGrid>
+                                <h:outputLabel value="#{msgs.etiquetaEstado}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <h:selectOneRadio value="#{jefeUniOrgMB.jefeUniOrgBean.status}" label="#{msgs.etiquetaEstado}" required="true">
+                                    <f:selectItem itemLabel="#{msgs.etiquetaEstadoAct}" itemValue="#{msgs.comboTrue}"/>
+                                    <f:selectItem itemLabel="#{msgs.etiqeutaEstadoInac}" itemValue="#{msgs.comboFalse}"/> 
+                                </h:selectOneRadio>
+                                <h:outputLabel value="#{msgs.etiquetaObs}: " class="negrita" />
+                                <h:outputText value="" class=""/>
+                                <p:inputTextarea  value="#{jefeUniOrgMB.jefeUniOrgBean.obs}"  rows="5" cols="45" label="#{msgs.etiquetaObs}" maxlength="100"  />
+
+                            </h:panelGrid> 
+                            <h:outputText value="(*) Requerido" class="requerido"/>
+                            <h:inputHidden value="#{jefeUniOrgMB.jefeUniOrgBean.idJefeUniOrg}"/><h:inputHidden/>
+                        </h:panelGrid> 
+                        <h:panelGrid class="centrado">
+                            <p:commandButton actionListener="#{jefeUniOrgMB.guardarJefeUniOrg()}" update=":frmDatosJefeUO:pnlTablaJefeUO,:frmMantJefe:tblJefes,msgsAdd,:frmMantJefe:pnlDatosJefe"
+                                             oncomplete="if(args.operacionCorrecta){PF('popJefeUO').show();PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAdd" showDetail="true" showSummary="true"/>
+                    </p:panel>
+                    <br></br> 
+                    <h:panelGrid>
+                        <p:dataTable id="tblJefes" value="#{jefeUniOrgMB.listaJefeUniOrgPorUniOrgBean}" widgetVar="tblJefes"
+                                     paginator="true" selectionMode="single" scrollable="true"  rowIndexVar="n"
+                                     paginatorPosition="bottom"  
+                                     var="jefe" rowKey="#{jefe}" rows="10" 
+                                     rendered="#{not empty jefeUniOrgMB.listaJefeUniOrgPorUniOrgBean}" 
+                                     style="width: 850px;overflow-x: auto;font-size:14px !important;">
+                            <p:ajax event="rowSelect"  listener="#{jefeUniOrgMB.rowSelect}" update=":frmMantJefe:pnlDatosJefe"/>
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaA}"/>  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="5%">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column filterBy="#{jefe.personalBean.nombreCompleto}" headerText="#{msgs.etiquetaColaborador}" filterMatchMode="contains" width="35%" styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{jefe.personalBean.nombreCompleto}"/>
+                            </p:column> 
+                            <p:column filterBy="#{jefe.fecIni}" headerText="#{msgs.etiquetaFechaInicio}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3">
+                                <h:outputText value="#{jefe.fecIniVista}">
+                                    <f:convertDateTime pattern="dd/MM/YYYY HH:mm" timeZone="GMT-5"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column filterBy="#{jefe.fecTer}" headerText="#{msgs.etiquetaFecTerm}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3">
+                                <h:outputText value="#{jefe.fecTermVista}">
+                                    <f:convertDateTime pattern="dd/MM/YYYY HH:mm" timeZone="GMT-5"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column filterBy="#{jefe.status}" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3">
+                                <h:outputText value="#{jefe.statusVista}"/>
+                            </p:column> 
+                            <!---->
+                            <p:column style="text-align:center;width: 80px">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                </f:facet> 
+                                <p:commandLink id="cmdEliminar" action="#{jefeUniOrgMB.obtenerJefePorId(jefe)}" update=":frmElimina:pnlDatosElimina"
+                                               oncomplete="PF('popEliminar').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelCargo}" />
+                            </p:column> 
+                        </p:dataTable>
+                        <p:growl id="msgs1" showDetail="true"/>
+                    </h:panelGrid> 
+                </p:dialog>
+            </h:form>
+            <h:form id="frmBuscarPersonal">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popJefe" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid columns="2" styleClass="centrado" id="pnlFiltroAutoPer1">
+                                <h:outputLabel value="#{msgs.etiquetaCodigo} " /> 
+                                <p:inputText value="#{legajoMB.personalFiltroBean.codPer}" size="15" maxlength="15"/>
+
+                                <h:outputLabel value="#{msgs.etiquetaApePat}"/> 
+                                <p:inputText value="#{legajoMB.personalFiltroBean.apepat}" size="28" maxlength="30"/>  
+
+                                <h:outputLabel value="#{msgs.etiquetaApeMat}"/> 
+                                <p:inputText  value="#{legajoMB.personalFiltroBean.apemat}" size="28" maxlength="30"/>
+
+                                <h:outputLabel value="#{msgs.etiquetaNombre}"/> 
+                                <p:inputText value="#{legajoMB.personalFiltroBean.nombre}" size="28" maxlength="30"/>  
+
+                                <h:outputLabel value="#{msgs.etiquetaUniOrg}"/>  
+                                <p:selectOneMenu value="#{legajoMB.personalFiltroBean.unidadOrganicaBean.idUniOrg}"   label="#{msgs.etiquetaUnidOrg}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{legajoMB.listaUniNegUniOrgBean}" var="uo" itemLabel="#{uo.unidadOrganicaBean.nombreUniOrg}" itemValue="#{uo.unidadOrganicaBean.idUniOrg}"/> 
+                                </p:selectOneMenu>
+                            </h:panelGrid> 
+                            <h:panelGrid styleClass="centrado" columns="2">
+                                <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{legajoMB.obtenerFiltroPersonal()}" update="pnlFiltro,pnlTablaAutoPer1,msgP" />
+                                <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{legajoMB.limpiarPersonalFiltro()}" update="pnlFiltroAutoPer1,pnlTablaAutoPer1,msgP"/>
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msgP" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  id="pnlTablaAutoPer1" styleClass="centrado"> 
+                        <p:dataTable id="tblPersona" value="#{legajoMB.listaPersonalBean}" widgetVar="tblPersona"
+                                     selectionMode="single" 
+                                     paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     selection="#{legajoMB.personalBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="personal" rowKey="#{personal.idPersonal}"  rows="10" 
+                                     rendered="#{not empty legajoMB.listaPersonalBean}" 
+                                     style="width: 725px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaPersonal}" />  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{personal.idPersona}" >
+                                <h:outputText value="#{personal.codPer}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaAbApePaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apepat}" >
+                                <h:outputText value="#{personal.apepat}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAAbApeMaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apemat}">
+                                <h:outputText value="#{personal.apemat}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.nombre}">
+                                <h:outputText value="#{personal.nombre}"/>
+                            </p:column>
+                            <p:column style="text-align:center;width:60px" width="6%" >
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                </f:facet>
+                                <p:commandLink id="cmdSelA1" actionListener="#{legajoMB.ponerPersonalDinamico(personal, 'jefeUniOrg') }"
+                                               update=":frmMantJefe:txtUniOrg,:frmMantJefe:txtCargo,:frmMantJefe:pnlSoli,:frmMantJefe:pnlCar"
+                                               oncomplete="PF('popJefe').hide();">
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd1" for="cmdSelA1" value="#{msgs.toolTipSeleccionar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCargo}: #{jefeUniOrgMB.jefeUniOrgBean.personalBean.nombreCompleto}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{jefeUniOrgMB.eliminarJefe()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosJefeUO:pnlTablaJefeUO,:frmMantJefe:tblJefes,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form> 
+        </h:body>
+    </ui:define>
+</ui:composition>

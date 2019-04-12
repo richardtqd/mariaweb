@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.SolicitudLogisticoDAO">   
+    <sql id="consultaCampos">
+        
+        select r.idrequerimiento as idRequerimiento,
+        right(replicate('0', 3) + rtrim(r.nroSolicitud), 3) as nroSolicitud , r.idrequerimiento as idRequerimiento,r.idobjoperativo,r.anio,r.titulo,r.fechaSolicitud,r.unineg,un.unineg,un.nombreUniNeg,r.idTipoSolicitud,
+        r.idUniOrg,uo.nombreUniOrg,r.idsolicitante,p.apepat,p.apemat,p.nombre,r.nrosolicitud as nroSolicitud,
+        concat(p.apepat+' ',p.apemat+' ',p.nombre) as nombreCompleto, r.importePropuesto,
+        r.idtipocategoria,tr.codigo as tipoCat,r.idtipostatusreq,te.codigo as tipoEst,te.idcodigo as idTipoEst,
+        r.idtipoprioridad,tp.codigo as tipoPrio, tip.nombre as nombreTipoSol,tip.idTipoAutoriza1,tip.idTipoAutoriza2,tip.idTipoAutoriza3, 
+        r.idautoriza1, r.idautoriza2, r.idautoriza3, r.fecautoriza1,r.fecautoriza2, 
+        r.fecautoriza3,r.flgautoriza1,r.flgautoriza2,r.flgautoriza3,r.creaFecha,r.nivelAutoriza
+        ,r.idActividad,po.nombre as nombrePlanOp, a.nombre as nombreActividad, oo.nombre as nombreOpe, oo.idobjoperativo as operativo, r.flgtransporte as flgTransporte
+        ,(select case when count(idrequerimiento)>0 then 'true' else 'false' end 
+        from ML_DetOrdenCompra where iddetordencompra in 
+        (select iddetordencompra from ML_detRegistroCompra where idregistrocompra in 
+        (select idregistrocompra from Ml_FacturaCompra where idtipostatusfactura=19905 and unineg=r.unineg) and unineg=r.unineg)
+        and idrequerimiento =r.idrequerimiento and unineg=r.unineg) as flgAutorizar
+        from ML_Requerimiento r
+        left join MO_UnidadNegocio un on un.unineg = r.unineg
+        left join MO_Personal p on p.idpersonal = r.idsolicitante and un.unineg = p.unineg
+        left join MO_UnidadOrganica uo on uo.idUniOrg = p.idUniOrg 
+        left join ME_Actividad a on a.idActividad = r.idActividad and un.unineg = a.unineg
+        left join ME_ObjOperativo oo on a.idobjoperativo = oo.idobjoperativo and un.unineg = oo.unineg
+        left join ME_PlanOperativo po on oo.unineg = po.unineg  
+        left join MO_Codigo tr on tr.idcodigo = r.idtipocategoria
+        left join MO_Codigo te on te.idcodigo = r.idtipostatusreq
+        left join MO_Codigo tp on tp.idcodigo = r.idtipoprioridad 
+        left join MM_TipoSolicitud tip on r.idTipoSolicitud = tip.idTipoSolicitud and un.unineg = tip.unineg
+    </sql>   
+    <resultMap id="solResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/>
+        <result property="anio" column="anio"/> 
+        <result property="idSol" column="idSol"/>
+        <result property="titulo" column="titulo"/>
+        <result property="fechaSolicitud" column="fechaSolicitud"/>
+        <result property="flgTransporte" column="flgTransporte"/>
+        <result property="idAutoriza1" column="idAutoriza1"/>
+        <result property="idAutoriza2" column="idAutoriza2"/>
+        <result property="idAutoriza3" column="idAutoriza3"/>
+        <result property="flgAutoriza1" column="flgAutoriza1"/>
+        <result property="flgAutoriza2" column="flgAutoriza2"/>
+        <result property="flgAutoriza3" column="flgAutoriza3"/>
+        <result property="fecAutoriza1" column="fecAutoriza1"/>
+        <result property="fecAutoriza2" column="fecAutoriza2"/>
+        <result property="fecAutoriza3" column="fecAutoriza3"/>
+        <result property="nivelAutoriza" column="nivelAutoriza"/>
+        <result property="importePropuesto" column="importePropuesto"/>
+        <result property="nroSolicitud" column="nroSolicitud"/>
+        <result property="flgAutorizar" column="flgAutorizar"/>
+        <!-- <result property="montoReq" column="montoReq"/>-->
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadResultado"/>
+        <association property="personalBean" column="idsolicitante"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <association property="actividadBean" column="idActividad"
+                     javaType="pe.marista.sigma.bean.ActividadBean"
+                     resultMap="actividadResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCatResultado"/>
+        <association property="tipoEstadoBean" column="idTipoStatusReq"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoEstResultado"/>
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioResultado"/>
+        <association property="inventarioAlmacenBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.InventarioAlmacenBean"
+                     resultMap="inventarioResultado"/>
+        <association property="tipoSolicitudBean" column="idTipoSolicitud"
+                     javaType="pe.marista.sigma.bean.TipoSolicitudBean"
+                     resultMap="tipoSolicitudResultado"/>
+        
+    </resultMap>
+    
+    <resultMap id="negocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <resultMap id="unidadResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap>
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idsolicitante"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nombreCompleto" column="nombreCompleto"/>
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadOrganicaResultado"/>
+    </resultMap>
+    <resultMap id="unidadOrganicaResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap>
+    <!--Listo todas las Actividades-->
+    <resultMap id="actividadResultado" type="pe.marista.sigma.bean.ActividadBean">
+        <id property="idActividad" column="idActividad"/>
+        <result property="nombreTarea" column="nombreTarea"/>
+        <association property="objOperativoBean" column="idObjOperativo"
+                     javaType="pe.marista.sigma.bean.ObjOperativoBean"
+                     resultMap="objOpertivoResultado"/>
+    </resultMap>
+    <!--Listo todas los Objetivos-->
+    <resultMap id="objOpertivoResultado" type="pe.marista.sigma.bean.ObjOperativoBean">
+        <id property="idObjOperativo" column="operativo"/>
+        <result property="nombre" column="nombreOpe"/>
+    </resultMap>
+    <resultMap id="tipoCatResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCat"/>
+    </resultMap>
+    <resultMap id="tipoEstResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoEst"/>
+        <result property="codigo" column="tipoEst"/>
+    </resultMap>
+    <resultMap id="tipoPrioResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idtipoprioridad"/>
+        <result property="codigo" column="tipoPrio"/>
+    </resultMap>
+    <resultMap id="inventarioResultado" type="pe.marista.sigma.bean.InventarioAlmacenBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="stockActual" column="stockActual"/>
+        <result property="stockMax" column="stockMax"/>
+        <result property="stockMin" column="stockMin"/>
+    </resultMap>
+    <resultMap id="tipoSolicitudResultado" type="pe.marista.sigma.bean.TipoSolicitudBean">
+        <id property="idTipoSolicitud" column="idTipoSolicitud"/>
+        <result property="nombre" column="nombreTipoSol"/>
+        <result property="idAutoriza1Vista" column="idAutoriza1Vista"/>
+        <result property="idAutoriza2Vista" column="idAutoriza2Vista"/>
+        <result property="idAutoriza3Vista" column="idAutoriza3Vista"/>     
+        <result property="idTipoAutoriza1" column="idTipoAutoriza1"/>     
+        <result property="idTipoAutoriza2" column="idTipoAutoriza2"/>     
+        <result property="idTipoAutoriza3" column="idTipoAutoriza3"/> 
+    </resultMap>
+    <!--Listo todas las solicitudes Categgoria-->
+    <select id="obtenerTodosCat" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where te.codigo in ('Activo Fijo','Material','Servicio') and un.uniNeg =  #{unidadNegocioBean.uniNeg}
+        order by r.fechasolicitud desc
+    </select>
+    
+    <!--Listo todas las solicitudes menos las Aprobadas-->
+    <select id="obtenerTodosSol" resultMap="solResultado" >
+        <include refid="consultaCampos" />
+        where te.codigo in ('Borrador','Anulado','Pendiente')
+        order by r.fechasolicitud desc
+    </select>
+    <!--Listo todas las solicitudes menos las de Servicio>-->
+    <select id="obtenerTodosM" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where tr.codigo in ('Activo Fijo','Material') and te.codigo in ('Autorizado','Proceso','Parcial') and un.uniNeg =  #{unidadNegocioBean.uniNeg}
+        order by r.idrequerimiento desc 
+    </select>
+    <select id="obtenerTodosMDespacho" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" /> 
+        <where>  
+            tr.codigo in ('Activo Fijo','Material') and te.codigo in ('Autorizado','Proceso','Comprado') and un.uniNeg = #{unidadNegocioBean.uniNeg}         
+            <if test="idRequerimiento != null and idRequerimiento != 0 ">
+                and r.idrequerimiento = #{idRequerimiento}
+            </if>
+            <if test="personalBean.nombre != null  and personalBean.nombre != ''  "> 
+                and upper(p.nombre) like concat('%',#{personalBean.nombre},'%')
+            </if>
+            <if test="personalBean.apepat != null  and personalBean.apepat != ''  "> 
+                and upper(p.apepat) like concat('%',#{personalBean.apepat},'%')
+            </if>
+            <if test="personalBean.apemat != null  and personalBean.apemat != ''  "> 
+                and upper(p.apemat) like concat('%',#{personalBean.apemat},'%')
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and r.fechasolicitud >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and r.fechasolicitud <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by r.fechasolicitud desc 
+    </select>
+    <select id="obtenerTodosSolicitud" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where tr.codigo in ('Activo Fijo','Material','Servicio') and te.codigo in ('Autorizado','Proceso')  and un.uniNeg =  #{unidadNegocioBean.uniNeg}
+        order by r.idrequerimiento desc
+    </select>
+    <!--Listo todas las solicitudes menos las de Servicio>-->
+    <select id="obtenerTodosSolDes" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where tr.codigo in ('Servicio') and te.codigo in ('Autorizado','Proceso','Parcial') and un.uniNeg =  #{unidadNegocioBean.uniNeg}
+        order by r.idrequerimiento desc
+    </select>
+ 
+    
+    <!--Listo todas las solicitudes de estado Pendiente y Autorizado -->
+    <select id="obtenerTodosAprob" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where te.codigo in ('Pendiente','Autorizado') and un.uniNeg =  #{unidadNegocioBean.uniNeg}
+        order by r.fechasolicitud desc
+    </select>
+   
+    <!--Listo todas las solicitudes de todos los estados -->
+    <select id="obtenerTodos" resultMap="solResultado">
+        <include refid="consultaCampos" />
+        order by r.fechasolicitud desc  
+    </select>
+    
+    <!--Listo todas las solicitudes de estado solo Autorizado -->
+    <select id="obtenerTodosCompra" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where te.codigo in ('Autorizado','Parcial','Proceso') and un.uniNeg =  #{unidadNegocioBean.uniNeg}
+        order by r.fechasolicitud desc
+    </select>
+    
+    <!--Listo todas las solicitudes de estado Autorizado y Pendiente -->
+    <select id="obtenerPorFiltro" resultMap="solResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        select r.idRequerimiento,r.nrosolicitud as nroSolicitud,r.idobjoperativo,r.anio,r.titulo,r.fechaSolicitud,r.unineg,un.unineg,un.nombreUniNeg,r.idTipoSolicitud,
+        r.idUniOrg,uo.nombreUniOrg,r.idsolicitante,p.apepat,p.apemat,p.nombre,
+        concat(p.apepat+' ',p.apemat+' ',p.nombre) as nombreCompleto, 
+        r.idtipocategoria,tr.codigo as tipoCat,r.idtipostatusreq,te.codigo as tipoEst,te.idcodigo as idTipoEst,
+        r.idtipoprioridad,tp.codigo as tipoPrio, tip.nombre as nombreTipoSol,tip.idTipoAutoriza1,tip.idTipoAutoriza2,tip.idTipoAutoriza3, 
+        r.idautoriza1, r.idautoriza2, r.idautoriza3, r.fecautoriza1,r.fecautoriza2, 
+        r.fecautoriza3,r.flgautoriza1,r.flgautoriza2,r.flgautoriza3,r.creaFecha,r.nivelAutoriza
+        ,r.idActividad,po.nombre as nombrePlanOp, a.nombre as nombreActividad, oo.nombre as nombreOpe, oo.idobjoperativo as operativo,
+        (select sum(dr.cantidadsolicitada * dr.precioref) as precio from ML_DetRequerimiento dr 
+        where dr.unineg = #{unidadNegocioBean.uniNeg} and dr.idrequerimiento = r.idrequerimiento group by dr.idrequerimiento,dr.unineg) as montoReq, r. flgtransporte as flgTransporte
+        from ML_Requerimiento r
+        left join MO_UnidadNegocio un on un.unineg = r.unineg
+        left join MO_UnidadOrganica uo on uo.idUniOrg = r.idUniOrg 
+        left join MO_Personal p on p.idpersonal = r.idsolicitante and un.unineg = p.unineg
+        left join ME_Actividad a on a.idActividad = r.idActividad and un.unineg = a.unineg
+        left join ME_ObjOperativo oo on a.idobjoperativo = oo.idobjoperativo and un.unineg = oo.unineg
+        left join ME_PlanOperativo po on oo.unineg = po.unineg  
+        left join MO_Codigo tr on tr.idcodigo = r.idtipocategoria
+        left join MO_Codigo te on te.idcodigo = r.idtipostatusreq
+        left join MO_Codigo tp on tp.idcodigo = r.idtipoprioridad 
+        left join MM_TipoSolicitud tip on r.idTipoSolicitud = tip.idTipoSolicitud and un.unineg = tip.unineg
+        <where>  
+            and un.uniNeg = #{unidadNegocioBean.uniNeg}          
+            <if test="idPaso == 'Generacion' ">
+                and te.codigo in ('Borrador','Anulado','Pendiente','Autorizado')
+            </if>
+            <if test="idPaso == 'Aprobacion' ">
+                and te.codigo in ('Autorizado','Pendiente')
+            </if>
+            <!--Si no es Generacion ni Aprobacion, es Atencion(Lista todas las solicitudes)-->
+            <if test="nroSolicitud != null and nroSolicitud != 0 ">
+                and r.nrosolicitud = #{nroSolicitud}
+            </if>
+            <if test="personalBean.nombre != null  and personalBean.nombre != ''  "> 
+                and upper(p.nombre) like concat('%',#{personalBean.nombre},'%')
+            </if>
+            <if test="personalBean.apepat != null  and personalBean.apepat != ''  "> 
+                and upper(p.apepat) like concat('%',#{personalBean.apepat},'%')
+            </if>
+            <if test="personalBean.apemat != null  and personalBean.apemat != ''  "> 
+                and upper(p.apemat) like concat('%',#{personalBean.apemat},'%')
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[   
+                and r.fechasolicitud >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and r.fechasolicitud <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by r.fechasolicitud desc
+    </select>
+    
+    <select id="obtenerPorId" resultMap="solResultado" parameterType="map">
+        <include refid="consultaCampos" />where r.idrequerimiento = #{idRequerimiento} and un.uniNeg = #{uniNeg} 
+    </select>
+    <select id="obtenerPorIdSoli" resultMap="solResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />where  p.idPersonal=#{idPersonal}  and r.unineg=#{unidadNegocioBean.uniNeg} 
+    </select>
+    <select id="llamarAutorizadores" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean" resultType="Object">
+        exec PRO_GET_AUTORIZADORES
+        @@unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idobjeto = #{idRequerimiento,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@objeto = #{objeto,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select> 
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        insert into ML_Requerimiento
+        (idrequerimiento,unineg,anio,idUniOrg,idsolicitante,idActividad,titulo,
+        idtipocategoria,idTipoSolicitud,idtipostatusreq,idtipoprioridad,fechasolicitud,creaPor,creaFecha,
+        idObjOperativo,importepropuesto,nrosolicitud,flgtransporte)
+        values
+        (0,#{unidadNegocioBean.uniNeg},#{anio},#{unidadOrganicaBean.idUniOrg},#{personalBean.idPersonal},#{actividadBean.idActividad},#{titulo},
+        #{tipoCategoriaBean.idCodigo},#{tipoSolicitudBean.idTipoSolicitud},#{tipoEstadoBean.idCodigo},#{tipoPrioridadBean.idCodigo},#{fechaSolicitud},
+        #{creaPor},getDate(),#{actividadBean.objOperativoBean.idObjOperativo},#{importePropuesto},#{nroSolicitud},#{flgTransporte})
+        <selectKey keyProperty="idRequerimiento" order="AFTER" resultType="Integer">
+            SELECT max(idRequerimiento) FROM ML_Requerimiento WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    <insert id="insertarServicio" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        insert into ML_Requerimiento
+        (idrequerimiento,unineg,anio,idUniOrg,idsolicitante,idActividad,titulo,
+        idtipocategoria,idTipoSolicitud,idtipostatusreq,idtipoprioridad,fechasolicitud,creaPor,creaFecha,
+        idObjOperativo,importepropuesto,flgtransporte)
+        values
+        (0,#{unidadNegocioBean.uniNeg},#{anio},#{unidadOrganicaBean.idUniOrg},#{personalBean.idPersonal},#{actividadBean.idActividad},#{titulo},
+        #{tipoCategoriaBean.idCodigo},#{tipoSolicitudBean.idTipoSolicitud},#{tipoEstadoBean.idCodigo},#{tipoPrioridadBean.idCodigo},#{fechaSolicitud},
+        #{creaPor},getDate(),#{actividadBean.objOperativoBean.idObjOperativo},#{importePropuesto},#{flgTransporte})
+        <selectKey keyProperty="idRequerimiento" order="AFTER" resultType="Integer">
+            SELECT max(idRequerimiento) FROM ML_Requerimiento WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        update ML_Requerimiento 
+        set 
+        anio = #{anio},
+        idUniOrg = #{unidadOrganicaBean.idUniOrg},
+        idsolicitante = #{personalBean.idPersonal},
+        idActividad = #{actividadBean.idActividad},
+        titulo = #{titulo},
+        idtipocategoria = #{tipoCategoriaBean.idCodigo},
+        idTipoSolicitud= #{tipoSolicitudBean.idTipoSolicitud},
+        idtipostatusreq = #{tipoEstadoBean.idCodigo},
+        fechasolicitud = #{fechaSolicitud},
+        flgtransporte = #{flgTransporte},
+        idtipoprioridad = #{tipoPrioridadBean.idCodigo},
+        importepropuesto =#{importePropuesto}
+        where idrequerimiento = #{idRequerimiento} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </update>
+    <!--    
+        <update id="actualizarAprobacion" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+            update ML_Requerimiento 
+            set 
+            idtipostatusreq = #{tipoEstadoBean.idCodigo}
+            where idrequerimiento = #{idRequerimiento}
+        </update>
+    -->
+    
+    <sql id="consultaCamposCR">
+        select
+        detCr.unineg as uniNegCR,
+        detCR.idRequerimiento,
+        detCR.cr,
+        detCR.idtipodistribucion as idTipoDistribucionCR,
+        detCR.valor,
+        detCR.valor as valorD,
+        uni.nombreUniNeg as nombreUniNegCR,
+        tipoDis.codigo as tipoDistribucionCR,
+        cr.nombre as nombreCeR,
+        re.idrequerimiento as idRequerimiento
+        from ML_DetRequerimientoCR detCR
+        left join MO_UnidadNegocio uni on uni.unineg = detCR.unineg
+        left join MO_Codigo tipoDis on tipoDis.idcodigo = detCR.idtipodistribucion
+        left join MT_CentroResponsabilidad cr on cr.cr = detCR.cr 
+        left join ML_Requerimiento re on re.idrequerimiento= detCR.idrequerimiento  AND re.unineg=detCR.unineg
+    </sql>
+    <resultMap id="detRequerimientoCRResultado" type="pe.marista.sigma.bean.DetRequerimientoCRBean">
+        <id property="centroResponsabilidadBean.cr" column="cr"/>
+        <id property="solicitudLogisticoBean.idRequerimiento" column="idRequerimiento"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNegCR"/> 
+        <result property="valor" column="valor"/>
+        <result property="valorD" column="valorD"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioCRResultado"/>
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResponsabilidadCRResultado"/>
+        <association property="tipoDistribucion" column="idTipoDistribucion"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDistribucionCRResultado"/>
+        <association property="solicitudLogisticoBean" column="idRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solResultado"/>
+    </resultMap>
+    <resultMap id="negocioCRResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCR"/>
+        <result property="nombreUniNeg" column="nombreUniNegCR"/>
+    </resultMap>
+    <resultMap id="centroResponsabilidadCRResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombreCeR"/>
+        <result property="tipoNivelCR" column="tipoNivelCR"/> 
+    </resultMap>
+    <resultMap id="tipoDistribucionCRResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDistribucionCR"/>
+        <result property="codigo" column="tipoDistribucionCR"/>
+    </resultMap>
+    <update id="anularSolicitudLog" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        Update ML_Requerimiento set 
+        idTipoStatusReq = (Select idCodigo from MO_Codigo Where codigo = #{tipoEstadoBean.codigo} and idTipoCodigo=#{tipoEstadoBean.tipoCodigoBean.descripcion}),
+        modiPor = #{modiPor}   
+        where idRequerimiento = #{idRequerimiento} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="actualizarFechaAprobacion" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        Update ML_Requerimiento set 
+        fechaaprobacion = getdate()
+        where idRequerimiento = #{idRequerimiento} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoSolicitudLog" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        Update ML_Requerimiento set
+        importePropuesto=#{importePropuesto},
+        idTipoStatusReq = (Select idCodigo from MO_Codigo Where codigo = #{tipoEstadoBean.codigo} and idTipoCodigo=#{tipoEstadoBean.tipoCodigoBean.descripcion})
+        where idRequerimiento = #{idRequerimiento} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoSolicitudLogComprado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        Update ML_Requerimiento set 
+        idTipoStatusReq = (Select idCodigo from MO_Codigo Where codigo = 'Comprado' and idTipoCodigo=#{tipoEstadoBean.tipoCodigoBean.descripcion})
+        where idRequerimiento = #{idRequerimiento} 
+    </update>
+    <update id="cambiarEstadoSolicitudLogParcial" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        Update ML_Requerimiento set 
+        idTipoStatusReq = (Select idCodigo from MO_Codigo Where codigo = 'Parcial' and idTipoCodigo=#{tipoEstadoBean.tipoCodigoBean.descripcion})
+        where idRequerimiento = #{idRequerimiento} 
+    </update>
+    <insert id="insertarDetRequerimientoCR" parameterType="pe.marista.sigma.bean.DetRequerimientoCRBean">
+        INSERT INTO ML_DetRequerimientoCR(uniNeg,idrequerimiento,cr,idTipoDistribucion,valor,creaPor,creaFecha) 
+        VALUES(
+        #{solicitudLogisticoBean.unidadNegocioBean.uniNeg},
+        #{solicitudLogisticoBean.idRequerimiento},
+        #{centroResponsabilidadBean.cr},
+        #{tipoDistribucion.idCodigo},
+        #{valor},
+        #{creaPor},
+        getDate()
+        )
+    </insert>
+    
+    <select id="ObtenerPorIdCR" resultMap="detRequerimientoCRResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        select top 1
+        detCr.unineg as uniNegCR,
+        detCR.idrequerimiento,
+        detCR.cr,
+        detCR.idtipodistribucion as idTipoDistribucionCR,
+        detCR.valor,
+        uni.nombreUniNeg as nombreUniNegCR,
+        tipoDis.codigo as tipoDistribucionCR,
+        cr.nombre as nombreCeR,
+        re.idrequerimiento as idRequerimientoCR
+        from ML_DetRequerimientoCR detCR
+        left join MO_UnidadNegocio uni on uni.unineg = detCR.unineg
+        left join MO_Codigo tipoDis on tipoDis.idcodigo = detCR.idtipodistribucion
+        left join MT_CentroResponsabilidad cr on cr.cr = detCR.cr
+        left join ML_Requerimiento re on re.idrequerimiento= detCR.idrequerimiento
+        where detCR.idrequerimiento = #{idRequerimiento}  and detCR.uniNeg =#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="ObtenerPorIdCRDis" resultMap="detRequerimientoCRResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCamposCR" />
+        where detCR.idrequerimiento = #{idRequerimiento}  and detCR.uniNeg =#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="ObtenerPorIdCRes" resultMap="detRequerimientoCRResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCamposCR" />where detCR.idrequerimiento = #{idRequerimiento} and detCR.uniNeg =#{unidadNegocioBean.uniNeg}
+    </select> 
+       
+    <select id="obtenerCRRegistro" resultMap="detRequerimientoCRResultado" parameterType="map">
+        select 
+        detCr.unineg as uniNegCR,
+        detCR.idrequerimiento as idRequerimiento,
+        detCR.cr as cr,
+        cr.nombre as nombreCeR,
+        cr.idtipogrupocr as tipoNivelCR,
+        detCR.idtipodistribucion as idTipoDistribucionCR,
+        detCR.valor,
+        detCR.valor as valorD
+        from ML_DetRequerimientoCR detCr
+        inner join MT_CentroResponsabilidad cr on cr.cr=detCr.cr
+        where idrequerimiento in (select distinct idrequerimiento from ML_DetOrdenCompra 
+        where idordencompra= #{idRegistroCompra} and unineg=#{uniNeg})and detCr.unineg=#{uniNeg}
+    </select>
+    <select id="obtenerCRInRegistro" resultMap="centroResponsabilidadCRResultado" parameterType="map">
+        select  
+        detCR.cr as cr, 
+        detCr.nombre as nombreCeR ,
+        c.idtipogrupocr as tipoNivelCR
+        from MT_CentroResponsabilidad detCr 
+        inner join MT_CentroResponsabilidad c on c.cr=detCr.cr
+        where detCR.cr not in(
+        select  
+        detCR.cr as cr 
+        from ML_DetRequerimientoCR detCr
+        inner join MT_CentroResponsabilidad cr on cr.cr=detCr.cr
+        where idrequerimiento in(select distinct idrequerimiento from ML_DetOrdenCompra 
+        where idordencompra= #{idRegistroCompra} and unineg=#{uniNeg})and detCr.unineg=#{uniNeg}) 
+    </select>
+    <select id="elimnarRequerimientoCrPorReq" resultMap="detRequerimientoCRResultado" parameterType="map"> 
+        delete from ML_DetRequerimientoCR where idrequerimiento = #{idRequerimiento} and  uniNeg =#{uniNeg}
+    </select>
+    <select id="obtenerCROrden" resultMap="detRequerimientoCRResultado" parameterType="map">
+        select 
+        detCr.unineg as uniNegCR,
+        detCR.idrequerimiento as idRequerimiento,
+        detCR.cr as cr,
+        cr.nombre as nombreCeR,
+        detCR.idtipodistribucion as idTipoDistribucionCR,
+        detCR.valor,
+        detCR.valor as valorD
+        from ML_DetRequerimientoCR detCr
+        inner join MT_CentroResponsabilidad cr on cr.cr=detCr.cr
+        where idrequerimiento=#{idRequerimiento} and unineg=#{uniNeg}
+    </select>
+    <select id="obtenerCRInOrden" resultMap="centroResponsabilidadCRResultado" parameterType="map">
+        select  
+        detCR.cr as cr, 
+        detCr.nombre as nombreCeR 
+        from MT_CentroResponsabilidad detCr 
+        where detCR.cr not in(
+        select  
+        detCR.cr as cr 
+        from ML_DetRequerimientoCR detCr
+        inner join MT_CentroResponsabilidad cr on cr.cr=detCr.cr
+        where idrequerimiento=#{idRequerimiento} and unineg=#{uniNeg})
+    </select> 
+    <select id="obtenerUltimoSoli" resultType="String" parameterType="String" >
+        select
+        right(replicate('0', 3) + rtrim(isnull((max(nroSolicitud)),0)+1),3) as nroSolicitud from ML_Requerimiento 
+        WHERE uniNeg=#{uniNeg} 
+    </select>   
+    <select id="obtenerCerosSol" resultType="pe.marista.sigma.bean.SolicitudLogisticoBean" parameterType="map" >
+        SELECT  	  
+        right(replicate('0', 3) + rtrim(d.nroSolicitud), 3) as nroSolicitud
+        from ml_requerimiento d 
+        where d.idrequerimiento = #{idRequerimiento} and d.unineg=#{uniNeg}
+    </select>   
+</mapper>

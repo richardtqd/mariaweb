@@ -1,0 +1,1466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ProcesoEnvioDAO">  
+    <sql id="consultaCampos" > 
+        SELECT 
+         pe.unineg
+        ,pe.idprocesoenvio
+        ,ROW_NUMBER() over(order by pe.idprocesoenvio) as operacion
+        ,ROW_NUMBER() over(order by pb.idprocesobanco) as operacionBanco
+        ,pe.idprocesobanco
+        ,pe.iddiscente
+        ,pe.codigoDiscente
+        ,pe.nomdiscente
+        ,pe.inforetorno
+        ,pe.fechaemision
+        ,pe.fechavenc
+        ,pe.moneda
+        ,pe.monto
+        ,pe.modiver
+        ,pe.mora
+        ,pe.tiporegistro
+        ,pe.flgEnvio
+        ,pe.idctasxcobrar
+        ,pe.idconcepto
+        ,pe.creapor
+        ,pe.creafecha
+	,DATEPART(YEAR,pe.creafecha)    as anioEnvio
+	,DATEPART(MONTH,pe.creafecha)   as mesEnvio
+        ,DATEPART(DAY,pe.creafecha)     as diaEnvio
+        ,DATEPART(HOUR,pe.creafecha)    as hora
+	,DATEPART(MINUTE,pe.creafecha)  as minuto
+	,DATEPART(SECOND,pe.creafecha)  as segundo
+        ,pe.modipor
+        ,pb.idprocesobanco
+        ,pb.nombre as nomProcesoBanco
+        ,pb.ruc
+        ,pb.numCuenta as cuentaNumBanco
+	,ctaBan.numcuenta as cuentaNumero
+	,ctaBan.codunineg
+	,ent.ruc as rucEnt
+	,ent.nombre as nombreEntidad 
+        ,cc.cuentad as cuentaD
+        ,cc.cuentah as cuentaH
+        ,cc.fechaVenc 
+        ,cc.fechaPago
+        ,cc.deuda
+        ,cc.dscto
+        ,cc.monto
+        ,cc.montopagado
+        ,cc.mora
+        ,cc.tasainteres
+        ,cc.deuda as flgDeuda
+        ,cc.creaFecha as fechaCreaCta
+	,es.idestudiante
+        ,per.idPersona
+        ,per.nombre as nombrePersona
+        ,per.apepat 
+        ,per.apemat
+        ,con.nombre as nomConcepto
+        ,uni.unineg 
+        ,uni.nombreUniNeg
+	,tp.idTipoConcepto
+	,tp.nombre as nombreTipoCon
+        FROM MT_ProcesoEnvio pe
+        left join MO_UnidadNegocio uni on pe.unineg = uni.unineg 
+        left join MT_ProcesoBanco pb on pe.idprocesobanco = pb.idprocesobanco and pe.unineg = pb.unineg 
+        left join MT_CuentaBanco ctaBan on pb.numcuenta = ctaBan.numcuenta AND ctaBan.unineg = pb.unineg
+        left join MO_Entidad ent on ctaBan.rucbanco = ent.ruc and ent.unineg = ctaBan.unineg
+        left join MT_CtasxCobrar cc on pe.idctasxcobrar = cc.idctasxcobrar and pe.unineg = cc.unineg
+        left join MX_Estudiante es on cc.idestudiante = es.idestudiante 
+        left join MX_Persona per on es.idestudiante = per.idpersona 
+        left join MT_Concepto con on pe.idconcepto = con.idconcepto 
+        left join MT_TipoConcepto tp on con.idtipoconcepto = tp.idTipoConcepto 
+    </sql>
+    
+    <sql id="consultaTotal">
+        select sum(monto) as total from MT_ProcesoEnvio
+    </sql>
+    
+    <sql id="consultaTipoconcepto" >
+        select * from MT_TipoConcepto
+    </sql>
+   
+    <resultMap id="procesoEnvioResultado" type="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        <id property="idProcesoEnvio" column="idprocesoenvio" />
+        <result property="codigoDiscente" column="codigoDiscente" />
+        <result property="monto" column="monto" />
+        <result property="moneda" column="moneda" />
+        <result property="tipoRegistro" column="tipoRegistro" />
+        <result property="flgEnvio" column="flgEnvio" />
+        <result property="flgDeuda" column="flgDeuda" />
+        <result property="flgGrabar" column="flgGrabar" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="anio" column="anioEnvio" />
+        <result property="mes" column="mesEnvio" />
+        <result property="dia" column="diaEnvio" />
+        <result property="hora" column="hora" />
+        <result property="minuto" column="minuto" />
+        <result property="segundo" column="segundo" />
+        <result property="operacion" column="operacion" />
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="uniNegResultado"/>
+        <association property="procesoBancoBean" column="idProcesoBanco" 
+                     javaType="pe.marista.sigma.bean.ProcesoBancoBean"
+                     resultMap="bancoResultado"/> 
+        <association property="cuentasPorCobrarBean" column="idCtasXCobrar"
+                     javaType="pe.marista.sigma.bean.CuentasPorCobrarBean"
+                     resultMap="ctasResultado" />
+        <!--<association property="idDiscente" column="idDiscente"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="estudianteResultado" />-->
+        <association property="idDiscente" column="idDiscente"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado" />
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado" />
+        <!--<association property="codigoMoneda" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado" />-->
+    </resultMap>
+    
+    <!--Unineg-->
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <!--Proceso de Banco-->
+    <resultMap id="bancoResultado" type="pe.marista.sigma.bean.ProcesoBancoBean">
+        <id property="idProcesoBanco" column="idProcesoBanco" />
+        <result property="nombre" column="nomProcesoBanco" />
+        <result property="fecha" column="fecha" />
+        <result property="numCuenta" column="cuentaNumBanco" />
+        <result property="regProc" column="regProc" />
+        <result property="regOk" column="regOk" />
+        <result property="regError" column="regError" />
+        <result property="flgProceso" column="flgProceso" />
+        <result property="operacion" column="operacionBanco" />
+        <association property="cuentaBancoBean" column="cuentaNumero"
+                     javaType="pe.marista.sigma.bean.CuentaBancoBean" 
+                     resultMap="cuentaBancoResultado"/>
+    </resultMap>
+    
+    <!--Cuentas Por Cobrar-->
+    <resultMap id="ctasResultado" type="pe.marista.sigma.bean.CuentasPorCobrarBean"  >
+        <id property="idCtasXCobrar" column="idCtasXCobrar" />
+        <result property="monto" column="monto" />
+        <result property="tasaInteres" column="tasaInteres" />
+        <result property="mora" column="mora" />
+        <result property="montoPagado" column="montoPagado" />
+        <result property="deuda" column="deuda" />
+        <result property="fechaPago" column="fechaPago" />
+        <result property="fechaVenc" column="fechaVenc" />
+        <result property="creaFecha" column="fechaCreaCta" />
+        <association property="cuentaH" column="cuentaH"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultado2"/>
+        <association property="cuentaD" column="cuentaD"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultado2"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <!--Cuenta D-->
+    <resultMap id="planContableDResultado2" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentaD"/>
+        <result property="nombre" column="nombreCuentaD"/>
+    </resultMap>
+    <!--Cuenta H-->
+    <resultMap id="planContableHResultado2" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentaH"/>
+        <result property="nombre" column="nombreCuentaH"/>
+    </resultMap>
+    <!--Estudiuante Resultado-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante" />
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado2"/>
+    </resultMap>
+    <!--Persona Resultado-->
+    <resultMap id="personaResultado2" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombrePersona" />
+        <result property="apepat" column="apePat" />
+        <result property="apemat" column="apeMat" />
+        <result property="sexo" column="sexo" />
+        <result property="correo" column="correo" />
+    </resultMap>
+    
+    <!--Cuenta Banco Resultado-->
+    <resultMap id="cuentaBancoResultado" type="pe.marista.sigma.bean.CuentaBancoBean">
+        <id property="numCuenta" column="cuentaNumero" />
+        <result property="codUniNeg" column="codUniNeg" />
+        <result property="descripcion" column="descripcion" />
+        <result property="fechaApertura" column="fechaApertura" />
+        <result property="fechaCierre" column="fechaCierre" />
+        <association property="entidadBancoBean" column="rucEnt"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="BancoResultado"/>
+    </resultMap>
+    
+    <resultMap id="BancoResultado" type="pe.marista.sigma.bean.EntidadBean" >
+        <id property="ruc" column="rucEnt" />
+        <result property="nombre" column="nombreEntidad"/>
+    </resultMap>
+        
+    <!--<resultMap id="estudianteResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombrePersona" />
+        <result property="apepat" column="apePat" />
+        <result property="apemat" column="apeMat" />
+        <result property="sexo" column="sexo" />
+        <result property="correo" column="correo" />
+    </resultMap>-->
+    
+    
+    <!--=======================-->
+    
+    <!--Concepto Resultado-->
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean" >
+        <id property="idConcepto" column="idConcepto" />
+        <result property="nombre" column="nomConcepto" />
+        <result property="descrip" column="descrip" />
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultado"/>        
+    </resultMap>
+    <!--Tipo Concepto-->
+    <resultMap id="tipoConceptoResultado" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+        <result property="nombre" column="nombreTipoCon"/>
+        <result property="flgIngreso" column="flgIngreso"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+    </resultMap>
+    
+    <!--Codigo Resultado-->
+    <!--<resultMap id="monedaResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idCodigo" />
+        <result property="codigo" column="nomMoneda" />
+    </resultMap>-->
+    
+    <!--Consultas-->
+    <select id="obtenerProcesoEnvio" resultMap="procesoEnvioResultado" >
+        <include refid="consultaCampos" />
+    </select>
+    
+    <select id="obtenerPorId" resultMap="procesoEnvioResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE pe.idprocesoenvio = #{idProcesoEnvio}
+    </select>
+    
+    <select id="obtenerPorBanco" resultMap="procesoEnvioResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE pe.idProcesoEnvio = #{idProcesoEnvio}
+    </select>
+    
+    <select id="obtenerPorUnineg" resultMap="procesoEnvioResultado" parameterType="String" >  
+        <include refid="consultaCampos" /> WHERE pe.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerPorProcesoBanco" resultMap="procesoEnvioResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE  pb.idProcesoBanco = #{idProcesoBanco} and pb.uniNeg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerTipoConcepto" resultMap="procesoEnvioResultado" parameterType="Integer" >
+        <include refid="consultaCampos" />
+        WHERE  tp.idTipoConcepto = #{conceptoBean.tipoConceptoBean.idTipoConcepto} 
+    </select>
+    
+    <select id="obtenerSumaImporte" resultType="Integer" parameterType="map" >
+        select SUM(monto) from MT_ProcesoEnvio
+        where unineg = #{uniNeg} and idprocesobanco = #{idProcesoBanco}
+    </select>
+    
+    <select id="obtenerEnvioPorFiltro" resultMap="procesoEnvioResultado" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        <include refid="consultaCampos" />
+        <where>
+            pe.uniNeg = #{unidadNegocioBean.uniNeg} and DATEPART(MONTH,cc.creafecha) = DATEPART(MONTH,GETDATE()) 
+            <if test="idDiscente.personaBean.idPersona != null and idDiscente.personaBean.idPersona  != '' ">
+                and upper(per.idPersona) like concat('%',#{idDiscente.personaBean.idPersona},'%')
+            </if>
+            <!--<if test="idDiscente.idEstudiante != null and idDiscente.idEstudiante  != '' ">
+                and upper(es.idEstudiante) like concat('%',#{idDiscente.idEstudiante},'%')
+            </if>   and DATEPART(MONTH,GETDATE()) = DATEPART(MONTH,cc.creafecha) -->
+            <if test="conceptoBean.idConcepto != null and conceptoBean.idConcepto != '' " >
+                and upper(con.idConcepto) like concat('%',#{conceptoBean.idConcepto},'%')
+            </if>
+            <if test="conceptoBean.tipoConceptoBean.idTipoConcepto != null and conceptoBean.tipoConceptoBean.idTipoConcepto != '' " >
+                and upper(tp.idTipoConcepto) like concat('%',#{conceptoBean.tipoConceptoBean.idTipoConcepto},'%')
+            </if> 
+            <if test="flgDeuda != null and flgDeuda != '' " >
+                and upper(cc.deuda) like concat('%',#{flgDeuda},'%')
+            </if> 
+            <if test="anio != null and anio != '' ">
+                and upper(DATEPART(YEAR,pe.creafecha)) like concat('%',#{anio},'%')
+            </if>
+            <if test="mes != null and mes != '' ">
+                and upper(DATEPART(MONTH,pe.creafecha)) like concat('%',#{mes},'%')
+            </if>
+            <if test="dia != null and dia != '' ">
+                and upper(DATEPART(DAY,pe.creafecha)) like concat('%',#{dia},'%')
+            </if>
+            order by idprocesoEnvio desc
+            <!--
+            <if test="fechaComodinIn != null " >
+                <![CDATA[
+                and cc.fechaVenc >= #{fechaComodinIn}
+                ]]>
+            </if>
+            <if test="fechaComodin != null " >
+                <![CDATA[
+                and cc.fechaVenc <= #{fechaComodin}
+                ]]>
+            </if> 
+            -->
+        </where>
+    </select>
+    
+    <!--<sql id="consultaAlterna" >
+        SELECT 
+        pe.unineg
+        ,pe.idprocesoenvio
+        ,pe.idprocesobanco
+        ,pe.idctasxcobrar
+        ,pe.iddiscente
+        ,pe.idconcepto
+        ,pe.idtipomoneda
+        ,pe.monto
+        ,pe.tipoRegistro
+        ,pe.creapor
+        ,pe.creafecha
+        ,pe.modipor
+        ,pe.modiver
+        ,pb.idprocesobanco
+        ,pb.nombre as nomProcesoBanco
+        ,cc.cuentad
+        ,cc.cuentah
+        ,cc.deuda
+        ,cc.dscto
+        ,cc.monto
+        ,cc.montopagado
+        ,cc.mora
+        ,cc.tasainteres
+	,es.idestudiante
+        ,per.nombre as nombrePersona
+        ,con.nombre as nomConcepto
+        ,cod.idcodigo
+        ,cod.codigo as nomMoneda
+        ,uni.unineg 
+        ,uni.nombreUniNeg
+        FROM MT_ProcesoEnvio pe
+        left join MO_UnidadNegocio uni on pe.unineg = uni.unineg
+        left join MT_ProcesoBanco pb on pe.idprocesobanco = pb.idprocesobanco
+        left join MT_CtasxCobrar cc on pe.idctasxcobrar = cc.idctasxcobrar
+	left join MX_Estudiante es on cc.idestudiante = es.idestudiante
+        left join MX_Persona per on es.idestudiante = per.idpersona
+        left join MT_Concepto con on pe.idconcepto = con.idconcepto
+        left join MO_Codigo cod  on pe.idtipomoneda = cod.idcodigo
+    </sql>
+    
+    <select id="obtenerEnvio" resultMap="procesoEnvioResultado" >
+        <include refid="consultaAlterna" />order By pe.nombre
+    </select>-->
+    
+    <!--<select id="buscarPersona" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean">
+        <include refid="consultaPersona"/>
+        <where>
+            per.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != ''">
+                and upper(per.nroDoc) like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="nombreFiltro != null and nombreFiltro != ''">
+                and upper(CONCAT(per.apepat ,' ',per.apemat,' ',per.nombre)) like concat('%',#{nombreFiltro},'%')
+            </if>
+        </where>
+    </select>-->
+    
+    <!--<select id="obtenerPorFiltro" resultMap="fileResultado" parameterType="pe.marista.sigma.bean.ProcesoFileBean">
+        <include refid="consultaCampos"/>
+        <where>
+            <if test="entidadBean.nombre != null and entidadBean.nombre != '' " >
+                and upper(con.nombre) like concat('%',#{entidadBean.nombre},'%')
+            </if> 
+        </where>
+    </select>-->
+    
+    <!--<select id="obtenerPorFiltro" resultMap="fileResultado" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean">
+        <include refid="consultaCampos"/>
+        <where>
+            <if test="entidadBean.nombre != null and entidadBean.nombre != '' " >
+                and upper(en.nombre) like concat('%',#{entidadBean.nombre},'%')
+            </if> 
+        </where>
+    </select>-->
+    
+    <insert id="insertarProcesoEnvio" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        INSERT INTO MT_ProcesoEnvio
+        (unineg
+        ,idprocesobanco
+        ,idctasxcobrar
+        ,iddiscente
+        ,idconcepto
+        ,moneda
+        ,monto
+        ,tipoRegistro
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg}
+        ,#{procesoBancoBean.idProcesoBanco}
+        ,#{cuentasPorCobrarBean.idCtasXCobrar}
+        ,#{cuentasPorCobrarBean.estudianteBean.personaBean.idPersona}
+        ,#{cuentasPorCobrarBean.conceptoBean.idConcepto}
+        ,#{cuentasPorCobrarBean.idTipoMoneda.idCodigo}
+        ,#{cuentasPorCobrarBean.monto}
+        ,#{tipoRegistro}
+        ,#{creaPor}
+        ,getDate())
+        
+    </insert>
+    
+    <insert id="insertarEnvioMasivo" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        
+        INSERT INTO MT_ProcesoEnvio
+           (unineg
+           ,idprocesobanco
+           ,iddiscente
+           ,nomdiscente
+           ,inforetorno
+           ,fechaemision
+           ,fechavenc
+           ,moneda
+           ,monto
+           ,mora
+           ,flgEnvio
+           ,tiporegistro
+           ,idctasxcobrar
+           ,idconcepto
+           ,creapor
+           ,creafecha)
+            VALUES
+           (#{unidadNegocioBean.uniNeg}
+            ,#{procesoBancoBean.idProcesoBanco}
+            ,#{cuentasPorCobrarBean.estudianteBean.personaBean.idPersona}
+            ,#{cuentasPorCobrarBean.estudianteBean.personaBean.nombre}
+            ,#{infoRetorno}
+            ,cast(#{cuentasPorCobrarBean.fechaPago} AS DATE)
+            ,cast(#{cuentasPorCobrarBean.fechaVenc} AS DATE)
+            ,#{moneda}
+            ,#{cuentasPorCobrarBean.monto}
+            ,#{cuentasPorCobrarBean.mora}
+            ,#{flgEnvio}
+            ,#{tipoRegistro}
+            ,#{cuentasPorCobrarBean.idCtasXCobrar}
+            ,#{cuentasPorCobrarBean.conceptoBean.idConcepto}
+            ,#{creaPor}
+            ,CAST(GETDATE() as varbinary))
+            <!--<selectKey keyProperty="idDocIngreso" order="AFTER" resultType="Integer">
+             SELECT max(idProcesoBanco) FROM MT_ProcesoBanco  WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+            </selectKey>-->
+        <!--
+        INSERT INTO MT_ProcesoEnvio
+        (unineg
+        ,idprocesobanco
+        ,idctasxcobrar
+        ,iddiscente
+        ,idconcepto
+        ,idtipomoneda
+        ,monto
+        ,tipoRegistro
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg}
+        ,#{procesoBancoBean.idProcesoBanco}
+        ,#{cuentasPorCobrarBean.idCtasXCobrar}
+        ,#{cuentasPorCobrarBean.estudianteBean.personaBean.idPersona}
+        ,#{cuentasPorCobrarBean.conceptoBean.idConcepto}
+        ,#{cuentasPorCobrarBean.idTipoMoneda.idCodigo}
+        ,#{cuentasPorCobrarBean.monto}
+        ,#{tipoRegistro}
+        ,#{creaPor}
+        ,getDate())
+        -->
+    </insert>
+    
+    <update id="modificarProcesoEnvio" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        UPDATE MT_ProcesoEnvio
+        SET
+        unineg = #{unidadNegocioBean.uniNeg}
+        ,idprocesobanco = #{procesoBancoBean.idProcesoBanco}
+        ,iddiscente = #{idDiscente.idEstudiante}
+        ,nomdiscente = #{idDiscente.personaBean.nombre}
+        ,inforetorno = #{infoRetorno}
+        ,fechaemision = cast(#{fechaEmision} AS DATE)
+        ,fechavenc = cast(#{fechaVenc} AS DATE)
+        ,moneda = #{moneda}
+        ,monto = #{monto}
+        ,mora = #{mora}
+        ,flgEnvio = #{flgEnvio}
+        ,tiporegistro = #{tipoRegistro}
+        ,idctasxcobrar = #{cuentasPorCobrarBean.idCtasXCobrar}
+        ,idconcepto = #{conceptoBean.idConcepto}
+        WHERE idprocesoenvio = #{idProcesoEnvio}
+    </update>
+    
+    <update id="modificarStatusEnvio" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        UPDATE MT_ProcesoEnvio
+        SET
+        <!--monto = #{monto}
+        ,mora = #{mora}-->
+        flgEnvio = #{flgEnvio}
+        ,tiporegistro = #{tipoRegistro}
+        ,modiPor = #{modiPor}
+        WHERE idprocesoenvio = #{idProcesoEnvio}
+    </update>
+    
+    <update id="modificarStatus" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        UPDATE MT_ProcesoEnvio
+        SET
+        flgEnvio = #{flgEnvio}
+        ,modiPor = #{modiPor}
+        WHERE idprocesoenvio = #{idProcesoEnvio}
+    </update>
+    
+    <update id="modificarStatusGraba" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        UPDATE MT_ProcesoEnvio
+        SET
+        flgGrabar = #{flgGrabar}
+        WHERE idprocesoenvio = #{idProcesoEnvio}
+    </update>
+    
+    <delete id="eliminarProcesoEnvio" parameterType="Integer" >
+        DELETE from MT_ProcesoEnvio
+        WHERE idprocesoenvio = #{idProcesoEnvio}
+    </delete>
+        
+    <delete id="eliminarProcesoPorBanco" parameterType="Integer" >
+        DELETE from MT_ProcesoEnvio
+        WHERE idProcesoBanco = #{procesoBancoBean.idProcesoBanco}
+    </delete>
+        
+    <!--Tercera Consulta-->
+    <sql id="consultaCtasXCobrar">
+        SELECT 
+        cta.idCtasXCobrar				as idCtasXCobrar
+        ,cta.idEstudiante				as idEstudiante	
+        ,mat.idMatricula                                as idMatricula
+        ,mat.idGradoAcademico                           as idGradoAcademico
+        ,gra.nombre                                     as nombreGrado
+        ,pro.idProgramacion                             as idProgramacion
+        ,pro.seccion					as seccion
+        ,cta.uniNeg					as uniNeg
+        ,uni.nombreUniNeg				as nombreUniNeg
+        ,cta.idConcepto					as idConcepto
+        ,con.nombre					as nombreConcepto
+        ,cta.idDocIngreso				as idDocIngreso
+        ,doc.fechaPago					as fechaPago
+        ,cta.cr						as cr
+        ,cen.nombre					as nombreCr
+        ,cta.cuentad					as cuentad
+        ,cta.cuentah                                    as cuentah
+        ,cta.monto					as monto
+        ,cta.montoPagado				as montoPagado	
+        ,cta.deuda					as deuda
+        ,cta.mora					as mora
+        ,cta.tasainteres                                as interes
+        ,cta.idTipoMoneda				as idTipoMoneda
+        ,cod.codigo					as codigoMoneda
+        ,cta.fechaVenc					as fechaVenc
+        ,cta.fechaPago					as fechaPago
+        ,cta.dsctoBeca					as dsctoBeca
+        ,cta.flgEnvio                                   as flgEnvio
+        ,DATEPART(DAY,cta.creafecha)                    as dias
+        ,DATEPART(Month,cta.creafecha)                  as meses
+        ,DATEPART(YEAR,cta.creafecha)                   as anios
+        ,cta.idEstudianteBeca				as idEstudianteBeca
+        ,est.mesInicio					as mesInicio
+        ,est.idBeca					as idBeca
+        ,bec.nombre					as nombreBeca
+        ,bec.porcentaje					as porcentaje
+        ,mot.codigo					as codigoMotivoBeca
+        ,cnd.codigo					as codigoMotivoCondonacion
+        ,cta.docRefProvision				as docRefProvision
+        ,DATEPART(Month,cta.creafecha)                  as meses
+        ,cta.anio					as anio	
+        ,cta.mes					as mes
+        ,cta.idTipoStatusCtaCte                         as idTipoStatusCtaCte
+        ,sta.codigo					as codigoStatusCtaCte
+        ,cta.creaPor					as creaPor
+        ,cta.creaFecha					as creaFecha
+	,mot.idcodigo as idMoneda
+	,mot.codigo as nomMoneda
+	,p.idpersona
+	,p.nombre
+	,p.apepat
+	,p.apemat
+        ,datepart(MONTH,getdate())                      as fechaActual
+	,DATEPART(MONTH,cta.fechavenc)                  as fechaTope
+        ,stu.codigo                                     as codigo
+        FROM MT_CtasxCobrar cta
+        LEFT JOIN MX_Estudiante stu on stu.idestudiante = cta.idestudiante and cta.unineg = stu.unineg 
+        left join MX_Persona p on stu.idestudiante = p.idpersona and cta.unineg = p.unineg 
+        LEFT JOIN MX_Matricula mat on cta.idestudiante = mat.idestudiante and cta.unineg = mat.unineg 
+        LEFT JOIN MX_GradoAcademico gra on gra.idGradoAcademico = mat.idGradoAcademico
+        LEFT JOIN MX_Programacion pro on pro.idProgramacion = mat.idProgramacion and pro.unineg = cta.unineg
+        LEFT JOIN MO_UnidadNegocio uni on uni.unineg = cta.unineg 
+        LEFT JOIN MT_Concepto con ON cta.idconcepto = con.idconcepto
+        LEFT JOIN MT_TipoConcepto tp on con.idtipoconcepto = tp.idTipoConcepto 
+        LEFT JOIN MT_DocIngreso doc ON cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg
+        LEFT JOIN MT_CentroResponsabilidad cen ON cta.cr = cen.cr 
+        LEFT JOIN MO_Codigo cod ON cta.idtipomoneda = cod.idcodigo 
+        LEFT JOIN MX_EstudianteBeca est ON est.idestudiantebeca = cta.idestudiantebeca 
+        LEFT JOIN MT_Beca bec ON bec.idbeca = est.idbeca 
+        LEFT JOIN MO_Codigo mot ON mot.idcodigo = cta.idtipomoneda 
+        LEFT JOIN MO_Codigo cnd ON cta.idtipomotivodscto = cnd.idcodigo 
+        LEFT JOIN MO_Codigo sta ON cta.idtipostatusctacte = sta.idcodigo      
+    </sql>
+  
+    <!--<resultMap id="ctasXCobrarResultado" type="pe.marista.sigma.bean.CuentasPorCobrarBean">
+        <id property="idCtasXCobrar" column="idCtasXCobrar"/>
+        <result property="monto" column="monto"/>
+        <result property="montoPagado" column="montoPagado"/>
+        <result property="deuda" column="deuda"/>
+        <result property="mora" column="mora"/>
+        <result property="tasaInteres" column="tasaInteres"/>        
+        <result property="fechaVenc" column="fechaVenc"/>
+        <result property="fechaPago" column="fechaPago"/>
+        <result property="dscto" column="dscto"/>
+        <result property="dsctoBeca" column="dsctoBeca"/>
+        <result property="condonacion" column="condonacion"/>
+        <result property="docRefProvision" column="docRefProvision"/>
+        <result property="anio" column="anio"/>
+        <result property="mes" column="mes"/>
+        <result property="creadoPor" column="creadoPor"/>
+        <result property="fechaCrea" column="fechaCrea"/>
+        <association property="matriculaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.MatriculaBean"
+                     resultMap="matriculaResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptosResultado"/>
+        <association property="idTipoMoneda" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/>
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado2"/> 
+    </resultMap>-->
+    
+    
+    <resultMap id="ctasXCobrarResultado" type="pe.marista.sigma.bean.CuentasPorCobrarBean">
+        <id property="idCtasXCobrar" column="idCtasXCobrar"/>
+        <result property="anio" column="anio"/>
+        <!--<result property="meses" column="meses"/>-->
+        <result property="mes" column="mes"/>
+        <result property="monto" column="monto"/>
+        <result property="tasaInteres" column="tasaInteres"/>
+        <result property="mora" column="mora"/>
+        <result property="tasaInteres" column="interes"/>        
+        <result property="dscto" column="dscto"/>
+        <result property="montoPagado" column="montoPagado"/>
+        <result property="deuda" column="deuda"/>  
+        <result property="fechaVenc" column="fechaVenc"/>
+        <result property="fechaPago" column="fechaPago"/>
+        <result property="dsctoBeca" column="dsctoBeca"/>
+        <result property="docRefProvision" column="docRefProvision"/>        
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/> 
+        <result property="dias" column="dias"/> 
+        <result property="meses" column="meses"/> 
+        <result property="fechaActual" column="fechaActual"/> 
+        <result property="fechaTope" column="fechaTope"/> 
+        <result property="anios" column="anios"/> 
+        <result property="flgEnvio" column="flgEnvio"/>
+        <result property=" estadoEst" column=" estadoEst"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/> 
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado2"/>     
+        <association property="matriculaBean" column="idMatricula"
+                     javaType="pe.marista.sigma.bean.MatriculaBean"
+                     resultMap="matriculaResultado"/>        
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado2"/>
+        <association property="idTipoStatusCtaCte" column="idTipoStatusCtaCte"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusCtaCteResultado"/>
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResponsabilidadResultado"/>
+        <association property="cuentaD" column="cuentaD"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultado"/>
+        <association property="cuentaH" column="cuentaH"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultado"/>
+        <association property="docIngresoBean" column="idDocIngreso"
+                     javaType="pe.marista.sigma.bean.DocIngresoBean"
+                     resultMap="docIngresoResultado"/>        
+        <association property="idTipoMoneda" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/>
+        <association property="idTipoDscto" column="idTipoDscto"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDsctoResultado"/>
+        <association property="idTipoMotivoDscto" column="idTipoMotivoDscto"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMotivoResultado"/>
+        <association property="estudianteBecaBean" column="idEstudianteBeca"
+                     javaType="pe.marista.sigma.bean.EstudianteBecaBean"
+                     resultMap="estudianteBecaResultado"/>
+        <association property="idTipoBeca" column="idTipoBeca"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoBecaResultado"/>
+        <association property="procesoEnvioBean" column="idProcesoEnvio"
+                     javaType="pe.marista.sigma.bean.ProcesoEnvioBean"
+                     resultMap="procesoEnvioResultado2"/>
+        <association property="procesoRecuperacionBean" column="idProcesoRecup"
+                     javaType="pe.marista.sigma.bean.ProcesoRecuperacionBean"
+                     resultMap="procesoRecuperacionResultado"/>
+    </resultMap>
+    <!--Unidad Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <resultMap id="estudianteResultado2" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante"/>
+        <result property="codigo" column="codigo"/>
+        <result property="anioIngreso" column="anioIngreso"/>
+        <result property="fechaIngreso" column="fechaIngreso"/>
+        <result property="foto" column="foto"/>
+        <result property="refeLugarNaci" column="refeLugarNaci"/>
+        <result property="viaDomi" column="viaDomi"/>
+        <result property="nroDomi" column="nroDomi"/>
+        <result property="urbDomi" column="urbDomi"/>
+        <result property="refeDomi" column="refeDomi"/>
+        <result property="telefono1Domi" column="telefono1Domi"/>
+        <result property="telefono2Domi" column="telefono2Domi"/>        
+        <result property="factorSanguineo" column="factorSanguineo"/>
+        <result property="grupoSanguineo" column="grupoSanguineo"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+    </resultMap>
+    <!--Persona Resultado-->
+     <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+    </resultMap>
+    
+    <!--idEstudiante-->
+    <resultMap id="matriculaResultado" type="pe.marista.sigma.bean.MatriculaBean">
+        <id property="idMatricula" column="idMatricula"/>
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>  
+        <association property="programacionBean" column="idProgramacion"
+                     javaType="pe.marista.sigma.bean.ProgramacionBean"
+                     resultMap="programacionResultado"/>  
+    </resultMap>
+    <!--idGradoAcadémico-->
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademico"/>
+        <result property="nombre" column="nombreGrado"/>
+    </resultMap>
+    <!--idProgramacion-->
+    <resultMap id="programacionResultado" type="pe.marista.sigma.bean.ProgramacionBean">
+        <id property="idProgramacion" column="idProgramacion"/>
+        <result property="seccion" column="seccion"/>
+    </resultMap>
+    <!--idConcepto-->
+    <resultMap id="conceptoResultado2" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultado2"/> 
+    </resultMap>
+    <!--Tipo Concepto-->
+    <resultMap id="tipoConceptoResultado2" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+        <result property="nombre" column="nombreTipoCon"/>
+        <result property="flgIngreso" column="flgIngreso"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+    </resultMap>
+    <!--idDocIngreso-->
+    <resultMap id="docIngresoResultado" type="pe.marista.sigma.bean.DocIngresoBean">
+        <id property="idDocIngreso" column="idDocIngreso"/>
+        <result property="fechaPago" column="fechaPago"/>
+    </resultMap>
+    <!--cr-->
+    <resultMap id="centroResponsabilidadResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombreCr"/>
+    </resultMap>
+    <!--cuenta-->
+    <resultMap id="planContableDResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentaD"/>
+        <result property="nombre" column="nombreCuentaD"/>
+    </resultMap>
+    <resultMap id="planContableHResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentaH"/>
+        <result property="nombre" column="nombreCuentaH"/>
+    </resultMap>
+    <!--idTipoMoneda-->
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idMoneda"/>
+        <result property="codigo" column="nomMoneda"/>
+    </resultMap>
+    <!--idDscto-->
+    <resultMap id="tipoDsctoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDscto"/>
+        <result property="codigo" column="codigoTipoDscto"/>
+    </resultMap>
+    <!--idTipoMotivo-->
+    <resultMap id="tipoMotivoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMotivoDscto"/>
+        <result property="codigo" column="codigoTipoMotivoDscto"/>
+    </resultMap>
+    <!--idTipoBeca-->
+    <resultMap id="tipoBecaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoBeca"/>
+        <result property="codigo" column="codigoTipoBeca"/>
+    </resultMap>
+    <!-- EstudianteBeca-->
+    <resultMap id="estudianteBecaResultado" type="pe.marista.sigma.bean.EstudianteBecaBean">
+        <id property="idEstudianteBeca" column="idEstudianteBeca"/>
+        <association property="becaBean" column="idBeca"
+                     javaType="pe.marista.sigma.bean.BecaBean"
+                     resultMap="becaResultado"/>
+        <association property="cronogramaPagoBean" column="mesInicio"
+                     javaType="pe.marista.sigma.bean.CronogramaPagoBean"
+                     resultMap="cronogramaPagoResultado"/>
+        <association property="idTipoMotivoBeca" column="idTipMotivoBeca"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipMotivoBecaResultado"/>
+    </resultMap>
+    <!-- Beca -->
+    <resultMap id="becaResultado" type="pe.marista.sigma.bean.BecaBean">
+        <id property="idBeca" column="idBeca"/>
+        <result property="nombre" column="nombreBeca"/>
+        <result property="porcentaje" column="porcentaje"/>
+        <association property="codigoBean" column="idTipBeca"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipBecaResultado"/>
+    </resultMap>
+    <resultMap id="tipBecaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipBeca"/>
+        <result property="codigo" column="codigoBeca"/>
+    </resultMap>
+    <!-- Cronograma -->
+    <resultMap id="cronogramaPagoResultado" type="pe.marista.sigma.bean.CronogramaPagoBean">
+        <id property="mes" column="mesInicio"/>
+    </resultMap>
+    
+    <!--idTipoMotivoBeca-->
+    <resultMap id="tipoMotivoBecaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipMotivoBeca"/>
+        <result property="codigo" column="codigoTipMotivoBeca"/>
+    </resultMap>
+    <!--idTipMotivoBeca-->
+    <resultMap id="tipMotivoBecaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMotivoBeca"/>
+        <result property="codigo" column="codigoMotivoBeca"/>
+    </resultMap>
+    
+    <!--tipoMotivoCondonacionResultado-->
+    
+    <resultMap id="tipoMotivoCondonacionResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMotivoCondonacion"/>
+        <result property="codigo" column="codigoMotivoCondonacion"/>
+    </resultMap>
+    
+    <!--idTipoStatusCtaCte-->
+    <resultMap id="tipoStatusCtaCteResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusCtaCte"/>
+        <result property="codigo" column="codigoStatusCtaCte"/>
+    </resultMap>
+    <!--idProcesoEnvio -->
+    <resultMap id="procesoEnvioResultado2" type="pe.marista.sigma.bean.ProcesoEnvioBean">
+        <id property="idProcesoEnvio" column="idProcesoEnvio"/>
+        <result property="monto" column="montoEnvio"/>
+    </resultMap>
+    <!--idProcesoRecu -->
+    <resultMap id="procesoRecuperacionResultado" type="pe.marista.sigma.bean.ProcesoRecuperacionBean">
+        <id property="idProcesoRecup" column="idProcesoRecup"/>
+        <result property="monto" column="montoRecup"/>
+    </resultMap>
+    
+    
+    
+    <!--
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    <resultMap id="matriculaResultado" type="pe.marista.sigma.bean.MatriculaBean">
+        <id property="idMatricula" column="idMatricula"/>
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>  
+        <association property="programacionBean" column="idProgramacion"
+                     javaType="pe.marista.sigma.bean.ProgramacionBean"
+                     resultMap="programacionResultado"/>  
+    </resultMap>
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademico"/>
+        <result property="nombre" column="nombreGrado"/>
+    </resultMap>
+    <resultMap id="programacionResultado" type="pe.marista.sigma.bean.ProgramacionBean">
+        <id property="idProgramacion" column="idProgramacion"/>
+        <result property="seccion" column="seccion"/>
+    </resultMap>
+    <resultMap id="conceptosResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/>
+        <result property="nombre" column="nombreConcepto"/>
+    </resultMap>
+    <resultMap id="docIngresoResultado" type="pe.marista.sigma.bean.DocIngresoBean">
+        <id property="idDocIngreso" column="idDocIngreso"/>
+        <result property="fechaPago" column="fechaPago"/>
+    </resultMap>        
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idMoneda"/>
+        <result property="codigo" column="nomMoneda"/>
+    </resultMap>
+    <resultMap id="estudianteResultado2" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante"/>
+        <result property="codigo" column="codigo"/>
+        <result property="anioIngreso" column="anioIngreso"/>
+        <result property="fechaIngreso" column="fechaIngreso"/>
+        <result property="foto" column="foto"/>
+        <result property="refeLugarNaci" column="refeLugarNaci"/>
+        <result property="viaDomi" column="viaDomi"/>
+        <result property="nroDomi" column="nroDomi"/>
+        <result property="urbDomi" column="urbDomi"/>
+        <result property="refeDomi" column="refeDomi"/>
+        <result property="telefono1Domi" column="telefono1Domi"/>
+        <result property="telefono2Domi" column="telefono2Domi"/>        
+        <result property="factorSanguineo" column="factorSanguineo"/>
+        <result property="grupoSanguineo" column="grupoSanguineo"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+    </resultMap>
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+    </resultMap>-->
+    
+    <!--<select id="buscarCuentas" resultMap="ctasXCobrarResultado" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean">
+        <include refid="consultaCtasXCobrar"/>
+        <where>
+            cta.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="idEstudiante != null and idEstudiante != ''">
+                and upper(cta.idEstudiante) like concat('%',#{matriculaBean.estudianteBean.personaBean.idPersona},'%')
+            </if>            
+        </where>
+    </select>-->
+    
+    <select id="obtenerCuentas" resultMap="ctasXCobrarResultado" parameterType="map" >
+        <include refid="consultaCtasXCobrar" />  where cta.uniNeg = #{unidadNegocioBean.uniNeg}   
+        <!--DATEPART(MONTH,cta.creafecha) = #{meses} and-->
+    </select>
+    
+    <select id="obtenerCuentaEstudiante" resultMap="ctasXCobrarResultado" parameterType="map" >
+        <include refid="consultaCtasXCobrar" />WHERE cta.idestudiante =  #{idEstudiante} and cta.uniNeg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerCtaEstudiante" resultMap="ctasXCobrarResultado" parameterType="map" >
+        <include refid="consultaCtasXCobrar" />WHERE cta.idestudiante =  #{idEstudiante} and cta.uniNeg = #{uniNeg} and cta.anio = #{anio} and cta.mes = #{mes}
+    </select>
+    
+    <select id="obtenerMaxIdProcesoBanco" resultType="int" parameterType="String" >
+       Select 
+       isnull(max(idProcesoEnvio),0) as idProcesoBanco
+       from MT_ProcesoEnvio 
+       where unineg=#{uniNeg}
+    </select>
+    
+    
+    <!--<sql id="consultaAlterna" >
+        select 
+        cta.idctasxcobrar
+        ,cta.cuentad
+        ,cta.cuentah
+        ,cta.monto
+        ,cta.montopagado
+        ,cta.mora
+        ,cta.tasainteres
+        ,cta.dscto
+        ,es.codigo
+        ,es.urbdomi
+        ,es.viadomi
+        ,per.nombre
+        ,per.apepat
+        ,per.apemat
+        ,per.nrodoc
+        from MT_ProcesoEnvio pe
+        inner join MT_CtasxCobrar cta on pe.idctasxcobrar = cta.idctasxcobrar
+        inner join MX_Estudiante es on cta.idestudiante = es.idestudiante
+        inner join MX_Persona per on es.idestudiante = per.idpersona
+    </sql>
+    
+    <select id="obtenerCuentaEst" resultMap="procesoEnvioResultado" >
+        <include refid="consultaAlterna" />
+        <where>
+             pe.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != '' " >
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="estudianteBean.personaBean.apePat != null and estudianteBean.personaBean.apePat != '' " >
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.apePat},'%')
+            </if> 
+            <if test="estudianteBean.personaBean.apeMat != null and estudianteBean.personaBean.apeMat != '' " >
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.apeMat},'%')
+            </if> 
+        </where>
+    </select>-->
+    
+    <select id="obtenerResTrans" parameterType="map" resultMap="ctasXCobrarResultado" >
+        select 'Alumno Origen' as estadoEst,cta.idestudiante,cta.montopagado,cta.monto,co.idcodigo,co.codigo as codigoStatusCtaCte,pe.nombre,pe.apepat,pe.apemat from MT_CtasxCobrar cta
+        inner join MX_Estudiante es on cta.idestudiante = es.idestudiante
+        inner join MX_Persona pe on es.idestudiante = pe.idpersona
+        left join MO_Codigo co on cta.idtipostatusctacte = co.idcodigo
+        where cta.unineg = #{uniNeg} and cta.idctasxcobrar = #{idCtasXCobrar}
+        union all
+        select 'Alumno Destino' as estadoEst,cta.idestudiante,cta.montopagado,cta.monto,co.idcodigo,co.codigo as codigoStatusCtaCte,pe.nombre,pe.apepat,pe.apemat from MT_CtasxCobrar cta
+        inner join MX_Estudiante es on cta.idestudiante = es.idestudiante
+        inner join MX_Persona pe on es.idestudiante = pe.idpersona
+        left join MO_Codigo co on cta.idtipostatusctacte = co.idcodigo
+        where cta.unineg = #{uniNeg} and cta.idctasxcobrar = #{idCtasXCobrarDes}
+    </select>
+    
+    <select id="obtenerEnvioCuenta" resultMap="ctasXCobrarResultado" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" > 
+        <include refid="consultaCtasXCobrar" />
+        <where>
+            cta.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != '' ">
+                and upper(p.idPersona) like concat('%',#{estudianteBean.personaBean.idPersona},'%')
+            </if>
+            <if test="conceptoBean.idConcepto != null and conceptoBean.idConcepto != '' " >
+                <!--and upper(con.idConcepto) like concat('%',#{conceptoBean.idConcepto},'%')-->
+                and con.idConcepto = #{conceptoBean.idConcepto}
+            </if>
+            <if test="conceptoBean.tipoConceptoBean.idTipoConcepto != null and conceptoBean.tipoConceptoBean.idTipoConcepto != '' " >
+                <!--and upper(tp.idTipoConcepto) like concat('%',#{conceptoBean.tipoConceptoBean.idTipoConcepto},'%')-->
+                and tp.idTipoConcepto = #{conceptoBean.tipoConceptoBean.idTipoConcepto}
+            </if>   
+            <if test="mes != 0 and mes != null">
+                and Month(cta.fechapago) = #{mes} 
+            </if>
+            <if test="dia != 0 and dia != null">
+                and Day(cta.fechapago) = #{dia} 
+            </if>
+            <if test="anios != null and anios != '' ">
+                <!-- and upper(DATEPART(YEAR,cta.fechavenc)) like concat('%',#{anios},'%') -->
+                and DATEPART(YEAR,cta.fechapago) = #{anios}
+            </if>
+            <!--
+            <if test="meses != null and meses != '' ">
+                and Month(cta.fechapago) = #{meses}
+            </if>
+            -->
+            <!--
+            <if test="meses == null or meses == '' ">
+                and MONTH(cta.fechavenc) = MONTH(GETDATE())
+            </if>
+            -->
+            <if test="idEstadoCuenta != null and idEstadoCuenta != 0">
+                and cta.idtipostatusctacte = #{idEstadoCuenta}
+            </if>
+        </where>
+    </select>
+    
+    <select id="obtenerEnvioCuentaRes" resultMap="ctasXCobrarResultado" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" > 
+        <include refid="consultaCtasXCobrar" />
+        <where>
+            cta.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="estudianteBean.idEstudiante != null and estudianteBean.idEstudiante != '' ">
+                and upper(p.idPersona) like concat('%',#{estudianteBean.idEstudiante},'%')
+            </if>
+            <if test="conceptoBean.idConcepto != null and conceptoBean.idConcepto != '' " >
+                and upper(con.idConcepto) like concat('%',#{conceptoBean.idConcepto},'%')
+            </if>
+            <if test="conceptoBean.tipoConceptoBean.idTipoConcepto != null and conceptoBean.tipoConceptoBean.idTipoConcepto != '' " >
+                and upper(tp.idTipoConcepto) like concat('%',#{conceptoBean.tipoConceptoBean.idTipoConcepto},'%')
+            </if>   
+            <if test="anio != 0 ">
+                and upper(DATEPART(YEAR,cta.fechavenc)) = #{anio}
+            </if> 
+            and cta.idtipostatusctacte = 19404
+        </where>
+    </select>
+    
+    <select id="obtenerEnvioCuentaResDes" resultMap="ctasXCobrarResultado" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" > 
+        <include refid="consultaCtasXCobrar" />
+        <where>
+            cta.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="estudianteBean.idEstudiante != null and estudianteBean.idEstudiante != '' ">
+                and upper(p.idPersona) like concat('%',#{estudianteBean.idEstudiante},'%')
+            </if>
+            <if test="conceptoBean.idConcepto != null and conceptoBean.idConcepto != '' " >
+                and upper(con.idConcepto) like concat('%',#{conceptoBean.idConcepto},'%')
+            </if>
+            <if test="conceptoBean.tipoConceptoBean.idTipoConcepto != null and conceptoBean.tipoConceptoBean.idTipoConcepto != '' " >
+                and upper(tp.idTipoConcepto) like concat('%',#{conceptoBean.tipoConceptoBean.idTipoConcepto},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != '' " >
+                and upper(p.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if> 
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != '' " >
+                and upper(p.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if> 
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != '' " >
+                and upper(p.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="idTipoStatusCtaCte.idCodigo != null" >
+                and cta.idTipoStatusCtaCte = #{idTipoStatusCtaCte.idCodigo}
+            </if>            
+            <if test="anio != 0 ">
+                and cta.anio = #{anio}
+            </if>
+            <if test="mes != 0 ">
+                and cta.mes = #{mes}
+            </if>
+        </where>
+    </select>
+    
+    <select id="obtenerDeudaConciliaCta" resultType="Integer" parameterType="map" >
+        select sum(monto) from MT_CtasxCobrar where idProcesoRecup = #{idProcesoRecup} and idEstudiante = #{idEstudiante}
+    </select>
+
+    <select id="obtenerDeudaEstudiante" resultType="Integer" parameterType="map" >
+        select sum(monto) -(select montorecup from MT_ProcesoRecup where idprocesobanco = #{idProcesoBanco} and iddiscente = #{idDiscente} and unineg = #{uniNeg}) from MT_CtasxCobrar
+        where idestudiante = #{idEstudiante}  and unineg = #{uniNeg}
+    </select>
+
+    <select id="obtenerSumaEnvio" resultType="Float" parameterType="map" >
+        declare @anio varchar(10) = ''
+        set @anio = #{anio}
+        
+        if (@anio is null or len(@anio) = 0)
+        begin
+        set @anio = (select YEAR(GETDATE()))
+        end
+        
+        select isnull(sum(monto),0) from MT_ProcesoEnvio where unineg = #{uniNeg}
+        and YEAR(fechaemision) = (select case 
+        when YEAR(fechaemision) is null or YEAR(fechaemision) = 0 then YEAR(GETDATE()) 
+        when YEAR(fechaemision) is not null and YEAR(fechaemision) <![CDATA[ <> ]]> 0 then @anio 
+        end)
+        and idprocesobanco = #{idProcesoBanco}
+    </select>
+
+    <select id="insertarMasivoEnvio" resultType="Object" parameterType="map" >
+        exec PRO_PROCESO_ENVIO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@iddiscente = #{idDiscente,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@registro = #{registro,javaType=String,jdbcType=CHAR,mode=IN},
+        @@moneda = #{moneda,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@mes = #{mes,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+
+    <update id="modificarStatusEnvioCuenta" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        UPDATE MT_CtasxCobrar
+        SET
+        flgEnvio = #{flgEnvio},
+        modipor = #{modiPor}
+        WHERE idctasxcobrar = #{idCtasXCobrar} 
+    </update>
+    
+    <!-- Exec PRO_CHANGE_STATUS_CTA_ENVIO -->
+    <select id="llamarProChangeEnvioCta" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" resultType="Object">
+        exec PRO_CHANGE_STATUS_CTA_ENVIO
+        @@unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idctasxcobrar = #{idCtasXCobrar,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@flgEnvio = #{flgEnvio,javaType=Boolean,jdbcType=BIT,mode=IN},
+        @@modipor = #{modiPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select> 
+    
+    <!-- Modificar a False -->
+    <update id="modificarStatusEnvioCuentaTrueFalse" parameterType="map" >
+        UPDATE MT_CtasxCobrar
+        SET
+        flgEnvio = #{flgEnvio}
+        WHERE uniNeg = #{uniNeg} AND  
+        WHERE idctasxcobrar = #{idCtasXCobrar} 
+    </update>
+      
+    <update id="modificarStatusCuenta" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        UPDATE MT_CtasxCobrar
+        SET
+        montopagado = #{montoPagado},
+        idTipoStatusCtaCte = #{idTipoStatusCtaCte.idCodigo},
+        fechaPago = #{fechaPago},
+        modipor=#{modiPor},
+        mora =#{mora}
+        WHERE idctasxcobrar = #{idCtasXCobrar}
+    </update>
+    
+    <update id="modificarCuentaCambio" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        UPDATE MT_CtasxCobrar
+        SET
+        montopagado = #{montoPagado},
+        idTipoStatusCtaCte = #{idTipoStatusCtaCte.idCodigo},
+        fechaPago = #{fechaPago},
+        modipor=#{modiPor},
+        mora =#{mora}
+        WHERE idctasxcobrar = #{idCtasXCobrar}
+    </update> 
+    
+    <select id="obtenerCuentaId" resultMap="ctasXCobrarResultado" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        <include refid="consultaCtasXCobrar" /> WHERE cta.idctasxcobrar = #{idCtasXCobrar}
+    </select> 
+    <!-- EXEC PRO OPERACIÓN -->
+    <select id="execProEnvioOp" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_PRO_2
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idprocesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombres = #{nombres,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fechaInic = #{fechaIni,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fechaVenc = #{fechaFin,javaType=Date,jdbcType=DATE,mode=IN},
+        @@idtipoconcepto = #{idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idconcepto = #{idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <!-- EXEC PRO-ENVIO -->
+    <select id="execProEnvioPro" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_PRO_3
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idprocesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@anio = #{anio,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombreCompleto = #{nombreCompleto,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idTipoConcepto = #{idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idConcepto = #{idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@tipoRegistro = #{idTipoRegistro,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@estado = #{estado,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@mes = #{mes,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <!-- MODIFICANDO CUOTA -->
+    <update id="modificarCuota" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        declare @unineg char(6) = #{uniNeg}
+        declare @cuota varchar(30) = #{cuota}
+        if(@unineg = 'SANJOC')
+        begin
+        UPDATE pf
+        set 
+        pf.constante = @cuota
+        from MT_ProcesoFile pf 
+        where unineg = @unineg and flgproceso = 2 and idtipofile = 20002 
+        and ruc = '20100053455' and idDefecto = 20414
+        end
+    </update>
+    
+    <select id="obtenerNumFilas" resultType="Integer" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        declare @uniNeg char(6) = #{uniNeg}
+        declare @idProcesoBanco Integer = #{idProcesoBanco}
+        if(@uniNeg = 'SANJOC') 
+        begin
+        select count(*) from Envio_SANJOC_InterBank where unineg = @uniNeg and idprocesobanco = @idProcesoBanco
+        end
+        if(@uniNeg = 'CHAMPS')
+        begin
+        select count(*) from Envio_CHAMPS_SCOTIABANK where unineg = @uniNeg and idprocesobanco = @idProcesoBanco
+        end
+    </select>
+    
+    <!-- EXEC PRO ENVIO POR MES -->
+    <select id="execProEnvioProFechas" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_PRO_2
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombres = #{nombres,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fechaInic = #{fechaIni,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fechaVenc = #{fechaFin,javaType=Date,jdbcType=DATE,mode=IN},
+        @@idtipoconcepto = #{conceptoBean.tipoConceptoBean.idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idconcepto = #{conceptoBean.idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioProAnio" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_PRO_5
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombres = #{nombres,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@mes = #{meses,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@anio = #{anios,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idtipoconcepto = #{conceptoBean.tipoConceptoBean.idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idconcepto = #{conceptoBean.idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@estado = #{tipoEstadoCta.idCodigo,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="obtenerMontoTotal" resultType="Float" parameterType="map" > 
+        declare @idProcesoBanco INTEGER = 0,@nomBanco varchar(1000) = ''       
+        declare @item Integer = 0         
+        declare @sql varchar(max) = ''   
+        set @nomBanco = (select case
+        when (select ruc from MO_Entidad where flgfinanciera = 1 and unineg = #{uniNeg} and ruc = #{ruc}) = #{ruc} then (select nombre from MO_Entidad where flgfinanciera = 1 and unineg = #{uniNeg} and ruc = #{ruc})
+        end as nomEn) 
+        set @idProcesoBanco = #{idProcesoBanco}   
+        set @item = (select posicionitem from MT_ProcesoFile where idtipofile = #{idTipoFile}  and flgproceso = #{flgProceso} and idDefecto = 20402 and ruc = #{ruc} and unineg = #{uniNeg})
+        set @sql = 'select sum(elemento_'+convert(varchar,@item)+') from Envio_'+#{uniNeg}+'_'+@nomBanco+' where idprocesobanco = ' + convert(varchar,@idProcesoBanco) + ' and uniNeg = ' + concat('''',#{uniNeg},'''')
+        exec(@sql)
+    </select>
+    
+    <select id="obtenerTotalRegistros" resultType="Integer" parameterType="map" >
+        declare @unineg varchar(6) = ''
+        declare @ruc varchar(11) = ''
+        declare @idProcesoBanco Integer = 0
+
+        declare @nomBanco varchar(20) = ''
+        declare @query varchar(max) = ''
+
+        set @idProcesoBanco = #{idProcesoBanco}
+        set @ruc = #{ruc}
+        set @unineg = #{uniNeg}
+        
+        set @nomBanco = (select nombre from MO_Entidad where ruc = @ruc and unineg = @unineg)
+        set @query = 'select COUNT(*) as total from Envio_'+@unineg+'_'+replace(@nomBanco,' ','')+' where unineg = ' + concat('''',@unineg,'''') + ' and idprocesobanco = ' + CONVERT(varchar(20),@idProcesoBanco)
+        exec(@query)
+    </select>
+    
+    <select id="execProUniNeg" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_UNINEG
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombres = #{nombres,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fechaInic = #{fechaIni,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fechaVenc = #{fechaFin,javaType=Date,jdbcType=DATE,mode=IN},
+        @@mes = #{meses,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@anio = #{anios,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idtipoconcepto = #{conceptoBean.tipoConceptoBean.idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idconcepto = #{conceptoBean.idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idTipoStatusCtaCte = #{tipoEstadoCta.idCodigo,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@valor = #{valor,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@tipoRegistro = #{tipoRegistro,javaType=String,jdbcType=VARCHAR,mode=IN}, 
+        @@moneda = #{tipoMoneda,javaType=Integer,jdbcType=INTEGER,mode=IN} 
+    </select>
+    
+    <select id="execProUniNegCab" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_PRO_CAB
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fecha = #{fecha,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@registroDefecto = #{tipoRegistro,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProTalleres" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_TALLER
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fechaInic = #{fechaIni,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fechaVenc = #{fechaFin,javaType=Date,jdbcType=DATE,mode=IN}
+    </select>
+    
+    <!-- ENVIO BANCO POR TALLERES -->
+    <select id="execProUniNegTaller" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_UNINEG_TALLER
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombres = #{nombres,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fechaInic = #{fechaIni,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fechaVenc = #{fechaFin,javaType=Date,jdbcType=DATE,mode=IN},
+        @@mes = #{meses,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@anio = #{anios,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idtipoconcepto = #{conceptoBean.tipoConceptoBean.idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idconcepto = #{conceptoBean.idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idTipoStatusCtaCte = #{tipoEstadoCta.idCodigo,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@valor = #{valor,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@tipoRegistro = #{tipoRegistro,javaType=String,jdbcType=VARCHAR,mode=IN}, 
+        @@moneda = #{tipoMoneda,javaType=Integer,jdbcType=INTEGER,mode=IN} 
+    </select>
+    
+    <!-- FILTRO DE CUENTA CORRIENTE -->
+    <select id="buscarCuentaCorriente" resultMap="ctasXCobrarResultado" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" > 
+        <include refid="consultaCtasXCobrar" />
+        <where>
+            cta.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="estudianteBean.idEstudiante != null and estudianteBean.idEstudiante != '' ">
+                and p.idPersona like concat('%',#{estudianteBean.idEstudiante},'%')
+            </if>
+            <if test="estudianteBean.codigo != null and estudianteBean.codigo != '' ">
+                and stu.codigo like concat('%',#{estudianteBean.codigo},'%')
+            </if>  
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != '' " >
+                and p.apepat like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if> 
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != '' " >
+                and p.apemat like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if> 
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != '' " >
+                and p.nombre like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="idTipoStatusCtaCte.idCodigo != null" >
+                and cta.idtipostatusctacte = #{idTipoStatusCtaCte.idCodigo}
+            </if>            
+            <if test="anio != null ">
+                and cta.anio = #{anio}
+            </if>
+            <if test="mes != null ">
+                and cta.mes = #{mes}
+            </if>
+        </where>
+    </select>
+    
+</mapper>
+
+

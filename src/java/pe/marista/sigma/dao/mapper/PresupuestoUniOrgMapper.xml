@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PresupuestoUniOrgDAO"> 
+    <sql id="consultaCampos" >
+        SELECT 
+        puo.unineg as uniNegUo
+        ,puo.anio
+        ,puo.iduniorg
+        ,puo.idpresupuesto
+        ,puo.cuenta
+        ,puo.presupuestotope
+        ,puo.presupuestoprog
+        ,puo.presupuestoejec
+        ,puo.creapor
+        ,puo.creafecha
+        ,puo.modipor
+        ,puo.modiver
+        ,pr.idpresupuesto as idPres
+        ,pr.cuenta as cuentaPRes
+        ,pr.anio as anioPresupuesto 
+        ,pl.cuenta as cuentaPlan 
+        ,pl.nombre as nomCuentaPlan
+        ,uo.iduniorg as idUo 
+        ,uo.nombreuniorg as nomUo
+        ,convert(varchar, getdate(), 103) as creaFechaAc
+        ,convert(varchar, getdate(), 8) as creaHoraAc
+        ,CAST(isnull((ISNULL(puo.presupuestoprog,0) - isnull(puo.presupuestoejec,0)),0) AS money) as saldo 
+        <!--
+        ,CAST(isnull((case 
+            when (((ISNULL(puo.presupuestoprog,0) - ISNULL(puo.presupuestoejec,0)) / ISNULL(puo.presupuestoprog,0)) * 100) <![CDATA[ < ]]> 0 then 0 
+            else (((ISNULL(puo.presupuestoprog,0) - ISNULL(puo.presupuestoejec,0)) / ISNULL(puo.presupuestoprog,0)) * 100) end),0) 
+        AS money) as porcentajeSaldo
+        -->
+        ,(case
+            when ISNULL(puo.presupuestoprog,0) <![CDATA[ <> ]]> 0 then (CAST(isnull((case              
+                    when (((ISNULL(puo.presupuestoprog,0) - ISNULL(puo.presupuestoejec,0)) / ISNULL(puo.presupuestoprog,0)) * 100) <![CDATA[ < ]]> 0 then 0              
+                else (((ISNULL(puo.presupuestoprog,0) - ISNULL(puo.presupuestoejec,0)) / ISNULL(puo.presupuestoprog,0)) * 100) end),0)          
+            AS money))
+                else CAST(0.00 as money) 
+        end) as porcentajeSaldo
+        FROM ME_PresupuestoUniOrg puo 
+        left join ME_Presupuesto pr on puo.idpresupuesto = pr.idpresupuesto
+        left join MT_PlanContable pl on pr.cuenta = pl.cuenta
+        left join MO_UnidadOrganica uo on puo.iduniorg = uo.iduniorg
+    </sql> 
+    
+    <resultMap id="presupuestoOrgResultado" type="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        <id  property="id" column="id" />
+        <result property="iduniorg" column="iduniorg" />
+        <result property="nombreuniorg" column="nombreuniorg" />
+        <result property="importe" column="importe" />
+        <result property="presupuestoejec" column="presupuestoejec" />
+        <result property="unidadOrganica" column="unidadOrganica" />
+        <result property="numActividad" column="numActividad" />
+        <result property="numSubActividad" column="numSubActividad" />
+        <result property="creaFechaAc" column="creaFechaAc" />
+        <result property="creaHoraAc" column="creaHoraAc" />
+        <result property="saldo" column="saldo" />
+        <result property="porcentajeSaldo" column="porcentajeSaldo" />
+    </resultMap>
+    
+    <sql id="consultaPresupuesto" > 
+        <!--
+        select uno.iduniorg,isnull(SUM(da.importe),0) as importe,uno.nombreuniorg as unidadOrganica 
+        ,convert(varchar, getdate(), 103) as creaFechaAc
+        ,convert(varchar, getdate(), 8) as creaHoraAc
+        from ME_DetActividad da
+        inner join MO_UnidadOrganica uo on da.iduniorg = uo.iduniorg
+        inner join ME_ObjOperativo obj on da.idobjoperativo = obj.idobjoperativo
+        inner join MO_UnidadOrganica uno on obj.iduniorg = uno.iduniorg 
+        -->
+        select puo.iduniorg,sum(puo.presupuestoprog) as importe,uo.nombreuniorg as unidadOrganica
+        ,isnull(puo.presupuestoejec,0) as presupuestoejec
+        ,convert(varchar, getdate(), 103) as creaFechaAc 
+        ,convert(varchar, getdate(), 8) as creaHoraAc
+        from ME_PresupuestoUniOrg puo
+        inner join MO_UnidadOrganica uo on puo.iduniorg = uo.iduniorg
+    </sql>
+    
+    <select id="obtenerPresupuestoOrg" parameterType="map" resultMap="presupuestoOrgResultado" >
+        <include refid="consultaPresupuesto" />
+        where puo.unineg = #{uniNeg}
+        group by puo.iduniorg,uo.nombreuniorg,puo.presupuestoejec
+    </select>
+    
+    <sql id="consultaPresupuestoOrgId">
+        select uno.iduniorg,isnull(SUM(da.importe),0) as importe,uo.nombreuniorg from ME_DetActividad da
+        inner join MO_UnidadOrganica uo on da.iduniorg = uo.iduniorg
+        inner join ME_ObjOperativo obj on da.idobjoperativo = obj.idobjoperativo
+        inner join MO_UnidadOrganica uno on obj.iduniorg = uno.iduniorg
+    </sql>
+    
+    <select id="obtenerPresupuestoOrgId" parameterType="map" resultMap="presupuestoOrgResultado" >
+        <include refid="consultaPresupuesto" />
+        where puo.unineg = #{uniNeg} and puo.anio = #{anio}
+        group by puo.iduniorg,uo.nombreuniorg
+        <!--
+        select uno.iduniorg,isnull(SUM(da.importe),0) as importe,uo.nombreuniorg,
+        (select COUNT(*) from ME_Actividad where iduniorg = da.iduniorg and unineg = #{uniNeg}) as numActividad,
+        (select COUNT(*) from ME_DetActividad where iduniorg = da.iduniorg and unineg = #{uniNeg}) as numSubActividad
+        from ME_DetActividad da
+        inner join MO_UnidadOrganica uo on da.iduniorg = uo.iduniorg
+        inner join ME_ObjOperativo obj on da.idobjoperativo = obj.idobjoperativo
+        inner join MO_UnidadOrganica uno on obj.iduniorg = uno.iduniorg
+        where da.unineg = #{uniNeg} and da.anio = #{anio} and uno.iduniorg = #{idUniOrg}
+        group by uno.iduniorg,uo.nombreuniorg,da.iduniorg
+        -->
+    </select>
+    
+    <resultMap id="presupuestoUoResultado" type="pe.marista.sigma.bean.PresupuestoUniOrgBean" > 
+        <result property="anio" column="anio" />
+        <result property="presupuestoProg" column="presupuestoProg" />
+        <result property="presupuestoTope" column="presupuestoTope" />
+        <result property="presupuestoEjec" column="presupuestoEjec" />
+        <result property="cuenta" column="cuenta" />  
+        <result property="uniNeg" column="uniNegUo" />  
+        <result property="mod" column="mod" />  
+        <result property="saldo" column="saldo" />
+        <result property="porcentajeSaldo" column="porcentajeSaldo" />
+        <result property="idPresupuesto" column="idPresupuesto" />                 
+        <association property="presupuestoBean" column="idpresupuesto" 
+                     javaType="pe.marista.sigma.bean.PresupuestoBean"
+                     resultMap="presupuestoResultado"/>
+        <association property="planContableBean" column="cuenta"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableResultado"/>
+        <association property="planOperativoBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.PlanOperativoBean"
+                     resultMap="planResultado"/>
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="uniOrgResultado"/>
+    </resultMap>
+     
+    <!--Plan Operativo-->
+    <resultMap id="planResultado" type="pe.marista.sigma.bean.PlanOperativoBean">
+        <result property="anio" column="anio" />
+        <result property="codigoPlanOperativo" column="codigoPlanOperativo"/>
+        <result property="nombre" column="nombrePlanOperativo"/> 
+    </resultMap>
+    
+    <!--Unidad de Organica-->
+    <resultMap id="uniOrgResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUo"/>  
+        <result property="nombreUniOrg" column="nomUo"/>
+    </resultMap>
+    
+    <!--Presupuesto-->
+    <resultMap id="presupuestoResultado" type="pe.marista.sigma.bean.PresupuestoBean" >
+        <result property="idPresupuesto" column="idPres" />
+        <result property="anio" column="anio" />
+        <result property="presupuestoProg" column="presupuestoProg" />
+        <result property="presupuestoEjec" column="presupuestoEjec" />
+        <result property="presupuestoTope" column="presupuestoTope" />
+        <result property="nombrePresupuesto" column="nombrePresupuesto" /> 
+        <result property="creaPor" column="creapor" />
+        <result property="creaFecha" column="creafecha" />
+        <result property="modiPor" column="modipor" />
+        <result property="modiVer" column="modiver" />
+    </resultMap>
+    
+    <!--Plan Contable-->
+    <resultMap id="planContableResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentaPlan"/>  
+        <result property="nombre" column="nomCuentaPlan"/>
+        <result property="nivel" column="nivel"/>
+    </resultMap>
+    
+    <select id="obtenerPresupuestoUniOrg" resultMap="presupuestoUoResultado" parameterType="String"  >
+        <include refid="consultaCampos" /> WHERE puo.unineg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerPorId" resultMap="presupuestoUoResultado" parameterType="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        <include refid="consultaCampos" /> WHERE puo.cuenta = #{cuenta} and puo.anio = #{anio} and puo.idUniOrg = #{unidadOrganicaBean.idUniOrg}
+    </select>  
+    
+    <select id="obtenerListaPorId" resultMap="presupuestoUoResultado" parameterType="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        <include refid="consultaCampos" /> WHERE puo.cuenta = #{cuenta} and puo.anio = #{anio} and puo.idUniOrg = #{unidadOrganicaBean.idUniOrg}
+    </select>  
+    
+    <select id="obtenerListaCuentaUo" resultMap="presupuestoUoResultado" parameterType="map" >
+        <include refid="consultaCampos" /> WHERE puo.cuenta = #{cuenta} and puo.anio = #{anio} and puo.idUniOrg = #{idUniOrg} and puo.uniNeg = #{uniNeg}
+    </select>   
+    
+    <select id="obtenerListaCuentaUorg" resultMap="presupuestoUoResultado" parameterType="map" >
+        <include refid="consultaCampos" /> WHERE puo.cuenta = #{cuenta} and puo.anio = #{anio} and puo.idUniOrg = #{idUniOrg} and puo.uniNeg = #{uniNeg}
+    </select>   
+    
+    <select id="obtenerPorPlanOperativo" resultMap="presupuestoUoResultado" parameterType="map" >
+        <include refid="consultaCampos" />  WHERE puo.iduniorg = #{idUniOrg} and puo.uniNeg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerPorCuenta" resultMap="presupuestoUoResultado" parameterType="map" >
+        <include refid="consultaCampos" /> WHERE puo.cuenta = #{cuenta} and puo.unineg = #{uniNeg}
+    </select>
+    <select id="execProPresUniOrg" resultType="object" parameterType="map" >
+        exec PRO_UPDATE_PRESUPUESTO_UNIORG
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    <select id="filtrarPresupuesto" resultMap="presupuestoUoResultado" parameterType="pe.marista.sigma.bean.PresupuestoBean" >
+        <include refid="consultaCampos" />
+        <where>
+            puo.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="planContableBean.cuenta != null" >
+                and puo.cuenta = #{planContableBean.cuenta}
+            </if>
+            <if test="anio != null" >
+                and puo.anio = #{anio}
+            </if>
+            order by 2 asc
+        </where>
+    </select>
+    <insert id="insertarPresupuestoUniOrg" parameterType="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        INSERT INTO ME_PresupuestoUniOrg
+        (unineg
+        ,anio
+        ,iduniorg
+        ,cuenta 
+        ,presupuestotope
+        ,presupuestoprog
+        ,presupuestoejec
+        ,idPresupuesto
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{anio},
+        #{unidadOrganicaBean.idUniOrg}, 
+        #{cuenta},
+        #{presupuestoTope},
+        #{presupuestoProg},
+        #{presupuestoEjec},
+        #{idPresupuesto},
+        #{creaPor},
+        getDate())
+    </insert>
+    
+    <insert id="insertarPresupuestoProg" parameterType="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        INSERT INTO ME_PresupuestoUniOrg
+        (unineg
+        ,anio
+        ,iduniorg
+        ,cuenta  
+        ,presupuestoprog 
+        ,idPresupuesto
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{anio},
+        #{unidadOrganicaBean.idUniOrg}, 
+        #{cuenta}, 
+        #{presupuestoProg}, 
+        #{idPresupuesto},
+        #{creaPor},
+        getDate())
+    </insert>
+    
+
+    <update id="modificarPresupuestoUniOrg" parameterType="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        UPDATE ME_PresupuestoUniOrg
+        SET   
+        presupuestotope = #{presupuestoTope},
+        presupuestoprog = #{presupuestoProg},
+        modiPor = #{modiPor}
+        WHERE 
+        cuenta = #{cuenta} and 
+        anio = #{anio} and
+        uniNeg = #{unidadNegocioBean.uniNeg} and 
+        idUniOrg = #{unidadOrganicaBean.idUniOrg}
+    </update>
+    
+    <update id="modificarPresupuestoProg" parameterType="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        UPDATE ME_PresupuestoUniOrg
+        SET    
+        presupuestoprog = #{presupuestoProg},
+        modiPor = #{modiPor}
+        WHERE 
+        cuenta = #{cuenta} and 
+        anio = #{anio} and
+        uniNeg = #{uniNeg} and 
+        idUniOrg = #{unidadOrganicaBean.idUniOrg}
+    </update>
+    
+    <delete id="eliminarPresupuestoUniOrg" parameterType="pe.marista.sigma.bean.PresupuestoUniOrgBean" >
+        DELETE from ME_PresupuestoUniOrg
+        WHERE 
+        cuenta = #{cuenta} and 
+        anio = #{anio} and 
+        idUniOrg = #{unidadOrganicaBean.idUniOrg} and
+        uniNeg = #{uniNeg}<!--Cambio-->
+    </delete>
+      
+    <select  id="obtenerPresupuestoPorUniOrgForTop1" parameterType="map" resultType="pe.marista.sigma.bean.reporte.PresUniOrgRepBean">
+        Declare @totalProg money =(select sum(isnull(puo.presupuestoprog,0))  from ME_PresupuestoUniOrg puo 
+        inner join ME_Presupuesto pre on pre.idpresupuesto=puo.idpresupuesto and pre.unineg=puo.unineg where iduniorg in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  
+        and puo.unineg=#{uniNeg} and puo.anio=#{anio}), 
+        @totalEjec money = (select sum(isnull(puo.presupuestoejec,0))  from ME_PresupuestoUniOrg puo 
+        inner join ME_Presupuesto pre on pre.idpresupuesto=puo.idpresupuesto and pre.unineg=puo.unineg where iduniorg in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  
+        and puo.unineg=#{uniNeg} and puo.anio=#{anio})
+        SELECT distinct  top 1
+        CONVERT(varchar,preUO.idUniOrg) as idUniOrg,
+        uni.nombreUniOrg,  
+        CONVERT(varchar, CAST(isnull((sum(isnull(preuo.presupuestoprog,0))),0) AS money), 1) as presupuestoTotal,
+        CONVERT(varchar, CAST(isnull((sum(isnull(preuo.presupuestoejec,0))),0) AS money), 1) as presupuestoEjec,
+        CONVERT(varchar, CAST(@totalProg AS money), 1) as totalPro,
+        CONVERT(varchar, CAST(@totalEjec AS money), 1) as totalEjec,
+        preUO.anio,
+        ent.nombre as nombreUniNeg,
+        'R.U.C. ' +un.ruc as ruc
+
+        FROM ME_PresupuestoUniOrg preUO
+        inner join MO_UnidadNegocio un on un.unineg=preUO.unineg
+        inner join MO_Entidad ent on ent.ruc=un.RUC and ent.unineg=preUO.unineg
+        inner join MO_UnidadOrganica uni on uni.iduniorg=preUO.iduniorg
+        where preUO.unineg=#{uniNeg} and preUO.anio=#{anio} and preUO.iduniorg in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        group by preUO.iduniorg,uni.nombreuniorg,un.ruc,ent.nombre,anio
+    </select>
+    <select  id="obtenerPresupuestoPorUniOrgFor" parameterType="map" resultType="pe.marista.sigma.bean.reporte.PresUniOrgRepBean">
+        Declare @totalProg money =(select sum(isnull(puo.presupuestoprog,0))  from ME_PresupuestoUniOrg puo 
+        inner join ME_Presupuesto pre on pre.idpresupuesto=puo.idpresupuesto and pre.unineg=puo.unineg where iduniorg in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  
+        and puo.unineg=#{uniNeg} and puo.anio=#{anio}), 
+        @totalEjec money = (select sum(isnull(puo.presupuestoejec,0))  from ME_PresupuestoUniOrg puo 
+        inner join ME_Presupuesto pre on pre.idpresupuesto=puo.idpresupuesto and pre.unineg=puo.unineg where iduniorg in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  
+        and puo.unineg=#{uniNeg} and puo.anio=#{anio})
+        SELECT distinct 
+        CONVERT(varchar,preUO.idUniOrg) as idUniOrg,
+        uni.nombreUniOrg,  
+        CONVERT(varchar, CAST(isnull((sum(isnull(preuo.presupuestoprog,0))),0) AS money), 1) as presupuestoTotal,
+        CONVERT(varchar, CAST(isnull((sum(isnull(preuo.presupuestoejec,0))),0) AS money), 1) as presupuestoEjec,
+        CONVERT(varchar, CAST(@totalProg AS money), 1) as totalPro,
+        CONVERT(varchar, CAST(@totalEjec AS money), 1) as totalEjec,
+        preUO.anio,
+        ent.nombre as nombreUniNeg,
+        'R.U.C. ' +un.ruc as ruc
+
+        FROM ME_PresupuestoUniOrg preUO
+        inner join MO_UnidadNegocio un on un.unineg=preUO.unineg
+        inner join MO_Entidad ent on ent.ruc=un.RUC and ent.unineg=preUO.unineg
+        inner join MO_UnidadOrganica uni on uni.iduniorg=preUO.iduniorg
+        where preUO.unineg=#{uniNeg} and preUO.anio=#{anio} and preUO.iduniorg in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        group by preUO.iduniorg,uni.nombreuniorg,un.ruc,ent.nombre,anio
+        order by uni.nombreuniorg
+    </select>
+    <select  id="obtenerDetPresupuestoPorUniOrg" parameterType="map" resultType="pe.marista.sigma.bean.reporte.DetPresUniOrgRepBean">
+        Declare  
+        @totalProg money = (select sum(isnull(puo.presupuestoprog,0)) from ME_PresupuestoUniOrg puo 
+        inner join ME_Presupuesto pre on pre.idpresupuesto=puo.idpresupuesto and pre.unineg=puo.unineg where iduniorg = #{idUniOrg}
+        and puo.unineg=#{uniNeg} and puo.anio=#{anio}),
+        @totalEjec money = (select sum(isnull(puo.presupuestoejec,0)) from ME_PresupuestoUniOrg puo 
+        inner join ME_Presupuesto pre on pre.idpresupuesto=puo.idpresupuesto and pre.unineg=puo.unineg where iduniorg = #{idUniOrg}
+        and puo.unineg=#{uniNeg} and puo.anio=#{anio})
+        SELECT 
+        CONVERT(varchar,preUO.cuenta) as cuenta,
+        pc.nombre as nombreCta,
+        CONVERT(varchar, CAST(isnull(pre.presupuestoprog,0) AS money), 1)   as presupuestoProg,
+        CONVERT(varchar, CAST(isnull(pre.presupuestoejec,0) AS money), 1)   as presupuestoEjec,
+ 
+        uni.nombreUniOrg,
+        CONVERT(varchar, CAST(isnull(preuo.presupuestoprog,0) AS money), 1)  as presupuestoProgUniOrg,
+        CONVERT(varchar, CAST(isnull(preUO.presupuestoejec,0) AS money), 1)  as presupuestoEjecUniOrg,
+        CONVERT(varchar, CAST(isnull(@totalProg,0) AS money), 1)  as presupuestoTotalProgUniOrg,
+        CONVERT(varchar, CAST(isnull(@totalEjec,0) AS money), 1)  as presupuestototalEjecUniOrg
+
+        FROM ME_PresupuestoUniOrg preUO
+        inner join ME_Presupuesto pre on pre.idpresupuesto=preUO.idpresupuesto and preUO.unineg=pre.unineg
+        inner join MO_UnidadOrganica uni on uni.iduniorg=preUO.iduniorg
+        inner join MT_PlanContable pc on pc.cuenta=preUO.cuenta
+        where pre.unineg=#{uniNeg} and pre.anio=#{anio} and preUO.iduniorg = #{idUniOrg}
+    </select>
+</mapper>

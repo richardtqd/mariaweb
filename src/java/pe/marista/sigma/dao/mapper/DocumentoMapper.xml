@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.marista.sigma.dao.DocumentoDAO">   
+
+    <sql id="consultaCampos">
+        SELECT
+        doc.idDocumento
+       
+        ,doc.nombre
+        ,doc.idTipoCatDoc
+        ,doc.flgCaduca
+        ,doc.status
+        ,doc.creaPor
+        ,doc.creaFecha
+        ,cod.codigo as nomDoc
+        From MO_Documento doc
+        left Join MO_Codigo cod ON doc.idTipoCatDoc=cod.idcodigo
+         
+    </sql>
+    <resultMap id="documentoResultado" type="pe.marista.sigma.bean.DocumentoBean">
+        <id property="idDocumento" column="idDocumento"/>
+      
+        <result property="nombre" column="nombre"/>
+        <result property="flgCaduca" column="flgCaduca"/>
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="creaFecha" column="creaFecha"  jdbcType="DATE"/> 
+        <association property="tipoCatDocBean" column="idTipoCatDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCatDocResultado"/>
+    </resultMap>  
+    <resultMap id="tipoCatDocResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCatDoc"/>
+        <result property="codigo" column="nomDoc"/>
+         
+    </resultMap>
+    <select id="obtenerTodos" resultMap="documentoResultado">
+        <include refid="consultaCampos" />
+        order by idDocumento 
+    </select> 
+    <select id="obtenerTodosActivos" resultMap="documentoResultado">
+        <include refid="consultaCampos" />
+        Where status = 1 
+        order by idDocumento
+    </select> 
+    <select id="obtenerDocumentoPorId" resultMap="documentoResultado" parameterType="pe.marista.sigma.bean.DocumentoBean">
+        <include refid="consultaCampos" />WHERE doc.idDocumento= #{idDocumento}  
+    </select>
+    <insert id="insertarDocumento" parameterType="pe.marista.sigma.bean.DocumentoBean"  >
+        INSERT INTO MO_Documento (nombre,idTipoCatDoc,flgCaduca,status,creaPor)
+        Values (#{nombre},#{tipoCatDocBean.idCodigo},#{flgCaduca},#{status},#{creaPor})
+    </insert> 
+    <update id="modificarDocumento" parameterType="pe.marista.sigma.bean.DocumentoBean">
+        UPDATE MO_Documento
+        SET 
+        nombre = #{nombre},
+        idTipoCatDoc = #{tipoCatDocBean.idCodigo},
+        flgCaduca = #{flgCaduca},
+        status = #{status},
+        modiPor=#{modiPor}
+        Where idDocumento = #{idDocumento}
+    </update>
+    <delete id="eliminarDocumento" parameterType="pe.marista.sigma.bean.DocumentoBean">
+        Delete From MO_Documento Where idDocumento = #{idDocumento} 
+    </delete>
+    <update id="cambiarEstados" parameterType="pe.marista.sigma.bean.DocumentoBean">
+        UPDATE MO_Documento
+        SET 
+        status = #{status},
+        flgCaduca = #{flgCaduca}
+        Where idDocumento = #{idDocumento}
+    </update>
+</mapper>

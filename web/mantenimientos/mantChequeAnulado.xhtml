@@ -1,0 +1,293 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>
+            <div>
+                <p:layout id="layEst" fullPage="false"  style="width:1300px;height:750px" styleClass="centrado">
+                    <p:layoutUnit id="pnlBuscadorPost" position="west" size="765" header="#{msgs.eitquetaBusCheqAnu}" resizable="false" closable="false" collapsible="true" effect="drop" effectSpeed="500" >
+                        <div>
+                            <h:form id="frmDatosCheqAnu">
+                                <h:panelGrid   style="width: 710px;padding: 0px"  styleClass="centrado">
+                                    <p:panel style="width: 705px" header="#{msgs.etiquetaFiltros}"> 
+                                        <h:panelGrid columns="4" id="pnlFiltro">   
+                                            <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" class="negrita siseFontGrid5"/>  
+                                            <p:calendar  value="#{chequeAnuladoMB.chequeAnuladoFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                            </p:calendar>
+                                            <h:outputLabel value="#{msgs.etiquetaFechaFin}:" class="negrita siseFontGrid5"/>  
+                                            <p:calendar  value="#{chequeAnuladoMB.chequeAnuladoFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                            </p:calendar>
+                                            <h:outputLabel value="#{msgs.etiquetaNumeroCheque}/Transferencia "/>
+                                            <p:inputText value="#{chequeAnuladoMB.chequeAnuladoFiltroBean.docEgresoBean.numCheque}" size="20" maxlength="30"/> 
+                                            <h:outputLabel value="#{msgs.etiquetaNumCta}" class="negrita siseFontGrid5"/> 
+                                            <p:selectOneMenu  value="#{chequeAnuladoMB.chequeAnuladoFiltroBean.cuentaBancoBean.numCuenta}" label="#{msgs.etiquetaNumCta}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{chequeAnuladoMB.listaCuentaBancoFiltroBean}" var="ctaBFilCA" itemLabel="#{ctaBFilCA.numCuenta} - #{ctaBFilCA.tipoMonedaBean.codigo} - #{ctaBFilCA.entidadBancoBean.nombre}" itemValue="#{ctaBFilCA.numCuenta}"/> 
+                                            </p:selectOneMenu> 
+                                            <h:outputLabel value="#{msgs.etiquetaObs}"/> 
+                                            <p:inputText value="#{chequeAnuladoMB.chequeAnuladoFiltroBean.obs}" size="20" maxlength="30"/>  
+                                        </h:panelGrid>
+                                        <p:separator/>
+                                        <h:panelGrid  columns="2" class="centrado">
+                                            <p:commandButton value="#{msgs.botonBuscar}" action="#{chequeAnuladoMB.obtenerFiltroChequeAnulado()}"
+                                                             update="pnlCheqAnula,msg" > 
+                                            </p:commandButton>
+                                            <p:commandButton  actionListener="#{chequeAnuladoMB.limpiarChequeFiltroAnulado()}" 
+                                                              update="pnlFiltro,pnlCheqAnula,msg"  
+                                                              value="#{msgs.botonLimpiar}" process="@this">
+                                            </p:commandButton> 
+                                        </h:panelGrid>
+                                        <p:messages autoUpdate="false" id="msg" />
+                                    </p:panel>
+                                </h:panelGrid>
+                                <br></br>
+                                <h:panelGrid  id="pnlCheqAnula" styleClass="centrado"> 
+                                    <p:dataTable id="cheqAnu" value="#{chequeAnuladoMB.listaChequeAnuladoBean}" widgetVar="cheqAnu"
+                                                 selectionMode="single" 
+                                                 paginator="true"
+                                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                                 rowsPerPageTemplate="5,10"
+                                                 paginatorPosition="bottom" rowIndexVar="n" 
+                                                 var="cheqAnu" rowKey="#{cheqAnu}"  rows="10" 
+                                                 rendered="#{not empty chequeAnuladoMB.listaChequeAnuladoBean}" 
+                                                 style="width: 715px;font-size:14px !important;margin-bottom:0"> 
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.etiquetaCheqAnulados}" />
+                                        </f:facet> 
+                                        <f:facet name="{Exporters}">
+                                            <h:commandLink>
+                                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                                <p:dataExporter type="xls" target="cheqAnu" fileName="Cheques_Anulados" />
+                                            </h:commandLink>
+                                        </f:facet>
+                                        <p:column headerText="#{msgs.numero}" width="5%" styleClass="nombre2Filtro centrado-texto siseFont1">
+                                            <h:outputText value="#{n+1}" />
+                                        </p:column>
+                                        <p:column  headerText="#{msgs.etiquetaNumeroCheque}" filterMatchMode="contains" sortBy="#{cheqAnu.docEgresoBean.numCheque}" width="10%" styleClass="nombre2Filtro centrado-texto siseFont1">
+                                            <h:outputText value="#{cheqAnu.docEgresoBean.numCheque}"/>
+                                        </p:column>
+                                        <p:column sortBy="#{cheqAnu.cuentaBancoBean.entidadBancoBean.nombre}"  headerText="#{msgs.etiquetaBanco}" width="15%" styleClass="nombreFiltro centrado-texto siseFont1">
+                                            <h:outputText value="#{cheqAnu.cuentaBancoBean.entidadBancoBean.nombre}"/>
+                                        </p:column>
+                                        <p:column sortBy="#{cheqAnu.cuentaBancoBean.numCuenta}" headerText="#{msgs.etiquetaNumCta}" width="10%"  styleClass="nombreFiltro centrado-texto siseFont1">
+                                            <h:outputText value="#{cheqAnu.cuentaBancoBean.numCuenta}"/>
+                                        </p:column>
+                                        <p:column sortBy="#{cheqAnu.fechaAnula}" headerText="#{msgs.etiquetaFecAnula}" width="8%"  styleClass="nombreFiltro centrado-texto siseFont1">
+                                            <h:outputText value="#{cheqAnu.fechaAnula}">
+                                                <f:convertDateTime  pattern="dd/MM/yyyy" />
+                                            </h:outputText>
+                                        </p:column>  
+                                        <!--
+                                        <p:column style="text-align:center;width: 20px" headerText="#{msgs.etiquetaAcciones}" styleClass="centrado-texto siseFont1">
+                                            <p:commandLink id="cmdEliminar" action="#{chequeAnuladoMB.obtenerDocEgresoPorId(cheqAnu)}" update=":frmElimina:pnlDatosElimina"
+                                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                            </p:commandLink>
+                                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelCheqAnu}" />
+                                        </p:column>
+                                        -->
+                                    </p:dataTable> 
+                                </h:panelGrid> 
+                            </h:form>
+                        </div>
+                    </p:layoutUnit>
+                    <p:layoutUnit position="center" styleClass="centrado">
+                        <div>
+                            <h:form id="frmDatosCheqAnu2">
+                                <center>
+                                    <br/><br/>
+                                    <h:panelGrid columns="1" >                   
+                                        <h:panelGrid columns="1" cellpadding="3" styleClass="centrado">
+                                            <p:panel id="pnlDoc" header="#{msgs.etiquetaAnuCheq}"  toggleable="true" toggleSpeed="500" closeSpeed="500" style="width: 600px"  >
+                                                <h:panelGrid columns="3" cellpadding="1"  styleClass="centrado"  id="pnlCheqAnu"> 
+                                                    <h:outputLabel value="#{msgs.etiquetaNumeroCheque}-Transferencia" class="negrita"  />
+                                                    <h:outputText value="*" class="requerido"/>
+                                                    <h:panelGrid columns="3" class="siseFontGrid5">
+                                                        <p:inputText value="#{chequeAnuladoMB.chequeAnuladoBean.docEgresoBean.numCheque}" label="#{msgs.etiquetaAnuCheq}" size="20" readonly="true" required="true"/> 
+                                                        <p:commandLink  value="#{docEgresoMB.limpiarDocEgresoFiltro()}" oncomplete="PF('popCheque').show();" process="@this" update=":frmBuscarCheque:pnlFiltro,:frmBuscarCheque:pnlDocEgre">
+                                                            <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                                        </p:commandLink>  
+                                                    </h:panelGrid>
+                                                    <h:outputLabel value="#{msgs.etiquetaNumCta}:" class="negrita"/>
+                                                    <h:outputText  class="requerido" value=""/>
+                                                    <h:outputText value="#{chequeAnuladoMB.chequeAnuladoBean.cuentaBancoBean.numCuenta}" rendered="#{chequeAnuladoMB.chequeAnuladoBean.cuentaBancoBean.numCuenta!=null}" />
+                                                    <h:outputText value="____________________________" rendered="#{chequeAnuladoMB.chequeAnuladoBean.docEgresoBean.numCheque==null}" />
+                                                    <h:outputLabel value="#{msgs.etiquetaRucBco}:" class="negrita"/>
+                                                    <h:outputText  class="requerido" value=""/>
+                                                    <h:outputText value="#{chequeAnuladoMB.chequeAnuladoBean.cuentaBancoBean.entidadBancoBean.ruc}" rendered="#{chequeAnuladoMB.chequeAnuladoBean.docEgresoBean.numCheque!=null}" />
+                                                    <h:outputText value="____________________________" rendered="#{chequeAnuladoMB.chequeAnuladoBean.docEgresoBean.numCheque==null}" />
+                                                    <h:outputLabel value="#{msgs.etiquetaBanco}:" class="negrita"/>
+                                                    <h:outputText  class="requerido" value=""/>
+                                                    <h:outputText value="#{chequeAnuladoMB.chequeAnuladoBean.cuentaBancoBean.entidadBancoBean.nombre}" rendered="#{chequeAnuladoMB.chequeAnuladoBean.docEgresoBean.numCheque!=null}" />
+                                                    <h:outputText value="____________________________" rendered="#{chequeAnuladoMB.chequeAnuladoBean.docEgresoBean.numCheque==null}" />
+                                                    <h:outputLabel value="#{msgs.etiquetaFecAnula}:" class="negrita "/>  
+                                                    <h:outputText  class="requerido" value="*"/>
+                                                    <p:calendar  value="#{chequeAnuladoMB.chequeAnuladoBean.fechaAnula}"  label="#{msgs.etiquetaFecAnula}" mode="popup" size="10" required="true"
+                                                                 pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                                    </p:calendar>  
+                                                    <h:outputLabel value="#{msgs.etiquetaObs}:" class="negrita"/>
+                                                    <h:outputText  class="requerido" value="*"/>
+                                                    <p:inputTextarea value="#{chequeAnuladoMB.chequeAnuladoBean.obs}"   required="true" label="#{msgs.etiquetaObs}" maxlength="100" cols="30" rows="5"/>
+                                                </h:panelGrid>
+                                                <br></br> 
+                                                <h:panelGrid class="centrado" columns="2" >
+                                                    <p:commandButton actionListener="#{chequeAnuladoMB.insertarChequeAnulado()}"
+                                                                     update="pnlCheqAnu,:frmDatosCheqAnu2:pnlCheqAnu,msgsAddSol"
+                                                                     oncomplete="if(args.operacionCorrecta){PF('popDone').show();}if(args.operacionIncorrecta){PF('popError').show();}"
+                                                                     value="#{msgs.botonGrabar}">
+                                                    </p:commandButton>
+                                                    <p:commandButton  actionListener="#{chequeAnuladoMB.limpiarChequeAnulado()}"
+                                                                      update="pnlCheqAnu"
+                                                                      value="#{msgs.botonNuevo}" process="@this">
+                                                    </p:commandButton>
+                                                </h:panelGrid> 
+                                                <p:messages id="msgsAddSol"  autoUpdate="false"/>
+                                            </p:panel>
+                                        </h:panelGrid>  
+                                    </h:panelGrid>  
+                                </center>
+                            </h:form>
+                        </div>
+                    </p:layoutUnit>
+                </p:layout>
+            </div> 
+            <h:form id="frmBuscarCheque">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popCheque" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid   style="width: 800px;padding: 0px"  styleClass="centrado">
+                        <p:panel style="width: 800px" header="#{msgs.etiquetaFiltros}"> 
+                            <h:panelGrid columns="4" id="pnlFiltro">   
+                                <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" class="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{docEgresoMB.docEgresoFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar>
+                                <h:outputLabel value="#{msgs.etiquetaFechaFin}:" class="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{docEgresoMB.docEgresoFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar> 
+                                <h:outputLabel value="#{msgs.etiquetaCodDocEgreso} "/>
+                                <p:inputText value="#{docEgresoMB.docEgresoFiltroBean.idDocEgreso}" size="20" maxlength="30"/>
+                                 
+                                <h:outputLabel value="#{msgs.etiquetaRucProveedor}" /> 
+                                <p:inputText value="#{docEgresoMB.docEgresoFiltroBean.entidadBean.ruc}" size="20" maxlength="30"/> 
+                                <h:outputLabel value="#{msgs.etiquetaGlosa}"/>
+                                <p:inputText value="#{docEgresoMB.docEgresoFiltroBean.glosa}" size="20" maxlength="30"/>
+                                <h:outputLabel value="#{msgs.etiquetaNumCta}" class="negrita siseFontGrid5"/> 
+                                <p:selectOneMenu  value="#{docEgresoMB.docEgresoFiltroBean.cuentaBancoBean.numCuenta}" label="#{msgs.etiquetaNumCta}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{docEgresoMB.listaCuentaBancoFiltroBean}" var="ctaBFil" itemLabel="#{ctaBFil.numCuenta} - #{ctaBFil.tipoMonedaBean.codigo} - #{ctaBFil.entidadBancoBean.nombre}" itemValue="#{ctaBFil.numCuenta}"/> 
+                                </p:selectOneMenu>
+                                <h:outputLabel value="#{msgs.etiquetaNumeroCheque}/Transferencia"/>
+                                <p:inputText value="#{docEgresoMB.docEgresoFiltroBean.numCheque}" size="20" maxlength="30"/>              
+                            </h:panelGrid>
+                            <p:separator/>
+                            <h:panelGrid  columns="2" class="centrado">
+                                <p:commandButton value="#{msgs.botonBuscar}" action="#{docEgresoMB.obtenerFiltroDocEgreso('ChequeNoAnulado')}"
+                                                 update="pnlDocEgre,msg" > 
+                                </p:commandButton>
+                                <p:commandButton  
+                                    update="pnlFiltro,pnlDocEgre,msg"  
+                                    value="#{msgs.botonLimpiar}" process="@this">
+                                </p:commandButton> 
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <br></br>
+                    <h:panelGrid  id="pnlDocEgre" styleClass="centrado"> 
+                        <p:dataTable id="docEgre" value="#{docEgresoMB.listaDocEgresoBean}" widgetVar="docEgre"
+                                     selectionMode="single" 
+                                     paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="docEgre" rowKey="#{docEgre}"  rows="10" 
+                                     rendered="#{not empty docEgresoMB.listaDocEgresoBean}" 
+                                     style="width: 1400px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloDocEgreso}" />  
+                            </f:facet> 
+                            <p:column  styleClass="siseFontTable3 centrado-texto" width="5%" headerText="N">
+                                <h:outputText value="#{n+1}" /> 
+                            </p:column> 
+                            <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaProveedor}" width="15%">
+                                <h:outputText value="#{docEgre.nombreVista}"/>
+                            </p:column>  
+                            <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaNumeroCheque}" width="5%">
+                                <h:outputText value="#{docEgre.numCheque}"/>
+                            </p:column>  
+                            <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaMontoPagado}" width="5%">
+                                <h:outputText value="#{docEgre.montoPagado}"/>
+                            </p:column> 
+                            <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaNumCta}" width="5%">
+                                <h:outputText value="#{docEgre.cuentaBancoBean.numCuenta}"/>
+                            </p:column> 
+                            <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaBanco}" width="10%">
+                                <h:outputText value="#{docEgre.cuentaBancoBean.entidadBancoBean.nombre}"/>
+                            </p:column> 
+                            <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaTipMon}" width="5%">
+                                <h:outputText value="#{docEgre.tipoMonedaBean.codigo}"/>
+                            </p:column>   
+                            <p:column class="centrado" width="5%" styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaSeleccionar}"> 
+                                <p:commandLink  action="#{docEgresoMB.ponerDocEgresoEnChequeAnulado(docEgre)}"
+                                                oncomplete="if(args.operacionCorrecta){PF('popCheque').hide();}" 
+                                                process="@this" update=":frmDatosCheqAnu2:pnlCheqAnu">
+                                    <h:graphicImage value="/resources/images/icons/select3.png"   style="border:0; cursor:pointer;"/>
+                                </p:commandLink> 
+                            </p:column>
+                        </p:dataTable> 
+                    </h:panelGrid> 
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <br></br>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNumeroCheque}: #{chequeAnuladoMB.chequeAnuladoBean.docEgresoBean.numCheque}"/>
+                            <h:outputLabel value="#{msgs.etiquetaBanco}: #{chequeAnuladoMB.chequeAnuladoBean.cuentaBancoBean.entidadBancoBean.nombre}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNumCta}: #{chequeAnuladoMB.chequeAnuladoBean.cuentaBancoBean.numCuenta}"/>
+                            <h:panelGrid columns="2">
+                                <h:outputLabel value="#{msgs.etiquetaFecAnula}"/>
+                                <h:outputText value="#{chequeAnuladoMB.chequeAnuladoBean.fechaAnula}">
+                                    <f:convertDateTime  pattern="dd/MM/yyyy" />
+                                </h:outputText>
+                            </h:panelGrid>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{chequeAnuladoMB.eliminarChequeAnulado()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCheqAnu:pnlCheqAnula:,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmErrorAdm">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popError" resizable="false" modal="true">
+                    <h:panelGrid columns="2" id="pnlError" styleClass="centrado"> 
+                        <h:graphicImage value="/resources/images/icons/warning.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosErrorAdm" class="centrado" > 
+                            <h:outputLabel value="#{msgs.mensajeChequeReq}"/>
+                        </h:panelGrid> 
+                    </h:panelGrid> 
+                    <h:panelGrid columns="2" styleClass="centrado">
+                        <p:commandButton value="#{msgs.botonAceptar}" oncomplete="PF('popError').hide();"/>
+                    </h:panelGrid> 
+                    <p:growl id="msgsErrorAdm" showDetail="true" showSummary="false" autoUpdate="false"/>
+                </p:dialog>
+            </h:form> 
+        </h:body>
+    </ui:define>
+</ui:composition>

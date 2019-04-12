@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.CatalogoCategoriaDAO">  
+    
+    <sql id="consultaCampos">
+        select cc.idcatalogocategoria,cc.nombre,cf.idcatalogofamilia,cf.nombre as familia
+        from ML_CatalogoCategoria cc
+        inner join ML_CatalogoFamilia cf on cc.idcatalogofamilia = cf.idcatalogofamilia
+    </sql>
+    
+    <resultMap id="categoriaResultado" type="pe.marista.sigma.bean.CatalogoCategoriaBean">
+        <id property="idCatalogoCategoria" column="idCatalogoCategoria"/>
+        <result property="nombre" column="nombre"/>
+        <association property="catalogoFamiliaBean" column="idCatalogoFamilia"
+                     javaType="pe.marista.sigma.bean.CatalogoFamiliaBean"
+                     resultMap="familiaResultado"/>
+    </resultMap>
+    
+    <resultMap id="familiaResultado" type="pe.marista.sigma.bean.CatalogoFamiliaBean">
+        <id property="idCatalogoFamilia" column="idCatalogoFamilia"/>
+        <result property="nombre" column="familia"/>
+    </resultMap>
+    
+    <select id="obtenerTodos" resultMap="categoriaResultado">
+        <include refid="consultaCampos" />
+        order by nombre
+    </select>
+    
+    <select id="obtenerPorFamilia" resultMap="categoriaResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        where cc.idcatalogofamilia = #{idCatalogoFamilia}
+    </select>
+   
+    <select id="obtenerPorId" resultMap="categoriaResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where cc.idcatalogocategoria = #{idCatalogoCategoria}
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.CatalogoCategoriaBean">
+        insert into ML_CatalogoCategoria (nombre,idcatalogofamilia)
+        values(#{nombre},#{catalogoFamiliaBean.idCatalogoFamilia})
+    </insert> 
+    
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.CatalogoCategoriaBean">
+        update ML_CatalogoCategoria 
+        set 
+        nombre = #{nombre},
+        idcatalogofamilia = #{catalogoFamiliaBean.idCatalogoFamilia}
+        where idcatalogocategoria = #{idCatalogoCategoria}
+    </update>
+    
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.CatalogoCategoriaBean">
+        delete from ML_CatalogoCategoria
+        where idcatalogocategoria = #{idCatalogoCategoria}
+    </delete>
+
+</mapper>

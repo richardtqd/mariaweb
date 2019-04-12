@@ -1,0 +1,166 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{perfilMB.obtenerTodos()}">
+            <h:form id="frmDatosPerfil">
+                <h:outputText value="#{msgs.tituloMantoPerfil}" class="tituloPantalla"/>
+                <br/>
+                <p:panel>
+                    <f:facet name="header">
+                        <h:outputText value="#{msgs.tituloBusFiltro}"/>
+                    </f:facet>
+                    <h:panelGrid columns="10">      
+                        <h:outputLabel value="#{msgs.campoNomPerfil}: "/>
+                        <p:inputText value="#{perfilMB.perfilFiltroBean.nombre}"/>
+                        <p:commandButton value="#{msgs.botonBuscar}" action="#{perfilMB.obtenerPorFiltro()}" update=":frmDatosPerfil:pnlTablaPerfil"/>
+                    </h:panelGrid>
+                    <h:panelGrid columns="1" class="centrado">         
+                        <p:commandButton value="#{msgs.botonNuevo}" action="#{perfilMB.limpiarPerfilBean()}" update=":frmMantPerfil:pnlDatosPerfil" 
+                                         oncomplete="PF('popNewPerfil').show();"/>
+                    </h:panelGrid>
+                </p:panel>
+                <br/>
+                <h:panelGrid styleClass="centrado" id="pnlTablaPerfil" >
+                    <p:dataTable value="#{perfilMB.listaPerfilBean}" paginator="true" 
+                                 var="perfil" id="tblPerfil"
+                                 rows="15" 
+                                 rendered="#{not empty perfilMB.listaPerfilBean}" 
+                                 style="width: #{perfilMB.anchoTablasBig}; font-size: 12px">
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaPerfiles}" />  
+                        </f:facet>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaPerfil}" />
+                            </f:facet>
+                            <center>
+                                <h:outputText value="#{perfil.nombre}"/>
+                            </center>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaEstado}" />
+                            </f:facet>
+                            <center>
+                                <h:outputText value="#{perfil.statusVista}"/>
+                            </center>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCambiarEstado}" />
+                            </f:facet>
+                            <center>
+                                <p:inputSwitch id="swCambio" value="#{perfil.estado}">
+                                    <p:ajax listener="#{perfilMB.ponerPerfil(perfil)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </center>
+                        </p:column>
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEditar" actionListener="#{perfilMB.obtenerPorId(perfil.idPerfil)}" update=":frmMantPerfil:pnlDatosPerfil,:frmMantPerfil:pickListPerfil"
+                                           oncomplete="PF('popNewPerfil').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                            <p:tooltip id="toolTipEdit" for="cmdEditar" value="#{msgs.mensajeEditPerfil}" />
+                            &nbsp;&nbsp;&nbsp;
+                            <p:commandLink id="cmdEliminar" action="#{perfilMB.obtenerPorId(perfil.idPerfil)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelPerfil}" />
+                        </p:column>
+                    </p:dataTable>
+                    <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                </h:panelGrid>
+               <h:panelGroup rendered="#{not empty perfilMB.listaPerfilBean}">
+                        <div align="center"> 
+                            <h:commandLink action="#{perfilMB.imprimirTodosPdf()}" target="_blank">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                        </div>
+               </h:panelGroup>  
+                
+            </h:form>
+            <h:form id="frmMantPerfil">
+                <p:dialog header="#{msgs.tituloMantoPerfil}" widgetVar="popNewPerfil" width="650" resizable="false" modal="true">
+                    <h:panelGrid columns="2" id="pnlDatosPerfil" cellpadding="5">
+                        <h:outputLabel value="#{msgs.campoNomPerfil}" class="negrita"/>
+                        <p:inputText  value="#{perfilMB.perfilBean.nombre}" required="true"  label="#{msgs.campoNomPerfil}"/> 
+                        <h:outputLabel value="#{msgs.etiquetaEstado}" class="negrita"/>
+                        <h:selectOneRadio value="#{perfilMB.perfilBean.status}" label="#{msgs.etiquetaEstado}">
+                            <f:selectItem itemLabel="#{msgs.etiquetaEstadoAct}" itemValue="1"/>
+                            <f:selectItem itemLabel="#{msgs.etiqeutaEstadoInac}" itemValue="0"/>
+                        </h:selectOneRadio>
+                        <h:outputLabel value="#{msgs.etiquetaModulos}" class="negrita"/>
+                        <h:panelGrid columns="1"> 
+                            <p:pickList id="pickListPerfil" value="#{perfilMB.dualListaModuloBean}" var="modulo" itemLabel="#{modulo.nodo}" 
+                                        itemValue="#{modulo.idModulo}" showSourceFilter="true" showTargetFilter="true" filterMatchMode="contains"
+                                        label="#{msgs.etiquetaModulos}" required="true">
+                                <f:facet name="sourceCaption">#{msgs.etiquetaDisponibles}</f:facet>
+                                <f:facet name="targetCaption">#{msgs.etiquetaSeleccionados}</f:facet>
+                            </p:pickList>
+                        </h:panelGrid>
+                        <h:inputHidden value="#{perfilMB.perfilBean.idPerfil}"/><h:inputHidden/>
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid class="centrado">
+                        <p:commandButton actionListener="#{perfilMB.guardarPerfil()}" update=":frmDatosPerfil:pnlTablaPerfil,msgsAdd"
+                                         oncomplete="if(args.operacionCorrecta){PF('popNewPerfil').hide();PF('popDone').show();}"
+                                         value="#{msgs.botonGrabar}">
+                        </p:commandButton>
+                    </h:panelGrid>
+                    <p:growl id="msgsAdd" showDetail="true" showSummary="true"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaPerfil}: #{perfilMB.perfilBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{perfilMB.eliminarPerfil()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosPerfil:pnlTablaPerfil,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaPerfil}: #{perfilMB.perfilBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{perfilMB.cambiarEstado()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosPerfil:pnlTablaPerfil,msgsCon"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update=":frmDatosPerfil:pnlTablaPerfil,msgsCon"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsCon" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

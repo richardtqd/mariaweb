@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteTraumaDAO">  
+    <sql id="consultaCampos">
+        Select  
+        estTra.idEstudianteTrauma,
+        estTra.idEstudiante,
+        estTra.fecha,
+        estTra.suceso
+        From MX_EstudianteTrauma estTra
+    </sql>
+    <resultMap id="estudianteTraumaResultado" type="pe.marista.sigma.bean.EstudianteTraumaBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idEstudianteTrauma" column="idEstudianteTrauma"/>
+        <result property="suceso" column="suceso"/>
+        <result property="fecha" column="fecha"/>
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+    </resultMap>
+    <!--Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+    </resultMap>
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+    </resultMap>
+    <select id="obtenerEstTraumaPorId" resultMap="estudianteTraumaResultado" parameterType="pe.marista.sigma.bean.EstudianteTraumaBean">
+        <include refid="consultaCampos" />Where estTra.idEstudianteTrauma = #{idEstudianteTrauma}
+    </select>
+    <select id="obtenerEstTraumaPorEst" resultMap="estudianteTraumaResultado" parameterType="String">
+        <include refid="consultaCampos" />Where estTra.idEstudiante = #{idEstudiante}
+    </select>
+    <insert id="insertarEstTrauma" parameterType="pe.marista.sigma.bean.EstudianteTraumaBean">
+        Insert Into MX_EstudianteTrauma (uniNeg,idEstudiante,fecha,suceso,creaPor) 
+        Values (#{unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona},#{fecha},#{suceso},#{creaPor})  
+    </insert> 
+    <update id="modificarEstTrauma" parameterType="pe.marista.sigma.bean.EstudianteTraumaBean">
+        Update MX_EstudianteTrauma
+        Set 
+        fecha = #{fecha},
+        suceso = #{suceso},
+        modiPor = #{modiPor}
+        Where idEstudianteTrauma = #{idEstudianteTrauma}
+    </update>
+    <delete id="eliminarEstTrauma" parameterType="pe.marista.sigma.bean.EstudianteTraumaBean">
+        Delete From MX_EstudianteTrauma Where idEstudianteTrauma = #{idEstudianteTrauma}
+    </delete>
+    
+    <select id="obtenerTraumas" resultType="pe.marista.sigma.bean.reporte.EstudianteTraumaRepBean" parameterType="map">
+        select
+        isnull(convert(varchar,tra.fecha,103) ,'-') as fecha
+        ,isnull(tra.suceso,'Ninguno') as suceso 
+        from MX_Estudiante e 
+        left join MX_EstudianteTrauma tra on e.idestudiante = tra.idestudiante 
+        WHERE e.idestudiante=#{idEstudiante}  and e.unineg=#{uniNeg}
+    </select>
+</mapper>

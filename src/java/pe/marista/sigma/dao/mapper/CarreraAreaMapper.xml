@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.CarreraAreaDAO">  
+    <sql id="consultaCampos">
+        Select
+        ca.idCarreraArea
+        ,ca.idGradoAcademico
+        ,ca.area as area
+        ,ga.nombre as nombreGA
+        ,ga.idnivelacademico
+        ,na.nombre as nomNA
+        From MO_CarreraArea ca
+        inner join MX_GradoAcademico ga on ca.idGradoAcademico =  ga.idGradoAcademico
+        inner join MX_NivelAcademico NA on ga.idnivelacademico =  na.idnivelacademico 
+    </sql>
+       
+    <resultMap id="carreraAreaResultado" type="pe.marista.sigma.bean.CarreraAreaBean">
+        <id property="idCarreraArea" column="idCarreraArea"/>
+        <result property="area" column="area"/>  
+        <result property="creaPor" column="creaPor"/>  
+        <result property="creaFecha" column="creaFecha"/>  
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>
+    </resultMap> 
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademico"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreGA"/>
+        <association property="nivelAcademicoBean" column="idNivelAcademico"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultado"/>
+    </resultMap>
+    <resultMap id="nivelResultado" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNivelAcademico"/>
+        <result property="nombre" column="nomNA"/>
+    </resultMap>
+    <select id="obtenerCarreraArea" resultMap="carreraAreaResultado">
+        <include refid="consultaCampos" />
+    </select>
+    <select id="obtenerCarreraAreaPorGradoAcademico" resultMap="carreraAreaResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        Where ca.idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}<!--Cambio en este cambio se esta empatando los id de carreraArea y Grado Academico-->   
+    </select>
+    
+    <select id="obtenerCarreraAreaPorNivelAcademico" resultMap="carreraAreaResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        Where na.idnivelacademico=#{idNivelAcademico}
+    </select>
+    
+    <select id="obtenerCarreraAreaPorId" resultMap="carreraAreaResultado" parameterType="Integer">
+        <include refid="consultaCampos" /> Where ca.idCarreraArea = #{ca.idCarreraArea}
+    </select>
+    
+    <insert id="insertarCarreraArea" parameterType="pe.marista.sigma.bean.CarreraAreaBean">
+        Insert Into MO_CarreraArea (area,idGradoAcademico) 
+        Values (#{area},#{gradoAcademicoBean.idGradoAcademico})     
+    </insert> 
+    
+    <update id="modificarCarreraArea" parameterType="pe.marista.sigma.bean.CarreraAreaBean">
+        Update MO_CarreraArea
+        set
+        area = #{area},
+        idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}
+        Where idCarreraArea = #{idCarreraArea}   
+    </update>
+    
+    <delete id="eliminarCarreraArea" parameterType="Integer">
+        Delete from MO_CarreraArea Where ca.idCarreraArea = #{idCarreraArea}  
+    </delete>
+    
+</mapper>

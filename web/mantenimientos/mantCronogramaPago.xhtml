@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body> 
+            <h:form id="frmCrono" > 
+                <p:panel header="#{msgs.etiquetaCronogramaPago}" style="width: 500px;" class="center-margin" >
+                    <h:panelGrid id="pnlCrono" columns="1" class="center-margin" > 
+                        <h:panelGrid columns="1" class="center-margin" > 
+                            <h:panelGrid columns="2" >
+                            <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="negrita siseFontGrid5" /> 
+                            <p:spinner id="minMax" value="#{cronogramaPagoMB.cronogramaPagoBean.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="1">
+                                                </p:spinner>
+                            </h:panelGrid>
+                            <h:panelGrid columns="2" >
+                                <p:outputLabel value="Vencimiento: " />
+                                <p:calendar id="txtFechaVen" value="#{cronogramaPagoMB.cronogramaPagoBean.fechaVenc}" showOn="button"
+                                            pattern="dd/MM/yyyy" mode="popup" locale="de" navigator="true" required="true" label="#{msgs.etiquetaFechaVencimiento}"> 
+                                    <p:ajax event="dateSelect" listener="#{cronogramaPagoMB.obtenerFecha}" oncomplete="if(args.validacionErronea){PF('popVal').show();}" />
+                                </p:calendar>
+                            </h:panelGrid> 
+                            <h:panelGrid columns="2"  id="resume"> 
+                                <p:outputLabel value="T. Concepto" />
+                                <p:selectOneMenu value="#{cronogramaPagoMB.cronogramaPagoBean.tipoConceptoBean.idTipoConcepto}" required="true" label="#{msgs.etiquetaTipoConcepto}" >
+                                    <f:selectItem value="#{null}" itemLabel="#{msgs.etiquetaSeleccionar}" />
+                                    <f:selectItems value="#{cronogramaPagoMB.listaTipoConceptoBean}" var="tipo" itemValue="#{tipo.idTipoConcepto}" itemLabel="#{tipo.nombre}" />
+                                    <p:ajax event="change" listener="#{cronogramaPagoMB.obtenerTipoCon()}" update="resume"/>
+                                </p:selectOneMenu> 
+                                <h:outputText value="" class="requerido"/>
+                                <p:selectOneMenu effect="fold" value="#{cronogramaPagoMB.cronogramaPagoBean.mes}"  class="resetSelect" style="width:125px" panelStyle="width:125px" >
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{cronogramaPagoMB.listaMesesExpMap}" />
+                                </p:selectOneMenu>
+                            </h:panelGrid>
+                            <h:panelGrid columns="2" >
+                                <p:outputLabel value="T. de Interes: " />
+                                <p:inputText id="txtInteres" value="#{cronogramaPagoMB.cronogramaPagoBean.tasaInteres}" required="true" label="#{msgs.etiquetaInteres}" />
+                            </h:panelGrid> 
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" class="center-margin" >
+                            <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{cronogramaPagoMB.registrarCronograma()}"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show()}" 
+                                             update=":frmCrono:pnlCrono,:frmTblCrono,:frmCrono:msgCrono"/>
+                            <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{cronogramaPagoMB.limpiarCronograma()}" update=":frmCrono:pnlCrono"
+                                             process="@this"/>
+                        </h:panelGrid>
+                        <p:messages id="msgCrono" closable="true" />
+                    </h:panelGrid>
+                </p:panel>
+            </h:form>
+
+            <h:form id="frmTblCrono" >
+                <h:panelGrid id="pnlTblCrono" class="center-margin" >
+                    <p:dataTable value="#{cronogramaPagoMB.listaCronogramaPagoBean}" var="crono"
+                                 paginator="true" selectionMode="single" selection="#{cronogramaPagoMB.cronogramaPagoBean}"
+                                 id="tblCtaCte" rowKey="#{crono}" rows="12" paginatorPosition="bottom"
+                                 rendered="#{not empty cronogramaPagoMB.listaCronogramaPagoBean}" style="width: 800px; font-size: 10px">
+                        <p:column filterBy="#{crono.anio}" headerText="#{msgs.etiquetaAnio}"  filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{crono.anio}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaVencimiento}"  filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{crono.fechaVencimiento}" >
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaDescrip}"  filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{crono.tipoConceptoBean.nombre}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMes}"  filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{crono.nomMes}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaInteres}"  filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{crono.tasaInteres}" />
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                            <p:commandLink id="cmdEdit" action="#{cronogramaPagoMB.obtenerIdCronograma(crono)}" process="@this"
+                                           update=":frmCrono:pnlCrono">
+                                <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                            </p:commandLink> 
+                            <p:tooltip id="toolTipEdit" for="cmdEdit" value="#{msgs.mensajeSelect}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form> 
+
+            <p:dialog id="popVal" header="Error de Cronograma" widgetVar="popVal" width="370" height="120" showEffect="fade" hideEffect="explode" resizable="false"
+                      modal="true" closable="true" >
+                <h:form>
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="Error de Validacion de Cronograma"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popVal').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </h:form>
+            </p:dialog>
+
+
+        </h:body>
+    </ui:define>
+</ui:composition>

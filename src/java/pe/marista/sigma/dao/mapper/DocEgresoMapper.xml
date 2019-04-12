@@ -1,0 +1,1965 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.DocEgresoDAO"> 
+    <sql id="consultaCampos"> 
+       SELECT distinct 
+        docE.uniNeg as uniNegDoc
+        ,docE.idDocEgreso
+        ,(select sum(doc2.montoPagado-ISNULL(doc2.dsctonotcred,0)) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso 
+        and doc2.unineg=doce.unineg) as montoTotal
+        ,docE.nroDocEgreso 
+        ,(	case 
+        when docE.idtipodocegreso='A' then (docE.idsolicitudcajach) 
+        when docE.idtipodocegreso in ('R','O','F')  then (docE.idcompra)
+        else 0
+        end) as idCompraDocE  
+        ,fact.idfacturacompra AS idFacturaCompra
+        ,regC.idRegistroCompra AS idRegCom
+        ,regC.uniNeg as idUniNeg
+        ,tipS.idtiposolicitud
+        ,tipS.nombre as nombreTS
+        ,docE.idCaja
+        ,docE.usuario
+        ,per.apepat as apepatPer
+        ,per.apemat as apematPer
+        ,per.nombre as nombrePer
+        ,docE.ruc
+        ,docE.glosa
+        ,docE.creaFecha
+        ,docE.idTipoMoneda
+        ,tipMon.codigo as codigoMoneda
+        ,sol.idTipoMoneda as idTipoMonedaSol
+        ,tipMonSol.codigo as codigoMonedaSol
+        ,docE.montoPagado - ISNULL(doce.dsctonotcred,0) as montoPagado
+        ,docE.idTipoPago
+        ,tipPag.codigo as codigoPago
+        ,docE.rucBanco
+        ,entBan.nombre as nombreEntBanco
+        ,docE.numCuenta
+        ,docE.numCheque 
+        ,docE.nroDocRef  
+        ,caj.uniNeg as uniNegCaja
+        ,ctaB.numCuenta as numCuentaBanco
+        ,ctaB.uniNeg as uniNegBanco  
+        ,cajGen.uniNeg as uniNegCajaGen
+        ,detra.idDetraccion
+        ,detra.descripcion
+        ,docE.idTipoDocEgreso
+        ,sol.idSolicitudCajaCh as idSolicitudCajaChSol
+        ,
+        (case 
+        when docE.idtipodocegreso='A' 
+        then   
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(perC.apepat),' ',UPPER(perC.apemat),', ',UPPER(perC.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(persC.apepat),' ',UPPER(persC.apemat),', ',UPPER(persC.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(entC.nombre)) end 
+        ) 
+        when docE.idtipodocegreso in ('R','O','F') 
+        then
+        (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        else ''
+        end) as nombreVista,
+
+        (case 
+        when docE.idTipoDocEgreso = 'A' then 
+        (  perC.codper )
+        when docE.idTipoDocEgreso in ('R','O','F')  then 
+        ( ent.RUC  )
+        end) as rucVista,
+
+        docE.flgRendicion,
+        tipSol.nombre,
+        sol.idTipoEstRend,
+        sol.idPersonal as idPersonalSol,  
+        tipEstRen.codigo as codigoEstRend,
+        sol.fechaSol as fechaSol,
+        sol.idSolicitudCajaCh AS idSolicitudCajaChSol,
+        isnull(descripTransfCta,'') as descripTransfCta,
+        docE.garantia as garantia
+        FROM MT_DocEgreso docE
+		
+        left join ML_FacturaCompra fact on fact.idfacturacompra=docE.idcompra and fact.uniNeg=docE.uniNeg 
+        LEFT JOIN ML_RegistroCompra regC on fact.idregistrocompra=regC.idRegistroCompra and regC.uniNeg=fact.uniNeg 
+        LEFT JOIN MM_TipoSolicitud tipS   on fact.idTipoSolicitud = tipS.idTipoSolicitud and tipS.unineg=fact.unineg
+
+        LEFT Join MM_Usuario        usu    on usu.usuario=docE.usuario and usu.unineg=docE.unineg
+        LEFT JOIN MT_CajeroCaja     ccCaj  on ccCaj.idCaja=docE.idCaja  and ccCaj.unineg=docE.unineg and ccCaj.usuario=usu.usuario
+        LEFT Join MT_Caja           caj    on caj.idCaja= ccCaj.idCaja and caj.unineg=ccCaj.unineg
+        
+        LEFT Join MO_Personal       per    on per.idPersonal=usu.idPersonal  and per.unineg=docE.unineg
+        LEFT JOIN MT_CuentaBanco    ctaB   on ctaB.numCuenta=docE.numCuenta and ctaB.uniNeg=docE.uniNeg
+        LEFT JOIN MO_Entidad        entBan on entBan.ruc=docE.rucBanco and entBan.uniNeg=docE.uniNeg
+        LEFT JOIN MO_Codigo         tipMon on tipMon.idCodigo = docE.idTipoMoneda
+        LEFT JOIN MO_Codigo         tipPag on tipPag.idCodigo = docE.idTipoPago
+        LEFT JOIN MO_Entidad        ent    on ent.ruc=docE.ruc and ent.uniNeg=docE.uniNeg
+        LEFT JOIN MT_CajaGen        cajGen on docE.idCajaGen=cajGen.idCajaGen and cajGen.uniNeg=docE.uniNeg
+        LEFT JOIN MT_Detraccion     detra  on docE.idDetraccion=detra.idDetraccion
+        LEFT JOIN MT_SolicitudCajaCh sol    on sol.idSolicitudCajaCh=docE.idSolicitudCajaCh and sol.unineg=docE.unineg
+        LEFT JOIN MO_Codigo         tipMonSol on tipMonSol.idCodigo = sol.idTipoMoneda
+        LEFT JOIN MO_Codigo         tipEstRen on sol.idTipoEstRend=tipEstRen.idCodigo
+        LEFT JOIN MO_Personal        perSol    on perSol.idPersonal=per.idPersonal and perSol.unineg=docE.unineg
+        LEFT JOIN MM_TipoSolicitud tipSol ON sol.idtiposolicitud=tipSol.idtiposolicitud and tipSol.unineg=docE.unineg
+
+        left join MO_Personal perC on sol.idPersonal =perC.idPersonal and perC.uniNeg=sol.uniNeg
+        left join MX_Persona persC on sol.idPersonal =persC.idPersona and persC.uniNeg=sol.uniNeg
+        left join MO_Entidad entC on sol.idPersonal =entC.ruc and entC.uniNeg=sol.uniNeg 
+    </sql>
+    <resultMap id="docEgresoResultado" type="pe.marista.sigma.bean.DocEgresoBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNegDoc"/> 
+        <id property="idDocEgreso" column="idDocEgreso"/>
+        <id property="nroDocEgreso" column="nroDocEgreso"/>
+        <result property="fecha" column="fecha"/>  
+        <result property="montoTotal" column="montoTotal"/>  
+        <result property="glosa" column="glosa"/>  
+        <result property="montoPagado" column="montoPagado"/> 
+        <result property="numCheque" column="numCheque"/> 
+        <result property="nroDocRef" column="nroDocRef"/>  
+        <result property="idTipoDocEgreso" column="idTipoDocEgreso"/>  
+        <result property="rucVista" column="rucVista"/>  
+        <result property="nombreVista" column="nombreVista"/>  
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="idTipoDoc" column="idTipoDoc"/>
+        <result property="flgRendicion" column="flgRendicion"/>
+        <result property="montoCadaUno" column="montoCadaUno"/>
+        <result property="montoTotalDocE" column="montoTotalDocE"/>
+        <result property="docRef" column="docRef"/> 
+        <result property="idCompraDocE" column="idCompraDocE"/>
+        <result property="nombreSolicitante" column="nombreSolicitante"/> 
+        <result property="flgAnulado" column="flgAnulado"/> 
+        <result property="serie" column="serie"/>  
+        <result property="descripTransfCta" column="descripTransfCta"/>  
+        <result property="garantia" column="garantia"/>  
+        <result property="dsctoNotCred" column="dsctoNotCred"/>  
+        <result property="nroNotaCredito" column="nroNotaCredito"/>  
+        
+        <!-- unidad negocio de doc egreso -->
+        <association property="unidadNegocioBean" column="uniNegDoc" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>         
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/> 
+        <association property="tipoPagoBean" column="idTipoPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPagoResultado"/>  
+        <association property="cajeroCajaBean" column="idCaja"
+                     javaType="pe.marista.sigma.bean.CajeroCajaBean"
+                     resultMap="cajeroCajaResultado"/>
+        <association property="cuentaBancoBean" column="numCuenta"
+                     javaType="pe.marista.sigma.bean.CuentaBancoBean"
+                     resultMap="cuentaBancoResultado"/>
+        <association property="entidadBean" column="rucEnt"
+                     javaType="pe.marista.sigma.bean.CuentaBancoBean"
+                     resultMap="entidadRucResultado"/>   
+        <association property="facturaCompraBean" column="idFacturaCompra"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="facturaCompraResultado"/>  
+        <association property="cajaGenBean" column="idCajaGen"
+                     javaType="pe.marista.sigma.bean.CajaGenBean"
+                     resultMap="cajaGenResultado"/>  
+        <association property="detraccionBean" column="idDetraccion"
+                     javaType="pe.marista.sigma.bean.DetraccionBean"
+                     resultMap="detraccionResultado"/>  
+        <association property="solicitudCajaCHBean" column="idSolicitudCajaCh"
+                     javaType="pe.marista.sigma.bean.SolicitudCajaCHBean"
+                     resultMap="solicitudCCHResultado"/>  
+        <association property="tipoCambioBean" column="idTC"
+                     javaType="pe.marista.sigma.bean.TipoCambioBean"
+                     resultMap="tipoCambioResultado"/>  
+        <association property="tipoDocBean" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/> 
+    </resultMap>
+    <resultMap id="tipoCambioResultado" type="pe.marista.sigma.bean.TipoCambioBean">
+        <id property="idTipoMoneda" column="idTC"/>
+        <result property="tcVenta" column="tcVenta"/>
+        <result property="tcCompra" column="tcCompra"/> 
+    </resultMap>
+    <resultMap id="facturaCompraResultado" type="pe.marista.sigma.bean.FacturaCompraBean">
+        <id property="idFacturaCompra" column="idFacturaCompra"/> 
+        <association property="registroCompraBean" column="idRegCom"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="registroCompraResultado"/>  
+    </resultMap>
+    <resultMap id="registroCompraResultado" type="pe.marista.sigma.bean.RegistroCompraBean">
+        <id property="idRegistroCompra" column="idRegCom"/> 
+        <association property="tipoSolicitudBean" column="idTipoSolicitud"
+                     javaType="pe.marista.sigma.bean.TipoSolicitudBean"
+                     resultMap="tipoSolicitudResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+    </resultMap> 
+    <resultMap id="detraccionResultado" type="pe.marista.sigma.bean.DetraccionBean">
+        <id property="idDetraccion" column="idDetraccion"/>
+        <result property="descripcion" column="descripcion"/>
+        <result property="valor" column="valor"/> 
+    </resultMap> 
+    <resultMap id="negocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="idUniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <resultMap id="tipoSolicitudResultado" type="pe.marista.sigma.bean.TipoSolicitudBean">
+        <id property="idTipoSolicitud" column="idTipoSolicitud"/>
+        <result property="nombre" column="nombreTS"/>   
+    </resultMap>
+    <!-- unidad negocio de doc egreso  -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegDoc" />
+        <id property="nombre" column="nombreDoc" />
+    </resultMap><!--  tipo moneda -->
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="codigoMoneda"/>
+    </resultMap> 
+    <resultMap id="tipoPagoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPago"/>
+        <result property="codigo" column="codigoPago"/>
+    </resultMap> 
+    <!--ASSOCIATION-->  
+    <!-- CAJERO CAJA -->
+    <resultMap id="cajeroCajaResultado" type="pe.marista.sigma.bean.CajeroCajaBean"> 
+        <association property="cajaBean" column="idCaja" 
+                     javaType="pe.marista.sigma.bean.CajaBean" 
+                     resultMap="cajaResultado"/>
+        <association property="usuarioBean" column="usuario" 
+                     javaType="pe.marista.sigma.bean.UsuarioBean" 
+                     resultMap="usuarioResultado"/> 
+    </resultMap>
+    <!-- CAJA -->
+    <resultMap id="cajaResultado" type="pe.marista.sigma.bean.CajaBean">
+        <id property="idCaja" column="idCaja"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNegCaja"/>
+        <result property="nombre" column="nombreCaja"/>
+        <result property="status" column="statusCaja"/>
+        <association property="unidadNegocioBean" column="uniNegCaja"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoCaja"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultadoCaja" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCaja"/>
+        <result property="nombreUniNeg" column="nombreUniNegCaja"/>
+    </resultMap>
+    <!--Usuario-->
+    <resultMap id="usuarioResultado" type="pe.marista.sigma.bean.UsuarioBean">
+        <id property="usuario" column="usuario" />
+        <association property="personalBean" column="idPersonal" 
+                     javaType="pe.marista.sigma.bean.PersonalBean" 
+                     resultMap="personalResultado"/>
+    </resultMap>
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal" />
+        <result property="nombre" column="nombrePer" />
+        <result property="apepat" column="apepatPer" />
+        <result property="apemat" column="apematPer" />
+    </resultMap>  
+    
+    <!-- CUENTA BANCO-->
+    <resultMap id="cuentaBancoResultado" type="pe.marista.sigma.bean.CuentaBancoBean">
+        <id property="numCuenta" column="numCuentaBanco"/>  
+        <!-- unidad negocio de cuenta banco -->
+        <association property="unidadNegocioBean" column="uniNegBanco" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/> 
+        <association property="entidadBancoBean" column="rucBanco"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadBancoResultado"/> 
+    </resultMap>
+    <!--entidad Banco -->
+    <resultMap id="entidadBancoResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucBanco" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegBanco"/>
+        <result property="nombre" column="nombreEntBanco" />
+        <!--   unidad negocio de entidad -->
+        <association property="unidadNegocioBean" column="uniNegBanco" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultadoBanco"/> 
+    </resultMap>
+    <!-- unidad negocio de cuenta banco -->
+    <resultMap id="unidadNegocioResultadoBanco" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegBanco" />
+        <id property="nombre" column="nombreBanco" />
+    </resultMap>
+    
+    <!--ruc ENTIDAD  -->
+    <resultMap id="entidadRucResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucEnt" /> 
+        <result property="nombre" column="nombreEntidad" />    
+    </resultMap> 
+    <resultMap id="cajaGenResultado" type="pe.marista.sigma.bean.CajaGenBean">
+        <id property="idCajaGen" column="idCajaGen"/>
+        <id property="uniNeg.uniNeg" column="uniNegCajaGen"/> 
+        <association property="uniNeg" column="uniNegCajaGen"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoCajaGen"/> 
+    </resultMap>
+    <resultMap id="unidadNegocioResultadoCajaGen" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCajaGen" /> 
+    </resultMap>
+    
+    <resultMap id="solicitudCCHResultado" type="pe.marista.sigma.bean.SolicitudCajaCHBean"> 
+        <id property="uniNeg" column="uniNegSolCajaCh"/>
+        <id property="idSolicitudCajaCh" column="idSolicitudCajaChSol"/>
+        <result property="fechaSol" column="fechaSol"/> 
+        <result property="tipoEstRend.idCodigo" column="idTipoEstRend"/>
+        <result property="tipoEstRend.codigo" column="codigoEstRend"/>
+        <result property="idTipoRespCheque" column="idTipoRespCheque"/>
+        <result property="idRespCheque" column="idRespCheque"/>
+        <result property="nomRespCheque" column="nomRespCheque"/>
+        <result property="idPersonalSol" column="idPersonalSol"/>
+        <result property="nomRespCheque" column="nomRespCheque"/>
+        <result property="nomRespCheque" column="nomRespCheque"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultadoSol"/> 
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalSolResultado"/> 
+        <association property="resChequeBean" column="idResCheque"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="resChequeSolResultado"/> 
+    </resultMap>
+    <!--Personal solicitante-->
+    <resultMap id="personalSolResultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idPersonal"/> 
+        <result property="nombre" column="nombrePer"/>
+        <result property="apepat" column="apePatPer"/>
+        <result property="apemat" column="apeMatPer"/> 
+        <result property="ruc" column="rucPer"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoPer"/>   
+    </resultMap>  
+    <resultMap id="unidadNegocioResultadoPer" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegPer" /> 
+    </resultMap>
+    <!--Personal res Chqeue-->
+    <resultMap id="resChequeSolResultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idResCheque"/> 
+        <result property="nombre" column="nombreResC"/>
+        <result property="apepat" column="apePatResC"/>
+        <result property="apemat" column="apeMatResC"/> 
+        <result property="ruc" column="rucResC"/>   
+    </resultMap>  
+    
+    <resultMap id="tipoMonedaResultadoSol" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMonedaSol"/>
+        <result property="codigo" column="codigoMonedaSol"/>
+    </resultMap>
+    
+    <resultMap id="tipoDocResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDoc"/>
+        <result property="codigo" column="codigoTipoDoc"/>
+    </resultMap>
+    <!-- MÉTODOS-->   
+    <select id="obtenerDocEgresoPorId" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos" />
+        WHERE docE.uniNeg=#{unidadNegocioBean.uniNeg} and docE.nroDocEgreso=#{nroDocEgreso}
+    </select> 
+    <select id="obtenerCuentaPorUniNeg" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos" />
+        WHERE docE.uniNeg=#{unidadNegocioBean.uniNeg}
+    </select>    
+    <select id="obtenerDocEgresoPorCheque" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        SELECT distinct numcheque as numCheque,doce.nrodocegreso ,uni.unineg,docE.unineg,DOCE.creafecha,idtipodocegreso,
+        (case 
+        when docE.idtipodocegreso='A' 
+        then   
+        sol.nomrespcheque
+        when docE.idtipodocegreso in ('R','O','F') 
+        then
+        (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        else ''
+        end) as nombreVista,
+        (select sum(montopagado) FROM MT_DocEgreso docE where docE.uniNeg=#{unidadNegocioBean.uniNeg} and numcheque=#{numCheque} and docE.nrodocegreso=#{nroDocEgreso}) as montoTotal FROM MT_DocEgreso docE
+        inner join MO_UnidadNegocio uni on uni.unineg=docE.unineg
+        LEFT JOIN MT_SolicitudCajaCh sol    on sol.idSolicitudCajaCh=docE.idSolicitudCajaCh and sol.unineg=docE.unineg
+        left join MO_Personal perC on sol.idPersonal =perC.idPersonal and perC.uniNeg=sol.uniNeg
+        left join MX_Persona persC on sol.idPersonal =persC.idPersona and persC.uniNeg=sol.uniNeg
+        left join MO_Entidad entC on sol.idPersonal =entC.ruc and entC.uniNeg=sol.uniNeg 
+        WHERE docE.uniNeg=#{unidadNegocioBean.uniNeg} and numcheque=#{numCheque}  and docE.nrodocegreso=#{nroDocEgreso}
+    </select>   
+    <insert id="insertarDocEgreso" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        INSERT INTO MT_DocEgreso 
+        (
+        nroDocEgreso
+        ,uniNeg
+        ,idCajaGen
+        ,idTipoDocEgreso 
+        ,idCaja
+        ,usuario  
+     
+        ,idTipoMoneda
+        ,valorDetraccion 
+        ,montoPagado
+        ,idTipoPago
+        ,rucBanco 
+        ,numCuenta
+        ,numCheque
+        ,nroDocRef
+        ,creaPor 
+        ,idDetraccion
+         
+        ,idCompra
+        ,idSolicitudCajaCh
+        ,ruc
+        ,glosa
+        ,idtipocambio
+        ,tc
+        ,serie
+        ,idtipodoc
+        ,descripTransfCta
+        ,garantia 
+        ,dsctoNotCred
+        ,nroNotaCredito
+        )
+        VALUES
+        (#{nroDocEgreso}
+        ,#{cajeroCajaBean.unidadNegocioBean.uniNeg} 
+        ,#{cajaGenBean.idCajaGen}
+        ,#{idTipoDocEgreso} 
+        ,#{cajeroCajaBean.cajaBean.idCaja}
+        ,#{cajeroCajaBean.usuarioBean.usuario}  
+        
+        ,#{tipoMonedaBean.idCodigo}
+        ,#{detraccionBean.valor}
+        ,#{montoPagado}
+        ,#{tipoPagoBean.idCodigo}
+        ,#{cuentaBancoBean.entidadBancoBean.ruc} 
+        ,#{cuentaBancoBean.numCuenta}
+        ,#{numCheque}
+        ,#{nroDocRef}
+        ,#{creaPor}  
+        ,#{detraccionBean.idDetraccion}
+        <if test="idTipoDoc == 0 ">
+            ,#{facturaCompraBean.idFacturaCompra}
+            ,NULL
+            ,#{facturaCompraBean.registroCompraBean.entidadBean.ruc}
+            ,#{facturaCompraBean.registroCompraBean.glosa}
+        </if>  
+        <if test="idTipoDoc == 1 ">
+            ,NULL
+            ,#{solicitudCajaCHBean.idSolicitudCajaCh}  
+            ,#{solicitudCajaCHBean.idRespCheque}   
+            ,#{solicitudCajaCHBean.motivo}
+        </if>   
+        ,#{tipoCambioBean.idTipoMoneda}
+        ,#{tipoCambioBean.tcVenta}
+        ,#{serie}
+        ,#{tipoDocBean.idCodigo}
+        ,#{descripTransfCta}
+        ,#{garantia}
+        ,#{dsctoNotCred}
+        ,#{nroNotaCredito}
+        )
+        <selectKey keyProperty="nroDocEgreso" order="AFTER" resultType="Integer">
+            SELECT max(nroDocEgreso) FROM MT_DocEgreso WHERE uniNeg = #{cajeroCajaBean.unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>
+    <update id="modificarDocEgreso" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        UPDATE MT_DocEgreso
+        SET  
+        usuario=#{cajeroCajaBean.usuarioBean.usuario}        
+        ,montoPagado=#{montoPagado}
+        ,idTipoPago=#{tipoPagoBean.idCodigo}
+        ,nroDoc=#{nroDoc}
+        ,numCheque=#{numCheque}
+        ,nroDocRef=#{nroDocRef} 
+        ,modiPor=#{modiPor}
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} and nroDocEgreso=#{nroDocEgreso}
+    </update>
+    <update id="modificarFechaDocEgreso" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        UPDATE MT_DocEgreso
+        SET  
+        creaFecha =#{creaFecha} 
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} and numCheque=#{numCheque} and nroDocEgreso=#{nroDocEgreso}
+    </update>
+    <update id="flgAnuladoDocEgreso" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        UPDATE MT_DocEgreso
+        SET  
+        flganulado=1
+        ,modiPor=#{modiPor}
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} and nroDocEgreso=#{nroDocEgreso}
+    </update>
+    
+    <delete id="eliminarDocEgreso" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        Delete From MT_DocEgreso 
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} and nroDocEgreso=#{nroDocEgreso}
+    </delete>
+    <delete id="eliminarDocEgresoCheque" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        Delete From MT_DocEgreso 
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} and numCheque=#{numCheque}
+    </delete>
+     
+    <select id="obtenerDocEgresoPorFiltro" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos"/>
+        <where>
+            docE.uniNeg=#{unidadNegocioBean.uniNeg}
+            <if test="idDocEgreso != null and idDocEgreso != 0 ">
+                and  docE.idDocEgreso=#{idDocEgreso}
+            </if>  
+            <if test="facturaCompraBean.idFacturaCompra != null and facturaCompraBean.idFacturaCompra != 0 ">
+                and  regC.idCompra=#{facturaCompraBean.idFacturaCompra}
+            </if>  
+            <if test="entidadBean.ruc != null and entidadBean.ruc != 0 ">
+                and  docE.ruc=#{entidadBean.ruc}
+            </if>  
+            <if test="glosa != null and glosa != '' "> 
+                and upper(docE.glosa) like concat('%',#{glosa},'%')
+            </if>
+            <if test="tipoPagoBean.idCodigo != null and tipoPagoBean.idCodigo != 0 ">
+                and  docE.idTipoPago=#{tipoPagoBean.idCodigo}
+            </if>
+            <if test="cuentaBancoBean.numCuenta != null and cuentaBancoBean.numCuenta != '' ">
+                and ctaB.numCuenta=#{cuentaBancoBean.numCuenta}
+            </if> 
+            <if test="numCheque != null and numCheque != '' ">
+                and  docE.numCheque=#{numCheque}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  docE.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  docE.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>
+        order by docE.idDocEgreso desc
+    </select>
+    <select id="obtenerDocEgresoPorFiltroARend" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos"/>
+        <where>
+            docE.uniNeg=#{unidadNegocioBean.uniNeg} and docE.idCompra is null and tipSol.nombre = #{solicitudCajaCHBean.tipoSolicitudBean.nombre}
+            <if test="flgAnulado != null and flgAnulado='false' ">
+                and  isnull(docE.flganulado,0)=0
+            </if>  
+            <if test="idDocEgreso != null and idDocEgreso != 0 ">
+                and  docE.idDocEgreso=#{idDocEgreso}
+            </if>  
+            <if test="entidadBean.ruc != null and entidadBean.ruc != 0 ">
+                and  docE.ruc=#{entidadBean.ruc}
+            </if>  
+            <if test="glosa != null and glosa != '' "> 
+                and upper(docE.glosa) like concat('%',#{glosa},'%')
+            </if>
+            <if test="tipoPagoBean.idCodigo != null and tipoPagoBean.idCodigo != 0 ">
+                and  docE.idTipoPago=#{tipoPagoBean.idCodigo}
+            </if>
+            <if test="cuentaBancoBean.numCuenta != null and cuentaBancoBean.numCuenta != '' ">
+                and ctaB.numCuenta=#{cuentaBancoBean.numCuenta}
+            </if> 
+            <if test="numCheque != null and numCheque != '' ">
+                and  docE.numCheque=#{numCheque}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  docE.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  docE.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>
+        order by docE.idDocEgreso desc
+    </select>
+     
+    <select id="obtenerDocEgresoChequePorFiltro" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos"/>
+        <where>                                     
+            docE.uniNeg=#{unidadNegocioBean.uniNeg}   
+            <!--and tipPag.idCodigo=(Select idCodigo from MO_Codigo 
+            Where codigo = #{tipoPagoBean.codigo} and idTipoCodigo=#{tipoPagoBean.tipoCodigoBean.descripcion}) -->
+<!--and flganulado is null or flganulado =0-->
+            <if test="detraccionBean.idDetraccion != null and detraccionBean.idDetraccion != 0 ">
+                and  docE.iddetraccion=#{detraccionBean.idDetraccion}
+            </if>  
+            <if test="idDocEgreso != null and idDocEgreso != 0 ">
+                and  docE.idDocEgreso=#{idDocEgreso}
+            </if>    
+            <if test="facturaCompraBean.idFacturaCompra != null and facturaCompraBean.idFacturaCompra != 0 ">
+                and  regC.idCompra=#{facturaCompraBean.idFacturaCompra}
+            </if>  
+            <if test="entidadBean.ruc != null and entidadBean.ruc != 0 ">
+                and  docE.ruc=#{entidadBean.ruc}
+            </if>  
+            <if test="glosa != null and glosa != '' " > 
+                and upper(docE.glosa) like concat('%',#{glosa},'%')
+            </if> 
+            <if test="cuentaBancoBean.numCuenta != null and cuentaBancoBean.numCuenta != '' ">
+                and ctaB.numCuenta=#{cuentaBancoBean.numCuenta}
+            </if> 
+            <if test="numCheque != null and numCheque != '' ">
+                and  docE.numCheque=#{numCheque}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  docE.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  docE.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>
+        order by docE.creaFecha desc
+    </select>
+    <select id="obtenerDocEgresoCheque" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos"/>
+        where docE.uniNeg=#{unidadNegocioBean.uniNeg} and numcheque=#{numCheque}  
+        order by docE.creaFecha desc
+    </select>
+    <select id="obtenerPorNroDocEgreso" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos"/>
+        where docE.uniNeg=#{unidadNegocioBean.uniNeg} and  docE.nroDocEgreso=#{nroDocEgreso}
+        order by docE.creaFecha desc
+    </select>
+    <select id="obtenerDocEgresoPorFiltroDistinct" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        SELECT 
+        distinct doce.nrodocegreso,
+        docE.creaFecha as creaFecha
+        ,(select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg) as montoTotal
+        ,docE.uniNeg as uniNegDoc
+        ,docE.idtipodocegreso
+        ,doce.ruc
+        ,tipMon.codigo as codigoMoneda
+        ,convert(varchar,doce.creafecha,103) as fecha
+        ,tipPag.codigo as codigoPago   
+        ,(case when flganulado=1 then '--ANULADO-- 'ELSE''END)+
+        (case 
+        when docE.idtipodocegreso='A' 
+        then  
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )  
+        when docE.idtipodocegreso  in ('R','O','F') 
+        then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        else ''
+        end) as nombreVista,
+        substring(docE.numcheque,1,4)+ ' '+substring(docE.numcheque,5,15) as numCheque  
+        FROM MT_DOCEGRESO docE
+        left join ML_FacturaCompra fact on fact.idfacturacompra=docE.idcompra and fact.uniNeg=docE.uniNeg 
+        LEFT JOIN ML_RegistroCompra regC on fact.idregistrocompra=regC.idRegistroCompra and regC.uniNeg=fact.uniNeg  
+        
+        LEFT JOIN MO_Codigo         tipMon on tipMon.idCodigo = docE.idTipoMoneda
+        LEFT JOIN MO_Codigo         tipPag on tipPag.idCodigo = docE.idTipoPago
+        LEFT JOIN MT_SolicitudCajaCh sol    on sol.idSolicitudCajaCh=docE.idSolicitudCajaCh and docE.unineg=sol.unineg
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+        <where>                                     
+            docE.uniNeg=#{unidadNegocioBean.uniNeg}
+            <if test="nroDocEgreso != null and nroDocEgreso != 0 ">
+                and  docE.nroDocEgreso=#{nroDocEgreso}
+            </if>  
+            <if test="glosa != null and glosa != '' ">
+                and  docE.glosa like concat('%',#{glosa},'%')
+            </if>  
+            <if test="detraccionBean.idDetraccion != null and detraccionBean.idDetraccion != 0 ">
+                and  docE.iddetraccion=#{detraccionBean.idDetraccion}
+            </if>  
+            <if test="facturaCompraBean.idFacturaCompra != null and facturaCompraBean.idFacturaCompra != 0 ">
+                and  fact.idfacturaCompra=#{facturaCompraBean.idFacturaCompra}
+            </if>  
+            <if test="entidadBean.ruc != null and entidadBean.ruc != 0 ">
+                and  docE.ruc=#{entidadBean.ruc}
+            </if>   
+            <if test="cuentaBancoBean.numCuenta != null and cuentaBancoBean.numCuenta != '' ">
+                and ctaB.numCuenta=#{cuentaBancoBean.numCuenta}
+            </if> 
+            <if test="numCheque != null and numCheque != '' ">
+                and  docE.numCheque=#{numCheque}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  docE.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  docE.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>
+        order by doce.nrodocegreso desc
+    </select>
+    <select id="obtenerDocEgresoPorFiltroDistinctNoAnulados" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        SELECT 
+        distinct doce.nrodocegreso
+        ,(select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg) as montoPagado
+        ,docE.uniNeg as uniNegDoc
+        ,docE.idtipodocegreso
+        ,doce.ruc
+        ,tipMon.codigo as codigoMoneda
+        ,convert(varchar,doce.creafecha,103) as fecha
+        ,tipPag.codigo as codigoPago   
+        ,(case when flganulado=1 then '--ANULADO-- 'ELSE''END)+
+        (case 
+        when docE.idtipodocegreso='A' 
+        then  
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )  
+        when docE.idtipodocegreso  in ('R','O','F') 
+        then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        else ''
+        end) as nombreVista,
+        doce.numcheque as numCheque   ,ctaB.numCuenta as numCuentaBanco,entBan.nombre as nombreEntBanco
+        ,docE.rucBanco,doce.nrodocegreso
+        FROM MT_DOCEGRESO docE
+        left join ML_FacturaCompra fact on fact.idfacturacompra=docE.idcompra and fact.uniNeg=docE.uniNeg 
+        LEFT JOIN ML_RegistroCompra regC on fact.idregistrocompra=regC.idRegistroCompra and regC.uniNeg=fact.uniNeg  
+         LEFT JOIN MO_Codigo         tipMon on tipMon.idCodigo = docE.idTipoMoneda
+        LEFT JOIN MO_Codigo         tipPag on tipPag.idCodigo = docE.idTipoPago
+        LEFT JOIN MT_SolicitudCajaCh sol    on sol.idSolicitudCajaCh=docE.idSolicitudCajaCh and docE.unineg=sol.unineg
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+        LEFT JOIN MT_CuentaBanco    ctaB   on ctaB.numCuenta=docE.numCuenta and ctaB.uniNeg=docE.uniNeg
+        LEFT JOIN MO_Entidad        entBan on entBan.ruc=docE.rucBanco and entBan.uniNeg=docE.uniNeg
+        <where>                                     
+            docE.uniNeg=#{unidadNegocioBean.uniNeg} and flganulado is null
+            <if test="nroDocEgreso != null and nroDocEgreso != 0 ">
+                and  docE.nroDocEgreso=#{nroDocEgreso}
+            </if>  
+            <if test="glosa != null and glosa != '' ">
+                and  docE.glosa like concat('%',#{glosa},'%')
+            </if>  
+            <if test="detraccionBean.idDetraccion != null and detraccionBean.idDetraccion != 0 ">
+                and  docE.iddetraccion=#{detraccionBean.idDetraccion}
+            </if>  
+            <if test="facturaCompraBean.idFacturaCompra != null and facturaCompraBean.idFacturaCompra != 0 ">
+                and  fact.idfacturaCompra=#{facturaCompraBean.idFacturaCompra}
+            </if>  
+            <if test="entidadBean.ruc != null and entidadBean.ruc != 0 ">
+                and  docE.ruc=#{entidadBean.ruc}
+            </if>   
+            <if test="cuentaBancoBean.numCuenta != null and cuentaBancoBean.numCuenta != '' ">
+                and ctaB.numCuenta=#{cuentaBancoBean.numCuenta}
+            </if> 
+            <if test="numCheque != null and numCheque != '' ">
+                and  docE.numCheque=#{numCheque}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  docE.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  docE.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>
+        order by doce.nrodocegreso desc
+    </select>
+    <select id="obtenerDocEgresoPorIdDistinct" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        SELECT top 1
+        docE.nroDocEgreso
+        ,(select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg) as montoTotal
+        ,docE.uniNeg as uniNegDoc
+        ,docE.idDocEgreso  
+        ,docE.idCaja
+        ,docE.usuario
+        ,per.apepat as apepatPer
+        ,per.apemat as apematPer
+        ,per.nombre as nombrePer 
+        ,(case 
+        when docE.idTipoDocEgreso = 'A' then  
+        (( case when sol.idTipoSolicitante is not null   then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(perSol.apepat),' ',UPPER(perSol.apemat),', ',UPPER(perSol.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ents.nombre)) end 
+        ) else (upper(sol.nomrespcheque)) end) ) 
+        when docE.idTipoDocEgreso in('R','F') then 
+        (select enti.nombre as nombreEntidad from MO_Entidad enti where enti.ruc=regC.ruc and fact.uniNeg=enti.uniNeg)
+        else '' 
+        end)   AS nombreSolicitante
+        ,docE.ruc
+        ,docE.glosa
+        ,docE.creaFecha
+        ,docE.idTipoMoneda
+        ,tipMon.codigo as codigoMoneda
+        ,docE.montoPagado
+        ,docE.idTipoPago
+        ,tipPag.codigo as codigoPago
+        ,docE.rucBanco
+        ,entBan.nombre as nombreEntBanco
+        ,docE.numCuenta
+        ,docE.numCheque 
+        ,docE.nroDocRef  
+        ,caj.uniNeg as uniNegCaja
+        ,ctaB.numCuenta as numCuentaBanco
+        ,ctaB.uniNeg as uniNegBanco  
+        ,cajGen.uniNeg as uniNegCajaGen
+        ,detra.idDetraccion
+        ,detra.descripcion
+        ,docE.idTipoDocEgreso
+        ,sol.idSolicitudCajaCh   
+        ,(case 
+        when docE.idTipoDocEgreso = 'A' then  
+        (upper(sol.nomrespcheque))
+        when docE.idTipoDocEgreso in('R','F') then 
+        (select enti.nombre as nombreEntidad from MO_Entidad enti where enti.ruc=regC.ruc and fact.uniNeg=enti.uniNeg)
+        else ''
+        end)  
+        as  nombreVista, 
+        docE.flgRendicion  
+        FROM MT_DocEgreso docE
+        left join ML_FacturaCompra fact on fact.idfacturacompra=docE.idcompra and fact.uniNeg=docE.uniNeg 
+        LEFT JOIN ML_RegistroCompra regC on fact.idregistrocompra=regC.idRegistroCompra and regC.uniNeg=fact.uniNeg    
+        LEFT JOIN MT_CajeroCaja     ccCaj  on ccCaj.idCaja=docE.idCaja and ccCaj.unineg=docE.unineg
+        LEFT Join MT_Caja           caj    on caj.idCaja= ccCaj.idCaja and caj.unineg=ccCaj.unineg
+        LEFT Join MM_Usuario        usu    on usu.usuario=ccCaj.usuario and usu.unineg=docE.unineg
+        LEFT Join MO_Personal       per    on per.idPersonal=usu.idPersonal  and per.unineg=docE.unineg  
+        LEFT JOIN MT_CuentaBanco    ctaB   on ctaB.numCuenta=docE.numCuenta and ctaB.uniNeg=docE.uniNeg
+        LEFT JOIN MO_Entidad        entBan on entBan.ruc=docE.rucBanco and entBan.uniNeg=docE.uniNeg
+        LEFT JOIN MO_Codigo         tipMon on tipMon.idCodigo = docE.idTipoMoneda
+        LEFT JOIN MO_Codigo         tipPag on tipPag.idCodigo = docE.idTipoPago
+        LEFT JOIN MO_Entidad        ent    on ent.ruc=docE.ruc and ent.uniNeg=docE.uniNeg
+        LEFT JOIN MT_CajaGen        cajGen on docE.idCajaGen=cajGen.idCajaGen and cajGen.unineg=docE.unineg  
+        LEFT JOIN MT_Detraccion     detra  on docE.idDetraccion=detra.idDetraccion 
+        LEFT JOIN MT_SolicitudCajaCh sol    on sol.idSolicitudCajaCh=docE.idSolicitudCajaCh and sol.unineg=docE.unineg  
+        LEFT JOIN MO_Personal        perSol    on perSol.idPersonal=per.idPersonal  and perSol.unineg=docE.unineg  
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ents on sol.idPersonal =ent.ruc and ents.uniNeg=sol.uniNeg  
+        where docE.uniNeg=#{unidadNegocioBean.uniNeg}  and  docE.nroDocEgreso=#{nroDocEgreso}
+        
+    </select>
+    <select id="obtenerDocEgresoRegistroCompraDistinct" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        SELECT distinct
+        docE.idCompra
+        ,regC.idRegistroCompra AS idRegCom
+        ,regC.uniNeg as idUniNeg 
+        FROM MT_DocEgreso docE
+        inner JOIN ML_RegistroCompra regC on docE.idCompra=regC.idRegistroCompra and regC.uniNeg=docE.uniNeg 
+        where docE.uniNeg=#{unidadNegocioBean.uniNeg}  and  docE.nroDocEgreso=#{nroDocEgreso}
+    </select>
+    <select id="obtenerUltimoDocEgreso" resultType="Integer" parameterType="pe.marista.sigma.bean.DocEgresoBean" >
+        select isnull((max(nrodocegreso)),0) from MT_DocEgreso 
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} 
+    </select>  
+    
+    <select id="obtenerDocEgreso" resultType="pe.marista.sigma.bean.reporte.DocEgresoRepBean" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        Select distinct 
+        upper(ENTU.nombre) as nombreUniNeg,
+        convert(varchar(25),getDate(),103)+ ' ' + right(convert(varchar(25),getDate(),100), 8) as creaFecha,
+        convert(varchar,uni.ruc) as rucUniNeg, 
+        (case when ts.idtiposolicitud is not null then ((case when ts.nombre = 'A RENDIR' then upper('- '+ts.nombre) else '' end)) else '' end) as tipoSolicitud,
+        doce.nrodocegreso as nroDocEgreso,
+        right(replicate('0', 10) + rtrim(doce.nrodocegreso), 10)    as nroDocEgresoStr,
+        (case 
+        when docE.idtipodocegreso='A' 
+        then  
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )  
+        when docE.idtipodocegreso in ('R','F')
+        then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        when docE.idTipoDocEgreso = 'O' then 
+        (select entiOC.nombre as nombreEntidad2 from MO_Entidad entiOC where entiOC.ruc=docE.ruc and docE.uniNeg=entiOC.uniNeg)
+        end) as nomEnt,
+
+        entB.nombre as nomBanco,
+        <!--docE.garantia as garantia,-->
+        <!--(case when docE.idtipopago is not null AND DOCE.unineg!='CHAMPS' then  tipo.codigo+' N°  ' else '         ' end)   as labelModoPago,-->
+        (case when docE.idtipopago is not null then  tipo.codigo+' N°  ' else '         ' end)   as labelModoPago,
+        (case when docE.idtipopago is not null then (CASE WHEN DOCE.idtipopago=15802 THEN 'A: ' ELSE '' END) + isnull(docE.descripTransfCta,'') else '         ' end)   as descripTransfCta,
+        (case when docE.numcheque is not null then substring(docE.numcheque,1,4)+ ' '+substring(docE.numcheque,5,15) else '-'end ) as numCheque,
+		 
+        (case when docE.idtipopago is not null then (case when tipo.codigo!='Cheque' then 
+        'DE: NRO. CTA. '+convert(varchar(25),docE.numcuenta)+' '+(select top 1 UPPER(ISNULL(descripcion,'')) from MT_CuentaBanco where numcuenta=docE.numcuenta and unineg=doce.unineg) else '' end) else '' end) as cuenta,
+        (case when docE.idtipopago is not null then (case when tipo.codigo!='Cheque' then 'Modo Pago: '+tipo.codigo else '' end) else ' -' end) as modoPago,
+        
+        (select convert(varchar,docE.creafecha,103)) as fecha,
+        isnull(doce.tc,3.00) as tc,
+        (Select dbo.CantidadConLetra( (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))
+        +' '+ (CASE WHEN DOCE.unineg !='CHAMPS' THEN (CASE WHEN ISNULL(DOCE.idtipomoneda,14901) = 14901 THEN 'SOLES' ELSE 'DÓLARES' END) ELSE ' ' END)) as textoMonto, 
+        (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg ) as montoTotal
+        ,(CASE WHEN DOCE.idtipomoneda = 14901 THEN 'S./' ELSE '$.' END) AS simbolo
+		
+        , (case 
+        when docE.idtipodocegreso='A' 
+        then  
+        ( case when sol.nivelautoriza is not null then 
+        ( case 
+        when sol.nivelautoriza =1 then 'A1: '+concat(UPPER(a1.apepat),' ',UPPER(a1.apemat),', ',substring(UPPER(a1.nombre),1,1)+'.')
+        when sol.nivelautoriza =2 then 'A1: '+concat(UPPER(a1.apepat),' ',UPPER(a1.apemat),', ',substring(UPPER(a1.nombre),1,1)+'.')+'A2: '+concat(UPPER(a2.apepat),' ',UPPER(a2.apemat),', ',substring(UPPER(a2.nombre),1,1)+'.')
+        when sol.nivelautoriza =3 then 'A1: '+concat(UPPER(a1.apepat),' ',UPPER(a1.apemat),', ',substring(UPPER(a1.nombre),1,1)+'.')+'A2: '+concat(UPPER(a2.apepat),' ',UPPER(a2.apemat),', ',substring(UPPER(a2.nombre),1,1)+'.')+'A3: '+concat(UPPER(a3.apepat),' ',UPPER(a3.apemat),', ',substring(UPPER(a3.nombre),1,1)+'.') 
+        else '' 
+        end 
+        )
+        else
+        ('Sin Autorizador') end)  
+        when docE.idtipodocegreso in('R','F','O') 
+        then (
+        ( case when fact.nivelautoriza is not null then 
+        ( case 
+        when fact.nivelautoriza =1 then 'A1: '+concat(UPPER(f1.apepat),' ',UPPER(f1.apemat),', ',substring(UPPER(f1.nombre),1,1)+'.')
+        when fact.nivelautoriza =2 then 'A1: '+concat(UPPER(f1.apepat),' ',UPPER(f1.apemat),', ',substring(UPPER(f1.nombre),1,1)+'.')+'A2: '+concat(UPPER(f2.apepat),' ',UPPER(f2.apemat),', ',substring(UPPER(f2.nombre),1,1)+'.')
+        when fact.nivelautoriza =3 then 'A1: '+concat(UPPER(f1.apepat),' ',UPPER(f1.apemat),', ',substring(UPPER(f1.nombre),1,1)+'.')+'A2: '+concat(UPPER(f2.apepat),' ',UPPER(f2.apemat),', ',substring(UPPER(f2.nombre),1,1)+'.')+'A3: '+concat(UPPER(f3.apepat),' ',UPPER(f3.apemat),', ',substring(UPPER(f3.nombre),1,1)+'.') 
+        else '' 
+        end 
+        )
+        else
+        ('Sin Autorizador') end))
+         
+        end) as autorizadores,
+        <!--(CONVERT(varchar, CAST((select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg)AS money), 1)) as montoTotalVista,-->
+        (case 
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=2 then replicate('*', 5)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=3 then replicate('*', 4)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=4 then replicate('*', 2)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=5 then replicate('*', 1)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=6 then replicate('*', 0)
+		else '*'
+		end)
+	+' '+
+	(CONVERT(varchar, CAST((select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg)AS money), 1)) as montoTotalVista,
+        docE.idtipodocegreso as tipoDocEgreso
+        from MT_DocEgreso docE  
+        left join MO_unidadNegocio uni on uni.unineg=docE.uniNeg
+        left join MO_Entidad entB on entB.ruc=docE.rucbanco and entB.unineg=doce.unineg
+        left join MO_Entidad entU on uni.ruc=entU.ruc AND  uni.unineg=entU.uniNeg
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+
+        left join MO_Personal a1 on sol.idautoriza1=a1.idPersonal and a1.uniNeg=sol.uniNeg
+        left join MO_Personal a2 on sol.idautoriza2=a2.idPersonal and a2.uniNeg=sol.uniNeg
+        left join MO_Personal a3 on sol.idautoriza3=a3.idPersonal and a3.uniNeg=sol.uniNeg
+
+        left join ML_FacturaCompra fact on doce.idcompra =
+        (case when docE.idtipodocegreso in('R','F') then fact.idfacturacompra
+        when docE.idtipodocegreso='O' THEN fact.idordencompra 
+        END)  and doce.unineg=fact.unineg
+		
+        left join MO_Personal f1 on fact.idautoriza1=f1.idPersonal and f1.uniNeg=fact.uniNeg
+        left join MO_Personal f2 on fact.idautoriza2=f2.idPersonal and f2.uniNeg=fact.uniNeg
+        left join MO_Personal f3 on fact.idautoriza3=f3.idPersonal and f3.uniNeg=fact.uniNeg
+        left join MO_Codigo tipo on tipo.idcodigo=docE.idtipopago
+        left join MM_TipoSolicitud ts on sol.idtiposolicitud=ts.idtiposolicitud and sol.unineg=ts.unineg
+        where docE.nroDocEgreso = #{nroDocEgreso} and docE.unineg =#{unidadNegocioBean.uniNeg} 
+    </select>
+    <select id="obtenerDocEgreso2" resultType="pe.marista.sigma.bean.reporte.DocEgresoRepBean" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        Select distinct 
+        upper(ENTU.nombre) as nombreUniNeg,
+        convert(varchar(25),docE.creaFecha,103)+ ' ' + right(convert(varchar(25),docE.creaFecha,100), 8) as creaFecha,
+        convert(varchar,uni.ruc) as rucUniNeg, 
+        (case when ts.idtiposolicitud is not null then ((case when ts.nombre = 'A RENDIR' then upper('- '+ts.nombre) else '' end)) else '' end) as tipoSolicitud,
+        doce.nrodocegreso as nroDocEgreso,
+        right(replicate('0', 10) + rtrim(doce.nrodocegreso), 10)    as nroDocEgresoStr,
+        (case 
+        when docE.idtipodocegreso='A' 
+        then  
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )  
+        when docE.idtipodocegreso in ('R','F')
+        then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        when docE.idTipoDocEgreso = 'O' then 
+        (select entiOC.nombre as nombreEntidad2 from MO_Entidad entiOC where entiOC.ruc=docE.ruc and docE.uniNeg=entiOC.uniNeg)
+        end) as nomEnt,
+
+        entB.nombre as nomBanco,
+        <!--docE.garantia as garantia,-->
+        <!--(case when docE.idtipopago is not null AND DOCE.unineg!='CHAMPS' then  tipo.codigo+' N°  ' else '         ' end)   as labelModoPago,-->
+        (case when docE.idtipopago is not null then  tipo.codigo+' N°  ' else '         ' end)   as labelModoPago,
+        (case when docE.idtipopago is not null then (CASE WHEN DOCE.idtipopago=15802 THEN 'A: ' ELSE '' END) + isnull(docE.descripTransfCta,'') else '         ' end)   as descripTransfCta,
+        (case when docE.numcheque is not null then substring(docE.numcheque,1,4)+ ' '+substring(docE.numcheque,5,15) else '-'end ) as numCheque,
+		 
+        (case when docE.idtipopago is not null then (case when tipo.codigo!='Cheque' then 
+        'DE: NRO. CTA. '+convert(varchar(25),docE.numcuenta)+' '+(select top 1 UPPER(ISNULL(descripcion,'')) from MT_CuentaBanco where numcuenta=docE.numcuenta and unineg=doce.unineg) else '' end) else '' end) as cuenta,
+        (case when docE.idtipopago is not null then (case when tipo.codigo!='Cheque' then 'Modo Pago: '+tipo.codigo else '' end) else ' -' end) as modoPago,
+        
+        (select convert(varchar,docE.creafecha,103)) as fecha,
+        isnull(doce.tc,3.00) as tc,
+        (Select dbo.CantidadConLetra( (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))
+        +' '+ (CASE WHEN DOCE.unineg !='CHAMPS' THEN (CASE WHEN ISNULL(DOCE.idtipomoneda,14901) = 14901 THEN 'SOLES' ELSE 'DÓLARES' END) ELSE ' ' END)) as textoMonto, 
+        (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg ) as montoTotal
+        ,(CASE WHEN DOCE.idtipomoneda = 14901 THEN 'S./' ELSE '$.' END) AS simbolo
+		
+        , (case 
+        when docE.idtipodocegreso='A' 
+        then  
+        ( case when sol.nivelautoriza is not null then 
+        ( case 
+        when sol.nivelautoriza =1 then 'A1: '+concat(UPPER(a1.apepat),' ',UPPER(a1.apemat),', ',substring(UPPER(a1.nombre),1,1)+'.')
+        when sol.nivelautoriza =2 then 'A1: '+concat(UPPER(a1.apepat),' ',UPPER(a1.apemat),', ',substring(UPPER(a1.nombre),1,1)+'.')+'A2: '+concat(UPPER(a2.apepat),' ',UPPER(a2.apemat),', ',substring(UPPER(a2.nombre),1,1)+'.')
+        when sol.nivelautoriza =3 then 'A1: '+concat(UPPER(a1.apepat),' ',UPPER(a1.apemat),', ',substring(UPPER(a1.nombre),1,1)+'.')+'A2: '+concat(UPPER(a2.apepat),' ',UPPER(a2.apemat),', ',substring(UPPER(a2.nombre),1,1)+'.')+'A3: '+concat(UPPER(a3.apepat),' ',UPPER(a3.apemat),', ',substring(UPPER(a3.nombre),1,1)+'.') 
+        else '' 
+        end 
+        )
+        else
+        ('Sin Autorizador') end)  
+        when docE.idtipodocegreso in('R','F','O') 
+        then (
+        ( case when fact.nivelautoriza is not null then 
+        ( case 
+        when fact.nivelautoriza =1 then 'A1: '+concat(UPPER(f1.apepat),' ',UPPER(f1.apemat),', ',substring(UPPER(f1.nombre),1,1)+'.')
+        when fact.nivelautoriza =2 then 'A1: '+concat(UPPER(f1.apepat),' ',UPPER(f1.apemat),', ',substring(UPPER(f1.nombre),1,1)+'.')+'A2: '+concat(UPPER(f2.apepat),' ',UPPER(f2.apemat),', ',substring(UPPER(f2.nombre),1,1)+'.')
+        when fact.nivelautoriza =3 then 'A1: '+concat(UPPER(f1.apepat),' ',UPPER(f1.apemat),', ',substring(UPPER(f1.nombre),1,1)+'.')+'A2: '+concat(UPPER(f2.apepat),' ',UPPER(f2.apemat),', ',substring(UPPER(f2.nombre),1,1)+'.')+'A3: '+concat(UPPER(f3.apepat),' ',UPPER(f3.apemat),', ',substring(UPPER(f3.nombre),1,1)+'.') 
+        else '' 
+        end 
+        )
+        else
+        ('Sin Autorizador') end))
+         
+        end) as autorizadores,
+        <!--(CONVERT(varchar, CAST((select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg)AS money), 1)) as montoTotalVista,-->
+        (case 
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=2 then replicate('*', 5)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=3 then replicate('*', 4)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=4 then replicate('*', 2)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=5 then replicate('*', 1)
+		when (len(FLOOR((select FLOOR(sum(convert(int,doc2.montoPagado))) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg))))=6 then replicate('*', 0)
+		else '*'
+		end)
+	+' '+
+	(CONVERT(varchar, CAST((select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg)AS money), 1)) as montoTotalVista,
+        docE.idtipodocegreso as tipoDocEgreso
+        from MT_DocEgreso docE  
+        left join MO_unidadNegocio uni on uni.unineg=docE.uniNeg
+        left join MO_Entidad entB on entB.ruc=docE.rucbanco and entB.unineg=doce.unineg
+        left join MO_Entidad entU on uni.ruc=entU.ruc AND  uni.unineg=entU.uniNeg
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+
+        left join MO_Personal a1 on sol.idautoriza1=a1.idPersonal and a1.uniNeg=sol.uniNeg
+        left join MO_Personal a2 on sol.idautoriza2=a2.idPersonal and a2.uniNeg=sol.uniNeg
+        left join MO_Personal a3 on sol.idautoriza3=a3.idPersonal and a3.uniNeg=sol.uniNeg
+
+        left join ML_FacturaCompra fact on doce.idcompra =
+        (case when docE.idtipodocegreso in('R','F') then fact.idfacturacompra
+        when docE.idtipodocegreso='O' THEN fact.idordencompra 
+        END)  and doce.unineg=fact.unineg
+		
+        left join MO_Personal f1 on fact.idautoriza1=f1.idPersonal and f1.uniNeg=fact.uniNeg
+        left join MO_Personal f2 on fact.idautoriza2=f2.idPersonal and f2.uniNeg=fact.uniNeg
+        left join MO_Personal f3 on fact.idautoriza3=f3.idPersonal and f3.uniNeg=fact.uniNeg
+        left join MO_Codigo tipo on tipo.idcodigo=docE.idtipopago
+        left join MM_TipoSolicitud ts on sol.idtiposolicitud=ts.idtiposolicitud and sol.unineg=ts.unineg
+        where docE.nroDocEgreso = #{nroDocEgreso} and docE.unineg =#{unidadNegocioBean.uniNeg} 
+    </select> 
+    
+    <select id="obtenerDetalleDocEgreso" resultType="pe.marista.sigma.bean.reporte.DetDocEgresoRepBean" parameterType="map">
+        declare @unineg varchar(6),@nrodoc int 
+        set @unineg = #{uniNeg} 
+        SET @nrodoc = #{nroDocEgreso} 
+        <!--
+        SELECT  distinct 
+        (case 
+        when docE.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(docE.idsolicitudcajach), 8)  
+        end) as idSolRC, 
+        (case 
+        when docE.idTipoDocEgreso  = 'A' then 
+        (select con.cuentad from MT_SolicitudCajaCh  sol  
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)  
+        end) as cuentaD, 
+        (case 
+        when docE.idTipoDocEgreso  = 'A' then 
+        (select con.nombre from MT_SolicitudCajaCh  sol  
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)  
+         
+        end) as concepto,   
+        (case 
+        when docE.idtipodocegreso='A' THEN (
+        select top 1 S.motivo from MT_SolicitudCajaCh S 
+        where S.idsolicitudcajach=doce.idsolicitudcajach and s.unineg=doce.unineg) 
+        end) as glosa,   
+
+        (case 
+        when docE.idtipodocegreso='A' 
+        then 
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )    
+        end) as nomEnt,
+        E.nombre+ ' '+(CASE WHEN ISNULL(DOCE.idtipomoneda,14901) = 14901 THEN 'SOLES' ELSE 'DÓLARES' END) AS nombreBco,
+        (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg) as montoTotal,
+        (select isnull(cta.ctacontbco,'') from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco
+        ,(select isnull(nombre,'') from MT_PlanContable where cuenta in ((select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ))) as nombreCtaBco  
+        
+        ,(CASE 
+        WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 then isnull(docE.montopagado,0)+isnull(doce.valordetraccion,0)
+        else convert(decimal(8,2),isnull(docE.montopagado,0)+(isnull(doce.valordetraccion,0)/isnull(doce.tc,3))) end) as montoPagadoTot
+       
+        ,(CASE 
+        WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 then isnull(docE.montopagado,0)+isnull(doce.valordetraccion,0) 
+        else convert(decimal(8,2),isnull(docE.montopagado,0)+(isnull(doce.valordetraccion,0)/isnull(doce.tc,3))) end) as montoPagadoTotCta
+         
+        ,(case when isnull(docE.valordetraccion,0)>0 then 1 else 0 end)as detra
+         
+        ,(CASE 
+        WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 
+        then (case when isnull(docE.valordetraccion,0)>0 then CONVERT(varchar, CAST(isnull(isnull(docE.montopagado,0)+isnull(doce.valordetraccion,0),0) AS money),1) else '' end)
+        else (case when isnull(docE.valordetraccion,0)>0 then CONVERT(varchar, CAST(isnull(convert(decimal(8,2),isnull(docE.montopagado,0)+(isnull(doce.valordetraccion,3)/isnull(doce.tc,3))),0) AS money),1) else '' end) end)	as montoPagadoTotConDet 
+       
+        FROM MT_DocEgreso docE  
+        INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg 
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+        left join MT_DetSolicitudCajaChCR detsol on sol.idsolicitudcajach = detsol.idsolicitudCajach and detsol.unineg=sol.unineg 
+        left join MT_CentroResponsabilidad cr on cr.cr=  detsol.cr 
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg    
+        where docE.nroDocEgreso = @nrodoc and docE.unineg=@unineg    
+        -->    
+        SELECT  distinct 
+        (CASE when docE.idtipodocegreso='F' then docE.idcompra
+        else docE.idsolicitudcajach end) as idSoli, 
+        (case 
+        when docE.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(docE.idsolicitudcajach), 8)  
+        end) as idSolRC, 
+        (case 
+        when docE.idTipoDocEgreso  = 'A' then 
+        (select con.cuentad from MT_SolicitudCajaCh  sol  
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)  
+        end) as cuentaD, 
+        (case 
+        when docE.idTipoDocEgreso  = 'A' then 
+        (select con.nombre from MT_SolicitudCajaCh  sol  
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)  
+         
+        end) as concepto,   
+        (case 
+        when docE.idtipodocegreso='A' THEN (
+        select top 1 S.motivo from MT_SolicitudCajaCh S 
+        where S.idsolicitudcajach=doce.idsolicitudcajach and s.unineg=doce.unineg) 
+        end) as glosa,   
+
+        (case 
+        when docE.idtipodocegreso='A' 
+        then 
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )    
+        end) as nomEnt,
+        (select (CASE
+        WHEN DOCE.UNINEG='BARINA' THEN CTA.DESCRIPCION
+        ELSE E.nombre+ ' '+(CASE WHEN ISNULL(DOCE.idtipomoneda,14901) = 14901 THEN 'SOLES' ELSE 'DÓLARES' END) END) from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg ) AS nombreBco,
+        (select sum(doc2.montoPagado) from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doce.nrodocegreso and doc2.unineg=doce.unineg) as montoTotal,
+        (select isnull(cta.ctacontbco,'') from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco
+        ,(select isnull(nombre,'') from MT_PlanContable where cuenta in ((select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ))) as nombreCtaBco  
+        <!--
+         ,(CASE 
+         WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 then isnull(docE.montopagado,0)+isnull(doce.valordetraccion,0)+isnull(docE.garantia,0)
+         else convert(decimal(8,2),isnull(docE.montopagado,0)+isnull(docE.garantia,0)+(isnull(doce.valordetraccion,0)/isnull(doce.tc,3))) end) as montoPagadoTot
+        -->
+        ,(CASE 
+        WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 then  
+        (select isnull(sum(isnull(d.montopagado,0)+isnull(d.valordetraccion,0)+isnull(d.garantia,0)),0) from MT_DocEgreso d where d.nrodocegreso=@nrodoc and d.unineg=@unineg)
+        else
+        <!--convert(decimal(8,2),isnull(docE.montopagado,0)+isnull(docE.garantia,0)+(isnull(doce.valordetraccion,0)/isnull(doce.tc,3))) 
+        (select isnull(sum(isnull(d.montopagado,0)+(isnull(d.valordetraccion,0)/isnull(d.tc,3))+isnull(d.garantia,0)),0) from MT_DocEgreso d where d.nrodocegreso=@nrodoc and d.unineg=@unineg)-->
+        convert(decimal(8,2),(select isnull(sum(isnull(d.montopagado,0)+(isnull(d.valordetraccion,0)/isnull(d.tc,3))+isnull(d.garantia,0)),0) from MT_DocEgreso d where d.nrodocegreso=@nrodoc and d.unineg=@unineg))
+        end) as montoPagadoTot 
+        ,(CASE 
+        WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 then isnull(docE.montopagado,0)+isnull(doce.valordetraccion,0)+isnull(docE.garantia,0) 
+        else convert(decimal(8,2),isnull(docE.montopagado,0)+(isnull(doce.valordetraccion,0)/isnull(doce.tc,3))+isnull(docE.garantia,0)) end) as montoPagadoTotCta
+         
+        ,(case when isnull(docE.valordetraccion,0)>0 then 1 else 0 end)as detra
+        ,(case when isnull(docE.garantia,0)>0 then 1 else 0 end) as gara 
+        ,(CASE 
+        WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 
+        then 
+        (case when isnull(docE.valordetraccion,0)>0 or isnull(docE.garantia,0)>0  then
+        <!--CONVERT(varchar, CAST(isnull(isnull(docE.montopagado,0)+isnull(docE.garantia,0)+isnull(doce.valordetraccion,0),0) AS money),1)-->
+        CONVERT(varchar, CAST(isnull((select isnull(sum(isnull(d.montopagado,0)+isnull(d.valordetraccion,0)+isnull(d.garantia,0)),0) from MT_DocEgreso d where d.nrodocegreso=@nrodoc and d.unineg=@unineg),0) AS money),1)
+        else '' end) 
+        else (case when isnull(docE.valordetraccion,0)>0 or isnull(docE.garantia,0)>0  then CONVERT(varchar, CAST(isnull(convert(decimal(8,2),isnull(docE.montopagado,0)+isnull(docE.garantia,0)+(isnull(doce.valordetraccion,3)/isnull(doce.tc,3))),0) AS money),1) else '' end) end)	as montoPagadoTotConDet 
+       
+        FROM MT_DocEgreso docE  
+        INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg 
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+        left join MT_DetSolicitudCajaChCR detsol on sol.idsolicitudcajach = detsol.idsolicitudCajach and detsol.unineg=sol.unineg 
+        left join MT_CentroResponsabilidad cr on cr.cr=  detsol.cr 
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg    
+        where docE.nroDocEgreso = @nrodoc and docE.unineg=@unineg   
+    </select> 
+    <select id="obtenerDetalleFacturaDocEgreso" resultType="pe.marista.sigma.bean.reporte.DetDocEgresoRepBean" parameterType="map">
+        declare @unineg varchar(6),@nrodoc int  
+        set @unineg=#{uniNeg}
+        set @nrodoc=#{nroDocEgreso} 
+        DECLARE @montoTotal money= ( select sum(isnull(montopagado,0)) from mt_docegreso where nroDocEgreso = @nrodoc and  unineg=@unineg )
+        DECLARE @montoTotalConDscto money= ( select sum(isnull(montopagado,0)-ISNULL(valorDetraccion,0)) from mt_docegreso where nroDocEgreso = @nrodoc and  unineg=@unineg )
+        SELECT  distinct
+        (CASE when docE.idtipodocegreso='F' then docE.idcompra
+        else docE.idsolicitudcajach end) as idSoli, 
+        (case  
+        when docE.idtipodocegreso in('R','O','F') then right(replicate('0', 8) + rtrim(docE.idcompra), 8) 
+        end) as idSolRC,         
+        ctaF.cuentad as cuentaD, 
+        c.nombre as concepto,
+        upper(f.glosa) as glosa,
+        prov.nombre as nomEnt ,
+        (select (CASE
+        WHEN DOCE.UNINEG='BARINA' THEN CTA.DESCRIPCION
+        ELSE E.nombre+ ' '+(CASE WHEN ISNULL(DOCE.idtipomoneda,14901) = 14901 THEN 'SOLES' ELSE 'DÓLARES' END) END) from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg ) AS nombreBco
+        , @montoTotal    as montoTotal
+        ,(select isnull(cta.ctacontbco,'') from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco
+        ,(select isnull(nombre,'') from MT_PlanContable where cuenta in ((select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ))) as nombreCtaBco  
+        <!--,isnull(docE.montopagado,0)-isnull(doce.valordetraccion,0) as montoPagadoTot-->
+        ,isnull(@montoTotalConDscto,0) as montoPagadoTot
+        ,isnull(sum(ctaF.valor),0) as montoPagadoTotCta
+        ,(case when isnull(docE.valordetraccion,0)>0 then 1 else 0 end)as detra
+        ,(case when isnull(docE.valordetraccion,0)>0 then CONVERT(varchar, CAST(isnull(isnull(docE.montopagado,0)-isnull(doce.valordetraccion,0),0) AS money),1) else '' end) as montoPagadoTotConDet 
+        FROM MT_DocEgreso docE   
+        INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg  
+        INNER join ML_FacturaCompra f on f.idfacturacompra=docE.idcompra and f.unineg=DOCE.unineg  
+        INNER join ML_CuentaFact ctaF on  ctaF.idfacturacompra =f.idfacturacompra and  f.unineg=docE.unineg 
+        INNER join ML_RegistroCompra rc on f.idregistrocompra=rc.idregistrocompra
+        INNER join MO_Entidad   prov ON prov.RUC=rc.ruc AND prov.unineg=DOCE.unineg  
+        left join MT_Concepto c on c.idconcepto=ctaF.idconcepto          
+        where docE.nroDocEgreso = @nrodoc and docE.unineg= @unineg
+        GROUP BY  docE.idtipodocegreso,docE.idcompra,ctaF.cuentad,c.nombre ,f.glosa,E.nombre,prov.nombre ,DOCE.idtipomoneda,docE.valordetraccion
+        ,doce.idsolicitudcajach
+        ,isnull(docE.montopagado,0)+isnull(doce.valordetraccion,0)
+        ,doce.rucbanco,doce.numcuenta,doce.unineg,docE.montopagado 
+        order by 1
+    </select> 
+    <select id="obtenerDetalleDetalleDocEgreso" resultType="pe.marista.sigma.bean.reporte.DetDetDocEgresoRepBean" parameterType="map">
+        declare @unineg varchar(6),@nrodoc int, @id int
+        set @unineg=#{uniNeg}
+        set @nrodoc=#{nroDocEgreso} 
+        set @id=#{id}
+        SELECT   
+        (case 
+        when docE.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(docE.idsolicitudcajach), 8) 
+        when docE.idtipodocegreso='R' or docE.idtipodocegreso='O'  then right(replicate('0', 8) + rtrim(docE.idcompra), 8) 
+        end) as idSolRC,  
+        CONVERT(VARCHAR,'') as cuentaD,
+        (case 
+        when docE.idTipoDocEgreso  = 'A' then 
+        (select con.nombre from MT_SolicitudCajaCh  sol  
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where sol.idsolicitudcajach=doce.idsolicitudcajach and sol.unineg=doce.unineg)  
+        when  docE.idTipoDocEgreso = 'R' then 
+        (select top 1 con.nombre from ML_DetRegistroCompra detrc 
+        inner join MT_Concepto con on con.idconcepto=detrc.idconcepto
+        where detrc.idregistrocompra=doce.idcompra and detrc.unineg=doce.unineg) 
+        when docE.idtipodocegreso='O' then (select top 1 con.nombre from ML_DetRequerimiento detreq
+        inner join MT_Concepto con on con.idconcepto=detreq.idconcepto
+        where idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra))  
+        end) as concepto,  
+        (case 
+        when docE.idTipoDocEgreso  = 'A' then 
+        (convert(varchar ,detsol.cr))+ ' '+cr.nombre   
+        when  docE.idTipoDocEgreso = 'R' or docE.idtipodocegreso='O'
+        then ((convert(varchar ,regcr.cr))+ ' '+cr.nombre)  
+        end) as nombreCR,  
+        (case 
+        when docE.idtipodocegreso='A' THEN (
+        select top 1 S.motivo from MT_SolicitudCajaCh S 
+        where S.idsolicitudcajach=doce.idsolicitudcajach and s.unineg=doce.unineg)
+        when  docE.idTipoDocEgreso = 'R' then 
+        (select top 1 rc.glosa from ML_FacturaCompra rc 
+       
+        where rc.idregistrocompra=doce.idcompra and rc.unineg=doce.unineg) 
+        when docE.idtipodocegreso='O' then ((select top 1 req.titulo from ML_Requerimiento req
+        where req.idrequerimiento=(select top 1 idrequerimiento from ML_DetOrdenCompra where idordencompra=doce.idcompra)))+ ' - Adelanto de Servicio'
+        end) as glosa,  
+        (case 
+        when docE.idtipodocegreso='A' then     CONVERT(varchar, CAST(detsol.valor AS money), 1)  
+        when docE.idtipodocegreso='R' then     CONVERT(varchar, CAST(regcr.valor AS money), 1)  
+        when docE.idtipodocegreso='O' then     CONVERT(varchar, CAST(regcr.valor AS money), 1)  
+        end) as montoPagado,
+        (NULL) as detraccion,
+        (case 
+        when docE.idtipodocegreso='A' 
+        then 
+        ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+        ( case 
+        when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+        )
+        else
+        (upper(sol.nomrespcheque)) end
+        )   
+        when docE.idtipodocegreso='R'
+        then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+        when docE.idTipoDocEgreso = 'O' then 
+        (select entiOC.nombre as nombreEntidad2 from MO_Entidad entiOC where entiOC.ruc=docE.ruc and docE.uniNeg=entiOC.uniNeg)
+        end) as nomEnt,
+        E.nombre AS nombreBco,
+        (select doc2.montoPagado from MT_DOCEGRESO doc2 where doc2.nrodocegreso=@nrodoc and doc2.unineg=@unineg
+        and (case when doc2.idtipodocegreso='A' then doc2.idsolicitudcajach else idcompra end)=@id )  as montoTotal  ,
+        (select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco
+        ,(case when docE.dsctonotcred<![CDATA[<=]]>0 then '' else 'MONTO: '+(CONVERT(varchar, CAST(docE.dsctonotcred AS money), 1))  end )  as dsctoNotCred, isnull('NOTA DE CREDITO NRO: '+docE.nroNotaCredito,'') as nroNotaCredito
+        FROM MT_DocEgreso docE  
+        INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg 
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+        left join MT_DetSolicitudCajaChCR detsol on sol.idsolicitudcajach = detsol.idsolicitudCajach and detsol.unineg=sol.unineg
+        left join ML_FacturaCompra fact on (case when fact.idregistrocompra is not null then fact.idregistrocompra when
+        fact.idregistrocompra is not null   then fact.idregistrocompra end)=docE.idcompra and  fact.unineg=docE.unineg
+        left join ML_DetRegCompraCR regcr on regcr.idregistrocompra=fact.idregistrocompra and regcr.idfacturacompra=fact.idfacturacompra and fact.unineg=regcr.unineg
+        left join MT_CentroResponsabilidad cr on cr.cr= (case when docE.idtipodocegreso='A' then detsol.cr when docE.idtipodocegreso = 'R' or docE.idtipodocegreso='O' then regcr.cr  end) 
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg    
+        where docE.nroDocEgreso = @nrodoc and docE.unineg=@unineg and 
+        (case when doce.idtipodocegreso='A' then doce.idsolicitudcajach else idcompra end)=@id 
+        <if test="detra == 1"> 
+            union all
+            SELECT distinct 
+            (case 
+            when docE.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(docE.idsolicitudcajach), 8) 
+            when docE.idtipodocegreso='R' or docE.idtipodocegreso='O'  then right(replicate('0', 8) + rtrim(docE.idcompra), 8) 
+            end) as idSolRC, 
+            (case when detra.descripcion ='Retención RH' then (CONVERT(VARCHAR,401721) ) else (CONVERT(VARCHAR,422113)) end ) as cuentaD,
+            (case when detra.descripcion ='Retención RH' then (select nombre from MT_PlanContable where cuenta=401721) else (select nombre from MT_PlanContable where cuenta=422113) end ) as concepto,
+            (case when detra.descripcion ='Retención RH' then (select nombre from MT_PlanContable where cuenta=401721) else (select nombre from MT_PlanContable where cuenta=422113) end ) as nombreCR,
+            (case when detra.descripcion ='Retención RH' then (select nombre from MT_PlanContable where cuenta=401721) else (select nombre from MT_PlanContable where cuenta=422113) end ) as glosa,
+            (NULL) as montoPagado,
+            (CASE 
+            WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 
+            then (CONVERT(varchar, CAST(doce.valorDetraccion AS money), 1)) 
+            else (CONVERT(varchar, CAST(((isnull(doce.valordetraccion,0)/isnull(doce.tc,3))) AS money), 1))  end ) as detraccion,
+            (case 
+            when docE.idtipodocegreso='A' 
+            then 
+            ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+            ( case 
+            when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+            when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+            when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+            )
+            else
+            (upper(sol.nomrespcheque)) end
+            )   
+            when docE.idtipodocegreso='R'
+            then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+            when docE.idTipoDocEgreso = 'O' then 
+            (select entiOC.nombre as nombreEntidad2 from MO_Entidad entiOC where entiOC.ruc=docE.ruc and docE.uniNeg=entiOC.uniNeg)
+            end) as nomEnt,
+            E.nombre AS nombreBco,
+            (select doc2.montoPagado from MT_DOCEGRESO doc2 where doc2.nrodocegreso=@nrodoc and doc2.unineg=@unineg
+            and (case when doc2.idtipodocegreso='A' then doc2.idsolicitudcajach else idcompra end)=@id )  as montoTotal  ,
+            (select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco  
+            ,(case when docE.dsctonotcred<![CDATA[<=]]>0 then '' else 'MONTO: '+(CONVERT(varchar, CAST(docE.dsctonotcred AS money), 1))  end )  as dsctoNotCred, isnull('NOTA DE CREDITO NRO: '+docE.nroNotaCredito,'') as nroNotaCredito
+            FROM MT_DocEgreso docE  
+            INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg 
+            left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+            left join MT_DetSolicitudCajaChCR detsol on sol.idsolicitudcajach = detsol.idsolicitudCajach and detsol.unineg=sol.unineg
+            left join ML_FacturaCompra fact on (case when fact.idregistrocompra is not null then fact.idregistrocompra when
+            fact.idregistrocompra is not null   then fact.idregistrocompra end)=docE.idcompra and  fact.unineg=docE.unineg
+            left join ML_DetRegCompraCR regcr on regcr.idregistrocompra=fact.idregistrocompra and regcr.idfacturacompra=fact.idfacturacompra and fact.unineg=regcr.unineg
+            left join MT_CentroResponsabilidad cr on cr.cr= (case when docE.idtipodocegreso='A' then detsol.cr when docE.idtipodocegreso = 'R' or docE.idtipodocegreso='O' then regcr.cr  end) 
+            left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+            left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+            left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg    
+            left join MT_Detraccion detra on detra.idDetraccion=doce.idDetraccion
+            where docE.nroDocEgreso = @nrodoc and docE.unineg=@unineg and 
+            (case when doce.idtipodocegreso='A' then doce.idsolicitudcajach else idcompra end)=@id
+        </if>  
+        <if test="gara == 1"> 
+            union all
+            SELECT distinct 
+            (case 
+            when docE.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(docE.idsolicitudcajach), 8) 
+            when docE.idtipodocegreso='R' or docE.idtipodocegreso='O'  then right(replicate('0', 8) + rtrim(docE.idcompra), 8) 
+            end) as idSolRC, 
+            '' as cuentaD,
+            ('  FONDO GARANTÍA') as concepto,
+            ('  FONDO GARANTÍA') as nombreCR,
+            ('  FONDO GARANTÍA') as glosa,
+            (NULL) as montoPagado,
+            (CASE 
+            WHEN ISNULL(DOCE.idtipomoneda,14901)= 14901 
+            then (CONVERT(varchar, CAST(doce.garantia AS money), 1)) 
+            else (CONVERT(varchar, CAST(doce.garantia AS money), 1))  end ) as detraccion,
+            (case 
+            when docE.idtipodocegreso='A' 
+            then 
+            ( case when sol.nomrespcheque is null or sol.nomrespcheque = '' then 
+            ( case 
+            when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+            when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+            when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end 
+            )
+            else
+            (upper(sol.nomrespcheque)) end
+            )   
+            when docE.idtipodocegreso='R'
+            then (Select ent.nombre from mo_entidad ent where   ent.ruc= docE.ruc and ent.unineg=doce.unineg )
+            when docE.idTipoDocEgreso = 'O' then 
+            (select entiOC.nombre as nombreEntidad2 from MO_Entidad entiOC where entiOC.ruc=docE.ruc and docE.uniNeg=entiOC.uniNeg)
+            end) as nomEnt,
+            E.nombre AS nombreBco,
+            (select doc2.montoPagado from MT_DOCEGRESO doc2 where doc2.nrodocegreso= @nrodoc and doc2.unineg=@unineg
+            and (case when doc2.idtipodocegreso='A' then doc2.idsolicitudcajach else idcompra end)=@id )  as montoTotal  ,
+            (select cta.ctacontbco from MT_CuentaBanco cta where cta.rucbanco=doce.rucbanco and cta.numcuenta=doce.numcuenta and cta.flgCtaCongre=0 and cta.unineg=doce.unineg  ) as ctabco  
+            ,(case when docE.dsctonotcred<![CDATA[<=]]>0 then '' else 'MONTO: '+(CONVERT(varchar, CAST(docE.dsctonotcred AS money), 1))  end )  as dsctoNotCred, isnull('NOTA DE CREDITO NRO: '+docE.nroNotaCredito,'') as nroNotaCredito
+            FROM MT_DocEgreso docE  
+            INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg 
+            left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doce.idsolicitudcajach and doce.unineg=sol.unineg
+            left join MT_DetSolicitudCajaChCR detsol on sol.idsolicitudcajach = detsol.idsolicitudCajach and detsol.unineg=sol.unineg
+            left join ML_FacturaCompra fact on (case when fact.idregistrocompra is not null then fact.idregistrocompra when
+            fact.idregistrocompra is not null   then fact.idregistrocompra end)=docE.idcompra and  fact.unineg=docE.unineg
+            left join ML_DetRegCompraCR regcr on regcr.idregistrocompra=fact.idregistrocompra and regcr.idfacturacompra=fact.idfacturacompra and fact.unineg=regcr.unineg
+            left join MT_CentroResponsabilidad cr on cr.cr= (case when docE.idtipodocegreso='A' then detsol.cr when docE.idtipodocegreso = 'R' or docE.idtipodocegreso='O' then regcr.cr  end) 
+            left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+            left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+            left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg    
+            left join MT_Detraccion detra on detra.idDetraccion=doce.idDetraccion
+            where docE.nroDocEgreso = @nrodoc and docE.unineg=@unineg and 
+            (case when doce.idtipodocegreso='A' then doce.idsolicitudcajach else idcompra end)=@id
+        </if>  
+    </select> 
+    <select id="obtenerDetalleDetalleFacturaDocEgreso" resultType="pe.marista.sigma.bean.reporte.DetDetDocEgresoRepBean" parameterType="map">
+        declare @unineg varchar(6),@nrodoc int ,@id int ,@cuenta int
+        set @unineg=#{uniNeg}
+        set @nrodoc=#{nroDocEgreso}
+        set @id=#{id}
+        set @cuenta=#{cuenta}
+        SELECT   
+        (case  
+        when docE.idtipodocegreso IN ('R','O','F')  then right(replicate('0', 8) + rtrim(docE.idcompra), 8) 
+        end) as idSolRC, 
+        CONVERT(VARCHAR,'') as cuentaD,                
+        (case          
+        when  docE.idTipoDocEgreso IN ('R','O','F')
+        then ((convert(varchar ,cFact.cr))+ ' '+cr.nombre)  
+        end) as nombreCR,           
+        fact.glosa  as glosa,  
+        (case  
+        when docE.idtipodocegreso IN ('O','R','F') then     CONVERT(varchar, CAST(cFact.valor AS money), 1)  
+        end) as montoPagado,
+        (NULL) as detraccion    
+        FROM MT_DocEgreso docE  
+        INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg        
+        left join ML_FacturaCompra fact on docE.idcompra=fact.idfacturacompra and fact.unineg=doce.unineg
+        left join ML_CuentaFact cFact on cFact.idfacturacompra=fact.idfacturacompra and cFact.unineg=fact.unineg and cFact.cuentad=@cuenta
+        left join MT_CentroResponsabilidad cr on cr.cr= cFact.cr 
+        where docE.nroDocEgreso = @nrodoc and docE.unineg=@unineg and idcompra  = @id
+        <if test="detra == 1">
+            union all 
+            SELECT  	 top 1 
+            (case  
+            when docE.idtipodocegreso IN ('R','O','F')  then right(replicate('0', 8) + rtrim(docE.idcompra), 8) 
+            end) as idSolRC, 
+            (case when detra.descripcion ='Retención RH' then (CONVERT(VARCHAR,401721) ) else (CONVERT(VARCHAR,422113)) end ) as cuentaD,         
+            (case when detra.descripcion ='Retención RH' then (select nombre from MT_PlanContable where cuenta=401721) else (select nombre from MT_PlanContable where cuenta=422113) end ) as nombreCR,      
+            (case when detra.descripcion ='Retención RH' then (select nombre from MT_PlanContable where cuenta=401721) else (select nombre from MT_PlanContable where cuenta=422113) end ) as glosa,  
+            (NULL) as montoPagado,  
+            (CONVERT(varchar, CAST(doce.valorDetraccion AS money), 1)) as detraccion
+            FROM MT_DocEgreso docE  
+            INNER JOIN MO_Entidad   E ON E.RUC=DOCE.RUCBANCO AND E.unineg=DOCE.unineg        
+            left join ML_FacturaCompra fact on docE.idcompra=fact.idfacturacompra and fact.unineg=doce.unineg
+            left join MT_Detraccion detra on detra.idDetraccion=doce.idDetraccion 
+            where docE.nroDocEgreso = @nrodoc and docE.unineg=@unineg and idcompra  = @id
+        </if>
+    </select>  
+    <select id="convertirAletras" parameterType="bigdecimal"> 
+        Select dbo.CantidadConLetra(#{monto})
+    </select> 
+    <!--Devolucion a Rendir-->
+    <select id="obtenerPorIdPersonal" parameterType="pe.marista.sigma.bean.DocEgresoBean" resultMap="docEgresoResultado">
+        Select sol.idpersonal,
+        per.apepat,per.apemat,
+        per.nombre,per.nrodoc,
+        per.codPer,
+        egr.nrodocegreso,
+        sol.motivo, 
+        egr.montopagado,
+        egr.numcheque
+        from MT_DocEgreso egr
+        Inner Join MT_SolicitudCajaCh sol On sol.idsolicitudcajach=egr.idsolicitudcajach
+        Inner Join MO_Personal per On sol.idpersonal=per.idpersonal
+        Where egr.unineg = #{unidadNegocioBean.uniNeg} and per.codPer = #{solicitudCajaCHBean.personalBean.codPer} and egr.flgRendicion=0
+    </select>
+    <update id="cambiarEstadoRendicionDoc" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        Update MT_DocEgreso set
+        flgRendicion = #{flgRendicion}
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and idDocEgreso = #{idDocEgreso} 
+    </update> 
+    <select id="obtenerDocEgresoPorSol" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean" resultMap="docEgresoResultado">
+        Select uniNeg as uniNegDoc,idDocEgreso from MT_DocEgreso where uniNeg = #{unidadNegocioBean.uniNeg} and idSolicitudCajaCh = #{idSolicitudCajaCh}
+        and (flganulado is null or flganulado=0)
+    </select> 
+    <!--Para Obtener las facturas que pertenecen a ese numero de cheque en el documento de egreso -->
+    <select id="obtenerFacturaPorNumCheq" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        <include refid="consultaCampos"/>
+        where docE.uniNeg=#{unidadNegocioBean.uniNeg} and numcheque=#{numCheque}  
+        order by docE.creaFecha desc
+    </select>
+    <select id="obtenerListaDocEgresoDetalle" resultMap="docEgresoResultado" parameterType="pe.marista.sigma.bean.DocEgresoBean">
+        select doc.glosa as glosa from MT_DocEgreso doc 
+        inner join MT_SolicitudCajaCh so on so.idsolicitudcajach=doc.idsolicitudcajach
+        where numcheque=#{numCheque}  and doc.uniNeg=#{unidadNegocioBean.uniNeg}
+        union all 
+        select concat(ca.item,' - CANTIDAD: '+CONVERT(VARCHAR,CONVERT(INT,DE.cantidad))) as glosa from MT_DocEgreso doc
+        inner join ML_FacturaCompra fact on fact.idfacturacompra=doc.idcompra 
+        inner join ML_DetRegistroCompra de on de.idregistrocompra=fact.idregistrocompra
+        inner join ML_Catalogo ca on ca.idcatalogo=de.idcatalogo
+        where numcheque=#{numCheque}  and doc.uniNeg=#{unidadNegocioBean.uniNeg} 
+    </select>
+    <select id="obtenerFiltroDocEgresoCheque" resultType="pe.marista.sigma.bean.reporte.DocEgresoRepBean" parameterType="pe.marista.sigma.bean.reporte.DocEgresoRepBean">
+        select  DISTINCT
+        uni.nombreUniNeg as nombreUniNeg, 
+        UNI.RUC  as rucUniNeg,
+        (case 
+        when doc.flganulado = 1 then 'Anulado'
+        when doc.flganulado = 0 or doc.flganulado is null then 'Correcto'
+        end) as estadoCheque, 
+        convert(varchar,doc.creafecha,103) as fecha,
+        isnull(substring(convert(varchar,convert(int,doc.numcheque)),1,4)+ ''+substring(convert(varchar,convert(int,doc.numcheque)),5,15),'-') as numCheque, 
+        isnull(substring(convert(varchar,doc.numcheque),1,4)+ ''+substring(convert(varchar,doc.numcheque),5,15),'-') as numCheque, 
+        (case
+        when doc.idtipodocegreso='A' then upper(isnull(sol.nomRespCheque,'-')) 
+        WHEN doc.idtipodocegreso='F'    then ENT.nombre
+        WHEN DOC.idtipodocegreso='O' THEN ENT.nombre 
+        ELSE ' - '
+        end) as nomRespCheque,  
+        doc.flganulado,
+        doc.nrodocegreso
+        ,(case when isnull(doc.idtipomoneda,14901)=14901 then (SELECT isnull(SUM(ISNULL(D.montopagado,0)),0) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null) else 0 END) AS montoPagadoSol
+        ,(case when isnull(doc.idtipomoneda,14901)=14902 then (SELECT isnull(SUM(ISNULL(D.montopagado,0)),0) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null) else 0 END) AS montoPagadoDol
+        ,(SELECT top 1 upper(d.glosa) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg) AS glosa
+        ,(CASE
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=1 THEN  'ENERO' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=2 THEN  'FEBRERO' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=3 THEN  'MARZO' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=4 THEN  'ABRIL' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=5 THEN  'MAYO' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=6 THEN  'JUNIO' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=7 THEN  'JULIO' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=8 THEN  'AGOSTO' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=9 THEN  'SEPTIEMBRE' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=10 THEN  'OCTUBRE' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=11 THEN  'NOVIEMBRE' 
+        WHEN DATEPART(MONTH,DOC.CREAFECHA)=12 THEN  'DICIEMBRE' 
+        END ) AS mes
+        from MT_DocEgreso doc
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doc.idsolicitudcajach and sol.unineg=doc.unineg
+        left join MT_Concepto con on con.idconcepto=sol.idconcepto  
+        left join MT_TipoConcepto tc on tc.idTipoConcepto=con.idtipoconcepto
+        LEFT JOIN ML_FacturaCompra fact on fact.idfacturacompra=doc.idcompra
+        left join ML_RegistroCompra reg on reg.idregistrocompra=fact.idregistrocompra and reg.unineg=doc.unineg
+        left join ML_OrdenCompra oc on oc.idordencompra=doc.idcompra and oc.unineg=doc.unineg 
+        left join MO_Entidad ent on ent.ruc= REG.ruc 
+        inner join MO_UnidadNegocio uni on doc.unineg=uni.unineg 
+        <where>
+            doc.uniNeg = #{uniNeg} and doc.idtipopago=15801
+            <if test="idTipoConcepto != null and idTipoConcepto != 0">
+                and tc.idtipoconcepto=#{idTipoConcepto}
+            </if>
+            <if test="idConcepto != null and idConcepto != 0">
+                and con.idconcepto=#{idConcepto}
+            </if>
+            <if test="glosa != null and glosa != ''">
+                and doc.glosa like concat('%',#{glosa},'%') 
+            </if> 
+            <if test="nomRespCheque != null and nomRespCheque != ''">
+                and (case when doc.idtipodocegreso='A' then sol.nomRespCheque when doc.idtipodocegreso='F' OR doc.idtipodocegreso='O'  THEN ent.nombre end)
+                like concat('%',#{nomRespCheque},'%') 
+            </if>  
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  doc.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  doc.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>   
+        GROUP BY doc.idtipomoneda,uni.nombreUniNeg,UNI.RUC,doc.creafecha,doc.idtipodocegreso,doc.numcheque,doc.idtipodocegreso,ENT.nombre,sol.nomRespCheque,doc.flganulado,doc.glosa
+        ,doc.montopagado,doc.montopagadodol,DOC.nrodocegreso,DOC.unineg
+        order by 4,5
+    </select> 
+    <select id="obtenerFiltroDocEgresoChequeSolesLPM" resultType="pe.marista.sigma.bean.reporte.DocEgresoRepBean" parameterType="pe.marista.sigma.bean.reporte.DocEgresoRepBean">
+        select distinct
+        (case when tipo.codigo='Transferencia' then '003'
+        when tipo.codigo='Cheque' then '007'
+        else '999' end) as tipoMedioPago, 
+        convert(varchar,doc.creafecha,103) as fecha, isnull(substring(convert(varchar,convert(int,doc.numcheque)),1,4)+ ' '+substring(convert(varchar,convert(int,doc.numcheque)),5,15),'-') as numCheque,
+        (case when doc.idtipodocegreso='A' then upper(isnull(sol.nomRespCheque,'-')) 
+        WHEN doc.idtipodocegreso='F' then ENT.nombre WHEN DOC.idtipodocegreso='O' THEN ENT.nombre ELSE ' - ' end) as nomRespCheque,  
+        (SELECT top 1 upper(d.glosa) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg) AS glosa ,
+        (select top 1 case  when d.nrodocref like'%caja chica%' then 'SN'
+        when ti.nombre='General' then concat(d.serie,' - '+d.nrodocref)
+        when ti.nombre='A rendir' then 'SN' 
+        WHEN ti.nombre='Factura Compra' then concat(fa.seriedoc,' - '+fa.nrodoc)  
+        END FROM MT_DocEgreso D 
+        left join ML_FacturaCompra fa on fa.idfacturacompra=d.idcompra
+        left join MT_SolicitudCajaCh so on so.idsolicitudcajach=d.idsolicitudcajach and so.unineg=d.unineg
+        left join MM_TipoSolicitud ti on ti.idtiposolicitud=so.idtiposolicitud
+        WHERE D.nrodocegreso=doc.nrodocegreso 
+        ) AS nroDoc,  
+        (case when isnull(doc.idtipomoneda,14901)=14901 then (SELECT isnull(SUM(ISNULL(D.montopagado,0)),0) 
+        FROM MT_DocEgreso D 
+        WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null) else 0 END) AS montoPagado
+        from MT_DocEgreso doc 
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doc.idsolicitudcajach and sol.unineg=doc.unineg
+        left join MT_Concepto con on con.idconcepto=sol.idconcepto
+        left join MT_TipoConcepto tc on tc.idTipoConcepto=con.idtipoconcepto left join ML_RegistroCompra reg on reg.idregistrocompra=doc.idcompra and reg.unineg=doc.unineg 
+        left join ML_OrdenCompra oc on oc.idordencompra=doc.idcompra and oc.unineg=doc.unineg left join ML_FacturaCompra fact on (case when doc.idtipodocegreso='F' then fact.idregistrocompra 
+        WHEN DOC.idtipodocegreso='O' THEN FACT.idordencompra END)=DOC.idcompra AND DOC.unineg=FACT.unineg 
+        left join MO_Entidad ent on ent.ruc=(case when doc.idtipodocegreso='F' then REG.ruc 
+        WHEN DOC.idtipodocegreso='O' THEN OC.ruc END) and ent.unineg= (case when doc.idtipodocegreso='F' then REG.unineg WHEN DOC.idtipodocegreso='O' THEN OC.unineg END) 
+        inner join MO_UnidadNegocio uni on doc.unineg=uni.unineg 
+        inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago
+        <where>
+            doc.uniNeg = #{uniNeg}   and doc.idtipomoneda=14901  
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  doc.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  doc.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>     
+    </select> 
+    <select id="obtenerFiltroDocEgresoChequeDolesLPM" resultType="pe.marista.sigma.bean.reporte.DocEgresoRepBean" parameterType="pe.marista.sigma.bean.reporte.DocEgresoRepBean">
+        select distinct
+        (case when tipo.codigo='Transferencia' then '003'
+        when tipo.codigo='Cheque' then '007'
+        else '999' end) as tipoMedioPago, 
+        convert(varchar,doc.creafecha,103) as fecha, isnull(substring(convert(varchar,convert(int,doc.numcheque)),1,4)+ ' '+substring(convert(varchar,convert(int,doc.numcheque)),5,15),'-') as numCheque,
+        (case when doc.idtipodocegreso='A' then upper(isnull(sol.nomRespCheque,'-')) 
+        WHEN doc.idtipodocegreso='F' then ENT.nombre WHEN DOC.idtipodocegreso='O' THEN ENT.nombre ELSE ' - ' end) as nomRespCheque,  
+        (SELECT top 1 upper(d.glosa) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg) AS glosa ,
+        (select top 1 case  when d.nrodocref like'%caja chica%' then 'SN'
+        when ti.nombre='General' then concat(d.serie,' - '+d.nrodocref)
+        when ti.nombre='A rendir' then 'SN' 
+        WHEN ti.nombre='Factura Compra' then concat(fa.seriedoc,' - '+fa.nrodoc)  
+        END FROM MT_DocEgreso D 
+        left join ML_FacturaCompra fa on fa.idfacturacompra=d.idcompra
+        left join MT_SolicitudCajaCh so on so.idsolicitudcajach=d.idsolicitudcajach and so.unineg=d.unineg
+        left join MM_TipoSolicitud ti on ti.idtiposolicitud=so.idtiposolicitud
+        WHERE D.nrodocegreso=doc.nrodocegreso 
+        ) AS nroDoc,  
+        (case when isnull(doc.idtipomoneda,14902)=14902 then (SELECT isnull(SUM(ISNULL(D.montopagado,0)),0) 
+        FROM MT_DocEgreso D 
+        WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null) else 0 END) AS montoPagado 
+        from MT_DocEgreso doc 
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doc.idsolicitudcajach and sol.unineg=doc.unineg
+        left join MT_Concepto con on con.idconcepto=sol.idconcepto
+        left join MT_TipoConcepto tc on tc.idTipoConcepto=con.idtipoconcepto left join ML_RegistroCompra reg on reg.idregistrocompra=doc.idcompra and reg.unineg=doc.unineg 
+        left join ML_OrdenCompra oc on oc.idordencompra=doc.idcompra and oc.unineg=doc.unineg left join ML_FacturaCompra fact on (case when doc.idtipodocegreso='F' then fact.idregistrocompra 
+        WHEN DOC.idtipodocegreso='O' THEN FACT.idordencompra END)=DOC.idcompra AND DOC.unineg=FACT.unineg 
+        left join MO_Entidad ent on ent.ruc=(case when doc.idtipodocegreso='F' then REG.ruc 
+        WHEN DOC.idtipodocegreso='O' THEN OC.ruc END) and ent.unineg= (case when doc.idtipodocegreso='F' then REG.unineg WHEN DOC.idtipodocegreso='O' THEN OC.unineg END) 
+        inner join MO_UnidadNegocio uni on doc.unineg=uni.unineg 
+        inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago
+        <where>
+            doc.uniNeg = #{uniNeg}   and doc.idtipomoneda=14902  
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  doc.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  doc.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+        </where>     
+    </select> 
+    <select id="obtenerFiltrosPagosEmitidosRep" resultType="pe.marista.sigma.bean.reporte.PagosEmitidosRepBean" parameterType="pe.marista.sigma.bean.reporte.PagosEmitidosRepBean">
+        declare
+        @montoChequeSol money = (select sum(isnull(doc.montopagado,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago    where tipo.codigo='Cheque' and doc.unineg=#{uniNeg} AND DOC.idtipomoneda=14901
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ),
+        @montoChequeDol money = (select sum(isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago where tipo.codigo='Cheque' and doc.unineg=#{uniNeg}  AND DOC.idtipomoneda=14902
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ),
+        @montoTransSol money =  (select sum(isnull(doc.montopagado,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago where tipo.codigo='Transferencia' and doc.unineg=#{uniNeg}  AND DOC.idtipomoneda=14901
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ) ,
+        @montoTransDol money =  (select sum(isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago where tipo.codigo='Transferencia' and doc.unineg=#{uniNeg}  AND DOC.idtipomoneda=14902
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ),
+        @montoSol money = (select sum(isnull(montopagado,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago and doc.unineg=#{uniNeg}  AND DOC.idtipomoneda=14901
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ),
+        @montoDol money = (select sum(isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago and doc.unineg=#{uniNeg}  AND DOC.idtipomoneda=14902
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ) ,
+        @montoDetraSol money = (select sum(isnull(doc.valorDetraccion,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14901 and doc.unineg=#{uniNeg}  
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ) ,
+        @montoDetraDol money = (select sum(isnull(doc.valorDetraccion,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14902 and doc.unineg=#{uniNeg}   
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ) ,
+        @montoTotSol money = (select sum(isnull(doc.valorDetraccion,0)+isnull(doc.montopagado,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14901  and doc.unineg=#{uniNeg}  
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ) ,
+        @montoTotDol money = (select sum(isnull(doc.valorDetraccion,0)+isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14902 and doc.unineg=#{uniNeg}  
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        ),
+        @cantAnulados money = (select count(*) from MT_DocEgreso doc  WHERE flganulado=1 and doc.unineg=#{uniNeg}  
+        <if test="fechaInicio != null" > <![CDATA[ and  doc.creaFecha >= #{fechaInicio}]]> </if>  
+        <if test="fechaFin != null" > <![CDATA[ and  doc.creaFecha <= #{fechaFin}]]> </if> 
+        )
+        select  DISTINCT 
+        uni.nombreUniNeg as nombreUniNeg, 
+        'R.U.C.: '+UNI.RUC  as rucUniNeg,  
+        convert(varchar,doc.creafecha,103) as fecha,
+        convert(date,doc.creafecha) as fecha2,
+        (CASE WHEN tipo.codigo='Cheque' THEN 'CH/ '+(isnull(substring(convert(varchar,doc.numcheque),1,4)+ ' '+substring(convert(varchar,doc.numcheque),5,15),'-')) WHEN tipo.codigo='Transferencia' THEN 'TRX. '+(isnull(substring(convert(varchar,doc.numcheque),1,4)+ ' '+substring(convert(varchar,doc.numcheque),5,15),'-')) else '' END) as numero, 
+        (case
+        when doc.idtipodocegreso='A' then upper(isnull(sol.nomRespCheque,'-')) 
+        WHEN   doc.idtipodocegreso='F'    then ENT.nombre
+        WHEN DOC.idtipodocegreso='O' THEN ENT.nombre 
+        ELSE ' - '
+        end) as nomRespCheque,    
+        CONVERT(varchar, CAST(isnull((SELECT SUM(ISNULL(D.montopagado,0)) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null),0) AS money), 1)  as montoPagadoSol,
+        CONVERT(varchar, CAST(isnull((SELECT SUM(ISNULL(D.montopagadodol,0)) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null),0) AS money), 1)  as montoPagadoDol,
+        CONCAT((case when doc.flganulado = 1 then '--Anulado--' end),' ',(SELECT top 1 upper(d.glosa) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg)) AS glosa,
+        tipo.codigo as modoPago,
+        CONVERT(varchar, CAST(isnull(@montoChequeSol,0) AS money), 1) as montoChequeSol,
+        CONVERT(varchar, CAST(isnull(@montoChequeDol,0) AS money), 1) as montoChequeDol,
+        CONVERT(varchar, CAST(isnull(@montoTransSol,0) AS money), 1) as montoTransSol,
+        CONVERT(varchar, CAST(isnull(@montoTransDol,0) AS money), 1) as montoTransDol,
+        CONVERT(varchar, CAST(isnull(@montoSol,0) AS money), 1) as montoSol,
+        CONVERT(varchar, CAST(isnull(@montoDol,0) AS money), 1) as montoDol,
+        CONVERT(varchar, CAST(isnull(@montoDetraSol,0) AS money), 1) as detraccionSol,
+        CONVERT(varchar, CAST(isnull(@montoDetraDol,0) AS money), 1) as detraccionDol,
+        CONVERT(varchar, CAST(isnull(@montoTotSol,0) AS money), 1) as montoTotSol,
+        CONVERT(varchar, CAST(isnull(@montoTotDol,0) AS money), 1) as montoTotDol,
+        (case when @cantAnulados   <![CDATA[ < ]]>10 then convert(varchar(2),right(replicate('0', 1) + rtrim(isnull( @cantAnulados,0)), 2)) else    convert(varchar,convert(integer,@cantAnulados))end) as cantAnulados
+        from MT_DocEgreso doc
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doc.idsolicitudcajach and sol.unineg=doc.unineg
+        left join MT_Concepto con on con.idconcepto=sol.idconcepto  
+        left join MT_TipoConcepto tc on tc.idTipoConcepto=con.idtipoconcepto
+        left join ML_RegistroCompra reg on reg.idregistrocompra=doc.idcompra and reg.unineg=doc.unineg
+        left join ML_OrdenCompra oc on oc.idordencompra=doc.idcompra and oc.unineg=doc.unineg
+        left join ML_FacturaCompra fact on (case 
+        when doc.idtipodocegreso='R' then fact.idregistrocompra
+        WHEN DOC.idtipodocegreso='O'  THEN FACT.idordencompra END)=DOC.idcompra
+        AND DOC.unineg=FACT.unineg
+        left join MO_Entidad ent on ent.ruc=(case when doc.idtipodocegreso='R' then REG.ruc WHEN DOC.idtipodocegreso='O' THEN OC.ruc END) and ent.unineg=
+        (case when doc.idtipodocegreso='R' then REG.unineg WHEN DOC.idtipodocegreso='O' THEN OC.unineg END)
+        inner join MO_UnidadNegocio uni on doc.unineg=uni.unineg 
+        left join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago 
+        <where>
+            doc.uniNeg = #{uniNeg}  
+            <if test="modoPago != null and modoPago != ''">
+                and tipo.codigo=#{modoPago}
+            </if>
+            <if test="idTipoConcepto != null and idTipoConcepto != 0">
+                and tc.idtipoconcepto=#{idTipoConcepto}
+            </if>
+            <if test="idConcepto != null and idConcepto != 0">
+                and con.idconcepto=#{idConcepto}
+            </if>
+            <if test="glosa != null and glosa != ''">
+                and doc.glosa like concat('%',#{glosa},'%') 
+            </if> 
+            <if test="nomRespCheque != null and nomRespCheque != ''">
+                and (case when doc.idtipodocegreso='A' then sol.nomRespCheque when doc.idtipodocegreso='R' OR doc.idtipodocegreso='O'  THEN ent.nombre end)
+                like concat('%',#{nomRespCheque},'%') 
+            </if>  
+            <!--
+            <if test="fechaInicio != null and fechaFin != null" >
+                <![CDATA[ 
+                and  doc.creaFecha >= #{fechaInicio}
+                and  (doc.creafecha  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) and (CONVERT(VARCHAR(10), #{fechaFin}, 112 )))
+                ]]>
+            </if>   --> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  doc.creaFecha >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  doc.creaFecha <= #{fechaFin}
+                ]]>
+            </if> 
+            <if test="flgAnulados != null"> 
+                <if test="flgAnulados != null"> 
+                    and   and doc.flganulado=1
+                </if>
+            </if> 
+        </where>    
+        order by 4
+    </select> 
+    <select id="obtenerActualMas1PorTipoPago" resultType="String" parameterType="map">
+        <!--DECLARE @TIPO VARCHAR(30),@UNINEG VARCHAR(6)
+        SET @TIPO=#{tipoPago}
+        SET @UNINEG=#{uniNeg} -->
+        <!-- SELECT MAX(ISNULL(NUMCHEQUE,1000))+1 -->
+        <!-- SELECT CONCAT(REPLICATE('0',8-LEN(CONVERT(INT,MAX(ISNULL(NUMCHEQUE,1000))))),MAX(ISNULL(NUMCHEQUE,1000))+1)
+        FROM MT_DocEgreso D
+        INNER JOIN MO_Codigo C ON C.idcodigo=D.idtipopago
+        WHERE C.codigo=@TIPO AND D.unineg=@UNINEG --> 
+        DECLARE @TIPO VARCHAR(30),@UNINEG VARCHAR(6)
+        SET @TIPO=#{tipoPago}
+        SET @UNINEG=#{uniNeg}
+        Declare @count int =(select count(*) from MT_DocEgreso D
+        left JOIN MO_Codigo C ON C.idcodigo=D.idtipopago
+        WHERE C.codigo=@TIPO AND D.unineg=@UNINEG)		
+        
+        select
+        case when @count>0 then 
+        (SELECT CONCAT(REPLICATE('0',8-LEN(CONVERT(INT,MAX(ISNULL(NUMCHEQUE,1000))))),MAX(ISNULL(NUMCHEQUE,1000))+1)
+        FROM MT_DocEgreso D
+        left JOIN MO_Codigo C ON C.idcodigo=D.idtipopago
+        WHERE C.codigo=@TIPO AND D.unineg=@UNINEG)
+        else CONCAT(REPLICATE('0',8-LEN(CONVERT(INT,MAX(1000)))),MAX( 1000)) end  
+    </select>
+    
+    <select id="obtenerChequesLPMCabecera" resultType="pe.marista.sigma.bean.reporte.ChequesEmitidosLPMRepBean" parameterType="map">   
+        declare @unineg varchar(6)=#{uniNeg}
+        declare @anio integer=#{anio}
+        declare @mes integer=#{mes}
+        declare @tipoMoneda integer=#{tipoMoneda}
+        declare @tipoModoPago integer =#{tipoModoPago}
+        
+        declare @montoTotal decimal(10,2)=(select   sum(e.montopagado)
+        from MT_DocEgreso e
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=e.idsolicitudcajach
+        left join MT_CajaChicaLiquidacion c on c.idsolicitudcajach=sol.idsolicitudcajach
+        left join ML_FacturaCompra fac on fac.idfacturacompra=e.idcompra 
+        left join ML_RegistroCompra reg on reg.idregistrocompra=fac.idregistrocompra
+        left join MO_Entidad en on en.ruc=reg.ruc
+        WHERE flganulado is null   
+        and month(e.creafecha)= @mes and year(e.creafecha) =@anio and e.unineg=@unineg)
+        
+        SELECT distinct  convert(varchar,e.creafecha,103) as fechaOperacion,
+        'INFORME DE DE '+upper(pag.codigo) as titulo ,
+        en.nombre as nombreBanco,mon.codigo as codigoMoneda,
+        E.numcuenta,
+        UNI.nombreUniNeg, UNI.RUC AS rucColegio,
+        (case when pag.idcodigo=15801 then '007'
+        when pag.idcodigo=15802 then '003' 
+        when pag.idcodigo=15804 then '999'else '001' end) as tipoMedioPago,
+        numcheque as numCheque,
+        @montoTotal as montopagado,datename(month,e.creafecha) as mes, datename(year,e.creafecha) as anio
+        FROM MT_DocEgreso e
+        inner join MO_UnidadNegocio uni on uni.unineg=e.unineg
+        inner join MO_Codigo pag on pag.idcodigo=e.idtipopago  
+        INNER JOIN MT_CuentaBanco CU ON CU.numcuenta=e.numcuenta
+        inner join MO_Entidad en on en.ruc=cu.rucbanco
+        inner join MO_Codigo mon on mon.idcodigo=cu.idtipomoneda
+        WHERE flganulado is null  
+        and month(e.creafecha)= @mes and year(e.creafecha) =@anio and e.unineg=@unineg
+        and mon.idcodigo=@tipoMoneda and pag.idcodigo=@tipoModoPago
+    </select>
+    <select id="obtenerChequesLPMDetalle" resultType="pe.marista.sigma.bean.reporte.ChequesEmitidosLPMRepBean" parameterType="map">   
+        declare @unineg varchar(6)=#{uniNeg}
+        <!-- declare @inicio date=#{inicio}
+        declare @fin date=#{fin} -->
+        declare @numCheque varchar(20)=#{numCheque}
+        declare @anio integer=#{anio}
+        declare @mes integer=#{mes}
+        
+        declare @montoTotal decimal(10,2)=(select   sum(e.montopagado)
+        from MT_DocEgreso e
+        WHERE flganulado is null  and e.numcheque=@numCheque
+        and month(e.creafecha)= @mes and year(e.creafecha) =@anio and e.unineg=@unineg)
+        
+        select distinct  numcheque as numCheque,(case when e.idsolicitudcajach is not null  then sol.nomrespcheque  
+        when e.idcompra is not null then en.nombre 
+        end) as razonSocial,
+        @montoTotal as montopagado
+        from MT_DocEgreso e
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=e.idsolicitudcajach 
+        left join ML_FacturaCompra fac on fac.idfacturacompra=e.idcompra 
+        left join ML_RegistroCompra reg on reg.idregistrocompra=fac.idregistrocompra
+        left join MO_Entidad en on en.ruc=reg.ruc
+        WHERE flganulado is null  and e.numcheque=@numCheque 
+        and month(e.creafecha)= @mes and year(e.creafecha) =@anio and e.unineg=@unineg
+    </select>
+    <select id="obtenerChequesLPMSubDetalle" resultType="pe.marista.sigma.bean.reporte.ChequesEmitidosLPMRepBean" parameterType="map">   
+        declare @unineg varchar(6)=#{uniNeg}
+        declare @anio integer=#{anio}
+        declare @mes integer=#{mes}
+        declare @numCheque varchar(20)=#{numCheque} 
+         
+        select 
+        (case when Sol.idsolicitudcajach is not null and ts.nombre='A rendir' then isnull(c.nrodoc,'-')
+        when sol.idsolicitudcajach is not null and  ts.nombre='General' then ISNULL(CONCAT(E.serie,'-'+E.nrodocref),'-')
+        else isnull(concat(e.serie,' '+e.nrodocref),'-') end) as documento,
+        (case when sol.idsolicitudcajach is not null and ts.nombre='General' then ISNULL(convert(decimal(10,2),sol.montoaprobado ),0)
+        when sol.idsolicitudcajach is not null and ts.nombre='A rendir' then ISNULL(convert(decimal(10,2),c.montototal),0)
+        when e.idcompra is not null then fac.montopago else ISNULL(convert(decimal(10,2),sol.monto),0) end) as monto,
+        isnull(c.montodevuelto,0) as devuelto , 
+        (case when e.idsolicitudcajach is not null then sol.motivo  
+        when e.idcompra is not null then fac.glosa end) as descripcion  
+        from MT_DocEgreso e
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=e.idsolicitudcajach
+        left join MT_CajaChicaLiquidacion c on c.idsolicitudcajach=sol.idsolicitudcajach
+        left join ML_FacturaCompra fac on fac.idfacturacompra=e.idcompra 
+        left join ML_RegistroCompra reg on reg.idregistrocompra=fac.idregistrocompra
+        left join MO_Entidad en on en.ruc=reg.ruc
+        inner join MM_TipoSolicitud ts on ts.idtiposolicitud=sol.idtiposolicitud
+        WHERE flganulado is null  and e.numcheque=@numCheque
+        and month(e.creafecha)= @mes and year(e.creafecha) =@anio and e.unineg=@unineg
+
+    </select>
+</mapper>

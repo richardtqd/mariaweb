@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.ProcesoFilesDAO">
+    <sql id="consultaCampos" >
+        SELECT 
+        pf.unineg
+        ,pf.ruc
+        ,pf.idfile
+        ,pf.idfilepadre
+        ,pf.posicionitem
+        ,pf.posicionini
+        ,pf.posicionfin
+        ,pf.idTipoFile
+        ,pf.longitud
+        ,pf.idDefecto
+        ,(select codigo from MO_Codigo where idcodigo = pf.idDefecto) as nomDefecto
+        ,pf.idtipodato
+        ,pf.nombre
+        ,pf.descripcion
+        ,pf.estado
+        ,pf.validate
+        ,pf.flgproceso
+        ,pf.creaPor
+        ,pf.creaFecha
+        ,isnull(pf.posicionvalor,2) as posicionvalor
+        ,(case 
+        when ISNULL(pf.posicionvalor,2) = 0 then 'Derecha'
+        when ISNULL(pf.posicionvalor,2) = 1 then 'Izquierda'
+        when ISNULL(pf.posicionvalor,2) = 2 then 'Ninguna'
+        end) as alineacion
+        ,ISNULL(pf.tipovalorestado,2) as tipovalorestado
+        ,(case 
+        when ISNULL(pf.tipovalorestado,2) = 0 then 'No Constante'
+        when ISNULL(pf.tipovalorestado,2) = 1 then 'Constante'
+        when ISNULL(pf.tipovalorestado,2) = 2 then 'Ninguna'
+        end) as valoracion
+        ,ISNULL(pf.constante,'Ninguna') as constante
+        ,ISNULL(pf.complemento,2) as complemento
+        ,(case
+        when ISNULL(pf.complemento,2) = 0 then 'Comp. ceros'
+        when ISNULL(pf.complemento,2) = 1 then 'Comp. espacios'
+        when ISNULL(pf.complemento,2) = 2 then 'Ninguna'
+        end) as valorComplemento
+        ,uni.unineg		  as idUniNeg			
+        ,uni.nombreUniNeg         as nomUniNeg
+        ,ent.ruc		  as rucEntidad
+        ,ent.nombre		  as nomEntidad
+        ,co.idcodigo
+        ,co.codigo
+        ,td.idcodigo              as idTipoValor
+        ,td.codigo                as tipoValor
+        ,pf.flgConsiderarPunto
+        ,(case when isnull(pf.flgConsiderarPunto,0)=1 then 'Sí' else 'No' end) flgConsiderarPuntoVista
+        ,pf.flgRestarMora
+        ,(case when isnull(pf.flgRestarMora,0)=1 then 'Sí' else 'No' end) flgRestarMoraVista
+        FROM MT_ProcesoFile pf
+        left join MO_UnidadNegocio uni on pf.unineg = uni.unineg
+        left join MO_Entidad ent on pf.ruc = ent.ruc and pf.unineg = ent.unineg
+        left join MO_Codigo co on pf.idTipoFile = co.idcodigo
+        left join MO_Codigo td on pf.idTipoDato = td.idcodigo
+    </sql>
+    
+    <!-- ResultMap Resultado -->
+    <resultMap id="fileResultado" type="pe.marista.sigma.bean.ProcesoFilesBean" >
+        <id property="idFile" column="idfile" />
+        <id property="idFilePadre" column="idfilepadre" />
+        <result property="posicionItem" column="posicionitem" />
+        <result property="posicionIni" column="posicionini" />
+        <result property="posicionFin" column="posicionfin" />
+        <result property="descripcion" column="descripcion" />
+        <result property="nomDefecto" column="nomDefecto" /> 
+        <result property="idDefecto" column="idDefecto" />
+        <result property="longitud" column="longitud" /> 
+        <result property="idDefecto" column="idDefecto" /> 
+        <result property="nomDefecto" column="nomDefecto" /> 
+        <result property="nombre" column="nombre" />
+        <result property="estado" column="estado" /> 
+        <result property="flgProceso" column="flgProceso" /> 
+        <result property="validate" column="validate" /> 
+        <result property="posicionValor" column="posicionValor" />
+        <result property="tipoValorEstado" column="tipoValorEstado" />
+        <result property="constante" column="constante" />  
+        <result property="valoracion" column="valoracion" /> 
+        <result property="alineacion" column="alineacion" /> 
+        <result property="complemento" column="complemento" />  
+        <result property="valorComplemento" column="valorComplemento" />  
+        <result property="creaPor" column="creaPor" /> 
+        <result property="modiPor" column="modiPor" /> 
+        <result property="creaFecha" column="creaFecha" /> 
+        <result property="modiVer" column="modiVer" /> 
+        <result property="valorCampo" column="valorCampo" /> 
+        <result property="valor" column="valor" /> 
+        <result property="formula" column="formula" /> 
+        <result property="flgConsiderarPunto" column="flgConsiderarPunto" /> 
+        <result property="flgConsiderarPuntoVista" column="flgConsiderarPuntoVista" /> 
+        <result property="flgRestarMora" column="flgRestarMora" /> 
+        <result property="flgRestarMoraVista" column="flgRestarMoraVista" /> 
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+        <association property="tipoFile" column="idTipoFile"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoFileResultado"/>
+        <association property="tipoDato" column="idtipodato"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDatoResultado"/>
+    </resultMap> 
+    <resultMap id="fileSPResultado" type="pe.marista.sigma.bean.ProcesoFilesBean" > 
+        <result property="valor" column="valor" />  
+    </resultMap> 
+    
+    <!-- ResultMap UniNeg -->
+    <resultMap id="unidadResultado" type="pe.marista.sigma.bean.UnidadNegocioBean" >
+        <id property="uniNeg" column="unineg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <!-- ResultMap Entidad -->
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean" >
+        <id property="ruc" column="rucEntidad" />
+        <result property="nombre" column="nomEntidad" />
+    </resultMap>
+    
+    <!-- Tipo File Resultado -->
+    <resultMap id="tipoFileResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idcodigo" />
+        <result property="codigo" column="codigo" />
+    </resultMap>
+    
+    <!-- Tipo Dato Resultado -->
+    <resultMap id="tipoDatoResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoValor" />
+        <result property="codigo" column="tipoValor" />
+    </resultMap>
+    
+    <select id="obtenerProcesosFiles" resultMap="fileResultado" parameterType="String" >
+        <include refid="consultaCampos" /> WHERE pf.unineg = #{unidadNegocioBean.uniNeg} and pf.idfilepadre = 0 order by pf.idfile
+    </select>
+    
+    <select id="obtenerProcesosFilesDeta" resultMap="fileResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> WHERE pf.unineg = #{uniNeg} and pf.idfilepadre = #{idFile}
+    </select>
+    
+    <!-- Obteniendo Listas de Files -->
+    <select id="obtenerProcesosFilesDetaCab" resultMap="fileResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> WHERE pf.unineg = #{uniNeg} and pf.idfilepadre = #{idFile} and pf.idtipofile = 20001 order by posicionitem
+    </select>
+    
+    <select id="obtenerProcesosFilesDetaDet" resultMap="fileResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> WHERE pf.unineg = #{uniNeg} and pf.idfilepadre = #{idFile} and pf.idtipofile = 20002 order by posicionitem
+    </select>
+    <select id="obtenerProcesosFilesConFormula" resultMap="fileResultado" parameterType="map" > 
+        declare @txt varchar(500)=#{txt}
+        SELECT 
+        pf.unineg
+        ,pf.ruc
+        ,pf.idfile
+        ,pf.idfilepadre
+        ,pf.posicionitem
+        ,pf.posicionini
+        ,pf.posicionfin
+        ,pf.idTipoFile
+        ,pf.longitud
+        ,pf.idDefecto
+        ,(select codigo from MO_Codigo where idcodigo = pf.idDefecto) as nomDefecto
+        ,pf.idtipodato
+        ,pf.nombre
+        ,pf.descripcion
+        ,pf.estado
+        ,pf.validate
+        ,pf.flgproceso
+        ,pf.creaPor
+        ,pf.creaFecha
+        ,isnull(pf.posicionvalor,2) as posicionvalor
+        ,(case 
+        when ISNULL(pf.posicionvalor,2) = 0 then 'Derecha'
+        when ISNULL(pf.posicionvalor,2) = 1 then 'Izquierda'
+        when ISNULL(pf.posicionvalor,2) = 2 then 'Ninguna'
+        end) as alineacion
+        ,ISNULL(pf.tipovalorestado,2) as tipovalorestado
+        ,(case 
+        when ISNULL(pf.tipovalorestado,2) = 0 then 'No Constante'
+        when ISNULL(pf.tipovalorestado,2) = 1 then 'Constante'
+        when ISNULL(pf.tipovalorestado,2) = 2 then 'Ninguna'
+        end) as valoracion
+        ,ISNULL(pf.constante,'Ninguna') as constante
+        ,ISNULL(pf.complemento,2) as complemento
+        ,(case
+        when ISNULL(pf.complemento,2) = 0 then 'Comp. ceros'
+        when ISNULL(pf.complemento,2) = 1 then 'Comp. espacios'
+        when ISNULL(pf.complemento,2) = 2 then 'Ninguna'
+        end) as valorComplemento
+        ,uni.unineg		  as idUniNeg			
+        ,uni.nombreUniNeg         as nomUniNeg
+        ,ent.ruc		  as rucEntidad
+        ,ent.nombre		  as nomEntidad
+        ,co.idcodigo
+        ,co.codigo
+        ,td.idcodigo              as idTipoValor
+        ,td.codigo                as tipoValor        
+        ,((substring(@txt,posicionini,longitud))) as valorCampo  
+        ,(REPLACE(formula, 'campo', ((substring(@txt,posicionini,longitud))))) as formula
+        <!--,${(select  dbo.campo2 (REPLACE(formula, 'campo', ((substring(@txt,posicionini,longitud))))))} as valor-->
+        FROM MT_ProcesoFile pf
+        left join MO_UnidadNegocio uni on pf.unineg = uni.unineg
+        left join MO_Entidad ent on pf.ruc = ent.ruc and pf.unineg = ent.unineg
+        left join MO_Codigo co on pf.idTipoFile = co.idcodigo
+        left join MO_Codigo td on pf.idTipoDato = td.idcodigo
+        WHERE pf.unineg = #{uniNeg} and pf.idfilepadre = #{idFile} and flgproceso=1
+        order by posicionitem
+    </select>
+    <!-- End -->
+         
+    <!-- Obteniendo Listas de Files/Proceso -->
+    <select id="obtenerValor" resultMap="fileResultado" parameterType="map" >         
+        EXEC [Prueba7]  
+        @@txt = #{txt,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@resultado   =  #{javaType=String,jdbcType=VARCHAR,mode=OUT}
+    </select>
+    <select id="obtenerProcesosFilesDetaCabPro" resultMap="fileResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> WHERE pf.unineg = #{uniNeg} and pf.idfilepadre = #{idFile} and pf.idtipofile = 20001 and pf.flgproceso = #{flgProceso} order by posicionitem
+    </select>
+    
+    <select id="obtenerProcesosFilesDetaDetPro" resultMap="fileResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> WHERE pf.unineg = #{uniNeg} and pf.idfilepadre = #{idFile} and pf.idtipofile = 20002 and pf.flgproceso = #{flgProceso} order by posicionitem
+    </select>
+    
+    <select id="obtenerProcesosFilesIntDetPro" resultMap="fileResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> WHERE pf.unineg = #{uniNeg} and pf.idfilepadre = #{idFile} and pf.idtipofile = 20003 and pf.flgproceso = #{flgProceso} order by posicionitem
+    </select>
+    
+    <!-- End -->
+                                                                                                                                                
+    <select id="obtenerFilesId" resultMap="fileResultado" parameterType="Integer" >
+        <include refid="consultaCampos" />WHERE pf.idfilepadre = #{idFile}
+    </select>
+    
+    <select id="obtenerDetaFilesId" resultMap="fileResultado" parameterType="map" >
+        <include refid="consultaCampos" />WHERE pf.idFile = #{idFile} and pf.unineg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerMaxPosFin" resultType="Integer" parameterType="map" >
+        select max(posicionfin) from MT_ProcesoFile
+        where idfile = (select max(idfile) from MT_ProcesoFile where unineg = #{uniNeg} and ruc = #{ruc}) and unineg = #{uniNeg}
+    </select>
+    
+    <!-- Obteniendo Listas Para Proceso -->
+    <select id="obtenerFileProceso" resultMap="fileResultado" parameterType="map" >
+        <include refid="consultaCampos" /> 
+        WHERE pf.unineg = #{uniNeg} 
+        <if test="ruc != null" >
+                and pf.ruc = #{ruc}
+        </if>  
+        and pf.idtipofile = #{idTipoFile} and pf.flgproceso = #{flgProceso} order by pf.posicionitem
+        <!--WHERE pf.unineg = #{uniNeg} and pf.ruc = #{ruc} and pf.flgproceso = #{flgProceso}-->
+    </select>
+    <!-- Obteniendo Listas Para Proceso -->
+    <select id="obtenerFileProcesoVer2" resultMap="fileResultado" parameterType="map" >
+        <include refid="consultaCampos" /> 
+        WHERE pf.unineg = #{uniNeg}  and estado=1
+        <if test="ruc != null" >
+                and pf.ruc = #{ruc}
+        </if>   
+        and pf.idfilepadre =(select TOP 1 idfile from MT_ProcesoFile where idfilepadre=0 and unineg=#{uniNeg})
+        and pf.idtipofile = #{idTipoFile} and pf.flgproceso = #{flgProceso} order by pf.posicionitem
+        <!--WHERE pf.unineg = #{uniNeg} and pf.ruc = #{ruc} and pf.flgproceso = #{flgProceso}-->
+    </select>
+    <!-- End -->  
+    
+    <select id="obtenerUltimaPosicion" resultType="Integer" parameterType="map" >
+        select isnull(MAX(posicionfin),0) from MT_ProcesoFile
+        where flgproceso = #{flgProceso} and idtipofile = #{idTipoFile} and unineg = #{uniNeg} and ruc = #{ruc}
+    </select>
+          
+    <select id="obtenerNumFiles" resultType="Integer" parameterType="map" >
+        select count(*) from MT_ProcesoFile where unineg = #{uniNeg} and flgproceso = #{flg} and idtipofile = #{idTipoFile} and ruc = #{ruc}
+    </select>
+          
+    <insert id="insertarProcesoFiles" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        INSERT INTO MT_ProcesoFile
+        (unineg
+        ,ruc
+        ,idfilepadre
+        ,posicionitem
+        ,posicionini
+        ,posicionfin
+        ,idtipofile
+        ,idtipodato
+        ,idDefecto
+        ,longitud
+        ,nombre
+        ,descripcion
+        ,estado
+        ,flgproceso
+        ,posicionvalor
+        ,tipovalorestado
+        ,constante
+        ,complemento
+        ,creapor
+        ,creafecha
+        ,flgConsiderarPunto
+        ,flgRestarMora)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{entidadBean.ruc},
+        #{idFilePadre},
+        #{posicionItem},
+        #{posicionIni},
+        #{posicionFin},
+        #{tipoFile.idCodigo},
+        #{tipoDato.idCodigo},
+        #{idDefecto},
+        #{longitud},
+        #{nombre},
+        #{descripcion},
+        #{estado},
+        #{flgProceso},
+        #{posicionValor},
+        #{tipoValorEstado},
+        #{constante},
+        #{complemento},
+        #{creaPor},
+        getdate(),
+        #{flgConsiderarPunto},
+        #{flgRestarMoraVista})
+    </insert> 
+    
+    <update id="modificarProcesosFiles" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        UPDATE MT_ProcesoFile
+        set  
+        posicionini = #{posicionIni},
+        posicionfin = #{posicionFin},
+        nombre = #{nombre},
+        idtipofile = #{tipoFile.idCodigo},
+        descripcion = #{descripcion},
+        longitud = #{longitud},
+        modipor = #{modiPor}
+        WHERE 
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile} 
+    </update>
+
+    <update id="modificarPosicionFiles" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        UPDATE MT_ProcesoFile
+        set
+        posicionitem = #{posicionItem},
+        modipor = #{modiPor}
+        WHERE 
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile} 
+    </update>
+    
+    <update id="modificarCabeceraFiles" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        UPDATE MT_ProcesoFile
+        set 
+        nombre = #{nombre},
+        posicionini = #{posicionIni},
+        posicionfin = #{posicionFin},
+        descripcion = #{descripcion},
+        longitud = #{longitud},
+        idtipodato = #{tipoDato.idCodigo},
+        idDefecto = #{idDefecto},
+        posicionvalor = #{posicionValor},
+        tipovalorestado = #{tipoValorEstado},
+        constante = #{constante},
+        complemento = #{complemento}
+        WHERE
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile}
+    </update>
+    
+    <update id="modificarDetallesFiles" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        UPDATE MT_ProcesoFile
+        set 
+        nombre = #{nombre},
+        posicionini = #{posicionIni},
+        posicionfin = #{posicionFin},
+        descripcion = #{descripcion},
+        longitud = #{longitud}
+        WHERE
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile}
+    </update>
+
+    <update id="modificarSuperFile" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        UPDATE MT_ProcesoFile
+        set 
+        nombre = #{nombre},
+        ruc = #{entidadBean.ruc},
+        descripcion = #{descripcion},
+        modipor = #{modiPor},
+        flgConsiderarPunto=#{flgConsiderarPunto},
+        flgRestarMora=#{flgRestarMora}
+        WHERE
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile}
+    </update>
+    
+    <update id="modificarPosicionesFiles" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        UPDATE MT_ProcesoFile
+        set
+        posicionini = #{posicionIni},
+        posicionfin = #{posicionFin},
+        modipor = #{modiPor}
+        WHERE
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile}
+    </update>
+
+    <update id="modificarDisabled" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        UPDATE MT_ProcesoFile
+        SET 
+        validate = #{validate},
+        modipor = #{modiPor}
+        WHERE
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile}
+    </update>
+
+    <delete id="eliminarProcesosFile" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" >
+        DELETE FROM MT_ProcesoFile
+        WHERE
+        unineg = #{unidadNegocioBean.uniNeg} and
+        ruc = #{entidadBean.ruc} and 
+        idfile = #{idFile} 
+    </delete>
+    
+    <select id="obtenerPosTipoFile" parameterType="pe.marista.sigma.bean.ProcesoFilesBean" resultType="Integer" >
+        declare @unineg char(6) = #{unidadNegocioBean.uniNeg}
+        declare @ruc varchar(20) = (select isnull(ruc,'0') from mo_unidadnegocio where unineg=#{unidadNegocioBean.uniNeg})
+        <!-- 1 => RECUP , 2 => ENVIO -->
+        declare @flgProceso Integer = #{flgProceso}
+        declare @posicion Integer = #{posicionItem}
+        select idtipodato from mt_procesofile where unineg = @unineg and flgproceso = @flgProceso and ruc = @ruc and posicionitem = @posicion 
+    </select>
+
+</mapper>

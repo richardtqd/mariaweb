@@ -1,0 +1,268 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body  > 
+            <h:form id="frmDatosMatricula"> 
+                <h:panelGrid  id="pnlTablaFiltroNoMatri" style="width: 700px" styleClass="centrado">
+                    <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusEst}" id="flBusqueda">
+                        <h:panelGrid columns="2">
+                            <h:panelGrid columns="1">
+                                <h:panelGrid id="pnlTodos" columns="2">
+                                    <p:selectBooleanCheckbox  value="#{impresionMasivaComprobanteMB.flgTodos}" styleClass="titulo" > 
+                                        <p:ajax event="change" update="pnlNivelGradoAca,pnlEstEsp,pnlAdi" listener="#{impresionMasivaComprobanteMB.verificarFiltroTodos()}"/>
+                                    </p:selectBooleanCheckbox>
+                                    <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                </h:panelGrid> 
+                                <h:panelGrid id="pnlEstEsp" columns="3">
+                                    <p:selectBooleanCheckbox  value="#{impresionMasivaComprobanteMB.flgEstEsp}" styleClass="titulo"> 
+                                        <p:ajax event="change" update="pnlTodos,pnlNivelGradoAca,pnlEstEsp,pnlAdi" listener="#{impresionMasivaComprobanteMB.verificarFiltroEstEsp()}"/>
+                                    </p:selectBooleanCheckbox>
+                                    <h:outputLabel value="#{msgs.etiquetaEstEspecifico}" styleClass="titulo" />
+                                </h:panelGrid> 
+                                <h:panelGrid id="pnlNivelGradoAca" columns="3" >
+                                    <p:selectBooleanCheckbox  value="#{impresionMasivaComprobanteMB.flgPorNivelGrado}" styleClass="titulo"  > 
+                                        <p:ajax event="change" update="pnlNivelGradoAca,pnlTodos,pnlEstEsp,pnlAdi" listener="#{impresionMasivaComprobanteMB.verificarFiltroNivelGrado()}" />
+                                    </p:selectBooleanCheckbox>
+                                    <h:outputText value="#{msgs.etiquetaPorNivelGrado}"/> 
+                                </h:panelGrid>  
+                                <h:panelGrid columns="2">
+                                    <p:selectOneMenu value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.anio}"    label="#{msgs.etiquetaPeriodo}" style="width: 125px" panelStyle="width: 125px" styleClass="resetSelect">
+                                        <f:selectItems value="#{impresionMasivaComprobanteMB.listaAnioFiltroMatricula}" var="anio" itemLabel="#{anio}" itemValue="#{anio}"/>
+                                    </p:selectOneMenu>  
+                                    <h:outputLabel value="#{msgs.etiquetaPeriodo}" styleClass="negrita siseFontGrid5" /> 
+                                </h:panelGrid>
+                                <h:panelGrid columns="2" id="estadoMatr">
+                                    <p:selectOneRadio disabled= "#{impresionMasivaComprobanteMB.flgSinNumeroDoc!=false}"
+                                                      value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.flgMatriculaVista}" >
+                                        <f:selectItem itemLabel="#{msgs.etiquetaMatriculado}" itemValue="1" />
+                                        <f:selectItem itemLabel="#{msgs.etiquetaNoMatriculado}" itemValue="0" />
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlSinNro" columns="1">
+                                    <h:panelGrid columns="2" >
+                                        <p:selectBooleanCheckbox  value="#{impresionMasivaComprobanteMB.flgSinNumeroDoc}" styleClass="titulo" > 
+                                            <p:ajax event="change" update="sinNumero,pnlTodos,estadoMatr" listener="#{impresionMasivaComprobanteMB.verificarFiltroSinNroDoc()}"/>
+                                        </p:selectBooleanCheckbox>
+                                        <h:outputText value="#{msgs.etiquetaSinNroRecibo}"/> 
+                                    </h:panelGrid>  
+                                    <h:panelGrid columns="2" id="sinNumero">
+                                        <h:outputLabel value="#{msgs.etiquetaMes}" styleClass="negrita siseFontGrid5" rendered="#{impresionMasivaComprobanteMB.flgSinNumeroDoc!=false}"/> 
+                                    <p:selectOneMenu value="#{impresionMasivaComprobanteMB.mesSelectBuscador}" label="#{msgs.etiquetaMes}" style="width: 125px" panelStyle="width: 125px" styleClass="resetSelect"
+                                                     rendered="#{impresionMasivaComprobanteMB.flgSinNumeroDoc!=false}">
+                                        <f:selectItems value="#{impresionMasivaComprobanteMB.listaMesBusqueda}" var="mes" itemLabel="#{mes.descripcion}" itemValue="#{mes.valor}"
+                                          />
+                                    </p:selectOneMenu>  
+                                    
+                                    </h:panelGrid>  
+                                </h:panelGrid> 
+                            </h:panelGrid>
+                            <h:panelGrid columns="1" id="pnlAdi">
+                                <p:panel rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}">  
+                                    <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                        <h:outputLabel value="#{msgs.EtiquetaCodigo}" styleClass="negrita siseFont5" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}" /> 
+                                        <p:inputText  value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.estudianteBean.personaBean.idPersona}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}"/> 
+                                        <h:outputLabel value="#{msgs.etiquetaApePat}" styleClass="negrita siseFont5" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}"/>
+                                        <p:inputText value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.estudianteBean.personaBean.apepat}" label="#{msgs.etiquetaApePat}" size="28" maxlength="30" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}" />  
+                                        <h:outputLabel value="#{msgs.etiquetaApeMat}" styleClass="negrita siseFont5" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}" />
+                                        <p:inputText value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.estudianteBean.personaBean.apemat}" label="#{msgs.etiquetaApeMat}" size="28" maxlength="30" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}"/> 
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}" styleClass="negrita siseFont5" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}"/>
+                                        <p:inputText value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.estudianteBean.personaBean.nombre}" label="#{msgs.etiquetaNombre}" size="28" maxlength="30" rendered="#{impresionMasivaComprobanteMB.flgEstEsp==true}" />  
+                                    </h:panelGrid>
+                                </p:panel>
+                                <p:panel rendered="#{impresionMasivaComprobanteMB.flgPorNivelGrado==true}">  
+                                    <h:panelGrid columns="2" width="300">
+                                        <h:outputLabel value="#{msgs.etiquetaNivelAcademico}" styleClass="titulo" rendered="#{impresionMasivaComprobanteMB.flgPorNivelGrado==true}" /> 
+                                        <p:selectOneMenu value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}" style="width:160px" panelStyle="width:160px" label="#{msgs.etiquetaNivelAcademico}" rendered="#{impresionMasivaComprobanteMB.flgPorNivelGrado==true}" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{impresionMasivaComprobanteMB.listaNivelAcademicoBean}" var="nivAca" itemLabel="#{nivAca.nombre}" itemValue="#{nivAca.idNivelAcademico}"/> 
+                                            <p:ajax event="change" listener="#{impresionMasivaComprobanteMB.obtenerGradoAcaBasica()}" update="cmboGradoAcaBas" />
+                                        </p:selectOneMenu>     
+                                        <h:outputLabel value="#{msgs.etiquetaGradoAca}" styleClass="titulo" rendered="#{impresionMasivaComprobanteMB.flgPorNivelGrado==true}"  /> 
+                                        <p:selectOneMenu id="cmboGradoAcaBas" value="#{impresionMasivaComprobanteMB.matriculaFiltroBean.estudianteBean.gradoHabilitado.idGradoAcademico}" style="width:160px" panelStyle="width:160px" styleClass="resetSelect" label="#{msgs.etiquetaGradoAca}" rendered="#{impresionMasivaComprobanteMB.flgPorNivelGrado==true}">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{impresionMasivaComprobanteMB.listaGradoAcademicoFiltroBean}" var="gradAcaBas" itemLabel="#{gradAcaBas.nombre}" itemValue="#{gradAcaBas.idGradoAcademico}"/>
+                                        </p:selectOneMenu>  
+                                    </h:panelGrid> 
+                                </p:panel>
+                            </h:panelGrid>
+                        </h:panelGrid> 
+                        <p:separator/>
+                        <h:panelGrid styleClass="centrado" columns="2">
+                            <p:commandButton value="#{msgs.botonBuscar}" action="#{impresionMasivaComprobanteMB.obtenerFiltroEstudianteMasivo()}" process=":frmDatosMatricula:flBusqueda"
+                                             update="pnlTablaMatricula,msg,btnPromover"/>
+                            <p:commandButton value="#{msgs.botonLimpiar}" action="#{impresionMasivaComprobanteMB.limpiarEstudianteMatriculaMasivo()}" update="pnlTablaFiltroNoMatri,pnlTablaMatricula,msg,btnPromover"/>
+                        </h:panelGrid> 
+                        <p:messages autoUpdate="false" id="msg"/>
+                    </p:fieldset>
+                    <p:fieldset legend="#{msgs.etiquetaSelMeses}" styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false">
+                        <h:panelGrid columns="12">
+                            <p:selectManyCheckbox id="grid" value="#{impresionMasivaComprobanteMB.listaMesSel}" layout="grid" columns="4">
+                                <f:selectItems value="#{impresionMasivaComprobanteMB.listaMesAll}" var="mes" itemLabel="#{mes.descripcion}" itemValue="#{mes.valor}" />
+                            </p:selectManyCheckbox>
+                        </h:panelGrid>
+                    </p:fieldset>
+                    <p:fieldset legend="#{msgs.etiquetaSelImp}" styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" id="flImpresora">
+                        <h:panelGrid columns="3">
+                            <h:outputLabel value="#{msgs.etiquetaImpr} - #{msgs.etiquetaSerie}:" class="negrita" style="font-size: 1em"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <p:selectOneMenu value="#{impresionMasivaComprobanteMB.impresoraBean.impresora}"  label="#{msgs.etiquetaImpr}"  
+                                             style="width: 275px" panelStyle="width:275px">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                <f:selectItems value="#{impresionMasivaComprobanteMB.listaImpresoraBean}" var="impresora" itemLabel="#{impresora.impresora}" 
+                                               itemValue="#{impresora.impresora}"/>
+                                <p:ajax event="change" listener="#{impresionMasivaComprobanteMB.traerImrpesora()}" update=":frmDatosMatricula:flImpresora,msg"/>
+                            </p:selectOneMenu>
+                        </h:panelGrid>
+                    </p:fieldset>
+                </h:panelGrid>  
+                <br></br>
+                <h:panelGrid  id="pnlTablaMatricula" styleClass="centrado" >
+                    <p:dataTable id="tblMatricula" value="#{impresionMasivaComprobanteMB.listaMatriculaEstudianteMasivoBean}" widgetVar="tblMatricula"
+                                 paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="estudiante" rowKey="#{estudiante}"
+                                 rows="#{impresionMasivaComprobanteMB.numRegistrosTablasPorFiltro}" 
+                                 rendered="#{not empty impresionMasivaComprobanteMB.listaMatriculaEstudianteMasivoBean}" 
+                                 style="width:700px; font-size: 10px;font-size:14px !important;"> 
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaEstPosNoMatri}" />   
+                        </f:facet>
+                        <p:column  headerText="N" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <center>
+                                <h:outputText value="#{n+1}" />
+                            </center>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                            <h:outputText value="#{estudiante.estudianteBean.personaBean.idPersona}"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                            <h:outputText value="#{estudiante.estudianteBean.personaBean.nombreCompleto}"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaGradoAca}" filterMatchMode="contains" width="12%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.gradoAcademicoVista}" >
+                            <h:outputText value="#{estudiante.gradoAcademicoVista}"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaSeccAbr}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.seccion}" >
+                            <h:outputText value="#{estudiante.seccion}"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.flgMatricula}" >
+                            <h:outputText value="#{estudiante.flgMatriVista}"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                            <p:commandLink actionListener="#{impresionMasivaComprobanteMB.generarReciboEstudiante(estudiante)}"  
+                                           oncomplete="if(args.operacionCorrecta){PF('popDone').show();}">
+                                <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                        </p:column>
+                    </p:dataTable>
+                    <br></br> 
+                </h:panelGrid>
+                <h:panelGrid styleClass="centrado" columns="2" id="btnPromover"> 
+                    <p:commandButton action="#{impresionMasivaComprobanteMB.generaComprobanteMasivo()}" disabled="#{not empty impresionMasivaComprobanteMB.listaMatriculaEstudianteMasivoBean==false}" 
+                                     update="@form" process="@form" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                     value="#{msgs.botonGenerar}">
+                    </p:commandButton> 
+                </h:panelGrid>
+            </h:form>
+
+
+            <h:form id="confirma">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popConfirmaImp" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false" closeOnEscape="true">
+                    <h:panelGrid columns="2">   
+                        <h:outputText value="#{msgs.etiquetaContSiMasivo}:" style="font-size: 1em" /> 
+                        <h:outputText value="#{impresionMasivaComprobanteMB.siImprimir}"/>
+                        <h:outputText value="#{msgs.etiquetaContNOMasivo}:" style="font-size: 1em" /> 
+                        <h:outputText value="#{impresionMasivaComprobanteMB.noImprimir}"/>
+                        <h:inputHidden value="#{impresionMasivaComprobanteMB.mesSelect}"/>
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid columns="3" class="centrado">
+                        <h:commandLink action="#{impresionMasivaComprobanteMB.generarImpresion()}" id="imprimir" target="_blank" >
+                            <h:graphicImage value="/resources/images/impresora.png" />
+                        </h:commandLink>
+                        <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" />
+                        <p:commandButton oncomplete="PF('popConfirmaImp').hide();" value="#{msgs.botonCancelar}" />
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+
+            <p:dialog id="popAnularDocIng" header="#{msgs.appSiglas}" widgetVar="popAnularDocIng" showEffect="fade" hideEffect="explode"
+                      modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+                <h:form id="frmPopAnular" >
+                    <h:panelGrid id="pnlPopAnular" styleClass="centrado" columns="2" >
+                        <p:outputLabel value="#{msgs.etiquetaInicio}: " />
+                        <p:inputText value="#{impresionMasivaComprobanteMB.docIngresoBean.nroDocIni}" />
+                        <p:outputLabel value="#{msgs.etiquetaFin}: " />
+                        <p:inputText value="#{impresionMasivaComprobanteMB.docIngresoBean.nroDocFin}" />
+                        <p:outputLabel value="#{msgs.etiquetaReini}: " />
+                        <p:inputText value="#{impresionMasivaComprobanteMB.docIngresoBean.nroRecIni}" />
+                    </h:panelGrid>
+                    <h:panelGrid styleClass="centrado" >
+                        <p:commandButton value="#{msgs.etiquetaAnular}" actionListener="#{impresionMasivaComprobanteMB.anularRecibo()}" 
+                                         oncomplete="if(args.anulados){PF('popConfirmaAnul').show();}"
+                                         update=":frmConfirmaAnul:pnlDatosConfirmaAnul"/>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <h:form id="frmConfirmaAnul">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirmaAnul" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirmaAnul">
+                            <h:outputText value="#{msgs.panelElimarDoc}"/>
+                            <h:outputLabel value="#{msgs.etiquetaTotal}: #{impresionMasivaComprobanteMB.totalAnulados}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{impresionMasivaComprobanteMB.eliminarRecibo()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmPopAnular:pnlPopAnular,:frmConfirmaAnul,msgsCon"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirmaAnul').hide();PF('popAnularDocIng').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirmaAnul').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsCon" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+            <p:dialog id="popVerRec" header="#{msgs.appTitulo}" widgetVar="popVerRec" showEffect="fade" hideEffect="explode"  resizable="false" modal="true" closeOnEscape="true">
+                <h:form id="frmVerRec" >
+                    <h:panelGrid id="pnlVerRec" >
+                        <p:dataTable id="tblMatricula" value="#{impresionMasivaComprobanteMB.listaDocIngRec}" widgetVar="tblDocIng"
+                                     paginator="true"  paginatorPosition="bottom" rowIndexVar="n" var="doc" 
+                                     rows="#{impresionMasivaComprobanteMB.numRegistrosTablasPorFiltro}" 
+                                     rendered="#{not empty impresionMasivaComprobanteMB.listaDocIngRec}" 
+                                     style="width:750px; font-size: 10px;font-size:14px !important;" >
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                            </f:facet>  
+                            <p:column headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{doc.concepto}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{doc.anio}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaMes}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{doc.mesVista}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaMontoPagado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{doc.montoEfectivoSol}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{doc.serieNroDoc}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                    <h:panelGrid styleClass="centrado" >
+                        <p:commandButton value="#{msgs.etiquetaCerrar}" oncomplete="PF('popVerRec').hide();" />
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>  
+        </h:body>
+    </ui:define>
+</ui:composition>

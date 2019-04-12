@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.MovimientoActivoDAO">
+    <sql id="consultaCampos">
+        SELECT 
+        m.idmovimientoactivo
+        ,m.idinventarioactivo
+        ,m.unineg
+        ,m.objreferencia
+        ,m.objid
+        ,m.fechamov
+        ,m.fecharetorno
+        ,m.idtipomovactivo
+        ,m.idmovimientomotivo
+        ,m.idtipoduracion
+        ,m.iduniorgorigen
+        ,m.iduniorgdestino
+        ,m.idresporigen
+        ,m.idrespdestino
+        ,m.observacion
+        ,m.creaFecha
+        ,m.creapor
+        ,m.nromovact
+        ,ia.idInventarioActivo
+        ,ia.idcatalogo
+        ,ia.titulo
+        ,al.item
+        ,u.uniNeg as UnidadNegocio
+        ,u.nombreUniNeg
+        ,mt.idmovimientomotivo as idMovimiento
+        ,mt.motivo as movimientoMotivo
+        ,p.idpersonal as idRespOrigen
+        ,p.apepat as apePatOr
+        ,p.apemat as apeMatOr
+        ,p.nombre as nombreOr
+        ,pe.idpersonal as idRespDestino
+        ,pe.apepat as apePatDes
+        ,pe.apemat as apeMatDes
+        ,pe.nombre as nombreDes
+        ,uo.iduniorg as idUniOrgOrigen
+        ,uo.nombreuniorg as nombreOrgOr
+        ,uno.iduniorg as idUniOrgDestino
+        ,uno.nombreuniorg as nombreOrgDes
+        ,duracion.idcodigo as idTipoDuracion
+        ,duracion.codigo as tipoDuracion
+        ,movActivo.idcodigo as tipoMovAc
+        ,movActivo.codigo as nombretipoMovAc
+        ,duracionMot.codigo as tipoDuracionMot
+        ,duracionMot.idcodigo as idTipoDuracionMot
+        ,ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as distritoUnidad,
+        pais.nombre as paisUnidad
+        FROM ML_MovimientoActivo m
+        LEFT join ML_InventarioActivo ia on m.idinventarioactivo = ia.idinventarioactivo 
+        LEFT join ML_Catalogo al on ia.idcatalogo = al.idcatalogo
+        LEFT join MO_UnidadNegocio u on m.unineg = u.unineg
+        left join MO_Entidad ent on ent.ruc= u.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        left join ML_MovimientoMotivo mt on m.idmovimientomotivo = mt.idmovimientomotivo
+        left join MO_Codigo duracionMot on m.idtipoduracion = duracionMot.idcodigo
+        left join MO_Personal p on m.idresporigen = p.idpersonal and p.unineg=m.unineg
+        left join MO_Personal pe on m.idrespdestino = pe.idpersonal and pe.unineg=m.unineg
+        left join MO_UnidadOrganica uo on m.iduniorgorigen = uo.iduniorg
+        left join MO_UnidadOrganica uno on m.iduniorgdestino = uno.iduniorg
+        left join MO_Codigo duracion on m.idtipoduracion = duracion.idcodigo
+        left join MO_Codigo movActivo on m.idtipomovactivo = movActivo.idcodigo
+    </sql>
+    <sql id="consultaObtener">
+        SELECT  
+        distinct(m.nroMovAct) 
+        ,m.observacion
+        ,m.unineg
+        ,u.unineg
+        ,m.fechamov
+        ,duracionMot.codigo as tipoDuracionMot
+        ,duracionMot.idcodigo as idTipoDuracionMot
+        ,mt.motivo 
+        FROM ML_MovimientoActivo m 
+        inner join MO_UnidadNegocio u on u.unineg= m.unineg
+        left join ML_MovimientoMotivo mt on m.idmovimientomotivo = mt.idmovimientomotivo 
+        left join MO_Codigo duracionMot on m.idtipoduracion = duracionMot.idcodigo
+    </sql>
+    
+    <resultMap id="movimientoActivoResultado" type="pe.marista.sigma.bean.MovimientoActivoBean">
+        <id property="idMovimientoActivo" column="idMovimientoActivo" />
+        <result property="objReferencia" column="objReferencia"/>
+        <result property="objid" column="objid"/>
+        <result property="fechaMov" column="fechaMov"/>
+        <result property="fechaRetorno" column="fechaRetorno"/>
+        <result property="observacion" column="observacion"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="nroMovAct" column="nroMovAct"/>
+        <association property="inventarioActivoBean" column="idInventarioActivo"
+                     javaType="pe.marista.sigma.bean.InventarioActivoBean"
+                     resultMap="inventarioActivoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/> 
+        <association property="uniOrgOrigenBean" column="idUniOrgOrigen"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="UOOrigenResultado"/>
+        <association property="uniOrgDestinoBean" column="idUniOrgDestino"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="UODestinoResultado"/>
+        <association property="respOrigenBean" column="idRespOrigen"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="resOrigenResultado"/>
+        <association property="resoDestinoBean" column="idRespDestino"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="resDestinoResultado"/>
+        <association property="tipoDuracionBean" column="idTipoDuracion"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="duracionResultado"/>
+        <association property="tipoMovActivoBean" column="idTipoMovActivo" 
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMovResultado"/>
+        <association property="motivoMovimientoBean" column="idmovimientomotivo" 
+                     javaType="pe.marista.sigma.bean.MotivoMovimientoBean"
+                     resultMap="motivoMovResultado"/>
+    </resultMap>
+    
+    <resultMap id="inventarioActivoResultado" type="pe.marista.sigma.bean.InventarioActivoBean">
+        <id property="idInventarioActivo" column="idinventarioactivo"/>
+        <result property="fechacompra" column="fechacompra" />
+        <result property="fechaultimaasignacion" column="fechaultimaasignacion" />
+        <association property="catalogoBean" column="idCatalogo" 
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultado"/>
+    </resultMap>
+    
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="UnidadNegocio"/>
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIDADResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNIDADResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucUnidad"/>
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultado"/>
+    </resultMap>
+    <resultMap id="distritoUNIDADENTResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distritoUnidad"/>
+    </resultMap>       
+    <resultMap id="paisUNIDADENTResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>    
+    
+    <!-- <resultMap id="motivoMovimientoResultado" type="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <id property="idMovimientoMotivo" column="idMovimientoMotivo"/>
+        <result property="motivo" column="motivo"/>
+    </resultMap>-->
+    
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean" >
+        <id property="idCatalogo" column="idCatalogo" />
+        <result property="item" column="item" />
+    </resultMap>
+    
+    <!--UniOrgOrigen-->
+    <resultMap id="UOOrigenResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean" >
+        <id property="idUniOrg" column="idUniOrgOrigen" />
+        <result property="nombreUniOrg" column="nombreOrgOr" />
+    </resultMap>
+    
+    <!--UniOrgDestino-->
+    <resultMap id="UODestinoResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean" >
+        <id property="idUniOrg" column="idUniOrgDestino" />
+        <result property="nombreUniOrg" column="nombreOrgDes" />
+    </resultMap>
+    
+    <!--Persona Origen-->
+    <resultMap id="resOrigenResultado" type="pe.marista.sigma.bean.PersonalBean" >
+        <id property="idPersonal" column="idRespOrigen" />
+        <result property="nombre" column="nombreOr" />
+        <result property="apepat" column="apePatOr" />
+        <result property="apemat" column="apeMatOr" />
+    </resultMap>
+    
+    <!--Persona Final-->
+    <resultMap id="resDestinoResultado" type="pe.marista.sigma.bean.PersonalBean" >
+        <id property="idPersonal" column="idRespDestino" />
+        <result property="nombre" column="nombreDes" />
+        <result property="apepat" column="apePatDes" />
+        <result property="apemat" column="apeMatDes" />
+    </resultMap>
+    
+    <resultMap id="duracionResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoDuracion" />
+        <result property="codigo" column="tipoDuracion" />
+    </resultMap>
+    
+    <resultMap id="tipoMovResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="tipoMovAc" />
+        <result property="codigo" column="nombretipoMovAc" />
+    </resultMap>
+    
+    <resultMap id="motivoMovResultado" type="pe.marista.sigma.bean.MotivoMovimientoBean" >
+        <id property="idMovimientoMotivo" column="idMovimiento" />
+        <result property="motivo" column="movimientoMotivo" />
+        <association property="tipoDuracionBean" column="idTipoDuracionMot"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="duracionMotResultado"/>
+    </resultMap>
+    <resultMap id="duracionMotResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoDuracionMot" />
+        <result property="codigo" column="tipoDuracionMot" />
+    </resultMap>
+    <select id="obtenerPorMovimiento" resultMap="movimientoActivoResultado" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        <include refid="consultaCampos" />where m.idMovimientoActivo = #{idMovimientoActivo}
+    </select>
+    
+    <select id="ObtenerTodos" resultMap="movimientoActivoResultado">
+        <include refid="consultaCampos"/>       
+    </select>
+    <select id="ObtenerPorIdMovimiento" resultMap="movimientoActivoResultado" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        <include refid="consultaCampos"/> where m.idMovimientoActivo = #{idMovimientoActivo}  and m.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="ObtenerPorIdMtivoMov" resultMap="motivoMovResultado" parameterType="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <include refid="consultaCampos"/>  where mt.idMovimientoMotivo = #{motivoMovimientoBean.idMovimientoMotivo}
+    </select>
+    
+    <select id="obtenerUltimoMovimiento" resultMap="movimientoActivoResultado" parameterType="pe.marista.sigma.bean.MovimientoActivoBean" >
+        select isnull((max(idMovimientoActivo)),0) from ML_MovimientoActivo
+        WHERE idMovimientoActivo = #{idMovimientoActivo} and unineg=#{unidadNegocioBean.uniNeg}
+    </select>  
+    
+    <select id="obtenerPorMovimientoPDF" resultMap="movimientoActivoResultado" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        <include refid="consultaCampos" />where m.idMovimientoActivo = #{idMovimientoActivo}  and m.unineg=#{unidadNegocioBean.uniNeg}
+    </select>  
+    
+    <select id="obtenerMotivoPorMov" resultMap="motivoMovResultado" parameterType="Integer"   >
+        <include refid="consultaCampos" /> where m.idtipomovactivo = #{tipoMovActivoBean.idCodigo}
+    </select>
+    <select id="obtenerMotivoPorDuracion" resultMap="duracionMotResultado" parameterType="Integer">
+        <include refid="consultaCampos" /> where m.idTipoDuracion = #{tipoDuracionBean.idCodigo}
+    </select>
+    
+    <select id="obtenerMovimiento" resultMap="movimientoActivoResultado" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        <include refid="consultaObtener"/>   
+        <where>            
+            <if test="nroMovAct != null and nroMovAct != 0 ">
+                and m.nromovact = #{nroMovAct}
+            </if>
+            <if test="anio != null and anio != 0 ">
+                and m.anio = #{anio}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and m.fechamov >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and m.fechamov <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by m.nromovact desc
+    </select>
+    <select id="obtenerUltimoDocMovAct" resultType="Integer" parameterType="pe.marista.sigma.bean.MovimientoActivoBean" >
+        select isnull((max(nromovact)),0) from ML_MovimientoActivo 
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} 
+    </select>  
+    
+    <select id="obtenerPorFiltroMovimientos" resultMap="movimientoActivoResultado" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        <include refid="consultaCampos"/>   
+        <where>       
+            m.unineg =#{unidadNegocioBean.uniNeg}    
+            <if test="idMovimientoActivo != null and idMovimientoActivo != 0 ">
+                and m.idMovimientoActivo = #{idMovimientoActivo}
+            </if>
+            <if test="anio != null and anio != 0 ">
+                and m.anio = #{anio}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and m.fechamov >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and m.fechamov <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by m.idMovimientoActivo desc
+    </select>
+    
+    <select id="ObtenerPorId" parameterType="Integer">
+        <include refid="consultaCampos"/>       
+        where m.idmovimientoactivo = #{idInventarioActivo}
+    </select>
+    
+    <select id="ObtenerPorFiltro" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        <include refid="consultaCampos"/>       
+        Where m.idmovimientoactivo = #{idMovimientoActivo}
+    </select>
+    
+    <select id="obtenerInventarioPorId" resultMap="movimientoActivoResultado" parameterType="Integer" >
+        <include refid="consultaCampos"/>       
+        where m.idmovimientoactivo = #{idMovimientoActivo}
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        insert into ML_MovimientoActivo 
+        (idmovimientoactivo,idinventarioactivo,unineg,objreferencia,objid,fechamov,fecharetorno,
+        idtipomovactivo,idmovimientomotivo,idtipoduracion,iduniorgorigen,iduniorgdestino,idresporigen,
+        idrespdestino,observacion,creapor,creaFecha,nromovact)
+        VALUES 
+        (0,#{inventarioActivoBean.idInventarioActivo},#{unidadNegocioBean.uniNeg},#{objReferencia},#{objid},
+        #{fechaMov},#{fechaRetorno},#{tipoMovActivoBean.idCodigo},#{motivoMovimientoBean.idMovimientoMotivo},#{motivoMovimientoBean.tipoDuracionBean.idCodigo},#{uniOrgOrigenBean.idUniOrg},
+        #{uniOrgDestinoBean.idUniOrg},#{respOrigenBean.idPersonal},#{resoDestinoBean.idPersonal},#{observacion},#{creaPor},getDate(),#{nroMovAct})
+        <!--useGeneratedKeys="true" keyProperty="idMovimientoActivo" keyColumn="idmovimientoactivo"-->
+        <selectKey keyProperty="idMovimientoActivo" order="AFTER" resultType="Integer">
+            SELECT max(idMovimientoActivo) from ML_MovimientoActivo WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>
+    
+    <update id="Actualizar" parameterType="pe.marista.sigma.bean.MovimientoActivoBean">
+        Update ML_MovimientoActivo  
+        set 
+        objreferencia = #{objReferencia}
+        ,objid = #{objid}
+        ,fechamov = #{fechaMov}
+        ,fecharetorno = #{fechaRetorno}
+        ,idtipomovactivo = #{tipoMovActivoBean.idCodigo}
+        ,idmovimientomotivo = #{motivoMovimientoBean.idMovimientoMotivo}
+        ,idtipoduracion = #{motivoMovimientoBean.tipoDuracionBean.idCodigo}
+        ,iduniorgorigen = #{uniOrgOrigenBean.idUniOrg}
+        ,iduniorgdestino = #{uniOrgDestinoBean.idUniOrg}
+        ,idresporigen = #{respOrigenBean.idPersonal}
+        ,idrespdestino = #{resoDestinoBean.idPersonal}
+        ,observacion = #{observacion}
+        ,creaFecha = #{creaFecha}
+        ,creapor = #{creaPor}
+        where 
+        idmovimientoactivo = #{idMovimientoActivo}  and idinventarioactivo = #{inventarioActivoBean.idInventarioActivo}
+    </update>
+    <select id="obtenerMovimientoGeneral" resultType="pe.marista.sigma.bean.reporte.MovimientoActivoGeneralRepBean" parameterType="map">
+        DECLARE @uniNeg varchar(6)
+        set @uniNeg=#{uniNeg}
+        SELECT I.idinventarioactivo as idInventarioActivo,
+        C.ITEM as item,I.marca as marca ,I.MODELO as modelo, 
+        CONCAT(P.APEPAT,' '+P.APEMAT,', '+P.NOMBRE)  as respdestino,
+        UO.nombreuniorg AS nombreUniOrg
+        ,unsol.nombreUniNeg
+        ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad
+        FROM ML_MovimientoActivo M
+        INNER JOIN ML_InventarioActivo I ON I.idinventarioactivo= M.idinventarioactivo
+        INNER JOIN ML_Catalogo C ON C.idcatalogo=I.idcatalogo
+        INNER JOIN MO_UnidadOrganica UO ON UO.iduniorg=M.iduniorgdestino
+        INNER JOIN MO_Personal P ON P.idpersonal=M.idrespdestino
+        left join MO_UnidadNegocio unsol on unsol.unineg= m.unineg
+        left join MO_Entidad ent on ent.ruc=unsol.ruc
+        left join MO_Pais pa on pa.idpais= ent.idpais
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito
+        where m.unineg=@uniNeg
+    </select>
+</mapper>

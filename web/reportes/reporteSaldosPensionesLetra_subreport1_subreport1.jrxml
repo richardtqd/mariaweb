@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteSaldosPensiones_subreport1_subreport1" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="bd25f279-b543-486a-9334-182759aa157d">
+	<property name="ireport.zoom" value="5.559917313492265"/>
+	<property name="ireport.x" value="1062"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[--1 es este con flg 0
+--2 la lista de estudiantes
+--3 es este con flg 1
+
+declare  @idestudiante varchar(15),@fecha varchar(30),@anio int,@uniNeg varchar(30),@idtipostatusctacte int,@flg int
+set @flg=1--flg 0 total , flg 1 x alumno
+set @uniNeg='CHAMPS'
+set @anio=2016
+set @idtipostatusctacte=19401
+
+set @idestudiante='77311227'
+set @fecha='31/05/2016'
+
+declare
+ @nombre varchar(100) =
+ (case
+ when @flg=0 then
+ (select nombreUniNeg from MO_UnidadNegocio where   unineg=@uniNeg)
+ when @flg=1 then
+ (select concat(apepat,' '+apemat,', '+nombre) from MX_Persona where idpersona=@idestudiante and unineg=@uniNeg)
+ end),
+ @id varchar(100) =
+ (case
+ when @flg=0 then
+ (select RUC from MO_UnidadNegocio where   unineg=@uniNeg)
+ when @flg=1 then
+ (select top 1 (case
+	when GRA.codigo= 'PRE-INICIAL(3)' then 'P3'
+	when GRA.codigo= 'PRE-INICIAL(4)' then 'P4'
+	when GRA.codigo= 'INICIAL(5)'	  then '00'
+	when GRA.codigo= 'PRIMERO'		  then '01'
+	when GRA.codigo= 'SEGUNDO'		  then '02'
+	when GRA.codigo= 'TERCERO'		  then '03'
+	when GRA.codigo= 'CUARTO'         then '04'
+	when GRA.codigo= 'QUINTO'         then '05'
+	when GRA.codigo= 'SEXTO'          then '06'
+	when GRA.codigo= 'SETIMO'         then '07'
+	when GRA.codigo= 'OCTAVO'         then '08'
+	when GRA.codigo= 'NOVENO'         then '09'
+	when GRA.codigo= 'DECIMO'         then '10'
+	when GRA.codigo= 'DECIMO-BACH'    then '10'
+	when GRA.codigo= 'UNDECIMO'       then '11'
+	when GRA.codigo= 'UNDECIMO-BACH'  then '11'
+	END )+ m.seccion from MX_Matricula m
+	inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico where m.idestudiante=@idestudiante and m.unineg=@uniNeg)
+ end),
+ @mesMat money=
+ (case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=2 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=2 and cta.unineg=@uniNeg)
+ end)
+,@mesMar money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=3 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=3 and cta.unineg=@uniNeg)
+ end)
+,@mesAbr money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=4 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=4 and cta.unineg=@uniNeg)
+ end)
+,@mesMay money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=5 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=5 and cta.unineg=@uniNeg)
+ end)
+,@mesJun money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=6 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=6 and cta.unineg=@uniNeg)
+ end)
+,@mesJul money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=7 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=7 and cta.unineg=@uniNeg)
+ end)
+,@mesAgo money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=8 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=8 and cta.unineg=@uniNeg)
+ end)
+,@mesSep money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=9 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=9 and cta.unineg=@uniNeg)
+ end)
+,@mesOct money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=10 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=10 and cta.unineg=@uniNeg)
+ end)
+,@mesNov money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=11 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=11 and cta.unineg=@uniNeg)
+ end)
+,@mesDic money=
+(case
+ when @flg=1 then
+ (SELECT isnull(cta.monto,0) - isnull(cta.dsctobeca,0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=12 and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and mes=12 and cta.unineg=@uniNeg)
+ end)
+,@deuda money=
+(case
+ when @flg=1 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and cta.idestudiante=@idestudiante and cta.unineg=@uniNeg)
+ when @flg=0 then
+ (SELECT isnull(sum(isnull(cta.monto,0) - isnull(cta.dsctobeca,0)),0) FROM MT_CtasxCobrar cta where cta.idtipostatusctacte=@idtipostatusctacte and convert(varchar,fechavenc,103)<=@fecha and anio=@anio and cta.unineg=@uniNeg)
+ end)
+
+select
+'REPORTE DE SALDOS DE PENSIONES '+ CONVERT(VARCHAR(4),@anio)+' AL ' + CONVERT(VARCHAR(15),@fecha) as titulo,
+@id as identificador,
+@nombre as nombre,
+CONVERT(varchar, CAST(isnull(@mesMat,0) AS money), 1)  as matricula,
+CONVERT(varchar, CAST(isnull(@mesMar,0) AS money), 1)   as marzo,
+CONVERT(varchar, CAST(isnull(@mesAbr,0) AS money), 1)   as abril,
+CONVERT(varchar, CAST(isnull(@mesMay,0) AS money), 1)   as mayo,
+CONVERT(varchar, CAST(isnull(@mesJun,0) AS money), 1)   as junio,
+CONVERT(varchar, CAST(isnull(@mesJul,0) AS money), 1)  as julio,
+CONVERT(varchar, CAST(isnull(@mesAgo,0) AS money), 1)   as agosto,
+CONVERT(varchar, CAST(isnull(@mesSep,0) AS money), 1)   as septiembre,
+CONVERT(varchar, CAST(isnull(@mesOct,0) AS money), 1)   as octubre,
+CONVERT(varchar, CAST(isnull(@mesNov,0) AS money), 1)   as noviembre,
+CONVERT(varchar, CAST(isnull(@mesDic,0) AS money), 1)   as diciembre,
+CONVERT(varchar, CAST(isnull(@deuda,0) AS money), 1)   as deuda]]>
+	</queryString>
+	<field name="titulo" class="java.lang.String"/>
+	<field name="identificador" class="java.lang.String"/>
+	<field name="nombre" class="java.lang.String"/>
+	<field name="matricula" class="java.lang.String"/>
+	<field name="marzo" class="java.lang.String"/>
+	<field name="abril" class="java.lang.String"/>
+	<field name="mayo" class="java.lang.String"/>
+	<field name="junio" class="java.lang.String"/>
+	<field name="julio" class="java.lang.String"/>
+	<field name="agosto" class="java.lang.String"/>
+	<field name="septiembre" class="java.lang.String"/>
+	<field name="octubre" class="java.lang.String"/>
+	<field name="noviembre" class="java.lang.String"/>
+	<field name="diciembre" class="java.lang.String"/>
+	<field name="deuda" class="java.lang.String"/>
+	<field name="nro" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="10" splitType="Stretch">
+			<textField>
+				<reportElement uuid="f6830c7b-a1d4-45c5-bb74-ce6edc28dc61" x="17" y="0" width="26" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{identificador}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="93745c35-b1c1-4eed-b92d-23bcbd3f725f" x="50" y="0" width="135" height="9"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="5258dbcc-2c17-4da4-a713-810c52ba5a00" x="192" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{matricula}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="3d3437b3-3bd5-4b5c-ba83-31e9b32a0dec" x="221" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{marzo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="06fb1918-d098-4762-a3e2-ef1fcf3021c6" x="254" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{abril}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="910e97aa-ec2b-4ce1-a94c-563b4142285f" x="287" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mayo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4cbe6612-4ebf-4973-9039-b116972efb3b" x="320" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{junio}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="09c20c96-c20a-4e95-883a-48e9980cc07f" x="353" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{julio}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4fe4d6ae-4c4c-437b-b4d1-3332340e595d" x="386" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{agosto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="c35a6bfd-f1dc-4640-b2f0-40c2b72a2261" x="419" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{septiembre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="9611b4cd-73a8-430b-b394-aa35cbad7cd8" x="452" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{octubre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="6c657172-d003-4786-9fa8-1a2b8b777eab" x="485" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{noviembre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="f81d17df-51ce-4bef-bd3b-27bee5e4e21d" x="518" y="0" width="34" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{diciembre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="98260a6e-c17a-46df-bff0-e33986cc302b" x="0" y="0" width="16" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nro}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="f23ec27a-210a-4326-b7c9-356357322a16" x="18" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="d99dcf4a-4775-4fd8-837f-c311372057a6" x="185" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="8d96c37a-f790-4735-916d-729c9ef7e430" x="44" y="0" width="1" height="9"/>
+				<graphicElement>
+					<pen lineWidth="1.0"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement uuid="9ada0bd5-eb7a-4868-bfdf-eef4ecdff83f" x="221" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="8a193210-6a90-4f0c-b328-a0ebb3b4b390" x="254" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="31eab330-f40f-4f51-95ab-dbc5bc7146f6" x="287" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="11006e9d-4e6e-4494-bc0f-a1d37c5478f4" x="320" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="e0a58164-32b7-4cdf-9771-d04e56248eb9" x="353" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="73956a7c-0052-4e85-a8eb-a88acc0a7daa" x="386" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="8d1426a5-bf24-41ce-a0f7-3d103ea12731" x="419" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="69778a76-7108-4e12-9adb-949a6458ef42" x="452" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="e9a3bcd9-cbcd-48c9-9426-5ae7c9ba6e05" x="485" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="2b13e87b-1611-4e11-a13f-636f0cfc8a47" x="518" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="62521161-0323-4d23-b232-2bb7c74a0570" x="554" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="69722917-e12c-4dc7-8fa1-dd16cfff2768" x="0" y="0" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="dcc224c8-845b-470d-a9ec-f0077b0a5aac" x="0" y="9" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.0"/>
+				</graphicElement>
+			</line>
+		</band>
+	</detail>
+</jasperReport>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.EstudianteBloqueoDAO"> 
+    <sql id="consultaCampos" > 
+        SELECT 
+        rank() OVER (ORDER BY uni.nombreUniNeg ,GR.nombre 
+        ,N.nombre 
+        ,tipostatu.codigo 
+        ,bloqueo.motivo  
+        ,bloqueo.anio  ) as numero
+        ,bloqueo.idestudiantebloqueo as idEstudianteBloqueo
+        ,uni.unineg as uniNeg
+        ,est.idestudiante as idEstudiante
+        ,tipostatuEst.codigo as tipoStatusEstu
+        ,tipostatuEst.idcodigo as idTipoStatusEstu
+        ,tipostatu.codigo as tipoStatusEst
+        ,tipostatu.idcodigo as idTipoStatusEst
+        ,tipobloqueo.codigo as tipoBloqueo
+        ,tipoBloqueo.idcodigo as idTipoBloqueo 
+        ,bloqueo.motivo as motivo
+        ,bloqueo.responsable as responsable
+        ,bloqueo.fechabloqueo as fechaBloqueo
+        ,bloqueo.fechasolucion as fechaSolucion
+        ,bloqueo.anio as anio
+        ,bloqueo.creapor as creaPor
+        ,bloqueo.creafecha as creaFecha
+        ,bloqueo.modipor as modiPor
+        ,bloqueo.modiver as modiVer
+        ,uni.nombreUniNeg
+        ,p.apepat,p.apemat,P.nombre
+        ,CONCAT(p.apepat+' ',p.apemat+', ',P.nombre) AS nombreCompleto
+        ,p.idpersona as idPersona
+        ,gr.idgradoacademico as idGradoAcademico
+        ,GR.nombre AS gradoAcademico 
+        ,n.idnivelacademico as idNivelAcademico
+        ,N.nombre AS nivelGrado 
+        FROM MX_EstudianteBloqueo bloqueo
+        left join MO_UnidadNegocio uni on uni.unineg= bloqueo.unineg
+        left join MX_Estudiante est on est.idestudiante=bloqueo.idestudiante and uni.unineg= est.unineg
+        LEFT JOIN MX_Persona P ON P.idpersona = EST.idestudiante AND uni.unineg=P.unineg 
+        LEFT JOIN MX_GradoAcademico GR ON GR.idgradoacademico=EST.idgradohabilitado 
+        LEFT JOIN MX_NivelAcademico N ON N.idnivelacademico=GR.idnivelacademico 
+        left join MO_Codigo tipostatuEst on tipostatuEst.idcodigo= est.idtipostatusest
+        left join MO_Codigo tipostatu on tipostatu.idcodigo= bloqueo.idtipostatusest
+        left join MO_Codigo tipobloqueo on tipobloqueo.idcodigo= bloqueo.idtipostatusbloqueo
+    </sql>
+       
+    <resultMap id="bloqueoResultado" type="pe.marista.sigma.bean.EstudianteBloqueoBean" >
+        <id property="idEstudianteBloqueo" column="idEstudianteBloqueo" />
+        <result property="motivo" column="motivo" />
+        <result property="responsable" column="responsable" />
+        <result property="fechaBloqueo" column="fechaBloqueo" />
+        <result property="fechaSolucion" column="fechaSolucion" />
+        <result property="anio" column="anio"/> 
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <result property="numero" column="numero" />
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadResultado"/>
+        <association property="tipoStatusEstBean" column="idTipoStatusEst"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusResultado"/>
+        <association property="tipoStatusBloqueoBean" column="idTipoBloqueo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoBloqueoResultado"/>
+    </resultMap>
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante" /> 
+        <association property="tipoStatusEst" column="idTipoStatusEstu"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusResultadoEst"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>
+    </resultMap>
+    <resultMap id="unidadResultado" type="pe.marista.sigma.bean.UnidadNegocioBean" >
+        <id property="uniNeg" column="uniNeg" /> 
+        <id property="nombreUniNeg" column="nombreUniNeg" /> 
+    </resultMap>
+    <resultMap id="tipoStatusResultadoEst" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusEstu"/>
+        <result property="codigo" column="tipoStatusEstu"/>
+    </resultMap>
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nombreCompleto" column="nombreCompleto"/>
+    </resultMap>
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademico"/>
+        <result property="nombre" column="gradoAcademico"/> 
+        <association property="nivelAcademicoBean" column="idNivelAcademico"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelAcademicoResultado"/>
+    </resultMap>
+    <resultMap id="nivelAcademicoResultado" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNivelAcademico"/>
+        <result property="nombre" column="nivelGrado"/>
+    </resultMap>
+    <resultMap id="tipoStatusResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusEst"/>
+        <result property="codigo" column="tipoStatusEst"/>
+    </resultMap>
+    <resultMap id="tipoBloqueoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoBloqueo"/>
+        <result property="codigo" column="tipoBloqueo"/>
+    </resultMap>
+    <select id="obtenerBloqueoPorEstudiantes" resultMap="bloqueoResultado" parameterType="pe.marista.sigma.bean.EstudianteBloqueoBean">
+        <include refid="consultaCampos" />where bloqueo.uniNeg = #{unidadNegocioBean.uniNeg}  and est.idEstudiante= #{estudianteBean.idEstudiante}
+        order by bloqueo.idestudiantebloqueo asc
+    </select>
+    <select id="obtenerBloqueoFiltro" resultMap="bloqueoResultado" parameterType="pe.marista.sigma.bean.EstudianteBloqueoBean">
+        <include refid="consultaCampos" />where bloqueo.uniNeg = #{unidadNegocioBean.uniNeg}  
+        order by bloqueo.idestudiantebloqueo asc
+    </select>
+    <select id="obtenerEstudianteBloqueo" resultMap="bloqueoResultado" parameterType="pe.marista.sigma.bean.EstudianteBloqueoBean">
+        <include refid="consultaCampos" />where bloqueo.uniNeg = #{unidadNegocioBean.uniNeg}  and est.idEstudiante= #{estudianteBean.idEstudiante}
+    </select>
+    <select id="obtenerFiltroEstudianteMasivo" resultMap="bloqueoResultado" parameterType="pe.marista.sigma.bean.EstudianteBloqueoBean">
+        <include refid="consultaCampos" />
+        <where>      
+            bloqueo.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="anio != null and anio != 0">
+                and bloqueo.anio=#{anio} 
+            </if>       
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and bloqueo.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(p.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(p.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(p.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+                and n.idNivelAcademico = #{estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and gr.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if> 
+            <if test="tipoStatusEstBean.idCodigo != null and tipoStatusEstBean.idCodigo != 0">
+                and bloqueo.idTipoStatusEst = #{tipoStatusEstBean.idCodigo}
+            </if> 
+        </where>
+        order by fechabloqueo
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.EstudianteBloqueoBean"
+            useGeneratedKeys="true" >
+        insert into MX_EstudianteBloqueo(uniNeg,idestudiante,idtipostatusest,idtipostatusbloqueo,motivo,responsable,fechabloqueo,anio,creaPor,creafecha)
+        values(#{unidadNegocioBean.uniNeg}, #{estudianteBean.idEstudiante}, #{tipoStatusEstBean.idCodigo},#{tipoStatusBloqueoBean.idCodigo},#{motivo},#{responsable},
+        #{fechaBloqueo}, #{anio}, #{creaPor},getDate())
+        <selectKey keyProperty="idEstudianteBloqueo" order="AFTER" resultType="Integer">
+            SELECT max(idestudiantebloqueo) from MX_EstudianteBloqueo WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey> 
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.EstudianteBloqueoBean">
+        update
+        MX_EstudianteBloqueo
+        set
+        idtipostatusbloqueo = #{tipoStatusBloqueoBean.idCodigo},  
+        fechasolucion=#{fechaSolucion},
+        modipor=#{modiPor}
+        where uniNeg = #{unidadNegocioBean.uniNeg} and idEstudiante= #{estudianteBean.idEstudiante} and idestudiantebloqueo=#{idEstudianteBloqueo}
+    </update>
+    <select id="obtenerCabecera" parameterType="map" resultType="pe.marista.sigma.bean.reporte.EstudianteBloqueoRepBean" >
+        DECLARE @unineg varchar(6),@anio int
+        set @unineg=#{uniNeg}
+        set @anio=#{anio}
+        SELECT DISTINCT
+        'Alumnos Bloqueados del año '+convert(varchar,@anio) AS titulo,
+        U.nombreUniNeg,
+        U.RUC AS ruc,
+        CONCAT(P.apepat,' '+P.apemat,' '+P.nombre) AS nombreCompleto,
+        B.idestudiante AS idEstudiante ,
+        E.codigo AS codigoColegio,
+        G.NOMBRE AS grado
+        FROM MX_EstudianteBloqueo B
+        INNER JOIN MO_UnidadNegocio U ON U.unineg=B.unineg
+        INNER JOIN MX_Estudiante E ON E.idestudiante=B.idestudiante
+        INNER JOIN MX_Persona P ON P.idpersona=B.idestudiante
+        INNER JOIN MX_GRADOACADEMICO G ON G.IDGRADOACADEMICO=e.IDGRADOHABILITADO
+        where b.unineg=@unineg and anio=@anio
+        order by CONCAT(P.apepat,' '+P.apemat,' '+P.nombre) ASC
+    </select>
+    <select id="obtenerDetalle" parameterType="map" resultType="pe.marista.sigma.bean.reporte.EstudianteBloqueoRepBean" >
+        DECLARE @unineg varchar(6),@anio int,@idEstudiante varchar(15)
+        set @unineg=#{uniNeg}
+        set @anio=#{anio} 
+        set @idEstudiante=#{idEstudiante}
+        SELECT 
+        '(*)Responsable: '+b.responsable+' - Motivo: '+motivo+' - 
+        Día: '+convert(varchar, fechabloqueo,105)+' - Estado: '+c.codigo+ (case when fechasolucion is not null then ' el día: '+convert(varchar,fechasolucion,105 )
+        when fechasolucion is null then '' end) as completo
+        FROM MX_EstudianteBloqueo B
+        INNER JOIN MO_UnidadNegocio U ON U.unineg=B.unineg
+        INNER JOIN MX_Estudiante E ON E.idestudiante=B.idestudiante
+        INNER JOIN MX_Persona P ON P.idpersona=B.idestudiante
+        INNER JOIN MO_Codigo C ON C.idcodigo=B.idtipostatusbloqueo
+        where b.unineg=@unineg and anio=@anio   and b.idestudiante=@idEstudiante
+        order by b.motivo  ASC
+    </select>
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.marista.sigma.dao.EstudianteRetiroDAO">
+    <sql id="consultaCampos">
+        select 
+        uni.unineg as uniNeg,
+        er.anio as anio,
+        er.codigoalumno as codigoAlumno,
+        er.fecharetiro as fechaRetiro,
+        er.motivoretiro as motivoRetiro,
+        er.nroresolucion as nroResolucion,
+        er.creapor as creaPor,
+        er.creafecha as creaFecha,
+        er.modipor as modiPor
+        from MX_EstudianteRetiros er
+        inner join MO_UnidadNegocio uni on uni.unineg=er.unineg
+        inner join MX_Estudiante e on e.codigo=er.codigoalumno
+    </sql>
+    <resultMap id="estudianteRetiroResultado" type="pe.marista.sigma.bean.EstudianteRetiroBean"> 
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="nroResolucion" column="nroResolucion"/>
+        <id property="estudianteBean.codigo" column="codigoAlumno"/>
+        <result property="anio" column="anio"/>
+        <result property="fechaRetiro" column="fechaRetiro"/>
+        <result property="motivoRetiro" column="motivoRetiro"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="estudianteBean" column="codigo"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="codigo" column="codigoAlumno"/> 
+    </resultMap> 
+    <select id="obtenerPorEstudiante" resultMap="estudianteRetiroResultado" parameterType="map">
+        <include refid="consultaCampos"/> 
+        Where uni.unineg = #{uniNeg} and er.anio=#{anio} and 
+        e.codigo=#{codigo}
+    </select>
+    <insert id="insertarEstudianteRetiro" parameterType="pe.marista.sigma.bean.EstudianteRetiroBean">
+        INSERT INTO MX_EstudianteRetiros
+        (
+        uniNeg
+        ,anio
+        ,codigoAlumno
+        ,fechaRetiro
+        ,motivoRetiro 
+        ,nroResolucion
+        ,creaPor
+        ,creaFecha
+        )
+        VALUES
+        (#{unidadNegocioBean.uniNeg},#{anio},#{estudianteBean.codigo},#{fechaRetiro},#{motivoRetiro}
+        ,#{nroResolucion},#{creaPor},getDate())
+    </insert>
+</mapper>

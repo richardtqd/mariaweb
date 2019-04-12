@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.FalloDAO">
+    <sql id="consultaCampos" >
+        select 
+        f.unineg,
+        f.codigo,
+        f.discente,
+        f.descripcion,
+        e.idestudiante,
+        f.creafecha,
+        f.creapor,
+        f.idprocesobanco,
+        m.anio,
+        uni.unineg,
+        uni.nombreUniNeg,
+        uni.RUC,
+        uni.fecfundacion,
+        e.codigo as codigoColegio
+        from MT_FALLO f
+        inner join MX_Estudiante e on f.codigo = e.codigo and f.unineg = e.unineg  
+        inner join MX_Matricula m on e.idestudiante = m.idestudiante and e.unineg = m.unineg
+        inner join MX_Persona p on e.idestudiante = p.idpersona and e.unineg = p.unineg
+        inner join MO_UnidadNegocio uni on f.unineg = uni.unineg 
+    </sql>
+    
+    <!-- FALLO RESULTADO -->
+    <resultMap id="falloResultado" type="pe.marista.sigma.bean.FalloBean" >
+        <result property="codigo" column="codigo" />
+        <result property="descripcion" column="descripcion" />
+        <result property="discente" column="discente" />
+        <result property="creaFecha" column="creafecha" />
+        <result property="creaPor" column="creapor" />
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+    </resultMap>
+    
+    <!-- UNIDAD DE NEGOCIO RESULTADO -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>
+    
+    <!-- ESTUDIANTE RESULTADO -->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante"/>
+        <id property="unidadNegocioBean" column="uniNegEst"/>
+        <result property="codigo" column="codigoColegio"/>   
+    </resultMap>
+    
+    <!-- CONSULTAS -->
+    <select id="obtenerPorUniNeg" resultMap="falloResultado" parameterType="pe.marista.sigma.bean.FalloBean" >
+        <include refid="consultaCampos" />
+        WHERE f.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="filtrarFallo" resultMap="falloResultado" parameterType="pe.marista.sigma.bean.FalloBean" >
+        <include refid="consultaCampos" />
+        <where>
+            f.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="codigo != null and codigo != '' " >
+                and f.codigo like concat('%',#{codigo},'%')
+            </if>
+            <if test="estudianteBean.idEstudiante != null and estudianteBean.idEstudiante != '' " >
+                and e.idestudiante like concat('%',#{estudianteBean.idEstudiante},'%')
+            </if>
+            <if test="discente != null and discente != '' " >
+                and f.discente like concat('%',#{discente},'%')
+            </if>
+            order by f.codigo
+        </where>
+    </select>
+    
+</mapper>  

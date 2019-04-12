@@ -1,0 +1,335 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{estudianteMB.cargarFormulario()}">
+            <div>
+                <p:layout id="layEst" fullPage="false"  style="width:1300px;height:750px" styleClass="centrado">
+                    <p:layoutUnit id="pnlBuscadorPost" position="west" size="765" header="#{msgs.etiquetaBuscadorEstudiante}" resizable="false" closable="false" collapsible="true" effect="drop" collapsed="#{estudianteMB.estudianteBean.collapsed}" effectSpeed="500" >
+                        <div>
+                            <h:panelGrid styleClass="centrado">
+                                <h:form id="frmDatosPostulante">
+                                    <h:panelGrid  id="pnlTablaPostulante">
+                                        <p:panel styleClass="centrado"  style="width: 675px" toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}" >
+                                            <h:panelGrid columns="2" styleClass="centrado">
+                                                <h:panelGrid columns="2" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}">                                          
+                                                    <h:outputLabel value="#{msgs.etiquetaCole}" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}"/>
+                                                    <h:outputLabel value=" " style="color: red" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}"/>
+                                                </h:panelGrid>
+                                                <p:selectOneMenu value="#{estudianteMB.estudianteFiltroBean.personaBean.unidadNegocioBean.uniNeg}" required="true" style="width: 315px" filter="true" filterMatchMode="contains" panelStyle="width:350px" styleClass="resetSelect" rendered="#{estudianteMB.personalBean.flgSuperAdmin==true}" label="#{msgs.etiquetaCole}">
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{estudianteMB.listaUnidadNegocioBean}" var="un" itemLabel="#{un.nombreUniNeg}" itemValue="#{un.uniNeg}"/>
+                                                </p:selectOneMenu>
+                                                <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                                <p:inputText value="#{estudianteMB.estudianteFiltroBean.codigo}" size="28" maxlength="30"/>  
+                                                <h:panelGrid columns="2"> 
+                                                    <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                                </h:panelGrid>
+                                                <p:inputText value="#{estudianteMB.estudianteFiltroBean.personaBean.idPersona}" size="15" maxlength="15"/>
+                                                <h:outputLabel value="#{msgs.etiquetaApePat}" />
+                                                <p:inputText value="#{estudianteMB.estudianteFiltroBean.personaBean.apepat}" size="28" maxlength="30"/>  
+                                                <h:outputLabel value="#{msgs.etiquetaApeMat}" />
+                                                <p:inputText value="#{estudianteMB.estudianteFiltroBean.personaBean.apemat}"  size="28" maxlength="30" /> 
+                                                <h:outputLabel value="#{msgs.campoPeriodo}: "/>
+                                                <p:spinner id="minMax" value="#{estudianteMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="1">
+                                                </p:spinner>
+                                                <h:panelGrid styleClass="centrado" columns="1" id="mey">
+                                                    <h:panelGroup>
+                                                        <h:outputLabel value="#{msgs.etiquetaReporteBloqueados} - #{estudianteMB.anio}"  styleClass="negrita"/> 
+                                                        <div align="center"> 
+                                                            <h:commandLink action="#{estudianteMB.imprimirTodosPdfGeneral()}" target="_blank">
+
+                                                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                                            </h:commandLink>
+                                                        </div>
+                                                    </h:panelGroup>
+                                                </h:panelGrid>
+                                            </h:panelGrid>
+                                            <h:panelGrid styleClass="centrado" columns="2">
+                                                <p:commandButton value="#{msgs.botonBuscar}" action="#{estudianteMB.obtenerFiltroEstudiante()}" update="pnlTablaPostulante2,msg"/>
+                                            </h:panelGrid>
+                                            <p:messages autoUpdate="false" id="msg" />
+                                        </p:panel>
+                                    </h:panelGrid>
+                                    <h:panelGrid id="pnlTablaPostulante2" styleClass="centrado"> 
+                                        <p:dataTable id="dgPostulante" value="#{estudianteMB.listaEstudianteBean}" widgetVar="dgPostulante" 
+                                                     paginator="true"
+                                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                                     rowsPerPageTemplate="10,20"
+                                                     selectionMode="single"
+                                                     paginatorPosition="bottom" rowIndexVar="n" selection="#{estudianteMB.estudianteBean}" 
+                                                     var="estudiante" rowKey="#{estudiante}"  rows="#{estudianteMB.numRegistrosTablasPorFiltro}" 
+                                                     rendered="#{not empty estudianteMB.listaEstudianteBean}" 
+                                                     style="width: 615px;font-size:14px !important;margin-bottom:0">
+                                            <p:ajax event="rowSelect" listener="#{estudianteMB.rowSelectBloqueo}" update=":tabDatosPostulante,:pnlDatosBasico" />
+                                            <f:facet name="header" >
+                                                <h:outputText value="#{msgs.etiquetaEstudiantes}" />  
+                                            </f:facet>
+                                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                                <center>
+                                                    <h:outputText value="#{n+1}" />
+                                                </center>
+                                            </p:column>
+                                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.idPersona}" >
+                                                <h:outputText value="#{estudiante.personaBean.idPersona}"/>
+                                            </p:column>
+                                            <p:column headerText="#{msgs.etiquetaCodigo} #{msgs.etiquetaCole}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.codigo}" >
+                                                <h:outputText value="#{estudiante.codigo}"/>
+                                            </p:column>
+                                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{estudiante.personaBean.nombre}">
+                                                <h:outputText value="#{estudiante.personaBean.nombreCompletoDesdeApellidos}"/>
+                                            </p:column>
+                                            <p:column headerText="#{msgs.etiquetaGrad}" filterMatchMode="contains" width="6%" styleClass="siseFontTable3  " sortBy="#{estudiante.personaBean.apepat}" >
+                                                <h:outputText value="#{estudiante.gradoHabilitado.nombre}" />
+                                            </p:column> 
+                                        </p:dataTable>
+                                    </h:panelGrid>
+                                </h:form>
+                            </h:panelGrid>
+                        </div>
+                    </p:layoutUnit>
+                    <p:layoutUnit position="center" styleClass="centrado">
+                        <div>
+                            <h:outputLabel value="#{msgs.flecha}" styleClass="requerido black "/>
+                            <h:outputLabel value="#{msgs.etiquetaBuscador}" styleClass="black siseFontGrid5"/>
+                            <h:panelGrid styleClass="centrado" id="pnlDatosPostulante" >
+                                <p:panel header="#{msgs.tituloFichaEst}" style="width: 1100px">
+                                    <h:panelGrid id="pnlDatosBasico" columns="4"  > 
+                                        <p:graphicImage url="/#{estudianteMB.estudianteBean.foto}" 
+                                                        width="100" height="110" cache="false" styleClass="foto"/>  
+                                        <f:metadata>
+                                            <f:viewParam name="idPersona" value="#{estudianteMB.estudianteBean.personaBean.idPersona}" />
+                                        </f:metadata>
+                                        <h:panelGrid columns="3" styleClass="siseFont1">
+                                            <h:outputLabel value="#{msgs.etiquetaNombre}" styleClass="negrita"/>
+                                            <h:outputLabel value=":" styleClass="negrita"/>
+                                            <h:outputLabel  value="#{estudianteMB.estudianteBean.personaBean.nombreCompleto}" styleClass="black"/> 
+                                            <h:outputLabel value="#{msgs.etiquetaCodigo} " styleClass="negrita"/>
+                                            <h:outputLabel value=":" styleClass="negrita"/>
+                                            <h:outputLabel value="#{estudianteMB.estudianteBean.personaBean.idPersona}"  styleClass="black" />
+                                            <h:outputLabel value="#{msgs.etiquetaCodigoCol}" styleClass="negrita"/>
+                                            <h:outputLabel value=":" styleClass="negrita"/>
+                                            <h:outputLabel value="#{estudianteMB.estudianteBean.codigo}"  styleClass="black" />
+                                            <br></br>
+                                            <br></br>
+                                            <br></br>
+                                        </h:panelGrid> 
+                                        <h:panelGrid columns="3" styleClass="siseFont1">
+                                            <h:outputLabel value="#{msgs.etiquetaNivelAcademico}" styleClass="negrita"/>
+                                            <h:outputLabel value=":" styleClass="negrita"/>
+                                            <h:outputLabel  value="#{estudianteMB.estudianteBean.gradoHabilitado.nombre}" styleClass="black"/> 
+                                            <h:outputLabel value="#{msgs.etiquetaSeccion} " styleClass="negrita"/>
+                                            <h:outputLabel value=":" styleClass="negrita"/>
+                                            <h:outputLabel value="#{estudianteMB.estudianteBean.seccion}"  styleClass="black" /> 
+                                        </h:panelGrid> 
+                                    </h:panelGrid>
+                                    <p:tabView dynamic="true" cache="true" id="tabDatosPostulante" >
+
+                                        <p:tab title="#{msgs.etiquetaDatosBloqueo}" id="mey">
+                                            <h:form id="frmDatosEstudianteBloqueo">
+                                                <center>
+                                                    <h:panelGrid columns="2" id="pnlEstudianteBloqueo" cellpadding="3" >
+                                                        <p:panel header="#{msgs.etiquetaSitActual}">
+                                                            <h:panelGrid columns="3" styleClass="siseFontGrid3" id="pnlBlo">
+                                                                <h:panelGrid columns="3" styleClass="siseFontGrid5" >
+                                                                    <h:outputLabel value="#{msgs.etiquetaStatusGra}:" styleClass="negrita" />
+                                                                    <h:outputText value=" " styleClass="requerido"/>
+                                                                    <p:selectOneMenu value="#{estudianteMB.estudianteBloqueoBean.tipoStatusEstBean.idCodigo}"    label="#{msgs.etiquetaStatusGra}" style="width: 250px" panelStyle="width:250px" required="true">
+                                                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                        <f:selectItems value="#{estudianteMB.listaStatusEstBlo}" var="statusEst" itemLabel="#{statusEst.codigo}" itemValue="#{statusEst.idCodigo}"/>
+                                                                    </p:selectOneMenu> 
+                                                                    <h:outputLabel value="#{msgs.etiquetaFechaBloqueo}:" styleClass="negrita"/>
+                                                                    <h:outputText value="" styleClass="requerido"/>
+                                                                    <p:inputText value="#{estudianteMB.estudianteBloqueoBean.fechaBloqueo}" label="#{msgs.etiquetaFechaBloqueo}"  size="5" maxlength="2" >
+                                                                        <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}" />
+                                                                    </p:inputText>
+                                                                    <h:outputLabel value="#{msgs.etiquetaMotivo}:" styleClass="negrita"/>
+                                                                    <h:outputText value="" styleClass="requerido"/>
+                                                                    <p:inputTextarea id="txtAreaMotivo" value="#{estudianteMB.estudianteBloqueoBean.motivo}" 
+                                                                                     rows="3" cols="40"  maxlength="100" autoResize="false" label="#{msgs.etiquetaMotivo}" required="true" /> 
+                                                                </h:panelGrid>
+                                                                <h:panelGrid columns="1" styleClass="siseFontGrid5" >
+                                                                    <h:panelGrid columns="4" styleClass="siseFontGrid5" id="pnlSoli">
+                                                                        <h:outputLabel value="#{msgs.etiquetaResponsable}" styleClass="negrita"  />
+                                                                        <h:outputText value="*" styleClass="requerido"/>
+                                                                        <p:inputText id="txtSolicitante" value="#{estudianteMB.estudianteBloqueoBean.responsable}" readonly="true"
+                                                                                     label="#{msgs.etiquetaResponsable}" size="35" onfocus="foco();" required="true"/> 
+                                                                        <p:commandLink id="btnBuscarAutoPer1" actionListener="#{estudianteMB.settearTipoSoli('solicitante')}" oncomplete="PF('popSoli').show();" 
+                                                                                       process="@this" update=":frmBuscarAutoPer1:pnlFiltro,:frmBuscarAutoPer1:pnlFiltro2,:frmBuscarAutoPer1:pnlTablaAutoPer1" 
+                                                                                       rendered="#{estudianteMB.flgGestorSoli==false}">
+                                                                            <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                                                            <p:ajax event="click" listener="#{legajoMB.limpiarPersonalFiltro()}" update=":frmBuscarAutoPer1:pnlGeneral,:frmBuscarAutoPer1:pnlTablaAutoPer1"/>
+                                                                        </p:commandLink> 
+
+
+                                                                        <h:outputLabel value="#{msgs.etiquetaUnidOrg}" styleClass="negrita"/>
+                                                                        <h:outputText  styleClass="requerido" value="*"/>
+                                                                        <p:inputText id="txtUniOrg" value="#{estudianteMB.estudianteBloqueoBean.personalBean.unidadOrganicaBean.nombreUniOrg==null ?'-' :estudianteMB.estudianteBloqueoBean.personalBean.unidadOrganicaBean.nombreUniOrg}" readonly="true"/>
+                                                                        <h:inputHidden value="#{estudianteMB.estudianteBloqueoBean.personalBean.idPersonal}"/> 
+                                                                        <h:inputHidden value="#{estudianteMB.estudianteBloqueoBean.personalBean.unidadOrganicaBean.idUniOrg}"/>
+                                                                    </h:panelGrid>
+                                                                </h:panelGrid>
+                                                            </h:panelGrid>
+                                                            <h:panelGrid styleClass="centrado" columns="2">
+                                                                <p:commandButton actionListener="#{estudianteMB.guardarEstudianteBloqueo()}" 
+                                                                                 update=":tabDatosPostulante:frmRegistroBloqueos:pnlBloqueos,:tabDatosPostulante:frmDatosEstudianteBloqueo,:pnlDatosBasico,msgsAddEstInfo2"      
+                                                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" disabled="#{estudianteMB.estudianteBean.personaBean.idPersona == null}"
+                                                                                 value="#{msgs.botonGrabar}">
+                                                                </p:commandButton>
+                                                                <p:commandButton actionListener="#{estudianteMB.limpiarEstudianteBloqueo()}"                                                             
+                                                                                 value="#{msgs.botonLimpiar}" process="@this" update=":tabDatosPostulante:frmDatosEstudianteBloqueo">
+                                                                </p:commandButton>
+                                                            </h:panelGrid>
+                                                            <p:growl id="msgsAddEstInfo2" showDetail="true" showSummary="true"/>
+                                                        </p:panel>
+                                                    </h:panelGrid>
+                                                </center>
+                                            </h:form>
+                                            <h:form id="frmRegistroBloqueos">
+                                                <h:panelGrid id="pnlBloqueos" columns="1" styleClass="centrado" >
+                                                    <p:dataTable value="#{estudianteMB.listaEstudianteBloqueoBean}" paginator="true" 
+                                                                 var="bloqueo" id="tblBloq" rows="6" editable="true"  editMode="cell"
+                                                                 rendered="#{not empty estudianteMB.listaEstudianteBloqueoBean}" 
+                                                                 style="width:1000px; font-size: 10px;margin-bottom:20px" rowIndexVar="n"> 
+                                                        <p:ajax event="cellEdit" listener="#{estudianteMB.actualizarTablaBloqueo(bloqueo,n)}"
+                                                                update=":tabDatosPostulante:frmRegistroBloqueos:tblBloq,:pnlDatosBasico"  process="@this" />  
+                                                        <f:facet name="header" >
+                                                            <h:outputText value="#{msgs.etiquetaBloqueo}" />  
+                                                        </f:facet>    
+                                                        <p:column  class="nombre2Filtro"  headerText="#{msgs.etiquetaStatusGra}" filterMatchMode="contains" width="6">
+                                                            <center><h:outputText value="#{bloqueo.tipoStatusEstBean.codigo}"  style=" font-size: 12px"/></center>
+                                                        </p:column>     
+                                                        <p:column styleClass="nombre5Filtro"  headerText="#{msgs.etiquetaMotivo}" filterMatchMode="contains" width="50"> 
+                                                            <center><h:outputText value="#{bloqueo.motivo}"  style=" font-size: 12px"/></center>
+                                                        </p:column>
+                                                        <p:column  class="nombre5Filtro" headerText="#{msgs.etiquetaResponsable}" filterMatchMode="contains" width="40">
+                                                            <h:outputText  value="#{bloqueo.responsable}" style=" font-size: 12px" />
+                                                        </p:column>
+                                                        <p:column  class="nombre5Filtro" headerText="#{msgs.etiquetaFechaBloqueo}" filterMatchMode="contains" width="5">
+                                                            <center> 
+                                                                <h:outputText value="#{bloqueo.fechaBloqueo}" style="font-size: 12px" >
+                                                                    <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}"/>
+                                                                </h:outputText>
+                                                            </center>
+                                                        </p:column>  
+                                                        <p:column   class="nombre5Filtro" headerText="#{msgs.etiquetaStatusProceso}" filterMatchMode="contains" width="6">
+                                                            <p:cellEditor> 
+                                                                <f:facet name="output">
+                                                                    <center>  <h:outputText value="#{bloqueo.tipoStatusBloqueoBean.codigo}"  style="font-size: 12px"  /></center>
+                                                                </f:facet>
+                                                                <f:facet name="input">
+                                                                    <p:selectOneMenu id="listaStatusBloqueo" value="#{bloqueo.tipoStatusBloqueoBean.idCodigo}"  filter="true" label="#{msgs.etiquetaStatusProceso}" style="width: 250px">
+                                                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                        <f:selectItems value="#{estudianteMB.listaStatusBloqueo}" var="bloq" itemValue="#{bloq.idCodigo}" itemLabel="#{bloq.codigo}"/>
+                                                                    </p:selectOneMenu > 
+                                                                </f:facet> 
+                                                            </p:cellEditor>
+                                                        </p:column>  
+                                                        <p:column  id="ggg" class="nombre5Filtro" headerText="#{msgs.etiquetaFechaResuelto}" filterMatchMode="contains" width="5">
+                                                            <center>
+                                                                <h:outputText id="fechaSolucion"  value="#{bloqueo.fechaSolucion}" styleClass="centrado"  style=" font-size: 12px">
+                                                                    <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}"/>
+                                                                </h:outputText> 
+                                                            </center>
+                                                        </p:column>   
+                                                    </p:dataTable>  
+                                                </h:panelGrid> 
+                                            </h:form>
+                                        </p:tab>
+                                    </p:tabView>
+                                </p:panel>
+                            </h:panelGrid>
+                        </div>
+                    </p:layoutUnit>
+                </p:layout>
+            </div> 
+            <h:form id="frmBuscarAutoPer1">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popSoli" resizable="false" modal="true" styleClass="autoWidthDialog" position="center">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid id="pnlGeneral" styleClass="centrado" >
+                                <h:panelGrid styleClass="centrado">  
+                                    <h:panelGrid columns="2" styleClass="centrado" id="pnlFiltroAutoPer1">
+                                        <h:outputLabel value="#{msgs.etiquetaCodigo} " /> 
+                                        <p:inputText value="#{legajoMB.personalFiltroBean.codPer}" size="15" maxlength="15"/>
+
+                                        <h:outputLabel value="#{msgs.etiquetaApePat}"/> 
+                                        <p:inputText value="#{legajoMB.personalFiltroBean.apepat}" size="28" maxlength="30"/>  
+
+                                        <h:outputLabel value="#{msgs.etiquetaApeMat}"/> 
+                                        <p:inputText  value="#{legajoMB.personalFiltroBean.apemat}" size="28" maxlength="30"/>
+
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}"/> 
+                                        <p:inputText value="#{legajoMB.personalFiltroBean.nombre}" size="28" maxlength="30"/>  
+
+                                        <h:outputLabel value="#{msgs.etiquetaUniOrg}"/>  
+                                        <p:selectOneMenu value="#{legajoMB.personalFiltroBean.unidadOrganicaBean.idUniOrg}"   label="#{msgs.etiquetaUnidOrg}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{legajoMB.listaUniNegUniOrgBean}" var="uo" itemLabel="#{uo.unidadOrganicaBean.nombreUniOrg}" itemValue="#{uo.unidadOrganicaBean.idUniOrg}"/> 
+                                        </p:selectOneMenu>
+                                    </h:panelGrid> 
+                                    <h:panelGrid styleClass="centrado" columns="3">
+                                        <p:commandButton id="btnBuscar1" value="#{msgs.botonBuscar}" actionListener="#{legajoMB.obtenerFiltroPersonal()}" update=":frmBuscarAutoPer1:pnlGeneral,:frmBuscarAutoPer1:pnlTablaAutoPer1,msgP" />
+                                        <p:commandButton id="btnNuevo1"  value="#{msgs.botonNuevo}"  actionListener="#{legajoMB.limpiarPersonalFiltro()}" update=":frmBuscarAutoPer1:pnlGeneral,:frmBuscarAutoPer1:pnlTablaAutoPer1,msgP"/>
+                                        <p:commandButton id="btnCerrar1"  value="#{msgs.botonCerrar}"  oncomplete="PF('popSoli').hide();" />
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                            </h:panelGrid> 
+                            <p:messages autoUpdate="false" id="msgP" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro2" >
+                        <h:panelGrid  id="pnlTablaAutoPer1" styleClass="centrado" > 
+                            <p:dataTable id="tblPersonal" value="#{legajoMB.listaPersonalBean}" widgetVar="tblPersonal"
+                                         selectionMode="single" 
+                                         paginator="true"
+                                         paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                         rowsPerPageTemplate="5,10"
+                                         selection="#{legajoMB.personalBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                         var="personal" rowKey="#{personal.idPersonal}"  rows="10" 
+                                         rendered="#{not empty legajoMB.listaPersonalBean}" 
+                                         style="width: 725px;font-size:14px !important;margin-bottom:0"> 
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaPersonal}" />  
+                                </f:facet>
+                                <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{personal.idPersona}" >
+                                    <h:outputText value="#{personal.codPer}"/>
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaAbApePaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apepat}" >
+                                    <h:outputText value="#{personal.apepat}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAAbApeMaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apemat}">
+                                    <h:outputText value="#{personal.apemat}" />
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.nombre}">
+                                    <h:outputText value="#{personal.nombre}"/>
+                                </p:column>
+                                <p:column style="text-align:center;width:60px" width="6%" >
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                    </f:facet>
+                                    <p:commandLink id="cmdSelA1" actionListener="#{legajoMB.ponerPersonaEnEstudianteBloqueoResponsable(personal,estudianteMB.flgSoli,estudianteMB.idTipoSol)}"
+                                                   update=":tabDatosPostulante:frmDatosEstudianteBloqueo:txtUniOrg,:tabDatosPostulante:frmDatosEstudianteBloqueo:pnlSoli"
+                                                   oncomplete="PF('popSoli').hide();">
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipAdd1" for="cmdSelA1" value="#{msgs.toolTipSeleccionar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid> 
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

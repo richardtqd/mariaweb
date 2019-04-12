@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.OrdenCompraDAO">  
+    
+    <sql id="consultaCampos">
+        select   oc.idordencompra as idOrdenCompra,
+        right(replicate('0', 3) + rtrim(oc.nroCompra), 3) as nroCompra ,
+        oc.idOrdenCompra,oc.anio,oc.fechaorden,un.unineg,un.nombreUniNeg,oc.flgAdelanto as flgAdelanto, oc.importeadelanto as importeAdelanto,
+        en.ruc,en.nombre,en.direccion,tfp.idcodigo as idTipoFormaPago,tfp.codigo as tipoFormaPago, oc.nombreCheque as nombreCheque,
+        tor.idcodigo as idTipoCategoria,tor.codigo as tipoCategoria,tp.idcodigo as idTipoPrioridad, oc.nrocompra as nroCompra,
+        tp.codigo as tipoPrioridad,oc.obs,oc.creaPor,oc.creafecha,oc.modiPor,
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Material' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Servicio' then sum(det.importe*det.cantidad)
+        end
+        from ML_DetOrdenCompra det 
+        where det.idOrdenCompra = oc.idOrdenCompra and det.uniNeg=oc.uniNeg) as montoRef,
+        CONCAT(SUBSTRING((REPLACE((det.importe*det.cantidad),'.','')),1,4),'.0')   as montoCadaUnoMate,
+        CONCAT(SUBSTRING((REPLACE((det.importe),'.','')),1,4),'.0')   as montoCadaUnoSer
+        ,corec.codigo as tipoStatusRegC
+        ,coRec.idcodigo as idTipoStatusRegC
+        ,coti.idcotizacion as idCotizacion
+        ,enco.ruc as rucCotizacion,
+        enco.nombre as nombreEntidadCoti,
+        enco.direccion as direccionCoti
+        ,uni.unineg as uniNeg,
+        uni.nombreUniNeg,
+        cat.item as item, 
+        oc.fechaentrega as fechaEntrega,
+        oc.fechatermina as fechaTermina,
+        oc.atencion as atencion,
+        oc.lugarentrega as lugarEntrega,
+        pago.idcodigo as idTipoPago,
+        pago.codigo as tipoPago,
+        oc.importepropuesto as importePropuesto,
+        oc.nrocotipro as nroCotiPro
+        from ml_ordenCompra oc
+        left join MO_UnidadNegocio un on oc.unineg = un.unineg 
+        left join MO_Entidad en on oc.ruc = en.ruc  
+        left join MO_Codigo tfp on oc.idtipoformapago = tfp.idcodigo  
+        left join MO_Codigo tor on oc.idtipocategoria = tor.idcodigo 
+        left join MO_Codigo tp on oc.idtipoprioridad = tp.idcodigo  
+        left join ML_DetOrdenCompra det on oc.idordencompra= det.idordencompra   and oc.unineg = det.unineg 
+        left join ML_Requerimiento re on det.idrequerimiento = re.idrequerimiento and oc.unineg = re.unineg 
+        left join MO_Codigo coRec on coRec.idcodigo = oc.idtipostatusregc 
+        left join ML_Cotizacion coti on coti.idcotizacion = oc.idcotizacion  and oc.unineg = coti.unineg 
+        left join MO_Entidad enco on coti.ruc = en.ruc   
+        left join MO_UnidadNegocio uni on coti.unineg = uni.unineg
+        left join ML_Catalogo CAT on cat.idcatalogo = det.idcatalogo and det.unineg = oc.unineg 
+        left join MO_Codigo pago on pago.idCodigo = oc.idtipopago
+    </sql>
+    
+    <sql id="consultaBusqueda">
+        select  distinct
+        oc.idordencompra as idOrdenCompra,
+        right(replicate('0', 3) + rtrim(oc.nroCompra), 3) as nroCompra ,
+        oc.fechaorden, 		
+        en.ruc,
+        en.nombre,
+        en.direccion,
+        tor.idcodigo as idTipoCategoria,
+        tor.codigo as tipoCategoria,
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Material' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Servicio' then sum(det.importe*det.cantidad)
+        end
+        from ML_DetOrdenCompra det 
+        where det.idOrdenCompra = oc.idOrdenCompra and det.uniNeg=oc.uniNeg) as montoRef,
+        oc.importepropuesto as importePropuesto
+        from ml_ordenCompra oc
+        left join MO_UnidadNegocio un on oc.unineg = un.unineg 
+        left join MO_Entidad en on oc.ruc = en.ruc   
+        left join MO_Codigo tor on oc.idtipocategoria = tor.idcodigo  
+        left join MO_Codigo coRec on coRec.idcodigo = oc.idtipostatusregc  
+        left join ML_DetOrdenCompra det on oc.idordencompra= det.idordencompra   and oc.unineg = det.unineg 
+        left join ML_Requerimiento re on det.idrequerimiento = re.idrequerimiento and oc.unineg = re.unineg 
+		
+    </sql>
+    
+    <resultMap id="ordenResultado" type="pe.marista.sigma.bean.OrdenCompraBean">
+        <id property="idOrdenCompra" column="idOrdenCompra"/>
+        <result property="anio" column="anio"/>
+        <result property="fechaOrden" column="fechaOrden"/>
+        <result property="obs" column="obs"/>
+        <result property="fechaEntrega" column="fechaEntrega"/>
+        <result property="fechaTermina" column="fechaTermina"/>
+        <result property="importePropuesto" column="importePropuesto"/>
+        <result property="nombreCheque" column="nombreCheque"/>
+        <result property="flgAdelanto" column="flgAdelanto"/>
+        <result property="importeAdelanto" column="importeAdelanto"/>
+        <result property="montoRef" column="montoRef"/>
+        <result property="montoCadaUnoMate" column="montoCadaUnoMate"/>
+        <result property="montoCadaUnoSer" column="montoCadaUnoSer"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="idOrden" column="idOrden"/>
+        <result property="nroCompra" column="nroCompra"/>
+        <result property="atencion" column="atencion"/> 
+        <result property="lugarEntrega" column="lugarEntrega"/>
+        <result property="nroCotiPro" column="nroCotiPro"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+        <association property="tipoFormaPagoBean" column="idTipoFormaPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoFormaPagoResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaResultado"/>
+        <association property="tipoPagoBean" column="idTipoPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPagoResultado"/>
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadResultado"/>
+        <association property="tipoStatusRegCBean" column="idTipoStatusRegC"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusRegCResultado"/>
+        <association property="cotizacionBean" column="idCotizacion"
+                     javaType="pe.marista.sigma.bean.CotizacionBean"
+                     resultMap="cotizacionResultado"/>
+    </resultMap>
+    <resultMap id="cotizacionResultado" type="pe.marista.sigma.bean.CotizacionBean">
+        <id property="idCotizacion" column="idCotizacion"/>  
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultadoCoti"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultadoCoti"/>
+        <association property="tipoPagoBean" column="idTipoPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoFormaPagoResultadoCoti"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaResultadoCoti"/>  
+    </resultMap>
+    <resultMap id="negocioResultadoCoti" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap> 
+    <resultMap id="entidadResultadoCoti" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucCotizacion"/>
+        <result property="nombre" column="nombreEntidadCoti"/> 
+        <result property="direccion" column="direccionCoti"/> 
+    </resultMap>
+    <resultMap id="tipoFormaPagoResultadoCoti" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoFormaPagoCoti"/>
+        <result property="codigo" column="tipoFormaPagoCoti"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaResultadoCoti" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoriaCoti"/>
+        <result property="codigo" column="tipoCategoriaCoti"/>
+    </resultMap>  
+    <resultMap id="tipoPagoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPago"/>
+        <result property="codigo" column="tipoPago"/>
+    </resultMap>  
+    <resultMap id="tipoStatusRegCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusRegC"/>
+        <result property="codigo" column="tipoStatusRegC"/>
+    </resultMap>
+    <resultMap id="negocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <!--
+    <resultMap id="entidadSedeResultado" type="pe.marista.sigma.bean.EntidadSedeBean">
+        <id property="idEntidadSede" column="idEntidadSede"/>
+        <result property="nombre" column="entidadSede"/>
+        <association property="entidadBean" column="idEntidad"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+    </resultMap>-->
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombre"/>
+        <result property="direccion" column="direccion"/>
+    </resultMap>
+    <resultMap id="tipoFormaPagoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoFormaPago"/>
+        <result property="codigo" column="tipoFormaPago"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>
+    <resultMap id="tipoPrioridadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="tipoPrioridad"/>
+    </resultMap>
+   
+    <update id="cambiarEstadoOrdenCompraRegistrado" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        Update ML_OrdenCompra set 
+        idTipoStatusRegC = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusRegCBean.codigo} and idTipoCodigo=#{tipoStatusRegCBean.tipoCodigoBean.descripcion})
+        where idOrdenCompra = #{idOrdenCompra} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+   
+    <select id="obtenerPorFiltro" resultMap="ordenResultado" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        <include refid="consultaBusqueda" /> 
+        <where>         
+            oc.unineg =#{unidadNegocioBean.uniNeg}  and coRec.idCodigo = 19007
+            <if test="idOrdenCompra != null and idOrdenCompra != 0 ">
+                and oc.idOrdenCompra = #{idOrdenCompra}
+            </if>
+            <if test="anio != null and anio != 0 ">
+                and oc.anio = #{anio}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and oc.fechaorden >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[ 
+                and oc.fechaorden <= #{fechaFin}
+                ]]>
+            </if>
+        </where> 
+    </select>
+    <!--Listo todas las solicitudes de Servicio>-->
+    <select id="obtenerTodosSolDes" resultMap="ordenResultado" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        <include refid="consultaBusqueda" />
+        <where>         
+            oc.unineg =#{unidadNegocioBean.uniNeg}  and  tor.idcodigo = 18203 and coRec.idcodigo = 19006
+            or oc.unineg =#{unidadNegocioBean.uniNeg} and tor.idcodigo = 18203 and coRec.idcodigo = 19007 
+            <if test="idOrdenCompra != null and idOrdenCompra != 0 ">
+                and oc.idOrdenCompra = #{idOrdenCompra}
+            </if>
+            <if test="anio != null and anio != 0 ">
+                and oc.anio = #{anio}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and oc.fechaorden >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and oc.fechaorden <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by oc.idOrdenCompra desc
+      
+    </select>
+    <!--Listo todas las solicitudes menos las de Servicio>-->
+    <select id="obtenerTodosM" resultMap="ordenResultado" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        <include refid="consultaBusqueda" />
+        <where>         
+            oc.unineg =#{unidadNegocioBean.uniNeg} and coRec.idcodigo = 19007 and tor.idcodigo = 18202 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and oc.fechaorden >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and oc.fechaorden <= #{fechaFin}
+                ]]>
+            </if>
+            or oc.unineg =#{unidadNegocioBean.uniNeg} and tor.idcodigo = 18201 
+            
+            <if test="nroCompra != null and nroCompra != 0 ">
+                and oc.nroCompra = #{nroCompra}
+            </if>
+            <if test="anio != null and anio != 0 ">
+                and oc.anio = #{anio}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and oc.fechaorden >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and oc.fechaorden <= #{fechaFin}
+                ]]>
+            </if>
+        </where> 
+    </select>
+    
+    <select id="obtenerTodosMSol" resultMap="ordenResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where oc.unineg =#{unidadNegocioBean.uniNeg}  and tor.idcodigo = 18202 or tor.idcodigo = 18201
+        order by re.idrequerimiento desc
+    </select>
+    
+    <select id="obtenerTodosPorUniNeg" resultMap="ordenResultado" parameterType="String">
+        <include refid="consultaCampos" /> where oc.unineg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerPorId" resultMap="ordenResultado" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        <include refid="consultaCampos" />where oc.idOrdenCompra = #{idOrdenCompra}  and oc.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerListaPorId" resultMap="ordenResultado" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        <include refid="consultaCampos" />where oc.idOrdenCompra = #{idOrdenCompra} and oc.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerUltimo" resultType="Integer" parameterType="String" >
+        select isnull((max(nroCompra)),0) from ML_ordenCompra
+        WHERE oc.uniNeg =#{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.OrdenCompraBean"
+            useGeneratedKeys="true" keyProperty="idOrdenCompra" keyColumn="idOrdenCompra">
+        insert into ML_OrdenCompra (idOrdenCompra,unineg,ruc,idtipoformapago,idtipoCategoria,
+        anio,idtipoprioridad,fechaorden,obs,creaPor,creafecha,idtipostatusregc,idcotizacion,flgadelanto, importeadelanto,nombrecheque
+        ,fechaentrega,fechatermina,nrocompra,nrocotipro,atencion,idtipopago, lugarentrega,importepropuesto) 
+        values (0,#{unidadNegocioBean.uniNeg},#{entidadBean.ruc},
+        #{tipoFormaPagoBean.idCodigo},#{tipoCategoriaBean.idCodigo},
+        #{anio},#{tipoPrioridadBean.idCodigo},
+        #{fechaOrden},#{obs},#{creaPor},getDate(),#{tipoStatusRegCBean.idCodigo},#{cotizacionBean.idCotizacion},
+        #{flgAdelanto}, #{importeAdelanto}, #{nombreCheque},#{fechaEntrega},#{fechaTermina},#{nroCompra},#{nroCotiPro},#{atencion},
+        #{tipoPagoBean.idCodigo},#{lugarEntrega},#{importePropuesto})
+        <selectKey keyProperty="idOrdenCompra" order="AFTER" resultType="Integer">
+            SELECT max(idOrdenCompra) FROM ML_OrdenCompra WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    <insert id="insertarCotizacionOrden" parameterType="pe.marista.sigma.bean.OrdenCompraBean"
+            useGeneratedKeys="true" keyProperty="idOrdenCompra" keyColumn="idOrdenCompra">
+        insert into ML_OrdenCompra (idOrdenCompra,unineg,ruc,idtipoformapago,idtipoCategoria,
+        anio,idtipoprioridad,fechaorden,obs,creaPor,creafecha,idtipostatusregc,idcotizacion,nombrecheque) 
+        values (0,#{unidadNegocioBean.uniNeg},#{entidadBean.ruc},
+        #{tipoPagoBean.idCodigo},#{tipoCategoriaBean.idCodigo},
+        #{anio},#{tipoPrioridadBean.idCodigo},
+        #{fechaOrden},#{obs},#{creaPor},getDate(),#{tipoStatusRegCBean.idCodigo},#{cotizacionBean.idCotizacion}, #{nombreCheque})
+        <selectKey keyProperty="idOrdenCompra" order="AFTER" resultType="Integer">
+            SELECT max(idOrdenCompra) FROM ML_OrdenCompra WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        update ML_OrdenCompra
+        set 
+        ruc = #{entidadBean.ruc},
+        idtipoformapago = #{tipoFormaPagoBean.idCodigo},
+        idtipoCategoria = #{tipoCategoriaBean.idCodigo},
+        anio = #{anio},
+        idtipoprioridad = #{tipoPrioridadBean.idCodigo},
+        nombrecheque = #{nombreCheque},
+        fechaorden = #{fechaOrden},
+        obs = #{obs},
+        flgadelanto = #{flgAdelanto},
+        importeadelanto = #{importeAdelanto},
+        fechaentrega =#{fechaEntrega},
+        fechatermina =#{fechaTermina},
+        atencion=#{atencion},
+        importepropuesto=#{importePropuesto},
+        lugarentrega =#{lugarEntrega},
+        idtipopago=#{tipoPagoBean.idCodigo},
+        nrocotipro=#{nroCotiPro},
+        modiPor = #{modiPor}
+        where idOrdenCompra = #{idOrdenCompra} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </update>
+    <select id="obtenerUltimoOrden" resultType="String" parameterType="String" >
+        select
+        right(replicate('0', 3) + rtrim(isnull((max(nroCompra)),0)+1),3) as nroCompra from ML_OrdenCompra 
+        WHERE uniNeg=#{uniNeg} 
+    </select>  
+
+</mapper>

@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.ActividadCrDAO">  
+    
+    <sql id="consultaCampos"> 
+        SELECT 
+        acr.unineg
+        ,acr.iduniorg
+        ,acr.anio
+        ,acr.idobjoperativo
+        ,acr.idactividad as idActXCr
+        ,acr.iddetactividad
+        ,acr.cr
+        ,acr.idtipovalor
+        ,acr.cuenta
+        ,acr.valor
+        ,acr.creapor
+        ,acr.creafecha
+        ,acr.modipor
+        ,acr.modiver
+        ,acr.idObjOperativo as acrObj
+        ,ac.idactividad
+        ,ac.nombre as nomActividad 
+        ,da.idactividad as actDetAct
+        ,da.iddetactividad
+        ,da.importe
+        ,da.meta
+        ,da.mes
+        ,da.descripcion
+        ,da.idObjOperativo as objDetAct
+        ,acc.idactividad as idAct
+        ,acc.nombre as nomACt
+        ,acc.responsable as resACt
+        ,acc.idobjoperativo as objACt
+        ,acc.idindicador as indACt
+        ,acc.idtipounimed as tipoUAct
+        ,acc.idtipotarea as tipoTAct
+        ,acc.egreso as egrAct
+        ,acc.ingreso as ingAct
+        ,acc.meta as metaAct
+        ,obj.idobjoperativo as idObj
+        ,obj.nombre as nomObj
+        ,pl.cuenta as cuentaPlan
+        ,pl.nombre as nomPlan   
+        ,pl.nivel as nivPlan
+        ,pll.cuenta
+        ,pll.nombre
+        ,pll.nivel
+        ,cr.cr
+        ,cr.nombre
+        ,cr.nivel
+        ,tv.idCodigo as idTipoValor 
+        ,tv.codigo as nomTipoValor
+        FROM ME_ActividadCR acr
+        left join ME_Actividad ac on  acr.idactividad = ac.idactividad
+        left join ME_DetActividad da on acr.iddetactividad = da.iddetactividad
+        left join ME_Actividad acc on  da.idactividad = acc.idactividad
+        left join ME_ObjOperativo obj on acc.idobjoperativo = obj.idobjoperativo
+        left join MT_PlanContable pl on da.cuenta = pl.cuenta
+        left join MT_PlanContable pll on acr.cuenta = pl.cuenta
+        left join MO_Codigo tv on acr.idtipovalor = tv.idcodigo
+        left join MT_CentroResponsabilidad cr on acr.cr = cr.cr
+        left join ME_ObjOperativo ob on acr.idobjoperativo = ob.idobjoperativo 
+    </sql>
+    
+    <sql id="consultaCamposNew" >
+        select 
+        acr.unineg
+        ,acr.iduniorg
+        ,acr.anio
+        ,acr.idobjoperativo
+        ,acr.idactividad as idActXCr
+        ,acr.iddetactividad
+        ,acr.cr
+        ,acr.idtipovalor
+        ,acr.cuenta
+        ,acr.valor
+        ,acr.creapor
+        ,acr.creafecha
+        ,acr.modipor
+        ,acr.modiver
+        ,acr.idObjOperativo as acrObj
+        ,ac.idactividad
+        ,ac.nombre as nomActividad 
+        ,da.idactividad as actDetAct
+        ,da.iddetactividad
+        ,da.importe
+        ,da.meta
+        ,da.mes
+        ,da.descripcion
+        ,da.idObjOperativo as objDetAct
+        ,pl.cuenta as cuentaPlan
+        ,pl.nombre as nomPlan   
+        ,pl.nivel as nivPlan 
+        ,cr.cr
+        ,cr.nombre
+        ,cr.nivel
+        ,tv.idCodigo as idTipoValor 
+        ,tv.codigo as nomTipoValor
+        from ME_ActividadCR acr
+        inner join ME_Actividad ac on  acr.idactividad = ac.idactividad and ac.unineg = acr.unineg
+        inner join ME_DetActividad da on acr.iddetactividad = da.iddetactividad and da.unineg = acr.unineg 
+        inner join MT_PlanContable pl on acr.cuenta = pl.cuenta
+        left join MO_Codigo tv on acr.idtipovalor = tv.idcodigo
+        left join MT_CentroResponsabilidad cr on acr.cr = cr.cr
+    </sql>
+    
+    <sql id="consultaAlterna" >
+        select distinct cr.cr,cr.idactividad,cr.anio,a.nombre as nombreA,c.cr,c.nombre,o.nombre as nomOO from ME_ActividadCR cr
+        inner join ME_Actividad a on cr.idactividad = a.idactividad
+        inner join MT_CentroResponsabilidad c on cr.cr = c.cr
+        inner join ME_ObjOperativo o on cr.idobjoperativo = o.idobjoperativo
+        inner join ME_DetActividad da on  cr.idactividad = da.idactividad
+    </sql>
+    
+    <sql id="consultaPresupuesto" >
+        select 
+        ROW_NUMBER() over(order by da.cr) as count,
+        pl.cuenta as numCuenta,pl.nombre as nomPlanCu,cr.cr as cr,cr.nombre as nombreCR,SUM(ac.importe) as importe,
+        isnull(convert(varchar,(select p.presupuestoejec from ME_Presupuesto p where p.cuenta = pl.cuenta and p.unineg = da.unineg)),0) as ejecutado
+        from ME_ActividadCR da
+        inner join ME_DetActividad ac on da.cuenta = ac.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr = da.cr 
+        inner join MT_PlanContable pl on da.cuenta = pl.cuenta 
+    </sql>
+    
+     <!--  HISTORICO */ -->
+    <sql id="consultaHistorico" >
+        select idHistorico, porSatisfecho, porMedSatisfecho, porNoSatisfecho,anio from MC_Historico
+    </sql>
+    
+     <!--  LISTA ANIO */ -->
+    <sql id="listaAnio" >
+        select Distinct idAnio as 'anio' from MC_Anio
+    </sql>
+        
+    <!--  HISTORICO SATISFACCION */ -->
+    <sql id="consultaHistoricoSat" >
+        select 'POR SATISFECHO' AS 'satisfaccion',cast(avg(porSatisfecho) as decimal (6,2)) as 'valor' from MC_Historico
+        union all
+        select 'POR MED. SATISFECHO' AS 'satisfaccion',cast(avg(porMedSatisfecho) as decimal (6,2)) as 'valor' from MC_Historico
+        union all
+        select 'POR NO SATISFECHO' AS 'satisfaccion',cast(avg(porNoSatisfecho) as decimal (6,2)) as 'valor' from MC_Historico
+    </sql>
+    <sql id="consultaPresGrafico">
+        select distinct cr.cr,cr.nombre from ME_ActividadCR ac 
+        inner join MT_CentroResponsabilidad cr on ac.cr = cr.cr 
+    </sql>
+    
+    <sql id="consultaDibujoGrafo">
+        select 
+        ROW_NUMBER() over(order by da.cr) as count,
+        pl.cuenta as numCuenta,pl.nombre as nomPlanCu,cr.cr,cr.nombre as nombreCR,SUM(ac.importe) as importe 
+        from ME_ActividadCR da
+        inner join ME_DetActividad ac on da.cuenta = ac.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr = da.cr 
+        inner join MT_PlanContable pl on da.cuenta = pl.cuenta 
+    </sql>
+    
+    <!--Result Alterno-->
+    <resultMap id="resultAlterno" type="pe.marista.sigma.bean.ActividadCrBean" >
+        <result property="anio" column="anio" />
+        <result property="meta" column="meta" />
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResultado"/>
+        <association property="objOperativoBean" column="idobjoperativo"
+                     javaType="pe.marista.sigma.bean.ObjOperativoBean"
+                     resultMap="objOpeResultado"/>
+        <association property="actividadBean" column="idactividad"
+                     javaType="pe.marista.sigma.bean.ActividadBean"
+                     resultMap="actividadResultado"/>
+    </resultMap>
+    <!--Fin Result Alterno-->
+    
+    <!--Result Presupuesto-->
+    <resultMap id="resultPresCr" type="pe.marista.sigma.bean.ActividadCrBean" >
+        <id property="count" column="count" /> 
+        <result property="importe" column="importe" />
+        <result property="ejecutado" column="ejecutado" />
+        <association property="centroResponsabilidadBean" column="cr" 
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroRes"/>
+        <association property="planContableBean" column="cuenta" 
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planRes"/>
+        <association property="detActividadBean" column="iddetactividad"
+                     javaType="pe.marista.sigma.bean.DetActividadBean"
+                     resultMap="detActREs"/> 
+    </resultMap> 
+    <!--  HISTORICO */ -->
+    <resultMap id="resultHistorico" type="pe.marista.sigma.bean.HistoricoBean" >
+        <id property="idHistorico" column="idHistorico" /> 
+        <result property="porSatisfecho" column="porSatisfecho" />
+        <result property="porMedSatisfecho" column="porMedSatisfecho" />
+        <result property="porNoSatisfecho" column="porNoSatisfecho" />
+        <result property="anio" column="anio" />
+    </resultMap> 
+    <!-- Store Procedure-->
+    <select id="sp_prueba" resultType="pe.marista.sigma.bean.HistoricoBeanFiltro" parameterType="String">
+        exec sp_prueba
+        @anio = #{anio,javaType=Integer,jdbcType=VARCHAR,mode=IN}
+    </select>
+    <select id="sp_prueba_grafico" resultType="pe.marista.sigma.bean.HistoricoGraficoBean" parameterType="String">
+        exec sp_prueba_grafico
+        @anio = #{anio,javaType=Integer,jdbcType=VARCHAR,mode=IN}
+    </select>    
+    <!--  HISTORICO SATISFACCION*/ -->
+    <resultMap id="resultHistoricoSat" type="pe.marista.sigma.bean.HistoricoSatBean" >
+        <id property="satisfaccion" column="satisfaccion" /> 
+        <result property="valor" column="valor" />
+    </resultMap>     
+    <!--  LISTA  ANIO/ -->
+    <resultMap id="resultAnio" type="pe.marista.sigma.bean.AnioHistBean" >
+        <id property="anio" column="anio" /> 
+        <result property="anio" column="anio" />
+    </resultMap>
+    
+    <resultMap id="centroRes" type="pe.marista.sigma.bean.CentroResponsabilidadBean" >
+        <id property="cr" column="cr" />
+        <result property="nombre" column="nombreCR" />
+    </resultMap> 
+    <resultMap id="planRes" type="pe.marista.sigma.bean.PlanContableBean" >
+        <id property="cuenta" column="numCuenta" />
+        <result property="nombre" column="nomPlanCu" />
+    </resultMap> 
+    <resultMap id="detActREs" type="pe.marista.sigma.bean.DetActividadBean" >
+        <id property="idDetActividad" column="idDetActividad" />
+        <result property="descripcion" column="descripcion" />
+        <result property="importe" column="importe" />
+    </resultMap>
+    <!--Fin Result Presupuesto-->
+    
+    
+    
+    <resultMap id="actividadCRResultado" type="pe.marista.sigma.bean.ActividadCrBean" >
+        <result property="anio" column="anio" /> 
+        <result property="meta" column="meta" /> 
+        <result property="importe" column="importe" /> 
+        <result property="idObjOperativo" column="acrObj" /> 
+        <result property="idActividad" column="idActXCr" /> 
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="valorD" column="valor" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" /> 
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="uniNegResultado"/>
+        <association property="unidadOrganicaBean" column="iduniorg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="uniOrgResultado"/>
+        <association property="objOperativoBean" column="idobjoperativo"
+                     javaType="pe.marista.sigma.bean.ObjOperativoBean"
+                     resultMap="objOpeResultado"/>
+        <association property="actividadBean" column="idactividad"
+                     javaType="pe.marista.sigma.bean.ActividadBean"
+                     resultMap="actividadResultado"/>
+        <association property="detActividadBean" column="iddetactividad"
+                     javaType="pe.marista.sigma.bean.DetActividadBean"
+                     resultMap="detActividadResultado"/> 
+        <association property="planContableBean" column="cuenta"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planResultado"/> 
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResultado"/> 
+        <association property="tipoValor" column="idtipovalor"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoValorResultado"/> 
+    </resultMap> 
+    
+    <!--UniNeg-->
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <!--UniOrg-->
+    <resultMap id="uniOrgResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap>
+    
+    <!--Obj Operativo-->
+    <resultMap id="objOpeResultado" type="pe.marista.sigma.bean.ObjOperativoBean">
+        <id property="idObjOperativo" column="idObjOperativo"/>
+        <result property="nombre" column="nomOO"/> 
+    </resultMap>
+    
+    <!--Actividad-->
+    <resultMap id="actividadResultado" type="pe.marista.sigma.bean.ActividadBean"> 
+        <id property="idActividad" column="idActividad"/>  
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreA"/> <!--Cambio-->
+        <result property="responsable" column="responsable"/> 
+        <result property="idUniOrg" column="UOact"/> 
+        <result property="egreso" column="egreso"/>
+        <result property="ingreso" column="ingreso"/>
+        <result property="meta" column="meta"/>
+    </resultMap>
+    
+    <!--Det Actividad-->
+    <resultMap id="detActividadResultado" type="pe.marista.sigma.bean.DetActividadBean" >
+        <id property="idDetActividad" column="idDetActividad" />
+        <result property="descripcion" column="descripcion" />
+        <result property="importe" column="importe" />
+        <result property="idObjOperativo" column="objDetAct" />
+        <result property="idUniOrg" column="detaIdUniOrg" />
+        <result property="meta" column="metaDeta" />
+        <result property="mes" column="mes" /> 
+        <result property="meses" column="meses" /> 
+        <result property="anio" column="anio" />
+        <association property="actividadBean" column="idactividad" 
+                     javaType="pe.marista.sigma.bean.ActividadBean"
+                     resultMap="actividadResultado2"/>
+        <association property="planContableBean" column="cuenta"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planResultado2"/> 
+    </resultMap>
+    <!-- actividad include(DetActividad)-->
+    <resultMap id="actividadResultado2" type="pe.marista.sigma.bean.ActividadBean" >
+        <id property="idActividad" column="idAct"/>  <!--actDetAct-->
+        <result property="nombre" column="nomACt"/>
+        <result property="meta" column="metaAct"/>
+        <result property="responsable" column="resACt"/>
+        <result property="egreso" column="egrAct"/>
+        <result property="ingreso" column="ingAct"/>
+        <association property="objOperativoBean" column="idObjOperativo"
+                     javaType="pe.marista.sigma.bean.ObjOperativoBean"
+                     resultMap="objResultado2"/>
+    </resultMap>
+        
+    <!-- objOpe include(Actividad)-->
+    <resultMap id="objResultado2" type="pe.marista.sigma.bean.ObjOperativoBean">
+        <id property="idObjOperativo" column="idObj"/>  
+        <result property="nombre" column="nomObj"/> 
+    </resultMap>
+    
+    <!--Plan_Contable include(DetActividad)-->
+    <resultMap id="planResultado2" type="pe.marista.sigma.bean.PlanContableBean" >
+        <id property="cuenta" column="cuentaPlan"/>
+        <result property="nombre" column="nomPlan"/>
+        <result property="nivel" column="nivPlan"/>       
+    </resultMap>
+     
+    <!--Plan Contable Resultado-->
+    <resultMap id="planResultado" type="pe.marista.sigma.bean.PlanContableBean" >
+        <id property="cuenta" column="cuenta"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nivel" column="nivel"/>
+    </resultMap>
+    
+    <!--Centro Responsabilidad-->
+    <resultMap id="centroResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nivel" column="nivel"/>
+    </resultMap>
+    
+    <!--Tipo Valor-->
+    <resultMap id="tipoValorResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoValor" />
+        <result property="codigo" column="nomTipoValor" />   
+    </resultMap> 
+    
+    <select id="obtenerActividadCr" resultMap="actividadCRResultado" parameterType="String" >
+        <include refid="consultaCampos" /> where acr.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerActividadCrId" resultMap="actividadCRResultado" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        <include refid="consultaCampos" />   
+        WHERE acr.unineg = #{unidadNegocioBean.uniNeg} 
+        and acr.iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and acr.anio = #{anio}
+        and acr.idobjoperativo = #{idObjOperativo}
+        and acr.idactividad = #{idActividad}   
+    </select>
+    
+    <select id="obtenerDetActividadCrId" resultMap="actividadCRResultado" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        <include refid="consultaCamposNew" />   
+        WHERE acr.unineg = #{unidadNegocioBean.uniNeg} 
+        and acr.iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and acr.anio = #{anio}
+        and acr.iddetactividad = #{detActividadBean.idDetActividad}  
+    </select>
+    
+    <select id="obtenerPorCuenta" resultMap="actividadCRResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE acr.cuenta = #{planContableBean.cuenta}
+    </select>
+    
+    <select id="obtenerSubCr" resultMap="actividadCRResultado" parameterType="map" >
+        <include refid="consultaCampos" /> WHERE acr.idactividad = #{idActividad} and acr.cr = #{cr} and acr.uniNeg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerSubCrCuenta" resultMap="actividadCRResultado" parameterType="map" >
+        <include refid="consultaCampos" /> WHERE acr.idactividad = #{idActividad} and acr.cr = #{cr} and acr.uniNeg = #{uniNeg} and acr.cuenta = #{cuenta}
+    </select>
+    
+    <select id="obtenerActividadCrPorDet" resultMap="actividadCRResultado" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        <include refid="consultaCampos" /> 
+        WHERE acr.idactividad = #{idActividad} and acr.uniNeg = #{unidadNegocioBean.uniNeg} 
+    </select>
+    
+    <select id="obtenerCrPorActividad" resultMap="actividadCRResultado" parameterType="map" >
+        <include refid="consultaAlterna" />  
+        where cr.idactividad in ( select idactividad from ME_DetActividad )
+        and da.cuenta = #{cuenta} 
+        order by cr.idactividad 
+    </select>
+    
+    <select id="obtenerPorId" resultMap="actividadCRResultado" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        <include refid="consultaCampos" /> 
+        WHERE acr.unineg = #{unidadNegocioBean.uniNeg} 
+        and acr.iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and acr.anio = #{anio}
+        and acr.idobjoperativo = #{idObjOperativo}
+        and acr.idactividad = #{idActividad}  
+        and acr.cr = #{centroResponsabilidadBean.cr}
+    </select>
+    
+    <select id="obtenerPresupuestoCr" resultMap="resultPresCr" parameterType="String" >
+        <include refid="consultaPresupuesto" />
+        where da.cuenta in (select cuenta from ME_DetActividad) and da.unineg = #{unidadNegocioBean.uniNeg} and da.cuenta not like 0
+        group by pl.cuenta,cr.cr,cr.nombre,pl.nombre,da.cr,da.unineg
+    </select>
+    <!--  HISTORICO */ -->
+    <select id="obtenerHistorico" resultMap="resultHistorico"  parameterType="pe.marista.sigma.bean.HistoricoBean">
+        <include refid="consultaHistorico" />
+    </select>
+    
+    <!--  LISTA  ANIO / -->
+    <select id="obtenerAnio" resultMap="resultAnio"  parameterType="pe.marista.sigma.bean.AnioHistBean">
+        <include refid="listaAnio" />
+    </select>
+    
+    <!--  HISTORICOSAT */ -->
+    <select id="obtenerHistoricoSat" resultMap="resultHistoricoSat"  parameterType="pe.marista.sigma.bean.HistoricoSatBean">
+        <include refid="consultaHistoricoSat" />
+    </select>
+    <select id="obtenerPresupuestoCrId" resultMap="resultPresCr" parameterType="map" >
+        <include refid="consultaPresupuesto" />
+        where da.cuenta in (select cuenta from ME_DetActividad) and da.unineg = #{uniNeg} and da.cuenta not like 0 and da.cr = #{cr}
+        group by pl.cuenta,cr.cr,cr.nombre,pl.nombre,da.cr,da.unineg
+    </select>
+     
+    <select id="obtenerDibujoPresupuestoCr" resultMap="resultPresCr" parameterType="map" >
+        <include refid="consultaDibujoGrafo" />
+        where da.cuenta in (select cuenta from ME_DetActividad) and da.unineg = #{uniNeg} 
+        and da.cr = #{cr}
+        group by pl.cuenta,cr.cr,cr.nombre,pl.nombre,da.cr
+    </select>
+    <!--da.cuenta in (select cuenta from ME_DetActividad) and-->
+    
+    <select id="obtenerGrafoPres" resultMap="actividadCRResultado" parameterType="String" >
+        <include refid="consultaPresGrafico" />
+        where ac.unineg = #{unidadNegocioBean.uniNeg} and ac.cuenta not like 0
+    </select>
+    
+    <select id="obetenerPresupuestoGeneralExec" resultType="Integer" parameterType="map" >
+        <!--
+        select
+        ISNULL(((select ISNULL(sum(dd.montopagado),0) from MT_DetDocIngreso dd 
+        inner join MT_PlanContable cd on dd.cuentad = cd.cuenta
+        inner join MT_PlanContable ch on dd.cuentah = ch.cuenta
+        WHERE dd.unineg = #{uniNeg} and dd.cuentah in (select cuenta from ME_ActividadCR WHERE cr = #{cr} and cuenta = #{cuenta}
+        group by cd.cuenta,cd.nombre)  +
+        (select ISNULL(sum(montopagado),0) from MT_CtasxCobrar
+        WHERE unineg = #{uniNeg} and cuentah in (select cuenta from ME_ActividadCR WHERE cr = #{cr} and cuenta = #{cuenta}))),0)
+        -->
+        select
+        ISNULL(((select ISNULL(sum(dd.montopagado),0) from MT_DetDocIngreso dd 
+        inner join MT_PlanContable cd on dd.cuentad = cd.cuenta
+        inner join MT_PlanContable ch on dd.cuentah = ch.cuenta
+        WHERE dd.unineg = #{uniNeg} and dd.cuentah in (select cuenta from ME_ActividadCR WHERE cr = #{cr} and cuenta = #{cuenta})
+        group by cd.cuenta,cd.nombre)  +
+        (select ISNULL(sum(montopagado),0) from MT_CtasxCobrar
+        WHERE unineg = #{uniNeg} and cuentah in (select cuenta from ME_ActividadCR WHERE cr = #{cr} and cuenta = #{cuenta}))),0) 
+    </select>
+    
+    <insert id="insertarActividadCr" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        INSERT INTO [dbo].[ME_ActividadCR]
+        (unineg
+        ,iduniorg
+        ,anio
+        ,idobjoperativo
+        ,idactividad
+        ,cr
+        ,idtipovalor
+        ,cuenta 
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg}
+        ,#{unidadOrganicaBean.idUniOrg}
+        ,#{anio}
+        ,#{idObjOperativo} <!--detActividadBean.getObjOperativoBean().getIdObjOperativo()  detActividadBean.idObjOperativo-->
+        ,#{idActividad}
+        ,#{centroResponsabilidadBean.cr}
+        ,#{tipoValor.idCodigo}
+        ,0
+        ,#{creaPor}
+        ,getDate())
+    </insert>
+    
+    <insert id="insertarActividadCrCuenta" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        INSERT INTO [dbo].[ME_ActividadCR]
+        (unineg
+        ,iduniorg
+        ,anio
+        ,idobjoperativo
+        ,idactividad
+        ,cr
+        ,idtipovalor
+        ,cuenta 
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg}
+        ,#{unidadOrganicaBean.idUniOrg}
+        ,#{anio}
+        ,#{idObjOperativo} <!--detActividadBean.getObjOperativoBean().getIdObjOperativo()  detActividadBean.idObjOperativo-->
+        ,#{idActividad}
+        ,#{centroResponsabilidadBean.cr}
+        ,#{tipoValor.idCodigo}
+        ,#{planContableBean.cuenta}
+        ,#{creaPor}
+        ,getDate())
+    </insert>
+    
+    <update id="modificarActividadCr" parameterType="pe.marista.sigma.bean.ActividadCrBean" > 
+        UPDATE ME_ActividadCR
+        SET 
+        unineg = #{unidadNegocioBean.uniNeg}
+        ,iduniorg = #{unidadOrganicaBean.idUniOrg}
+        ,anio = #{anio}
+        ,idobjoperativo = #{planContableBean.objOperativoBean.idObjOperativo}
+        ,idactividad = #{detActividadBean.actividadBean.idActividad}
+        ,cr = #{centroResponsabilidadBean.cr}
+        ,idtipovalor = #{tipoValor.idCodigo}
+        ,creapor = #{creaPor}
+        ,creafecha = #{creaFecha}
+        ,modipor = #{modiPor}
+        ,iddetactividad = #{detActividadBean.idDetActividad}
+        ,cuenta = #{planContableBean.cuenta}
+        WHERE unineg = #{unidadNegocioBean.uniNeg} 
+        and iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and anio = #{anio}
+        and idobjoperativo = #{idObjOperativo}
+        and idactividad = #{idActividad} 
+        and cr = #{centroResponsabilidadBean.cr}
+    </update>
+      
+    <update id="modificarCuentaSub" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        UPDATE ME_ActividadCR
+        SET 
+        cuenta = #{planContableBean.cuenta}
+        WHERE unineg = #{unidadNegocioBean.uniNeg} 
+        and iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and anio = #{anio}
+        and idobjoperativo = #{idObjOperativo}
+        and idactividad = #{idActividad} 
+        and cr = #{centroResponsabilidadBean.cr}
+    </update>
+      
+    <delete id="eliminarActividadCr" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        DELETE from ME_ActividadCR
+        WHERE unineg = #{unidadNegocioBean.uniNeg} 
+        and iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and anio = #{anio}
+        and idobjoperativo = #{idObjOperativo}
+        and idactividad = #{idActividad}  
+        and cr = #{centroResponsabilidadBean.cr} 
+    </delete>
+    
+    <delete id="eliminarActCr" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        DELETE from ME_ActividadCR
+        WHERE unineg = #{unidadNegocioBean.uniNeg} 
+        and iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and anio = #{anio}
+        and iddetactividad = #{detActividadBean.idDetActividad} 
+        and cr = #{centroResponsabilidadBean.cr} 
+    </delete>
+    
+    <delete id="eliminarActividadCrCuenta" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        DELETE from ME_ActividadCR
+        WHERE unineg = #{unidadNegocioBean.uniNeg} 
+        and iduniorg = #{unidadOrganicaBean.idUniOrg}
+        and anio = #{anio}
+        and idobjoperativo = #{idObjOperativo}
+        and idactividad = #{idActividad}   
+        and cuenta = #{planContableBean.cuenta}
+    </delete> 
+    
+    <!-- CAMBIO DE INSERT -->
+    <insert id="insertarActCr" parameterType="pe.marista.sigma.bean.ActividadCrBean" >
+        INSERT INTO [dbo].[ME_ActividadCR]
+        (unineg
+        ,iduniorg
+        ,anio
+        ,idobjoperativo
+        ,idactividad
+        ,cr
+        ,idtipovalor
+        ,cuenta 
+        ,creapor
+        ,creafecha
+        ,idDetActividad
+        ,valor)
+        VALUES
+        (#{unidadNegocioBean.uniNeg}
+        ,#{unidadOrganicaBean.idUniOrg}
+        ,#{anio}
+        ,#{idObjOperativo}
+        ,#{idActividad}
+        ,#{centroResponsabilidadBean.cr}
+        ,#{tipoValor.idCodigo}
+        ,#{planContableBean.cuenta}
+        ,#{creaPor}
+        ,getDate()
+        ,#{detActividadBean.idDetActividad}
+        ,#{valorD})
+    </insert>
+    
+</mapper>

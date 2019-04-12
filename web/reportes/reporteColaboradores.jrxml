@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteColaboradores" language="groovy" pageWidth="595" pageHeight="842" columnWidth="574" leftMargin="14" rightMargin="7" topMargin="20" bottomMargin="20" uuid="413ba3fc-8fe0-4ddb-88d7-6a127dd40da8">
+	<property name="ireport.zoom" value="1.6105100000000017"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="16"/>
+	<queryString>
+		<![CDATA[select
+upper(ent.nombre) as nombreUniNeg,
+ent.ruc as rucUniNeg,
+
+isnull(codper,' ') as codPer,
+CONCAT(per.apepat,' ',per.apemat,', ',per.nombre) as nombrePersonal,
+concat((case when cod.codigo='Carnet de Extranjeria' then 'C.E.' when cod.codigo='Pasaporte' then 'PAS.'   else isnull(cod.codigo,'') end) ,': ',isnull(per.nrodoc,'')) as nroDoc,
+uo.nombreuniorg as nombreUniOrg,
+isnull(car.nombre,'-') as cargo,
+
+(case when per.fecingreso is null then '-' else (SELECT CONVERT(VARCHAR(10), per.fecingreso, 103))  end) as fechaIng,
+(
+select (case
+		when (select top 1 count (*) from MO_PersonalDocumento where idpersonal=per.idpersonal and flgobligatorio=1 and fechapresentacion is null)>0 then 'Pendiente'
+		 else
+			  (case
+					when (select top 1 count (*) from MO_PersonalDocumento where idpersonal=per.idpersonal)>0 then 'Completo' else 'No tiene Documentos'
+			   end)
+	   end)
+) as documento,
+(case when isnull(per.status,0)=1 then 'Activo' else 'Inactivo' end) as estado
+from MO_Personal per
+inner join MO_Codigo cod on cod.idcodigo=idtipodocper
+inner join MO_UnidadNegocio un on un.unineg=per.unineg
+inner join MO_Entidad ent on ent.ruc=un.RUC and ent.unineg=un.unineg
+inner join MO_UniNegUniOrg unuo on unuo.unineg=per.unineg and unuo.iduniorg=per.iduniorg
+inner join MO_UnidadOrganica uo on uo.iduniorg=per.iduniorg
+left join MO_PersonalCargo_borrador1 pcar on pcar.idpersonal=per.idpersonal and pcar.unineg=per.unineg and pcar.status=1
+left join MO_CargoUniNeg cun on cun.unineg=per.unineg and cun.idcargo=pcar.idcargo
+left join MO_Cargo car on car.idcargo=pcar.idcargo
+left join MO_Distrito dis on dis.iddistrito=per.iddistritodom
+left join MO_Codigo estCiv on estCiv.idcodigo=per.idtipoestadocivil
+left join MO_Pais nac on nac.idpais=per.idnacionalidad
+left join MO_Pais nacimi on nacimi.idpais=per.idnacionalidad]]>
+	</queryString>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="rucUniNeg" class="java.lang.String"/>
+	<field name="codPer" class="java.lang.String"/>
+	<field name="nombrePersonal" class="java.lang.String"/>
+	<field name="nroDoc" class="java.lang.String"/>
+	<field name="nombreUniOrg" class="java.lang.String"/>
+	<field name="cargo" class="java.lang.String"/>
+	<field name="fechaIng" class="java.lang.String"/>
+	<field name="documento" class="java.lang.String"/>
+	<field name="estado" class="java.lang.String"/>
+	<field name="textoFiltro" class="java.lang.String"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="68" splitType="Stretch">
+			<textField>
+				<reportElement uuid="23cb885b-7b60-4f0c-b270-a18bb359e59a" x="11" y="3" width="305" height="13"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="cba7611f-4432-4287-9be7-abdf12a9879f" x="11" y="13" width="100" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{rucUniNeg}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="d023bceb-9b0a-49d9-8e0a-e4a920c2d4f6" x="193" y="20" width="199" height="20"/>
+				<textElement textAlignment="Center">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[REPORTE DE COLABORADORES]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="5215e015-a91d-40ca-953a-1ea93bad13f4" x="8" y="37" width="558" height="28"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{textoFiltro}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="18bbbd83-c0e8-42f6-a7d8-dd4490eb60d9" x="466" y="3" width="100" height="13"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FECHA DE IMPRESIÓN:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="bdc02ebb-9f16-48ac-a0c2-8e5d17c0ae94" x="480" y="12" width="80" height="11"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="18" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="95955223-6650-4efc-893e-6d5e449e6484" x="-1" y="2" width="573" height="13"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="c4d0630f-e537-42ec-b450-2860f8092ea6" x="1" y="2" width="34" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[CÓDIGO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c5662d6a-b016-4940-9f59-1dfd19e67517" x="37" y="2" width="165" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[NOMBRE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="4ed6bd85-629f-4dd3-bdfb-c8649c9febee" x="213" y="2" width="58" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[NRO. DOC.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="09d569f6-c846-4bdd-852b-1e839de6242f" x="281" y="2" width="66" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[UNIDAD ORG.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="69255f5f-ca75-4b36-820f-b55ceaa88d65" x="347" y="2" width="57" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[CARGO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9dc5d055-b8b9-4d0b-9161-91c4838db714" x="467" y="2" width="72" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[DOCUMENTACIÓN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0d3b4b9c-a222-41a5-8150-285ea45484fc" x="407" y="2" width="60" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[FECHA DE ING.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="aa6f0eaa-183d-4606-9d5c-90bfb86ce9e2" x="543" y="2" width="26" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Estado]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement uuid="bd8b7cc4-c838-45a7-b34c-59d42bb37062" x="4" y="0" width="29" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{codPer}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e3a2ba39-dcc5-4c95-8a06-dee6f43e306f" x="34" y="0" width="178" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombrePersonal}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="30536ef7-ad95-4185-ac18-9455230c0219" x="213" y="0" width="69" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroDoc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="0aec6846-9b8e-4dff-9d3c-33541d10c55b" x="282" y="0" width="65" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniOrg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="2f2f2d61-36bb-43ba-915c-b37b776c5a03" x="347" y="0" width="70" height="13"/>
+				<textElement verticalAlignment="Top">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cargo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="c03d5e30-91c7-46bb-bde2-ed996f129da8" x="468" y="0" width="71" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{documento}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="6ddbf2fb-350c-4a5e-8a4c-ba921948758c" x="417" y="0" width="50" height="13"/>
+				<textElement verticalAlignment="Top">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fechaIng}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="12fd4e32-72c8-497c-8456-69a2d678a95c" x="544" y="0" width="28" height="13"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{estado}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="18">
+			<textField>
+				<reportElement uuid="3f375ebf-6008-494a-b0e9-ce8c7bf6bd15" x="22" y="3" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement uuid="47bbf54e-efa5-472b-b4db-fe8334cc53d9" x="50" y="3" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="020c7483-d35f-4bf5-beca-b6d36a725443" x="35" y="3" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f6fd3b15-5f23-4b93-8226-0fd1d8a93f36" x="2" y="3" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

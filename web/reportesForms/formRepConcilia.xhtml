@@ -1,0 +1,286 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:form id="frmDatosFiltroMov">
+            <h:panelGrid class="centrado" columns="2">   
+                <p:panel style="width: 690px" header="#{msgs.tituloBusFiltro}" toggleable="false" toggleSpeed="500" closeSpeed="500"> 
+                    <h:panelGrid columns="1" styleClass="centrado" id="pnlFiltro" cellpadding="3">  
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:outputLabel for="console" value="#{msgs.etiquetaProceso}: " />
+                            <p:selectOneRadio id="console" value="#{conciliaBancoMB.conciliaRepBean.flgProceso}">
+                                <f:selectItem itemLabel="#{msgs.etiquetaAmbos}" itemValue="#{null}" />
+                                <f:selectItem itemLabel="#{msgs.etiquetaEnvio}" itemValue="1" />
+                                <f:selectItem itemLabel="#{msgs.etiquetaRecuperacion}" itemValue="0" />
+                            </p:selectOneRadio>
+                        </h:panelGrid>
+                        <h:panelGrid columns="4">
+                            <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" styleClass="negrita siseFontGrid5"/>  
+                            <p:calendar  value="#{conciliaBancoMB.conciliaRepBean.fecIni}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                            </p:calendar>
+                            <h:outputLabel value="#{msgs.etiquetaFechaFin}:" styleClass="negrita siseFontGrid5"/>  
+                            <p:calendar  value="#{conciliaBancoMB.conciliaRepBean.fecFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                            </p:calendar>
+                        </h:panelGrid>  
+                    </h:panelGrid>
+                    <p:separator /> 
+                    <h:panelGrid class="centrado" columns="3"> 
+                        <p:commandButton value="#{msgs.botonBuscar}" action="#{conciliaBancoMB.filtrarBanco()}"
+                                         update="msg,:frmDatosFiltroMov:panel,:frmDatosMov:pnlTablaMov,:frmDatosFiltroMov:panel"/>
+                        <p:commandButton actionListener="#{conciliaBancoMB.limpiarconcilia()}" 
+                                         update="msg,pnlFiltro,:frmDatosFiltroMov:panel,:frmDatosMov:pnlTablaMov"  
+                                         value="#{msgs.botonLimpiar}" process="@this">
+                        </p:commandButton> 
+                    </h:panelGrid>
+                    <p:messages autoUpdate="false" id="msg" showDetail="true" />
+                </p:panel>
+
+                <p:panel style="width: 420px" header="#{msgs.etiquetaTotales}" toggleable="false" toggleSpeed="500" closeSpeed="500"> 
+                    <br></br>
+                    <br></br>
+                    <p:panelGrid id="panel" styleClass="centrado">
+                        <p:row>
+                            <p:column styleClass="ui-widget-header centrado-derecha">
+                                <h:outputText value="#{msgs.etiquetaMontoRec}:"  
+                                              style="font-size: 1.1em ;text-align: left !important;font-weight: bold" />
+                            </p:column>
+                            <p:column styleClass="centrado-derecha ">
+                                <h:outputText value="#{conciliaBancoMB.totSoles}"  style="font-size: 1.25em ;text-align: left !important;font-weight: bold" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                        </p:row>
+                        <p:row>
+                            <p:column styleClass="ui-widget-header centrado-derecha">
+                                <h:outputText value="#{msgs.etiquetaMontoProc}:"  
+                                              style="font-size: 1.1em ;text-align: left !important;font-weight: bold" />
+                            </p:column>
+                            <p:column styleClass="centrado-derecha ">
+                                <h:outputText value="#{conciliaBancoMB.totSolesPro}"  style="font-size: 1.25em ;text-align: left !important;font-weight: bold" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                        </p:row> 
+                    </p:panelGrid> 
+                    <br></br>
+                    <br></br>
+                    <br></br>
+                </p:panel> 
+            </h:panelGrid>
+        </h:form>
+
+        <h:form id="frmDatosMov">
+            <p:messages id="msgFormCon" showDetail="false" autoUpdate="false" />
+            <h:panelGrid  id="pnlTablaMov" styleClass="centrado">
+                <p:dataTable id="tblMov" value="#{conciliaBancoMB.listaConciliaRepBean}" widgetVar="tblMov"
+                             paginator="true" paginatorPosition="bottom"
+                             selection="#{conciliaBancoMB.conciliaRepBean}"
+                             paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                             var="concilia" rowKey="#{concilia.idProcesoBanco}" rowIndexVar="n"
+                             rows="10" rendered="#{not empty conciliaBancoMB.listaConciliaRepBean}" 
+                             style="width: 1200px; font-size: 10px;font-size:14px !important;">
+                    <f:facet name="header" >
+                        <h:outputText value="#{msgs.etiquetaDatosGenerales}" /> 
+                    </f:facet>
+                    <f:facet name="{Exporters}">
+                        <h:commandLink> 
+                            <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                            <p:dataExporter type="xls" target="tblMov" fileName="cobranza" />
+                        </h:commandLink>  
+                    </f:facet>
+                    <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                        <h:outputText value="#{n+1}"  /> 
+                    </p:column>    
+                    <p:column sortBy="#{concilia.nomBanco}" headerText="#{msgs.etiquetaBanco}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                        <h:outputText value="#{concilia.nomBanco}" />
+                    </p:column> 
+                    <p:column sortBy="#{concilia.rucBanco}" headerText="#{msgs.etiquetaRucBco}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                        <h:outputText value="#{concilia.rucBanco}" />
+                    </p:column> 
+                    <p:column sortBy="#{concilia.anio}" headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-izq">
+                        <h:outputText value="#{concilia.anio}" />
+                    </p:column> 
+                    <p:column sortBy="#{concilia.fechaOpVista}" headerText="#{msgs.etiquetaFecAcc}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                        <h:outputText value="#{concilia.fechaOpVista}" />
+                    </p:column> 
+                    <p:column sortBy="#{concilia.totalRecuperado}" headerText="#{msgs.etiquetatotRec}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                        <h:outputText value="#{concilia.totalRecuperado}" >
+                        </h:outputText>
+                    </p:column>
+                    <p:column sortBy="#{concilia.totalProcesado}" headerText="#{msgs.etiquetatotPro}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                        <h:outputText value="#{concilia.totalProcesado}" >
+                        </h:outputText>
+                    </p:column>
+                    <p:column sortBy="#{concilia.sumRecuperado}" headerText="#{msgs.etiquetaMontoRec}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                        <h:outputText value="#{concilia.sumRecuperado}" >
+                            <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column sortBy="#{concilia.sumProcesado}" headerText="#{msgs.etiquetaMontoProc}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                        <h:outputText value="#{concilia.sumProcesado}" >
+                            <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                        </h:outputText>
+                    </p:column>  
+                    <p:column colspan="4" headerText="#{msgs.etiquetaAcci}" style="text-align:center;width: 100px" >
+                        <p:commandLink id="cmdVerCon" actionListener="#{conciliaBancoMB.obtenerRepBanco(concilia,1)}"
+                                       update=":frmPopConBan:pnlPopConBan" oncomplete="PF('popRecBan').show();" >
+                            <h:graphicImage value="/resources/images/icons/search2.png" />
+                        </p:commandLink>
+                        <p:tooltip value="#{msgs.etiquetaVer}" id="msgVer" for="cmdVerCon" />
+                        &nbsp;&nbsp;&nbsp;
+                        <p:commandLink id="cmdVerConFail" actionListener="#{conciliaBancoMB.obtenerRepBanco(concilia,2)}"
+                                       update=":frmPopConBanFail:pnlPopConBanFail" oncomplete="PF('popRecBanFail').show();">
+                            <h:graphicImage value="/resources/images/icons/warn.png" />
+                        </p:commandLink>                        
+                        <p:tooltip value="#{msgs.etiquetaVer} Fallos" id="msgVerFail" for="cmdVerConFail" />
+                        &nbsp;&nbsp;&nbsp;
+                        <p:commandLink id="cmdUpdateBanco" actionListener="#{conciliaBancoMB.actualizarRegistroBanco(concilia)}"
+                                       update=":frmDatosMov:pnlTablaMov">
+                            <h:graphicImage value="/resources/images/icons/refrescar.png" />
+                        </p:commandLink>
+                        <p:tooltip value="#{msgs.etiquetaRefresh}" id="msgUpdateBnaco" for="cmdUpdateBanco" />
+                        &nbsp;&nbsp;&nbsp;
+                        <p:commandLink id="cmdEliminarCod" actionListener="#{conciliaBancoMB.obtenerRepBanco(proceso,3)}" 
+                                       update=":frmDatosMov:msgFormCon,:frmDatosMov:pnlTablaMov,:frmDatosFiltroMov:msg"
+                                       oncomplete="PF('popEliminar').show();" process="@this">
+                            <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                        </p:commandLink> 
+                        <p:tooltip  for="cmdEliminarCod" value="#{msgs.mensajeDelPro}" />
+                    </p:column>
+                </p:dataTable> 
+            </h:panelGrid>
+        </h:form>
+
+        <p:dialog id="popRecBan" header="#{msgs.appSiglas}" widgetVar="popRecBan" modal="true" closeOnEscape="true" >
+            <h:form id="frmPopConBan" >
+                <h:panelGrid id="pnlPopConBan" >
+                    <p:dataTable id="cmdXlsRep" value="#{conciliaBancoMB.listaConciliaBancoRepBean}" widgetVar="tblMovRec"
+                                 paginator="true" paginatorPosition="bottom"
+                                 selection="#{conciliaBancoMB.conciliaBancoRepBean}"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                 var="conciliaRep" rowKey="#{concilia.idProcesoBanco}" rowIndexVar="n"
+                                 rows="10" rendered="#{not empty conciliaBancoMB.listaConciliaBancoRepBean}" 
+                                 style="width: 1200px; font-size: 10px;font-size:14px !important;" >
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaDatosGenerales}" />  
+                        </f:facet> 
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                <p:dataExporter type="xls" target="cmdXlsRep" fileName="detalleConcilia" />
+                            </h:commandLink>  
+                        </f:facet>
+                        <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{n+1}"  /> 
+                        </p:column>
+                        <p:column filterBy="#{conciliaRep.idEstudiante}" sortBy="#{conciliaRep.idEstudiante}" headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.idEstudiante}" />
+                        </p:column> 
+                        <p:column filterBy="#{conciliaRep.codigo}" sortBy="#{conciliaRep.codigo}" headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.codigo}" />
+                        </p:column> 
+                        <p:column filterBy="#{conciliaRep.nombreCompleto}" sortBy="#{conciliaRep.nombreCompleto}" headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="20%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.nombreCompleto}" />
+                        </p:column> 
+                        <p:column sortBy="#{conciliaRep.fechaPagoVista}" headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.fechaPagoVista}" />
+                        </p:column> 
+                        <p:column filterBy="#{conciliaRep.anio}" sortBy="#{conciliaRep.anio}" headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.anio}" />
+                        </p:column> 
+                        <p:column sortBy="#{conciliaRep.mesVista}" headerText="#{msgs.etiquetaMes}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.mesVista}" />
+                        </p:column> 
+                        <p:column sortBy="#{conciliaRep.nomConcepto}" headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.nomConcepto}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMontoPagado}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.montoPagado}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+        </p:dialog>
+
+        <p:dialog id="popRecBanFail" header="#{msgs.appSiglas} - " widgetVar="popRecBanFail" modal="true" closeOnEscape="true" >
+            <h:form id="frmPopConBanFail" >
+                <h:panelGrid id="pnlPopConBanFail" > 
+                    <p:dataTable id="cmdXlsRepFail" value="#{conciliaBancoMB.listaConciliaBancoRepBeanFallo}" widgetVar="tblMovRec"
+                                 paginator="true" paginatorPosition="bottom"
+                                 selection="#{conciliaBancoMB.conciliaBancoRepBean}"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                 var="conciliaRep" rowKey="#{concilia.idProcesoBanco}" rowIndexVar="n"
+                                 rows="10" rendered="#{not empty conciliaBancoMB.listaConciliaBancoRepBeanFallo}" 
+                                 style="width: 1200px; font-size: 10px;font-size:14px !important;" >
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaDatosGenerales}" />  
+                        </f:facet> 
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                <p:dataExporter type="xls" target="cmdXlsRepFail" fileName="detalleConcilia" />
+                            </h:commandLink>  
+                        </f:facet>
+                        <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{n+1}"  /> 
+                        </p:column>
+                        <p:column sortBy="#{conciliaRep.idEstudiante}" headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.idEstudiante}" />
+                        </p:column> 
+                        <p:column sortBy="#{conciliaRep.codigo}" headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.codigo}" />
+                        </p:column> 
+                        <p:column sortBy="#{conciliaRep.nombreCompleto}" headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="20%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.nombreCompleto}" />
+                        </p:column>   
+                        <p:column sortBy="#{conciliaRep.cuota}" headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.anio}" />
+                        </p:column>  
+                        <p:column sortBy="#{conciliaRep.mesVista}" headerText="#{msgs.etiquetaMes}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.mesVista}" />
+                        </p:column>  
+                        <p:column sortBy="#{conciliaRep.fechaPagoVista}" headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.fechaPagoVista}" />
+                        </p:column>
+                        <p:column sortBy="#{conciliaRep.montoRecup}" headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.montoRecup}" />
+                        </p:column>
+                        <p:column sortBy="#{conciliaRep.moraRecup}" headerText="#{msgs.etiquetaMora}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                            <h:outputText value="#{conciliaRep.moraRecup}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+        </p:dialog>
+
+        <!-- POP_ELIMINA_PRO_BANCO -->
+        <h:form id="frmElimina">
+            <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                <h:panelGrid columns="2">
+                    <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                    <h:panelGrid columns="1" id="pnlDatosElimina">
+                        <h:outputText value="#{msgs.panelEliminacionFisica}"/> 
+                    </h:panelGrid>
+                </h:panelGrid>
+                <h:panelGrid columns="2" class="centrado">
+                    <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{conciliaBancoMB.eliminarProcesoBanco()}" 
+                                     styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                     update=":frmDatosMov:pnlTablaMov,msgsDelProc"
+                                     oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                    <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                     icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                </h:panelGrid>
+                <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+            </p:dialog>
+        </h:form>
+
+    </ui:define>
+</ui:composition>
+

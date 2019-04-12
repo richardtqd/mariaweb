@@ -1,0 +1,185 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body>
+            <h:form id="frmfiltroFecha" >
+                <h:panelGrid styleClass="centrado" >
+                    <p:panel id="basic" header="#{msgs.appSiglas} #{msgs.etiquetaBanco}" style="margin-bottom:20px;width: 1000px;">
+                        <h:panelGrid id="pnlFiltroFecha" styleClass="centrado" columns="1" >
+                            <h:panelGrid columns="2" styleClass="centrado" >
+                                <h:panelGrid columns="2" styleClass="centrado-izq" >
+                                    <p:outputLabel value="#{msgs.etiquetaFechaInicio}: " />
+                                    <p:calendar value="#{recEnvMB.procesoEnvioBean.fechaIni}" showOn="button"
+                                                pattern="dd/MM/yyyy" mode="popup" locale="de" navigator="true" required="true" label="#{msgs.etiquetaFechaInicio}"> 
+                                    </p:calendar>
+                                    <p:outputLabel value="#{msgs.etiquetaFechaFin}: " />
+                                    <p:calendar value="#{recEnvMB.procesoEnvioBean.fechaFin}" showOn="button"
+                                                pattern="dd/MM/yyyy" mode="popup" locale="de" navigator="true" required="true" label="#{msgs.etiquetaFechaFin}" >
+                                    </p:calendar>
+                                    <p:outputLabel value="#{msgs.EtiquetaCodigo}: " />
+                                    <p:inputText value="#{recEnvMB.procesoEnvioBean.codigo}" />
+                                </h:panelGrid>
+                                <h:panelGrid columns="2" styleClass="centrado-izq" >
+                                    <p:outputLabel value="#{msgs.etiquetaTipoConcepto}: "  />
+                                    <p:selectOneMenu id="txtTipoConceptoCur" value="#{recEnvMB.procesoEnvioBean.idTipoConcepto}" label="#{msgs.etiquetaTipoConcepto}" filter="true" style="width: 200px">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{recEnvMB.listaTipoConceptoBean}" var="tipCon" itemLabel="#{tipCon.nombre}" itemValue="#{tipCon.idTipoConcepto}"/>
+                                        <p:ajax event="change" listener="#{recEnvMB.obtenerPorTipo}" process="@this,txtTipoConceptoCur" update="cmbConceptoCur" />
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="#{msgs.etiquetaConcepto}: "  />
+                                    <p:selectOneMenu id="cmbConceptoCur" value="#{recEnvMB.procesoEnvioBean.idConcepto}" label="#{msgs.etiquetaConcepto}" filter="true" style="width: 200px">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{recEnvMB.listaconceptoBean}" var="con" itemLabel="#{con.nombre}" itemValue="#{con.idConcepto}"/>                                    
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="#{msgs.etiquetaNroDocPer}: " />
+                                    <p:inputText value="#{recEnvMB.procesoEnvioBean.idEstudiante}" />
+                                </h:panelGrid>
+                            </h:panelGrid>
+                            <h:panelGrid styleClass="centrado" >
+                                <p:inputTextarea value="#{recEnvMB.procesoEnvioBean.nombres}" cols="60" rows="5" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaNombreCompleto}" ></p:inputTextarea>
+                            </h:panelGrid>
+                        </h:panelGrid>
+                        <h:panelGrid styleClass="centrado" columns="3" >
+                            <p:commandButton value="#{msgs.botonBuscar}" update=":frmfiltroFecha:pnlMsg,:frmTblFecha:frmPnlFecha,:frmSigmaBanco:pnlSigmaBanco"
+                                             actionListener="#{recEnvMB.filtrarOperaciones()}" />
+                            <p:commandButton value="#{msgs.botonLimpiar}" update=":frmfiltroFecha:pnlFiltroFecha" 
+                                             actionListener="#{recEnvMB.limpiarFiltroRecEnv()}"/>
+                            <p:commandButton id="btnDownload" value="#{msgs.botonDescargar}" actionListener="#{recEnvMB.descargaSigmaBanco()}"  
+                                             onclick="PrimeFaces.monitorDownload(start, stop);" ajax="false" >
+                                <p:fileDownload  value="#{recEnvMB.content}" ></p:fileDownload>
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <h:panelGrid id="pnlMsg" styleClass="centrado" columns="1" >
+                            <p:messages id="msg" showDetail="true" />
+                        </h:panelGrid>
+                    </p:panel>
+                </h:panelGrid> 
+            </h:form>
+            <h:form id="frmSigmaBanco" >
+                <h:panelGrid id="pnlSigmaBanco" styleClass="centrado" >
+                    <p:dataTable value="#{recEnvMB.listaBancoSigma}" var="fila"
+                                 rendered="#{not empty recEnvMB.listaBancoSigma}"
+                                 paginator="true" paginatorPosition="bottom" rows="10" id="tblTableRecursiveFiltro"
+                                 style="width: 1500px; overflow-x: auto;font-size:14px !important;">
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                        </f:facet>
+                        <c:forEach var="i" begin="0" end="#{recEnvMB.filas - 1}" >
+                            <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable2 centrado-texto">
+                                <f:facet name="header">
+                                    <h:outputText value="Data #{i+1}"/>
+                                </f:facet>
+                                <h:outputText value="#{fila.listaContenedor.get(i).getValor()}"/>
+                            </p:column>
+                        </c:forEach>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmTblFecha" >
+                <h:panelGrid styleClass="centrado" id="frmPnlFecha">
+                    <p:dataTable id="tblRecEnv" value="#{recEnvMB.listaRecEnvBean}" widgetVar="tblRecEnv"
+                                 selectionMode="single" 
+                                 paginator="true"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                 rowsPerPageTemplate="5,10"
+                                 selection="#{recEnvMB.recEnvBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                 var="recEnv" rowKey="#{recEnv}"  rows="10" 
+                                 rendered="#{not empty recEnvMB.listaRecEnvBean}" 
+                                 style="width: 1500px;font-size:14px !important;margin-bottom:0" >
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaFiltrodeProcesos}" />
+                        </f:facet>
+                        <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.codigoCliente}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNombres}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.nombreAlumno}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaCodCuota}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.codigoCuota}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaImporte}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.importe}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMora}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.mora}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.fechaPago}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFormPago}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.formaPago}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaOficinaPago}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.oficinaPago}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNroTerm}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.nroTerminal}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaOficina}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.oficinaAbono}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaCtaAbono}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.ctaAbono}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMoneda}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.moneda}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaVencimiento}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.fechaVenc}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaCodRef}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.codReferencial}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFiller}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.filler}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaTipoSer}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto" >
+                            <h:outputText value="#{recEnv.tipoServicio}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid> 
+            </h:form> 
+            <script type="text/javascript">
+                function start() {
+                    PF('statusDialog').show();
+                }
+
+                function stop() {
+                    PF('statusDialog').hide();
+                }
+            </script>
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+
+

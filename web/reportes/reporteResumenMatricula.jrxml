@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteResumenMatricula" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="16c8ad82-50ea-4ad0-93db-271b20100195">
+	<property name="ireport.zoom" value="4.594972986357228"/>
+	<property name="ireport.x" value="592"/>
+	<property name="ireport.y" value="67"/>
+	<queryString>
+		<![CDATA[declare @anio integer,@mes integer,@fechaCorte date
+set @anio=2019
+set @mes=2
+set @fechaCorte='21-03-2019'
+
+select m1.anio,UPPER(uni.nombreUniNeg) AS nombreUniNeg,
+'Resumen de Matrícula '+convert(varchar(6),m1.anio) as titulo, convert(varchar(20),@fechaCorte,103)  as fechaCorte,
+n1.nombre as nivelAcademico,
+g1.nombre as gradoAcademico,
+(select count(*) from MX_Matricula m
+inner join MX_Admision a on a.idestudiante=m.idestudiante and a.anio=@anio
+inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+where m.anio=@anio and g.idgradoacademico=g1.idgradoacademico and n.idnivelacademico=n1.idnivelacademico
+and convert(varchar(20),a.fechaingreso,105)<=@fechaCorte and idtipostatuspostulante=13802) as ingresantes,
+(select count(*) from MX_Matricula m2
+inner join MX_GradoAcademico g2 on g2.idgradoacademico=m2.idgradoacademico
+inner join MX_NivelAcademico n2 on n2.idnivelacademico=g2.idnivelacademico
+where m2.anio=@anio and g2.idgradoacademico=g1.idgradoacademico and n2.idnivelacademico=n1.idnivelacademico
+ and m2.idestudiante not in(select idestudiante from mx_admision aa where aa.anio=@anio)
+ and convert(varchar(20),m2.creafecha,105)<=@fechaCorte
+) as promovido,
+(select count(*) from MX_Matricula m3
+inner join MX_GradoAcademico g3 on g3.idgradoacademico=m3.idgradoacademico
+inner join MX_NivelAcademico n3 on n3.idnivelacademico=g3.idnivelacademico
+where m3.anio=@anio and m3.flgmatricula=1 and g3.idgradoacademico=g1.idgradoacademico and n3.idnivelacademico=n1.idnivelacademico
+and convert(varchar(20),m3.fechamatricula,105)<=@fechaCorte) as matriculados,
+(select count(*) from MT_CtasxCobrar c
+inner join MX_Matricula m4 on m4.idestudiante=c.idestudiante
+inner join MX_GradoAcademico g4 on g4.idgradoacademico=m4.idgradoacademico
+inner join MX_NivelAcademico n4 on n4.idnivelacademico=g4.idnivelacademico
+where c.mes=@mes and c.anio=@anio and g4.idgradoacademico=g1.idgradoacademico and n4.idnivelacademico=n1.idnivelacademico
+and m4.anio=@anio and idtipostatusctacte=19404 and convert(varchar(20),c.fechapago,105)<=@fechaCorte
+) as cantidadPagados
+from MX_Matricula m1
+inner join MX_GradoAcademico g1 on g1.idgradoacademico=m1.idgradoacademico
+inner join MX_NivelAcademico n1 on n1.idnivelacademico=g1.idnivelacademico
+inner join MO_UnidadNegocio uni on uni.unineg=m1.unineg
+where m1.anio=@anio
+group by n1.idnivelacademico,g1.nombre,g1.idgradoacademico,n1.nombre,m1.anio,uni.nombreUniNeg
+order by n1.idnivelacademico desc,g1.idgradoacademico asc]]>
+	</queryString>
+	<field name="anio" class="java.lang.Integer"/>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="titulo" class="java.lang.String"/>
+	<field name="fechaCorte" class="java.lang.String"/>
+	<field name="nivelAcademico" class="java.lang.String"/>
+	<field name="gradoAcademico" class="java.lang.String"/>
+	<field name="ingresantes" class="java.lang.Integer"/>
+	<field name="promovido" class="java.lang.Integer"/>
+	<field name="matriculados" class="java.lang.Integer"/>
+	<field name="cantidadPagados" class="java.lang.Integer"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<variable name="promovido_1" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{promovido}]]></variableExpression>
+	</variable>
+	<variable name="ingresantes_1" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{ingresantes}]]></variableExpression>
+	</variable>
+	<variable name="matriculados_1" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{matriculados}]]></variableExpression>
+	</variable>
+	<variable name="cantidadPagados_1" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{cantidadPagados}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="15">
+			<textField>
+				<reportElement uuid="e34499ea-8088-4b01-8b7f-46075d3a950a" positionType="Float" x="1" y="0" width="320" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="30" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="a5add7dd-f5c0-402d-905d-e02503a2f6d8" x="1" y="0" width="80" height="29"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NIVEL ACADEMICO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="513f051e-8ac8-4c52-84b9-162c79a90580" x="82" y="0" width="100" height="29"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRADO ACADEMICO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c2b69c22-baf0-46e0-a6cf-d384858b2681" x="183" y="18" width="75" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[INGRESANTES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b23db7ef-033f-44be-ac95-85cd8bcc2eae" x="259" y="18" width="74" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PROMOVIDO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a5a18dad-f5fc-4d40-8980-57ca2327e029" x="334" y="0" width="85" height="29"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[N° MATRICULADOS SIGMA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="30ada984-ff46-4398-a784-918a64546860" x="420" y="0" width="63" height="29"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[N° C/PAGO MATRICULA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b2d6a746-5c25-4e35-81b9-ce76cbb3bce2" x="183" y="0" width="150" height="17"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[META BASE INICIAL]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="a7c4598d-5310-4e98-a9ba-7e3e830e05f4" x="0" y="-1" width="554" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="a1cd87d3-f89c-454a-8181-ceaf17cd9081" x="0" y="0" width="1" height="29"/>
+			</line>
+			<line>
+				<reportElement uuid="9fdfed43-a9e5-4c62-b138-6a1f51c0d766" x="81" y="0" width="1" height="29"/>
+			</line>
+			<line>
+				<reportElement uuid="d5caa9e1-da92-4883-b29d-b74fcbb6ebc2" x="182" y="0" width="1" height="29"/>
+			</line>
+			<line>
+				<reportElement uuid="ab468c41-9c84-4f94-a188-536292565d25" x="333" y="0" width="1" height="29"/>
+			</line>
+			<line>
+				<reportElement uuid="e9d715b0-7c45-444c-bf38-269dab9f5325" x="419" y="0" width="1" height="29"/>
+			</line>
+			<line>
+				<reportElement uuid="ad805489-5f4f-464b-a2f6-55a86db3712c" x="483" y="0" width="1" height="29"/>
+			</line>
+			<line>
+				<reportElement uuid="b75c0e54-a32e-4dd3-aedf-2e92f5c444a7" x="0" y="29" width="554" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="831a662e-ac4d-4858-b871-4d3ae929e612" x="258" y="18" width="1" height="11"/>
+			</line>
+			<line>
+				<reportElement uuid="7c37b2bc-ad17-475c-88e6-60faac519fc7" x="183" y="17" width="150" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="04475250-4ebe-460f-be85-c7f76016f00f" x="484" y="0" width="70" height="29"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DIFERENCIA ]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="0c5996bd-94d1-491c-86d1-2334038f6a1a" x="554" y="-1" width="1" height="30"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<textField>
+				<reportElement uuid="32f75c88-18f6-4c89-9dfc-c34584a5f74f" mode="Opaque" x="484" y="0" width="70" height="17" backcolor="#FFFF00"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[($F{ingresantes}+$F{promovido})-$F{matriculados}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4d0c5a12-622b-426e-9cc3-f63e8beee75e" x="1" y="0" width="80" height="17"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nivelAcademico}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="dc56aaf8-5f9c-4ee8-87aa-4d62d5c0d991" x="82" y="0" width="100" height="17"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gradoAcademico}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="157d58f7-5266-46e0-b085-e19b3dbea9dc" mode="Opaque" x="183" y="0" width="75" height="17" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ingresantes}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e211f413-df35-408a-b6ba-b0fbfdeb6566" mode="Opaque" x="259" y="0" width="74" height="17" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{promovido}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="8a0202e1-68e8-4fc3-9ad9-45bc6211b20b" mode="Opaque" x="334" y="0" width="85" height="17" backcolor="#99CCFF"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{matriculados}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="403c989e-4352-44fb-8dd1-617120ddb2d0" x="420" y="0" width="63" height="17"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cantidadPagados}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="44adf41a-360a-45c7-b868-652e376c18c4" x="0" y="0" width="1" height="17"/>
+			</line>
+			<line>
+				<reportElement uuid="d6b7e863-7577-4b32-a83f-f245ea147d3c" x="81" y="0" width="1" height="17"/>
+			</line>
+			<line>
+				<reportElement uuid="cb171c8c-4bd2-400d-b39c-208fd0d30b71" x="182" y="0" width="1" height="17"/>
+			</line>
+			<line>
+				<reportElement uuid="6c1e7f0a-12b4-4c44-8f3e-7ccdc733ce59" x="258" y="0" width="1" height="17"/>
+			</line>
+			<line>
+				<reportElement uuid="db920127-9516-4aff-b03b-03e81e2f3c89" x="333" y="0" width="1" height="17"/>
+			</line>
+			<line>
+				<reportElement uuid="7792a031-b183-4894-bf08-8afca2a05341" x="419" y="0" width="1" height="17"/>
+			</line>
+			<line>
+				<reportElement uuid="28595076-d070-4e64-9504-afd00e257d2d" x="483" y="0" width="1" height="17"/>
+			</line>
+			<line>
+				<reportElement uuid="28e3c2d3-b638-4689-9e83-d6ad044487ca" x="554" y="0" width="1" height="18"/>
+			</line>
+		</band>
+	</detail>
+	<summary>
+		<band height="17" splitType="Stretch">
+			<textField>
+				<reportElement uuid="4282117c-963f-4060-8042-c6ec8b7f0631" x="259" y="0" width="74" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{promovido_1}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ed87dc83-fc48-4ea3-b270-d39b6af900f7" x="183" y="0" width="75" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{ingresantes_1}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="49b8af00-d802-4caa-80ad-f33a6eccbaa5" x="334" y="0" width="85" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{matriculados_1}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="8482937d-8bc1-40a9-8ce2-eeafcf2cec6a" x="420" y="0" width="63" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{cantidadPagados_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5bbfee32-3019-4c02-b86d-96af209341cb" x="82" y="0" width="100" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="da6c4235-ec0b-4774-a3a8-3339faa1340c" x="82" y="16" width="473" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="e1f7fa86-df8b-440b-9cdf-30cee7412d2f" x="81" y="0" width="1" height="16"/>
+			</line>
+			<line>
+				<reportElement uuid="a361fac4-56ee-41c1-8c59-0bfb44d6a868" x="182" y="0" width="1" height="16"/>
+			</line>
+			<line>
+				<reportElement uuid="5bb9ce72-6134-4196-a1d8-d50bf5e65678" x="258" y="0" width="1" height="16"/>
+			</line>
+			<line>
+				<reportElement uuid="9831ae2c-e02a-4a63-b67f-969461936f70" x="333" y="0" width="1" height="16"/>
+			</line>
+			<line>
+				<reportElement uuid="39eb6ce5-ac52-4990-8167-e526cdd5b6f6" x="419" y="0" width="1" height="16"/>
+			</line>
+			<line>
+				<reportElement uuid="310dcb94-6bb8-4eed-aae2-87729caf1c4b" x="483" y="0" width="1" height="16"/>
+			</line>
+			<line>
+				<reportElement uuid="7d17bf8d-f430-4aea-b141-b5ab5368ee55" x="554" y="0" width="1" height="16"/>
+			</line>
+			<textField>
+				<reportElement uuid="6e03e24a-1fd4-446f-8d7a-0d147a1166bb" x="484" y="0" width="70" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[($V{ingresantes_1}+$V{promovido_1})-$V{matriculados_1}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="6ee69af9-547a-4766-8bbc-c170ac3acce4" x="0" y="-1" width="554" height="1"/>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

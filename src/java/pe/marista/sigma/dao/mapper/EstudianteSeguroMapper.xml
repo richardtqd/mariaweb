@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteSeguroDAO">   
+    <sql id="consultaCampos">
+        SELECT 
+        estSeg.idEstudianteSeguro,
+        estSeg.idEstudiante,
+        estSeg.anio,
+        estSeg.idTipoSeguro,
+        cod.codigo as codSeguro,
+        estSeg.clinica,
+        estSeg.prioridad, 
+        estSeg.codigo,
+        estSeg.status,
+        estSeg.fecIni,
+        estSeg.fecFin,
+        estSeg.creaPor,
+        estSeg.creaFecha, 
+        en.ruc,
+        en.nombre as nomEnt,  
+        per.uniNeg ,
+        estSeg.ruc as rucSeg
+        FROM MX_EstudianteSeguro estSeg
+        Left Join MO_Codigo cod ON estSeg.idTipoSeguro=cod.idCodigo
+        left join MX_Persona per on estSeg.idestudiante = per.idpersona 
+        left join MO_Entidad en on estSeg.ruc = en.ruc and en.unineg=estSeg.unineg
+    </sql> 
+    <resultMap id="estudianteSeguroResultado" type="pe.marista.sigma.bean.EstudianteSeguroBean">
+        <id property="estudianteBean.personaBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="estudianteBean.personaBean.idPersona" column="idEstudiante"/>
+        <id property="idEstudianteSeguro" column="idEstudianteSeguro"/> 
+        <result property="anio" column="anio"/>
+        <result property="clinica" column="clinica"/>
+        <result property="prioridad" column="prioridad"/>
+        <result property="codigo" column="codigo"/>
+        <result property="status" column="status"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/> 
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+        <association property="codigoBean" column="idTipoSeguro"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/> 
+        <association property = "estudianteBean" column="idEstudiante"
+                     javaType = "pe.marista.sigma.bean.EstudianteBean" 
+                     resultMap = "estudianteResultado"/>
+     
+    </resultMap>
+    
+    <!--Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean"> 
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+    </resultMap>
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean" >
+        <id property="uniNeg" column="uniNeg"/>
+    </resultMap>
+    <!--Codigo Resultado-->
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoSeguro"/>
+        <result property="codigo" column="codSeguro"/> 
+    </resultMap>
+    <!--Entidad Resultado-->
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucSeg" />
+        <result property="nombre" column="nomEnt" />
+    </resultMap>  
+    <select id="obtenerEstudianteSeguro" resultMap="estudianteSeguroResultado">
+        <include refid="consultaCampos" />
+    </select>
+    <select id="obtenerEstudianteSeguroSelect" resultMap="estudianteSeguroResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaCampos" />where
+        estSeg.idEstudiante= #{personaBean.idPersona} and estSeg.uniNeg=#{personaBean.unidadNegocioBean.uniNeg}  
+        and anio=DATEPART(year,GETDATE()) 
+    </select> 
+    <select id="obtenerEstudianteSeguroPorEst" resultMap="estudianteSeguroResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaCampos" />where
+        estSeg.idEstudiante= #{personaBean.idPersona} and estSeg.uniNeg=#{personaBean.unidadNegocioBean.uniNeg}
+    </select> 
+    <select id="obtenerEstudianteSeguroActivoPorEst" resultMap="estudianteSeguroResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        <include refid="consultaCampos" />where
+        estSeg.idEstudiante= #{personaBean.idPersona} and estSeg.uniNeg=#{personaBean.unidadNegocioBean.uniNeg} and estSeg.status=1
+    </select> 
+    <select id="obtenerEstudianteSeguroPorId" resultMap="estudianteSeguroResultado" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">
+        <include refid="consultaCampos" />
+        Where 
+        estSeg.idEstudiante= #{estudianteBean.personaBean.idPersona} and 
+        estSeg.uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and
+        estSeg.idEstudianteSeguro = #{idEstudianteSeguro} 
+    </select>
+    <insert id="insertarEstudianteSeguro" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">  
+        Insert Into MX_EstudianteSeguro 
+        (uniNeg,idEstudiante,anio,idTipoSeguro
+        ,ruc,prioridad,codigo,status,fecIni,fecFin
+        ,creaPor,creaFecha,clinica) 
+        Values 
+        (#{estudianteBean.personaBean.unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona},#{anio},#{codigoBean.idCodigo}
+        ,#{entidadBean.ruc},#{prioridad},#{codigo},#{status},#{fecIni}, #{fecFin}
+        ,#{creaPor},getDate(),#{clinica})
+    </insert>
+    <insert id="insertarEstudianteSeguroRapido" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">  
+        Insert Into MX_EstudianteSeguro 
+        (uniNeg,idEstudiante,anio,idTipoSeguro
+        ,ruc,prioridad,codigo,status,fecIni,fecFin
+        ,creaPor,creaFecha,clinica) 
+        Values 
+        (#{estudianteBean.personaBean.unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona},DATEPART(year,GETDATE()) ,#{codigoBean.idCodigo}
+        ,#{entidadBean.ruc},#{prioridad},#{codigo},#{status},#{fecIni}, #{fecFin}
+        ,#{creaPor},getDate(),#{clinica})
+    </insert>
+    <update id="modificarEstudianteSeguro" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">
+        Update MX_EstudianteSeguro Set 
+        anio=#{anio}
+        ,idTipoSeguro=#{codigoBean.idCodigo}
+        ,ruc=#{entidadBean.ruc}
+        ,prioridad=#{prioridad}
+        ,codigo=#{codigo}
+        ,status=#{status}
+        ,fecIni=#{fecIni}
+        ,fecFin=#{fecFin}
+        ,clinica=#{clinica}
+        ,modiPor=#{modiPor} 
+        Where 
+        idEstudiante= #{estudianteBean.personaBean.idPersona} and 
+        uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and
+        idEstudianteSeguro = #{idEstudianteSeguro}
+    </update>
+    <update id="modificarEstudianteSeguroRapido" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">
+        Update MX_EstudianteSeguro Set 
+        anio=DATEPART(year,GETDATE()) 
+        ,idTipoSeguro=#{codigoBean.idCodigo}
+        ,ruc=#{entidadBean.ruc}
+        ,prioridad=#{prioridad}
+        ,codigo=#{codigo}
+        ,status=#{status}
+        ,fecIni=#{fecIni}
+        ,fecFin=#{fecFin}
+        ,clinica=#{clinica}
+        ,modiPor=#{modiPor} 
+        Where 
+        idEstudiante= #{estudianteBean.personaBean.idPersona} and 
+        uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and
+        idEstudianteSeguro = #{idEstudianteSeguro}
+    </update>
+    <update id="cambiarEstadoAllEstudianteSeguroRapido" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">
+        Update MX_EstudianteSeguro 
+        Set  
+        status=#{status},modiPor=#{modiPor} 
+        Where 
+        idEstudiante= #{estudianteBean.personaBean.idPersona} and 
+        uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg} 
+    </update>
+    <delete id="eliminarEstudianteSeguro" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">
+        Delete From MX_EstudianteSeguro 
+        Where idEstudiante= #{estudianteBean.personaBean.idPersona} and 
+        uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and
+        idEstudianteSeguro = #{idEstudianteSeguro} 
+    </delete>
+    <update id="cambiarEstadoEstudianteSeguro" parameterType="pe.marista.sigma.bean.EstudianteSeguroBean">
+        Update MX_EstudianteSeguro Set
+        status = #{status}
+        Where idEstudiante= #{estudianteBean.personaBean.idPersona} and 
+        uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and
+        idEstudianteSeguro = #{idEstudianteSeguro} 
+    </update>
+</mapper>

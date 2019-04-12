@@ -1,0 +1,335 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body>
+            <h:form id="frmCargaVal" >
+                <h:panelGrid id="pnlCargaVal" styleClass="centrado" columns="2" >
+                    <p:panel header="#{msgs.etiquetaCargaVal}" style="width: 850px;margin: 0 auto;"  >
+                        <h:panelGrid styleClass="centrado" columns="2" >
+                            <h:panelGrid columns="2" styleClass="centrado" >
+                                <p:outputLabel value="#{msgs.etiquetaFiltros}:" />
+                                <p:selectOneRadio value="#{cargaValoradosMB.tipFiltro}" >
+                                    <f:selectItem itemLabel="#{msgs.etiquetaEstudiante}" itemValue="1" />
+                                    <f:selectItem itemLabel="#{msgs.etiquetaFamilia}" itemValue="2" />
+                                    <p:ajax listener="#{cargaValoradosMB.cambiarTiFiltro}" update=":frmTblCargaVal:pnlTblCargaFamilia,:frmTblCargaVal:pnlTblCargaVal,:frmCargaVal:panel" 
+                                            process="@this,:frmTblCargaVal:pnlTblCargaFamilia,:frmTblCargaVal:pnlTblCargaVal,:frmCargaVal:panel"/>
+                                </p:selectOneRadio>
+                                <p:outputLabel value="#{msgs.etiquetaFechaInicio}: " />
+                                <p:calendar  value="#{cargaValoradosMB.fichaFiltroBean.fechaIni}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30"/>
+                                <p:outputLabel value="#{msgs.etiquetaFechaFin}: " />
+                                <p:calendar  value="#{cargaValoradosMB.fichaFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30"/>
+                                <p:outputLabel value="#{msgs.etiquetaModalidadPago}: " />
+                                <p:selectOneMenu value="#{cargaValoradosMB.fichaFiltroBean.tipoModoPago.idCodigo}"    label="#{msgs.etiquetaModali}" filter="false" style="width: 175px" panelStyle="width:175px">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                    <f:selectItems value="#{cargaValoradosMB.listaModoPago}" var="modo" itemLabel="#{modo.codigo}" itemValue="#{modo.idCodigo}"/> 
+                                </p:selectOneMenu>
+                            </h:panelGrid>
+                            <h:panelGrid styleClass="centrado" >
+                                <p:inputText value="#{cargaValoradosMB.fichaFiltroBean.paganteBean.nroDoc}" size="59" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaNroDocAbb}" />
+
+                                <p:inputTextarea value="#{cargaValoradosMB.fichaFiltroBean.paganteBean.nomPagante}" cols="60" rows="3" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaPagante}" />
+                            </h:panelGrid>
+                        </h:panelGrid> 
+                        <br/>
+                        <h:panelGrid columns="3" styleClass="centrado" >
+                            <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{cargaValoradosMB.filtrarFichaPagada()}" 
+                                             update=":frmTblCargaVal:pnlTblCargaVal,:frmCargaVal:panel,:frmTblCargaVal:pnlTblCargaFamilia,msgCargaVal"/>
+                            <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{cargaValoradosMB.limpiarFicha()}" 
+                                             update=":frmTblCargaVal:pnlTblCargaVal,:frmCargaVal:panel"/>
+                            <p:commandButton value="#{msgs.botonNuevo}" oncomplete="PF('popRecuperacionFile').show();"  />
+                        </h:panelGrid>
+                        <p:messages id="msgCargaVal" autoUpdate="false" showDetail="false" />
+                    </p:panel> 
+                    <p:panel style="width: 500px" header="#{msgs.etiquetaTotales}" toggleable="false" toggleSpeed="500" closeSpeed="500"> 
+                        <br></br>
+                        <p:panelGrid id="panel" styleClass="centrado">
+                            <p:row>
+                                <p:column styleClass="ui-widget-header centrado-derecha">
+                                    <h:outputText value="#{msgs.etiquetaMontoRec}:"  
+                                                  style="font-size: 1.1em ;text-align: left !important;font-weight: bold" />
+                                </p:column>
+                                <p:column styleClass="centrado-derecha ">
+                                    <h:outputText value="#{cargaValoradosMB.totSoles}"  style="font-size: 1.25em ;text-align: left !important;font-weight: bold" >
+                                        <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                            </p:row> 
+                        </p:panelGrid>
+                        <br></br>
+                        <h:panelGrid id="pnlHistorialFicha" styleClass="centrado" >
+                            <p:dataTable id="tblFicha" value="#{cargaValoradosMB.listaHisFicha}" widgetVar="tblFicha"
+                                         var="ficha" 
+                                         rendered="#{not empty cargaValoradosMB.listaHisFicha}" 
+                                         scrollable="true" scrollHeight="100">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaHistorialCa}" />
+                                </f:facet>
+                                <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{ficha.nomFile}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{ficha.fechaPagoVista}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaProcesados}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{ficha.contador}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaMontoProc}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{ficha.totalPro}" >
+                                        <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <br></br>
+                    </p:panel>
+                </h:panelGrid>
+            </h:form> 
+            <h:form id="frmTblCargaVal" >
+                <h:panelGrid id="pnlTblCargaFamilia" styleClass="centrado" >
+                    <p:dataTable id="tblFichaFa" value="#{cargaValoradosMB.listaFichaFamilia}" widgetVar="tblFichaFa"
+                                 paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="ficha" rowKey="#{ficha}"
+                                 rows="15" 
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                 rendered="#{not empty cargaValoradosMB.listaFichaFamilia}" 
+                                 style="width:1200px; font-size: 10px;font-size:14px !important;">
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaFichas}" />
+                        </f:facet>
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                <p:dataExporter type="xls" target="tblFichaFa" fileName="pagos" />
+                            </h:commandLink> 
+                        </f:facet>
+                        <p:column exportable="false" headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                            <center>
+                                <h:outputText value="#{n+1}" />
+                            </center>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFamilia}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.nomFamilia}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.paganteBean.matriculaBean.estudianteBean.codigo}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaEstudiante}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.paganteBean.nomPagante}" />
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaGrado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.nombreGrado}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaGradoAca}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{ficha.grado}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.EtiquetaNivel}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{ficha.nivel}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaSeccion}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{ficha.seccion}" />
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{ficha.fechaPagoVista}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaAsignacion}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.totalPagFa}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMontoPagado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.totalFa}" >
+                                <f:convertNumber pattern="#0.00" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column exportable="false" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                            <h:commandLink action="#{cargaValoradosMB.reimpresionReciboMasivo(ficha,2)}" target="_blank" id="imprimir" 
+                                           disabled="#{ficha.tipoStatusFicha.idCodigo == 26101 or ficha.tipoStatusFicha.idCodigo == 26103}">
+                                <h:graphicImage value="/resources/images/impresora.png" width="20%"/>
+                            </h:commandLink>
+                            <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" /> 
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+                <h:panelGrid id="pnlTblCargaVal" styleClass="centrado" >
+                    <p:dataTable id="tblFicha" value="#{cargaValoradosMB.listaFichaFiltroBean}" widgetVar="tblFicha"
+                                 paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="ficha" rowKey="#{ficha}"
+                                 rows="15" 
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                 rendered="#{not empty cargaValoradosMB.listaFichaFiltroBean}" 
+                                 style="width:1200px; font-size: 10px;font-size:14px !important;">
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaFichas}" />
+                        </f:facet>
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                <p:dataExporter type="xls" target="tblFicha" fileName="pagos" />
+                            </h:commandLink> 
+                        </f:facet>
+                        <p:column exportable="false" headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                            <center>
+                                <h:outputText value="#{n+1}" />
+                            </center>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.paganteBean.nroDoc}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPagante}" filterMatchMode="contains" width="6%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.paganteBean.nomPagante.toUpperCase()}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNroFicha}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.nroficha}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.tipoStatusFicha.codigo}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaModalidadPago}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.tipoModoPago.codigo}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMonto}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.monto}" >
+                                <f:convertNumber pattern="#0.00" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMontoPagado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.montoPagado}" >
+                                <f:convertNumber pattern="#0.00" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{ficha.fechaPagoVista}" />
+                        </p:column>
+                        <p:column exportable="false" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:commandLink action="#{cargaValoradosMB.reimpresionReciboMasivo(ficha,1)}" target="_blank" id="imprimir" 
+                                           disabled="#{ficha.tipoStatusFicha.idCodigo == 26101 or ficha.tipoStatusFicha.idCodigo == 26103}">
+                                <h:graphicImage value="/resources/images/impresora.png" width="20%"/>
+                            </h:commandLink>
+                            <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" /> 
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+
+            <!-- RECUPERACION BANCO BINGO -->
+            <p:dialog id="popRecuperacionFile" header="#{msgs.etiquetaConfigurar} #{msgs.etiquetaProceso}"  widgetVar="popRecuperacionFile" modal="true" width="600px" showEffect="explode" >
+                <h:form id="frmRecuperacionPru" enctype="multipart/form-data" >                    
+                    <p:accordionPanel id="accRecPru" >
+                        <p:tab title="#{msgs.etiquetaNuevoProceso}">
+                            <h:panelGrid id="pnlRecuperacionPru" columns="1" > 
+                                <p:fieldset legend="#{msgs.etiquetaConfigurar} #{msgs.etiquetaProceso}" >
+                                    <h:panelGrid columns="2" style="padding: 5px;" >   
+                                        <p:outputLabel value="#{msgs.etiquetaFecha} #{msgs.etiquetaOperacion}: " />
+                                        <p:calendar id="txtFechaBancoPru" value="#{cargaValoradosMB.procesoBancoBean.fecha}" mode="popup" showOn="button" readonlyInput="true" 
+                                                    pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" >
+                                        </p:calendar>
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaBanco}: "  />
+                                        <p:selectOneMenu id="txtRucBancoPru" value="#{cargaValoradosMB.procesoBancoBean.ruc}" required="true" label="#{msgs.etiquetaBanco}" style="width: 200px;" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                            <f:selectItems value="#{cargaValoradosMB.listaEntidad}" var="banco" itemLabel="#{banco.nombre}" itemValue="#{banco.ruc}"/>
+                                            <p:ajax event="change" listener="#{cargaValoradosMB.cargarRuc()}" process="@this" update=":frmPopCodUniNeg"
+                                                    oncomplete="if(args.openModalCodUniNeg){PF('popCodUniNeg').show()}" />
+                                        </p:selectOneMenu> 
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaMoneda}: "/>
+                                        <p:selectOneRadio id="monedaPru" value="#{cargaValoradosMB.procesoBancoBean.moneda}" required="true" label="#{msgs.etiquetaMoneda}" >
+                                            <f:selectItem itemLabel="#{msgs.etiquetaDolares}" itemValue= "1" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaSoles}" itemValue= "0" />
+                                        </p:selectOneRadio> 
+                                    </h:panelGrid>
+                                    <h:panelGrid id="pnlDatosCtaBancoPru" columns="2" style="padding: 5px;" >
+                                        <h:panelGrid columns="2" style="margin: 0 auto;" >
+                                            <p:outputLabel value="#{msgs.EtiquetaCodigo} UniNeg: " />
+                                            <p:inputText id="txtCodUniNeg" value="#{cargaValoradosMB.procesoBancoBean.codUniNeg}" style="width: 60px;" readonly="true" />
+                                        </h:panelGrid>
+                                        <h:panelGrid columns="2" style="margin: 0 auto;" >
+                                            <p:outputLabel value="#{msgs.etiquetaNroCue}: " />
+                                            <p:inputText id="txtNumCuenta" value="#{cargaValoradosMB.procesoBancoBean.numCuenta}" style="width: 90px;" readonly="true" />
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                </p:fieldset>
+                            </h:panelGrid>
+                            <br/>
+                            <p:fileUpload fileUploadListener="#{cargaValoradosMB.obtenerFileRecuperacion}" oncomplete="if(args.operacionCorrecta){PF('popRecuperacionFile').hide();PF('popDone').show();}else if(args.error){PF('popError').show();}" 
+                                          allowTypes="/(\.|\/)(txt|TXT)$/" sizeLimit="100000" value="#{msgs.etiquetaSelArchivo}" 
+                                          update=":frmRecuperacionPru:accRecPru:pnlRecuperacionPru,:frmCargaVal:pnlHistorialFicha"/>
+                        </p:tab>
+                    </p:accordionPanel>
+                    <p:growl id="msgsss" autoUpdate="false" />
+                </h:form>
+            </p:dialog>
+
+            <!-- POP_CODUNINEG -->
+            <p:dialog id="popCodUniNeg" header="#{msgs.etiquetaDetalle} #{msgs.etiquetaCtaBco}" widgetVar="popCodUniNeg" modal="true" showEffect="explode" closeOnEscape="true" >
+                <h:form id="frmPopCodUniNeg" >
+                    <h:panelGrid columns="1" style="margin: 0 auto;" >
+                        <p:dataTable value="#{cargaValoradosMB.listaCuentaBanco}" var="ctaBanco" 
+                                     paginator="true" paginatorPosition="bottom"  rows="5" rowKey="#{ctaBanco}" 
+                                     rendered="#{not empty cargaValoradosMB.listaCuentaBanco}"
+                                     style="width: 600px;overflow-x: auto;font-size:14px !important;">
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaNombre} #{msgs.etiquetaRecpcion}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.entidadBancoBean.nombre}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaRucBco}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.entidadBancoBean.ruc}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaNumCta}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.numCuenta}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaCodigo} #{msgs.etiquetaUniNegocio}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.codUniNeg}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaAcci}" />
+                                </f:facet>
+                                <center>
+                                    <p:commandLink id="cmdMostrarActiv" update=":frmRecuperacionPru:accRecPru:pnlDatosCtaBancoPru" 
+                                                   oncomplete="PF('popCodUniNeg').hide();" actionListener="#{cargaValoradosMB.obtenerCuentaBanco(ctaBanco)}" 
+                                                   process="@this">
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink> 
+                                </center>
+                                <p:tooltip for="cmdMostrarActiv" value="#{msgs.mensajeSelect}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <!-- POP_ERROR -->
+            <h:form id="frmError">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popError" width="370" height="120" showEffect="fade" hideEffect="explode" modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.etiquetaErrorReporte}"/>
+                    <br/><br/> 
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popError').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+
+

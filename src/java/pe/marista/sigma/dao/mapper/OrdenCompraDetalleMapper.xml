@@ -1,0 +1,800 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">   
+   
+<mapper namespace="pe.marista.sigma.dao.OrdenCompraDetalleDAO">  
+    
+    <sql id="consultaCampos">
+        select orden.atencion as atencion,
+        dr.horaregreso as horaRegreso ,dr.horasalida as horaSalida,dr.fechasalida as fechaSalida,dr.destinoservicio as destinoServicio,
+        det.uniNeg,det.idordencompra,det.iddetordencompra,det.iddetrequerimiento,det.idrequerimiento,det.cantidad as cantidad,
+        orden.idOrdenCompra,orden.anio as anioOc,det.idfacturacompra, det.cantidadrecibida,orden.nombreCheque as nombreCheque,
+        (case when c.idcatalogo is not null then c.idcatalogo else cb.idcatalogo end) as idCatalogo,
+        (case when c.idcatalogo is not null then upper(c.item) else upper(isnull(cb.item,'')) end) as item,
+        (case when c.idcatalogo is not null then 1 else 0 end) AS validarCatalogo
+        ,c.cuenta,det.importe AS importe,um.idcodigo as idUnidadMedida,um.codigo as unidadMedida,
+        tm.idcodigo as idTipoMoneda,tm.codigo tipoMoneda,req.idrequerimiento, dr.iddetrequerimiento,
+        (select sum(d.importe*d.cantidad) from ML_DetOrdenCompra d
+        where d.idOrdenCompra = (select max(idordencompra)from ML_OrdenCompra)) as sumaImporte,concat(fact.seriedoc+'-',fact.nrodoc) as serieNroDoc,
+        fact.seriedoc as serieDocumento ,fact.nrodoc as nroDocument,
+        un.nombreUniNeg,det.anio,
+        orden.unineg as uniNegOC,
+        orden.fechaorden as fechaOrden, tor.codigo as categoria,
+        toror.codigo as categoriaOrden,
+        form.codigo as formaPagoOrden,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,en.direccion as direccionOrden,
+        ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.iddistrito as distritoUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        orden.importeadelanto as importeAdelanto,
+        req.importepropuesto as importePropuesto,
+        dis.nombre as nombreDistrito,   
+        pais.nombre as paisUnidad,    
+        (select case
+        when tor.codigo = 'Activo Fijo' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Material' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Servicio' then (sum(det.importe) + (sum(det.importe*det.cantidad)*18)/100)
+        end
+        from ML_DetOrdenCompra det
+        where det.idOrdenCompra = orden.idOrdenCompra and det.uniNeg=orden.uniNeg) as montoRef,
+        (det.importe *det.cantidad)   as montoCadaUnoMate,
+        req.importepropuesto as importePropuestoOrden,
+        (select sum(fe.importe *fe.cantidad) 
+        from ML_DetOrdenCompra fe WHERE  fe.uniNeg=orden.uniNeg)  as montoGeneralOrden,
+        (det.importe)  as montoCadaUnoSer
+        ,dr.iddetrequerimiento
+        ,dr.cuentad as cuentaDebeSoli
+        ,dr.cuentah as cuentaHaberSoli
+        ,dr.idconcepto as idConceptoReq
+        ,co.idconcepto as idConcep,
+        co.nombre as nombreConcepto,
+        catD.idTipoConcepto,
+        co.cuentad as cuentad,
+        plnD.nombre as nombreCuentaD,
+        co.cuentah as cuentah,
+        plnH.nombre as nombreCuentaH
+        ,coti.idcotizacion as idCotizacion
+        ,detCot.iddetcotizacion as idDetCotizacion 
+        ,toror.codigo as categoria,
+        req.nrosolicitud as nroSolicitud,
+        req.flgtransporte as flgTransporte,
+        dr.flgComprado as flgComprado
+        from ML_DetOrdenCompra det
+        inner join ML_OrdenCompra orden on orden.idOrdenCompra = det.idordencompra  and orden.unineg=det.unineg
+        left join MO_Codigo form on orden.idtipoformapago = form.idcodigo 
+        left join MO_Codigo toror on orden.idtipocategoria = toror.idcodigo 
+        left join MO_Entidad en on orden.ruc = en.ruc   
+        left join MO_UnidadNegocio un on un.uniNeg = det.uniNeg 
+        left join MO_Entidad ent on un.ruc = ent.ruc   
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais 
+        inner join ML_DetRequerimiento dr on det.iddetrequerimiento = dr.iddetrequerimiento   and dr.unineg=det.unineg
+        inner join ML_Requerimiento req on det.idrequerimiento = req.idrequerimiento  and req.unineg=det.unineg
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo 
+        left join ML_Catalogo c on det.idcatalogo = c.idcatalogo
+        left join ML_CatalogoBlock cb on det.idcatalogo = cb.idcatalogo
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo 
+        left join MO_Codigo tm on det.idtipomoneda = tm.idcodigo
+        left join ML_FacturaCompra fact on fact.idfacturacompra = det.idfacturacompra  and fact.unineg=det.unineg
+        left join MO_UnidadNegocio uniDet on dr.unineg = uniDet.unineg 
+        left join MT_ConceptoUniNeg unic on unic.idconcepto = dr.idconcepto   and unic.unineg=det.unineg
+        left join MT_Concepto co on unic.idconcepto = co.idconcepto
+        Left Join MT_TipoConcepto catD ON co.idTipoConcepto = catD.idTipoConcepto 
+        Left Join MT_PlanContable plnD ON co.cuentad = plnD.cuenta 
+        Left Join MT_PlanContable plnH ON co.cuentah = plnH.cuenta 
+        left join ML_DetCotizacion detCot on detCot.iddetcotizacion = det.iddetcotizacion   and detcot.unineg=det.unineg
+        left join ML_Cotizacion coti ON coti.idcotizacion = det.idcotizacion  and coti.unineg=det.unineg 
+    </sql>
+    <sql id="concultaCampitos">
+        select det.uniNeg,
+        det.cantidad as cantidad,
+        orden.nombreCheque as nombreCheque,
+        orden.idOrdenCompra,
+        orden.anio as anioOc, 
+        (case when c.idcatalogo is not null then c.idcatalogo else cb.idcatalogo end) as idCatalogo,
+        (case when c.idcatalogo is not null then upper(c.item) else upper(isnull(cb.item,'')) end) as item,
+        det.importe AS importe,
+        um.idcodigo as idUnidadMedida,
+        um.codigo as unidadMedida,
+        tm.idcodigo as idTipoMoneda,
+        tm.codigo tipoMoneda,
+        req.idrequerimiento, 
+        dr.iddetrequerimiento,
+        (select sum(d.importe*d.cantidad) from ML_DetOrdenCompra d
+        where d.idOrdenCompra = (select max(idordencompra)from ML_OrdenCompra)) as sumaImporte,
+        un.nombreUniNeg,
+        req.importepropuesto as importePropuesto,
+        orden.unineg as uniNegOC,
+        orden.fechaorden as fechaOrden, 
+        tor.codigo as categoria,
+        toror.codigo as categoriaOrden,
+        form.codigo as formaPagoOrden,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,
+        en.direccion as direccionOrden,
+        ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.iddistrito as distritoUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as nombreDistrito,   
+        pais.nombre as paisUnidad,    
+        (select case
+        when tor.codigo = 'Activo Fijo' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Material' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Servicio' then (sum(det.importe) + (sum(det.importe*det.cantidad)*18)/100)
+        end
+        from ML_DetOrdenCompra det
+        where det.idOrdenCompra = orden.idOrdenCompra and det.uniNeg=orden.uniNeg) as montoRef,
+        (det.importe *det.cantidad)   as montoCadaUnoMate,
+        (select sum(fe.importe *fe.cantidad) 
+        from ML_DetOrdenCompra fe WHERE  fe.uniNeg=orden.uniNeg)  as montoGeneralOrden,
+        (det.importe)  as montoCadaUnoSer
+        ,dr.iddetrequerimiento
+        ,dr.cuentad as cuentaDebeSoli
+        ,dr.cuentah as cuentaHaberSoli
+        ,dr.idconcepto as idConceptoReq
+        ,toror.codigo as categoria,
+        req.nrosolicitud as nroSolicitud,
+        dr.flgComprado as flgComprado
+        from ML_DetOrdenCompra det
+        left join ML_OrdenCompra orden on orden.idOrdenCompra = det.idordencompra
+        left join MO_Codigo form on orden.idtipoformapago = form.idcodigo
+        left join MO_Codigo toror on orden.idtipocategoria = toror.idcodigo
+        left join MO_Entidad en on orden.ruc = en.ruc
+        left join MO_UnidadNegocio un on un.uniNeg = det.uniNeg
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        left join ML_DetRequerimiento dr on det.iddetrequerimiento = dr.iddetrequerimiento
+        left join ML_Requerimiento req on det.idrequerimiento = req.idrequerimiento
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo
+        left join ML_Catalogo c on det.idcatalogo = c.idcatalogo
+        left join ML_CatalogoBlock cb on det.idcatalogo = cb.idcatalogo
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on det.idtipomoneda = tm.idcodigo
+    </sql>
+    <resultMap id="detResultado" type="pe.marista.sigma.bean.OrdenCompraDetalleBean">
+        <id property="idDetOrdenCompra" column="idDetOrdenCompra"/>
+        <result property="cantidad" column="cantidad"/>
+        <result property="cantidadAnterior" column="cantidad"/>
+        <result property="importe" column="importe"/>
+        <result property="anio" column="anio"/>
+        <result property="cantidadRecibida" column="cantidadRecibida"/>
+        <result property="importeAnterior" column="importe"/>
+        <result property="sumaImporte" column="sumaImporte"/>
+        <result property="idOrdenCompra" column="idOrdenCompra"/>
+        <result property="idRequerimiento" column="idRequerimiento"/>
+        <result property="idDetRequerimiento" column="idDetRequerimiento"/>
+        <result property="idFacturaCompra" column="idFacturaCompra"/>
+        <result property="categoria" column="categoria"/>
+        <result property="validarCatalogo" column="validarCatalogo"/>
+        <association property="ordenCompraBean" column="idOrdenCompra"
+                     javaType="pe.marista.sigma.bean.OrdenCompraBean"
+                     resultMap="ordenResultado"/>
+        <association property="catalogoBean" column="idcatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="solicitudLogDetalleBean" column="idDetRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogDetalleBean"
+                     resultMap="solDetalleResultado"/>
+        <association property="solicitudLogisticoBean" column="idRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaDETResultado"/>
+        <association property="facturaCompraBean" column="idFacturaCompra"
+                     javaType="pe.marista.sigma.bean.FacturaCompraBean"
+                     resultMap="facturaCompraResultado"/>
+        <association property="cotizacionBean" column="idCotizacion"
+                     javaType="pe.marista.sigma.bean.CotizacionBean"
+                     resultMap="cotizacionResultado"/> 
+        <association property="detCotizacionBean" column="idDetCotizacion"
+                     javaType="pe.marista.sigma.bean.DetCotizacionBean"
+                     resultMap="detCotizacionResultado"/> 
+    </resultMap>
+    
+    <resultMap id="ordenResultado" type="pe.marista.sigma.bean.OrdenCompraBean">
+        <id property="idOrdenCompra" column="idOrdenCompra"/>
+        <result property="anio" column="anioOc"/>
+        <result property="fechaOrden" column="fechaOrden"/>
+        <result property="nombreCheque" column="nombreCheque"/>
+        <result property="montoRef" column="montoRef"/>
+        <result property="montoCadaUnoMate" column="montoCadaUnoMate"/>
+        <result property="montoCadaUnoSer" column="montoCadaUnoSer"/>
+        <result property="montoGeneralOrden" column="montoGeneralOrden"/>
+        <result property="importeAdelanto" column="importeAdelanto"/>
+        <result property="importePropuesto" column="importePropuestoOrden"/>
+        <result property="atencion" column="atencion"/>
+        <association property="unidadNegocioBean" column="uniNegOC"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioOCResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadOCResultado"/>
+        <association property="tipoFormaPagoBean" column="idTipoFormaPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoFormaPagoOCResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaOCResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioOCResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegOC"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombre"/>
+        <result property="direccion" column="direccion"/>
+        <result property="telefono" column="telefono"/>
+        <result property="correo" column="correo"/>
+        <result property="url" column="url"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoENResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisENResultado"/>
+    </resultMap>
+    <resultMap id="distritoENResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distrito"/>
+    </resultMap>    
+    <resultMap id="paisENResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="nomPais"/>
+    </resultMap>
+    <resultMap id="entidadOCResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucOrden"/>
+        <result property="nombre" column="nombreOrden"/>
+        <result property="direccion" column="direccionOrden"/>
+    </resultMap>
+    <resultMap id="tipoFormaPagoOCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoFormaPago"/>
+        <result property="codigo" column="formaPagoOrden"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaOCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="categoriaOrden"/>
+    </resultMap>
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="precioRef" column="importe"/>
+        <association property="tipoUnidadMedidaBean" column="idUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="unidadMedResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado"/>
+    </resultMap>
+    <resultMap id="unidadMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idUnidadMedida"/>
+        <result property="codigo" column="unidadMedida"/>
+    </resultMap>
+    <resultMap id="monedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIDADResultado"/>
+        
+    </resultMap>
+    <resultMap id="entidadUNIDADResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucUnidad"/>
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultado"/>
+    </resultMap>
+    <resultMap id="distritoUNIDADENTResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="nombreDistrito"/>
+    </resultMap>       
+    <resultMap id="paisUNIDADENTResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>
+    <resultMap id="solDetalleResultado" type="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        <id property="idDetRequerimiento" column="idDetRequerimiento"/>
+        <result property="horaRegreso" column="horaRegreso"/>
+        <result property="horaSalida" column="horaSalida"/>
+        <result property="fechaSalida" column="fechaSalida"/>
+        <result property="destinoServicio" column="destinoServicio"/> 
+        <result property="validarCatalogo" column="validarCatalogo"/> 
+        <result property="flgComprado" column="flgComprado"/> 
+        <association property="solicitudLogisticoBean" column="idrequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solDetResultado"/>
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniNegBeanResultado"/>
+    </resultMap>
+    <resultMap id="solDetResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/>
+        <result property="nroSolicitud" column="nroSolicitud"/>
+        <result property="flgTransporte" column="flgTransporte"/>
+    </resultMap>
+    <resultMap id="conceptoUniNegBeanResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean">
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioDETResultado"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioDETResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>  
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcep"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <result property="descrip" column="descrip"/>
+        <association property="planContableCuentaDBean" column="cuentad1"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultadoC"/>
+        <association property="planContableCuentaHBean" column="cuentah1"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultadoC"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultadoC"/>
+    </resultMap>
+    <resultMap id="planContableDResultadoC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentad"/>
+        <result property="nombre" column="nombreCuentaD"/>
+    </resultMap>
+    <resultMap id="planContableHResultadoC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentah"/>
+        <result property="nombre" column="nombreCuentaH"/>
+    </resultMap>
+    <resultMap id="tipoConceptoResultadoC" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+    </resultMap>
+    <resultMap id="solResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/>
+        <result property="importePropuesto" column="importePropuesto"/>
+        <result property="nroSolicitud" column="nroSolicitud"/>
+        <result property="flgTransporte" column="flgTransporte"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaSOLResultado"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaSOLResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>
+    <resultMap id="monedaDETResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="facturaCompraResultado" type="pe.marista.sigma.bean.FacturaCompraBean">
+        <id property="idFacturaCompra" column="idFacturaCompra"/>
+        <result property="serieDoc" column="serieDocumento"/>
+        <result property="nroDoc" column="nroDocument"/>
+        <result property="montoPago" column="montoPago"/>
+        <result property="serieNroDoc" column="serieNroDoc"/>
+    </resultMap>
+    <resultMap id="cotizacionResultado" type="pe.marista.sigma.bean.CotizacionBean">
+        <id property="idCotizacion" column="idCotizacion"/> 
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaCOTIResultado"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaCOTIResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoriaCOTI"/>
+        <result property="codigo" column="tipoCategoriaCOTI"/>
+    </resultMap>
+    <resultMap id="detCotizacionResultado" type="pe.marista.sigma.bean.DetCotizacionBean">
+        <id property="idDetCotizacion" column="idDetCotizacion"/> 
+        <association property="cotizacionBean" column="idCotizacion"
+                     javaType="pe.marista.sigma.bean.CotizacionBean"
+                     resultMap="cotizacionDETResultado"/> 
+        <association property="solicitudLogisticoBean" column="idRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solResultadoCOTI"/>
+    </resultMap>
+    <resultMap id="cotizacionDETResultado" type="pe.marista.sigma.bean.CotizacionBean">
+        <id property="idCotizacion" column="idCotizacion"/>  
+    </resultMap>
+    <resultMap id="solResultadoCOTI" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/> 
+    </resultMap>
+  
+    <!--
+    <resultMap id="anioResultado" type="pe.marista.sigma.bean.AnioBean">
+        <id property="anio" column="anio"/>
+    </resultMap>
+    -->
+    <select id="obtenerPorOrden" resultMap="detResultado" parameterType="map">
+        <include refid="consultaCampos" />where det.idordencompra = #{idOrdenCompra} and det.uniNeg = #{uniNeg}  
+    </select>
+    
+    <select id="obtenerListaPorId" resultMap="detResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where det.iddetordencompra = #{iddetordencompra}  
+    </select>
+    <select id="obtenerTodos" resultMap="detResultado" parameterType="String">
+        <include refid="consultaCampos" />where det.uniNeg = #{unidadNegocioBean.uniNeg}  
+    </select>
+    
+    <select id="obtenerUltimo" resultMap="detResultado" parameterType="map" >
+        select isnull((max(idOrdenCompra)),0) from ML_DetOrdenCompra
+        WHERE idOrdenCompra = #{idOrdenCompra} and uniNeg = #{uniNeg}  
+    </select> 
+    <select id="obtenerPorId" parameterType="pe.marista.sigma.bean.OrdenCompraDetalleBean">
+        <include refid="concultaCampitos" /> where det.uniNeg = #{unidadNegocioBean.uniNeg} and det.idOrdenCompra = #{ordenCompraBean.idOrdenCompra}
+    </select>  
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.OrdenCompraDetalleBean"
+            useGeneratedKeys="true" keyProperty="idDetOrdenCompra" keyColumn="idDetOrdenCompra">
+        insert into ML_DetOrdenCompra 
+        (iddetordencompra,uniNeg,idordencompra,idRequerimiento,idDetRequerimiento,anio,importe,cantidad,idcatalogo,
+        idtipounimed,idtipomoneda,creaPor,creaFecha,idfacturacompra,cantidadrecibida,idcotizacion,iddetcotizacion) 
+        values
+        (0,#{unidadNegocioBean.uniNeg},#{idOrdenCompra},#{idRequerimiento},#{idDetRequerimiento},#{anio},#{importe},#{cantidad},#{catalogoBean.idCatalogo},
+        #{catalogoBean.tipoUnidadMedidaBean.idCodigo},#{catalogoBean.tipoMonedaBean.idCodigo}
+        ,#{creaPor},getDate(),#{facturaCompraBean.idFacturaCompra},#{cantidadRecibida},#{cotizacionBean.idCotizacion},#{detCotizacionBean.idDetCotizacion}) 
+    </insert>
+    <insert id="insertarCotizacionOrden" parameterType="pe.marista.sigma.bean.OrdenCompraDetalleBean"
+            useGeneratedKeys="true" keyProperty="idDetOrdenCompra" keyColumn="idDetOrdenCompra">
+        insert into ML_DetOrdenCompra 
+        (iddetordencompra,uniNeg,idordencompra,idRequerimiento,idDetRequerimiento,anio,importe,cantidad,idcatalogo,
+        idtipounimed,idtipomoneda,creaPor,creaFecha,idfacturacompra,cantidadrecibida,idcotizacion,iddetcotizacion) 
+        values
+        (0,#{unidadNegocioBean.uniNeg},#{idOrdenCompra},#{idRequerimiento},#{idDetRequerimiento},#{anio},#{importe},#{cantidad},#{catalogoBean.idCatalogo},
+        #{catalogoBean.tipoUnidadMedidaBean.idCodigo},#{catalogoBean.tipoMonedaBean.idCodigo}
+        ,#{creaPor},getDate(),#{facturaCompraBean.idFacturaCompra},#{cantidadRecibida},#{cotizacionBean.idCotizacion},#{detCotizacionBean.idDetCotizacion}) 
+    </insert>
+    
+    <!--  <update id="validarRecepcionCompra" parameterType="pe.marista.sigma.bean.OrdenCompraDetalleBean">
+        update ML_DetOrdenCompra 
+        set recibido = #{recibido}
+        where idDetOrdenCompra = #{idDetOrdenCompra} and uniNeg= #{unidadNegocioBean.uniNeg}
+    </update>-->
+    
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.OrdenCompraBean">
+        delete from ML_DetOrdenCompra 
+        where idOrdenCompra = #{idOrdenCompra} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </delete>
+    <update id="modificarFactura" parameterType="pe.marista.sigma.bean.OrdenCompraDetalleBean">
+        update
+        ML_DetOrdenCompra  
+        set
+        idfacturacompra=#{facturaCompraBean.idFacturaCompra}
+        where  iddetordencompra=#{idDetOrdenCompra} and idOrdenCompra = #{ordenCompraBean.idOrdenCompra} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </update>
+
+    <select id="obtenerTodosProveedores" resultMap="detResultado" parameterType="pe.marista.sigma.bean.OrdenCompraDetalleBean">
+        <include refid="consultaCampos" />
+        <where>         
+            orden.unineg =#{unidadNegocioBean.uniNeg}  
+            <if test="ordenCompraBean.entidadBean.nombre != null and ordenCompraBean.entidadBean.nombre != '' ">
+                and upper(en.nombre) like concat('%',#{ordenCompraBean.entidadBean.nombre},'%')
+            </if>
+            <if test="catalogoBean.item != null and catalogoBean.item != '' ">
+                and upper(c.item) like concat('%',#{catalogoBean.item},'%')
+            </if>
+            <if test="anio != null and anio != 0 ">
+                and orden.anio = #{anio}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and orden.fechaorden >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and orden.fechaorden <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by orden.idOrdenCompra desc
+    </select>
+    <select id="obtenerPorOrdenFiltro" resultMap="detResultado" parameterType="pe.marista.sigma.bean.OrdenCompraDetalleBean">
+        <include refid="consultaCampos" />
+        <where>         
+            orden.unineg =#{unidadNegocioBean.uniNeg}  
+            <if test="ordenCompraBean.entidadBean.nombre != null and ordenCompraBean.entidadBean.nombre != '' ">
+                and upper(en.nombre) like concat('%',#{ordenCompraBean.entidadBean.nombre},'%')
+            </if>
+            <if test="catalogoBean.item != null and catalogoBean.item != '' ">
+                and upper(c.item) like concat('%',#{catalogoBean.item},'%')
+            </if>
+        </where>
+    </select>
+    <select id="obtenerOrdenCompra" resultType="pe.marista.sigma.bean.reporte.DetOrdenCompraRepBean" parameterType="map">
+        declare @uniNeg varchar(6) = #{uniNeg}
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        else 'resources\images\sector.jpg'
+        
+        end)
+         select distinct
+        '-' AS igv,
+        @IMG AS rutaImagen,
+        (case 
+        when tm.idcodigo=14901 then 'S/.'
+        when tm.idcodigo=14902 then '$.'
+        else '-'
+        end )as moneda,
+        isnull(orden.atencion,'-') as atencion,
+        ISNULL(orden.nrocotipro,'-') as nroCotiPro,
+        isnull(dr.horaregreso,0) as horaRegreso ,
+        isnull(dr.horasalida,0) as horaSalida,
+        isnull(convert(varchar,dr.fechasalida),'-') as fechaSalida,
+        isnull(dr.destinoservicio,'-') as destinoServicio,
+        isnull(orden.nrocompra,'-') as nroCompra,
+        isnull(concat(p.nombre+', ',p.apepat+' ',p.apemat),'-')  as administradora,
+        (select right(replicate('0', 3) + rtrim(isnull((max(det.idordencompra)),0)+1),3)  from ML_DetOrdenCompra det)  as idOrdenCompra , isnull(convert(varchar,det.anio),'-') as anio, concat(SUBSTRING(UPPER (dis.nombre), 1, 1) + SUbSTRING (LOWER (dis.nombre), 2,50) +', ', ( DateName(day,orden.fechaorden) + ' de ' +DateName(month,orden.fechaorden) + ' de ' +DateName(year,orden.fechaorden))) as fecha,
+        isnull(det.cantidad,'-') as cantidad,
+        (case when c.idcatalogo is not null then upper(c.item) else upper(isnull(cb.item,'')) end) as item,
+        isnull(det.importe,0) AS importe,
+        isnull(tm.codigo,'-') tipoMoneda,
+        isnull(un.nombreUniNeg,'-') as nombreUniNeg, 
+        isnull(tor.codigo,'-') as categoria,
+        isnull(form.codigo,'-') as formaPago, en.ruc as rucOrden,
+        isnull(en.contacto,'-') as nombreOrden,
+        isnull(en.direccion,'-') as direccionOrden,
+        isnull(ent.ruc,'-') as rucUnidad,
+        isnull(ent.nombre,'-') as nombreUnidad,
+        isnull(ent.url,'-') as webUnidad,
+        isnull(ent.correo,'-') as correoUnidad,
+        isnull(ent.telefono,'-') as telefonoUnidad,
+        isnull(ent.direccion,'-') as direccionUnidad,
+        isnull(dis.nombre,'-') as distritoUnidad,
+        isnull(pais.nombre,'-') as paisUnidad, 
+        (case 
+        when flgadelanto=1 then convert(varchar,convert(int ,importeadelanto))+'%  '+(case 
+        when tm.idcodigo=14901 then 'S/.'
+        when tm.idcodigo=14902 then '$.'
+        else '-'
+        end )+convert(varchar,(convert(decimal(8,2),((orden.importepropuesto*orden.importeadelanto)/100)))) +'  Cheque a la firma del contrato. Previo envío de factura. '
+        + 'y el '+(select distinct convert(varchar,convert(int ,(100-importeadelanto))) from ML_OrdenCompra where idordencompra = det.idordencompra  )+'%  '+(case 
+        when tm.idcodigo=14901 then 'S/.'
+        when tm.idcodigo=14902 then '$.'
+        else '-'
+        end )+convert(varchar,(convert(decimal(8,2),((orden.importepropuesto*(100-orden.importeadelanto))/100)))) + 
+        +'  Cheque al finalizar el servicio, previo envío de la factura.'
+        when flgadelanto is null then (case when pago.codigo is not null then isnull(pago.codigo,'-') else form.codigo end)
+        end ) as importeAdelanto, 
+        (select sum(d.importe*d.cantidad) from ML_DetOrdenCompra d
+        where d.idOrdenCompra = det.idordencompra) as sumaImporte,
+        (select case
+        when tor.codigo = 'Activo Fijo' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Material' then (sum(det.importe*det.cantidad)+ (sum(det.importe*det.cantidad)*18)/100)
+        when tor.codigo = 'Servicio' then (sum(det.importe) + (sum(det.importe*det.cantidad)*18)/100)
+        end
+        from ML_DetOrdenCompra det
+        where det.idOrdenCompra = orden.idOrdenCompra) as sumaImporteFinal,
+        isnull(orden.importepropuesto,0) as importePropuesto,
+        isnull((det.importe*det.cantidad),0)  as montoRef,
+        isnull((det.importe*det.cantidad),0)   as montoCadaUnoMate,
+        isnull((det.importe), 0) as montoCadaUnoSer,
+        isnull(comed.codigo,'-') as tipoUniMed,
+        (select right(replicate('0', 3) + rtrim(isnull((max(det.idordencompra)),0)+1),3)  from ML_DetOrdenCompra det)  as idOrdenCompra , det.anio as anio,
+        ( case
+        when  DATENAME(month, orden.fechaentrega)  = DATENAME(MONTH,orden.fechaentrega)
+        then
+        isnull(dateName(WEEKDAY,orden.fechaentrega)+ ' '+ DateName(day,orden.fechaentrega) +' al '+ dateName(WEEKDAY,orden.fechatermina)+' '+  DateName(day,orden.fechatermina)+ ' de ' +DateName(month,orden.fechaentrega) + ' de ' +DateName(year,orden.fechaentrega),'-')
+        else isnull(dateName(WEEKDAY,orden.fechaentrega)+ ' '+ DateName(day,orden.fechaentrega) + ' de ' +DateName(month,orden.fechaentrega) +' al '+ dateName(WEEKDAY,orden.fechatermina)+' '+  DateName(day,orden.fechatermina)+ '  de ' +DateName(month,orden.fechaentrega) + ' de ' +DateName(year,orden.fechaentrega),'-')
+        end ) as fechaEntregaServicio,
+        isnull(DateName(dw,orden.fechaentrega)+', ' +  DATENAME(day, orden.fechaentrega)+' de '+DateName(month,orden.fechaentrega)+' de '+
+        DateName(year,orden.fechaentrega),'-')  as fechaEntrega,
+        (case when en.ruc=pe.ruc then '-' 
+        when orden.unineg=@uniNeg then isnull(en.nombre,'-') 
+        else isnull(en.nombrecomercial,en.nombre) end) as nombreComercial,
+        (case 
+        when req.flgautoriza1= 1 then isnull(concat(per1.nombre,+', '+per1.apepat,+' ' +per1.apemat),'-')
+        when req.flgautoriza2= 1 then isnull(concat(per2.nombre,+', '+per2.apepat,+' ' +per2.apemat),'-')
+        when req.flgautoriza3= 1 then isnull(concat(per3.nombre,+', '+per3.apepat,+' ' +per3.apemat),'-')
+        else (select (concat(p.nombre,+', '+p.apepat,+' ' +p.apemat)) from MO_Personal p inner join MO_PersonalCargo pc on pc.idpersonal=p.idpersonal 
+        inner join MO_Cargo cc on cc.idcargo=pc.idcargo
+        where cc.nombre='ADMINISTRADOR' and p.status=1)
+        end) as nombreAutorizador,
+        isnull(car.nombre,'Administrador') AS cargoAutorizador,
+        isnull(pago.codigo,'-') as tipoPago,
+        isnull(orden.lugarentrega,'-') as lugarEntrega,
+        orden.obs as descripcion
+        from ML_DetOrdenCompra det
+        inner join ML_OrdenCompra orden on det.idordencompra = orden.idOrdenCompra and orden.uniNeg = det.uniNeg
+        left join MO_Codigo form on orden.idtipoformapago = form.idcodigo
+        left join MO_Codigo tor on orden.idtipocategoria = tor.idcodigo
+        left join MO_Entidad en on orden.ruc = en.ruc
+        left join MO_UnidadNegocio un on un.uniNeg = det.uniNeg
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        left join ML_DetRequerimiento dr on det.iddetrequerimiento = dr.iddetrequerimiento and dr.uniNeg = det.uniNeg
+        left join ML_Requerimiento req on det.idrequerimiento = req.idrequerimiento and req.uniNeg = det.uniNeg
+        left join MO_Personal per1 on req.idautoriza1= per1.idpersonal
+        left join MO_Personal per2 on req.idautoriza1= per2.idpersonal
+        left join MO_Personal per3 on req.idautoriza1= per3.idpersonal
+        left join ML_Catalogo c on det.idcatalogo = c.idcatalogo
+        left join ML_CatalogoBlock cb on det.idcatalogo = cb.idcatalogo
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on det.idtipomoneda = tm.idcodigo
+        left join MO_Codigo comed on comed.idcodigo = det.idtipounimed
+        left join MM_Mensaje msj on objeto='ml_Requerimiento' and idobjeto=req.idrequerimiento and msj.unineg=req.unineg
+        left join MO_Personal P ON P.unineg= DET.unineg and p.idpersonal=msj.idowner  
+        left join MO_PersonalCargo pc on pc.idpersonal = p.idpersonal
+        left join MO_Cargo car on car.idcargo= pc.idcargo
+        left join MO_Codigo pago on pago.idcodigo= orden.idtipopago
+        left join MO_Personal pe on Pe.ruc=en.ruc
+        where det.idOrdenCompra = #{idOrdenCompra}  AND det.unineg=@uniNeg
+    </select>
+    <select id="obtenerContrato" resultType="pe.marista.sigma.bean.reporte.ContratoRepBean" parameterType="map">
+        DECLARE @RUC VARCHAR(11),@RUCCOLEGIO VARCHAR(11), @COLEUNI VARCHAR(6) ,@IDORDENCOMPRA INT
+        SET @RUC =#{ruc}
+        SET @COLEUNI=#{uniNeg}
+        SET @IDORDENCOMPRA = #{idOrdenCompra}
+        SET @RUCCOLEGIO = (select  ruc from MO_UnidadNegocio where unineg=@COLEUNI)
+
+        DECLARE 
+ 
+        @PROVEEDOR VARCHAR(100) = (SELECT nombre FROM MO_Entidad WHERE ruc=@RUC)
+        ,@RUBRO VARCHAR(100)=(SELECT c.codigo FROM MO_Entidad e inner join MO_Codigo c on c.idcodigo=e.idtiporubro WHERE ruc=@RUC)
+        ,@DIRECCION VARCHAR(250) = (SELECT direccion FROM MO_Entidad WHERE ruc=@RUC)
+        ,@PARTIDA VARCHAR(100) = (SELECT partidaregistral FROM MO_Entidad WHERE ruc=@RUC)
+        ,@CONTACTO VARCHAR(100)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad WHERE ruc=@RUC)+(SELECT representante FROM MO_Entidad WHERE ruc=@RUC)+' con DNI'+(SELECT dnirepresentante FROM MO_Entidad WHERE ruc=@RUC)
+        ,@UNINEG VARCHAR(50)=(SELECT un.nombreUniNeg FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC)
+        ,@RUCUNINEG VARCHAR(11)= (SELECT un.ruc FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC)
+        ,@REPRESENTANTECOLE VARCHAR(500)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+(SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+'  con D.N.I. Nº '+(SELECT e.dnirepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+', con domicilio en '+(SELECT e.direccion FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
+        +', distrito de '+(SELECT d.nombre FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg inner join MO_Distrito d on d.iddistrito=e.iddistrito WHERE e.RUC=@RUCCOLEGIO)
+        ,@MONTO VARCHAR(100) = (select sum(cantidad*importe) from ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA and unineg=@COLEUNI)
+        ,@MONTODESC VARCHAR(500)= (select  DBO.CantidadConLetra (sum(cantidad*importe)) from ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA and unineg=@COLEUNI)
+        ,@DISTRITOCOLE VARCHAR(100)=(SELECT e.direccion FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO) +', del distrito de '+(SELECT d.nombre FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg inner join MO_Distrito d on d.iddistrito=e.iddistrito WHERE e.RUC=@RUCCOLEGIO)
+        ,@FECHA VARCHAR(100)=(select  lower(DBO.FechaConLetra(DATENAME(day, getdate())))+' días del mes de ' +DateName(month,getdate())+' de '+lower(DBO.FechaConLetra(DateName(year,getdate()))))
+        ,@REPRESENCOLE VARCHAR(50)= (SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
+        ,@REPREPROVE VARCHAR(50)= (SELECT representante FROM MO_Entidad WHERE ruc=@RUC)
+        ,@COLE VARCHAR(50)=(SELECT top 1 nombre FROM MO_Entidad WHERE RUC=@RUCCOLEGIO)
+        ,@IDORDEN varchar(5) = (SELECT distinct idordencompra FROM ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA and unineg=@COLEUNI)
+        SELECT
+        'Conste por el presente documento, el contrato de servicios que celebran de una parte  la empresa '+ @PROVEEDOR+' con RUC Nº '+ @RUC+
+        ', con domicilio legal en '+@DIRECCION+', con  Partida Registral Nº '+@PARTIDA+', representada por  '+@CONTACTO+
+        ', a quien en adelante se le denominará "EL CONTRATISTA” y por otra parte el  '+@UNINEG +' a quien en adelante se le denominará “EL CONTRATANTE”
+        con RUC '+@RUCUNINEG +'  representado legalmente por el '+@REPRESENTANTECOLE+'.' as contrato,
+
+        'EL CONTRATANTE es una Institución que proporciona servicios educativos en los niveles inicial, primario y secundario en el inmueble destinado a su funcionamiento, ubicado en '+@DISTRITOCOLE+'.
+        EL CONTRATISTA '+@PROVEEDOR+' declara que es una empresa que se dedica al rubro de '+@RUBRO+' en sus diferentes modalidades y  consecuentemente está plenamente capacitado y habilitado para brindar el servicio requerido por el Contratante.
+        “EL CONTRATANTE”  toma los servicios de  "EL CONTRATISTA” para que brinde la prestación de los servicios de transportes para el traslado del alumnado y personal; según requerimientos descritos a continuación.
+        ' AS primeraParte,
+        'El presente contrato tiene por objeto garantizar que los servicios requeridos por “EL CONTRATISTA” se brinden con calidad y seguridad, garantizando el confort y la integridad física de los alumnos y el personal.' as segundaParte,
+        'El plazo de ejecución de la prestación concluirá una vez cumplido con el servicio, de acuerdo al siguiente cronograma:	' as terceraParte,
+        'El monto pactado por el total de la prestación del servicio por servicio es de S/.'+@MONTO+' '+@MONTODESC+' el que será cancelado al término del servicio, previa presentación de la factura correspondiente.' as cuartaParte,
+        '“EL CONTRATISTA” es el responsable por la calidad ofrecida a “EL CONTRATANTE”, los vehículos  contaran con iluminación, ventilación adecuada, limpios y bien presentados, asientos cómodos y cinturones de seguridad en perfecto funcionamiento.  Las unidades  de transporte  asignadas  a prestar los servicios, contaran con la documentación correspondiente al servicio, vigente y/o actualizada:
+
+        <![CDATA[ - ]]>	Tarjeta de Propiedad
+        <![CDATA[ - ]]>	Tarjeta de Circulación Terrestre
+        <![CDATA[ - ]]>	Revisión Técnica (copia legalizada del documento que acredite que se encuentra vigente)
+        <![CDATA[ - ]]>	SOAT  (Copia legalizada de la póliza vigente del Seguro Obligatorio de Accidentes de Tránsito)
+        <![CDATA[ - ]]>	Póliza de accidentes.
+        <![CDATA[ - ]]>	Fotocopia legalizada de la licencia profesional de conducir y del DNI de los choferes.
+        <![CDATA[ - ]]>	Record de papeletas emitidas por el servicio de Administración Tributaria (SAT) con 24 horas de anticipación a la fecha del servicio.
+
+        Además los vehículos deben contar con:
+
+        <![CDATA[ - ]]>	Botiquín de primeros auxilios.
+        <![CDATA[ - ]]>	Luces de señales de emergencia
+        <![CDATA[ - ]]>	Extintor
+        <![CDATA[ - ]]>	Llanta de repuesto
+        <![CDATA[ - ]]>	Gata, llaves de ruedas y herramientas
+        <![CDATA[ - ]]>	Asientos con cinturones de seguridad en perfectas condiciones.
+
+        Para los puntos anteriores se tomará en cuenta lo que exige la normativa vigente y dado el caso la futura, además los conductores contarán con radio-celular para las comunicaciones en casos de emergencias o imprevistos.
+        Los conductores procuran y mantendrán en todo momento el manejo responsable de sus unidades.
+        ' as quintaParte,
+        'Caso 1: Si el “CONTRATISTA” incumpliera con la cláusula quinta y tercera del presente contrato y esto derivara  al perjuicio de la actividad a desarrollar, de los alumnos y/o personal se tendrá en cuenta lo que estipula la ley vigente.
+        Caso 2: “EL CONTRATISTA”, reembolsa  la totalidad y/o asume los gastos ocasionados por exceder el límite de la tolerancia de treinta minutos dentro del radio urbano y una hora fuera del radio urbano, para los casos de reemplazos de las unidades cuando se presente  desperfectos en uno de sus vehículos.
+        Caso 3: Para los casos de subcontrata de unidades por  “EL CONTRATISTA” se aplicará el CASO 1 de la presente cláusula.' as sextaParte,
+        '“EL CONTRATISTA” asume administrativa y económicamente las gestiones  y costos por las infracciones de tránsito que ocasione  su personal.
+        “EL CONTRATISTA” asume los costos de peajes, impuestos de Ley y combustible.
+        “EL CONTRATANTE” se hace responsable de los daños y perjuicios que los pasajeros pudieran ocasionar a la infraestructura interna y externa de los vehículos que prestan servicio de movilidad.
+        “EL CONTRATANTE” es responsable y asume todos los riesgos sobre las obligaciones de los usuarios. Esto según D.S. 017-2009 Art. 77.M.T.C.' as setimaParte,
+        'EL CONTRATISTA se obliga a realizar lo establecido en el presente Contrato en la forma más diligente posible, procurando la mayor eficiencia en la prestación de los servicios, considerando que el Contrato es suscrito de buena fe.' as octavaParte,
+        'El incumplimiento de cualquiera de las obligaciones asumidas por las partes contratantes, dará lugar a que el Contrato se resuelva, quedando facultada EL CONTRATANTE para  continuar el trabajo con otros profesionales.' as novenaParte,
+        'Las partes contratantes han declarado sus respectivos domicilios en la parte introductoria del presente contrato. Para efectos del presente contrato se tendrá por válida cualquier notificación efectuada a estas direcciones.
+
+        De acuerdo con lo consignado, en el presente contrato, las partes lo firman en señal de conformidad en la ciudad de Lima a los '+@FECHA+'.' as decimaParte,
+        @REPRESENCOLE AS representanteCole, @REPREPROVE as repreProveedor, @PROVEEDOR as nobreProveedor, @COLE as nombreCole ,'000'+@IDORDEN as idOrdenCompra
+
+    </select>
+    <select id="obtenerDetContrato" resultType="pe.marista.sigma.bean.reporte.DetContratoRepBean" parameterType="map">
+        select
+        dr.horaregreso as horaRegreso ,dr.horasalida as horaSalida,convert(varchar,dr.fechasalida,103) as fechaSalida,
+        dr.destinoservicio as destinoServicio,det.cantidad as cantidad,(case when c.idcatalogo is not null then upper(c.item) else upper(isnull(cb.item,'')) end) as item,
+        (select sum(d.importe*d.cantidad) from ML_DetOrdenCompra d
+        where d.idOrdenCompra = det.idordencompra) as sumaImporte,
+        (det.importe*det.cantidad)  as montoRef
+        from ML_DetOrdenCompra det
+        inner join ML_DetRequerimiento dr on det.iddetrequerimiento = dr.iddetrequerimiento and dr.uniNeg = det.uniNeg
+        left join ML_Catalogo c on det.idcatalogo = c.idcatalogo
+        left join ML_CatalogoBlock cb on det.idcatalogo = cb.idcatalogo
+        where det.idOrdenCompra = #{idOrdenCompra} AND det.unineg=#{uniNeg}
+    </select>
+    <select id="obtenerContratoAdqui" resultType="pe.marista.sigma.bean.reporte.ContratoAdquisicionRepBean" parameterType="map">
+        DECLARE @RUC VARCHAR(11),@RUCCOLEGIO VARCHAR(11), @COLEUNI VARCHAR(6) ,@IDORDENCOMPRA INT
+        SET @RUC =#{ruc}
+        SET @COLEUNI=#{uniNeg}
+        SET @IDORDENCOMPRA = #{idOrdenCompra}
+        SET @RUCCOLEGIO = (select  ruc from MO_UnidadNegocio where unineg=@COLEUNI)
+
+        DECLARE
+
+        @PROVEEDOR VARCHAR(100) = (SELECT nombre FROM MO_Entidad WHERE ruc=@RUC)
+        ,@CONTACTO VARCHAR(100)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad WHERE ruc=@RUC)+(SELECT representante FROM MO_Entidad WHERE ruc=@RUC)+' identificado con DNI'+(SELECT dnirepresentante FROM MO_Entidad WHERE ruc=@RUC)
+        ,@DIRECCION VARCHAR(250) = (SELECT direccion FROM MO_Entidad WHERE ruc=@RUC)
+        ,@UNINEG VARCHAR(50)=(SELECT un.nombreUniNeg FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC)
+        ,@RUCUNINEG VARCHAR(20)= (' con RUC '+(SELECT un.ruc FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC))
+        ,@REPRESENTANTECOLE VARCHAR(500)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+(SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+' identificado con D.N.I. Nº '+(SELECT e.dnirepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+', con domicilio en '+(SELECT e.direccion FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
+        +', distrito de '+(SELECT d.nombre FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg inner join MO_Distrito d on d.iddistrito=e.iddistrito WHERE e.RUC=@RUCCOLEGIO)
+        ,@DESCRIPCION VARCHAR(100) =(SELECT obs FROM ML_OrdenCompra where idordencompra=@IDORDENCOMPRA)
+        ,@FECHAENTREGA VARCHAR(50) =(select  DateName(dw,fechaentrega)+  DATENAME(day, fechaentrega)+' de '+DateName(month,fechaentrega)+' de '+
+        DateName(year,fechaentrega) from ML_OrdenCompra where idordencompra=@IDORDENCOMPRA)
+        ,@TIPOMONEDA VARCHAR(10) = (SELECT DISTINCT CASE WHEN c.codigo='Soles' then 'S/.' when c.codigo='Dolares' then 'US$' END as tipoMoneda FROM ML_DetOrdenCompra do INNER JOIN ML_DETREQUERIMIENTO dr on dr.idrequerimiento= do.idrequerimiento INNER JOIN MO_Codigo c ON c.IDCODIGO= dr.idtipomoneda where idordencompra=@IDORDENCOMPRA)
+        ,@MONTO VARCHAR(100) =(SELECT SUM(cantidad*importe)FROM ML_DetOrdenCompra  where idordencompra=@IDORDENCOMPRA)
+        ,@DESCMONTO VARCHAR(100) =(SELECT DBO.CantidadConLetra (SUM(cantidad*importe)) FROM ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA)
+        ,@MONEDA VARCHAR(50) = (SELECT DISTINCT CASE WHEN c.codigo='Soles' then 'Soles' when c.codigo='Dolares' then 'DOLARES AMERICANOS' END as tipoMoneda FROM ML_DetOrdenCompra do INNER JOIN ML_DETREQUERIMIENTO dr on dr.idrequerimiento= do.idrequerimiento INNER JOIN MO_Codigo c ON c.IDCODIGO= dr.idtipomoneda where idordencompra=@IDORDENCOMPRA)
+        ,@FECHA VARCHAR(100)=(select  lower(DBO.FechaConLetra(DATENAME(day, getdate())))+' días del mes de ' +DateName(month,getdate())+' de '+lower(DBO.FechaConLetra(DateName(year,getdate()))))
+        ,@ADELANTO VARCHAR(500) = (select case when flgadelanto=1 then convert(varchar ,importeadelanto,103) +'% de adelanto de la compra '
+        + 'y el '+(select distinct convert(varchar ,(100-importeadelanto),103) from ML_OrdenCompra where idordencompra = @IDORDENCOMPRA)
+        +'% a la entrega del material, prevía presentación de la factura.'when flgadelanto is null then '100% a la entrega del material, previa presentación de la factura.'
+        end as importe from ML_OrdenCompra where idordencompra = @IDORDENCOMPRA)
+        ,@REPRESENCOLE VARCHAR(50)= (SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
+        ,@REPREPROVE VARCHAR(50)= (SELECT representante FROM MO_Entidad WHERE ruc=@RUC)
+        ,@COLE VARCHAR(50)=(SELECT top 1 nombre FROM MO_Entidad WHERE RUC=@RUCCOLEGIO)
+        select
+        'Conste por el presente documento, el contrato de compra que celebran por una parte  la empresa '
+        + @PROVEEDOR+' con RUC Nº '+ @RUC+', representada por  '+@CONTACTO+', con domicilio en '+@DIRECCION+
+        ' a quien en adelante se le denominará "LA EMPRESA” y por otra parte el  '+@UNINEG + @RUCUNINEG+
+        ', a quien en adelante se le denominará “EL CONTRATANTE”  representado legalmente por el '+@REPRESENTANTECOLE+'.' as contrato,
+        'Por el presente contrato la empresa se compromete a entregar según proforma los siguientes productos.'as primero,
+        @DESCRIPCION  as descripcionn,
+        'La entrega se realizará el día '+@FECHAENTREGA+' en las instalaciones de EL CONTRATANTE en cada oficina de apoyo según detalle.' as segundo,
+        'EL CONTRATANTE se compromete a brindar las facilidades para el ingreso y permanencia del personal del contratante, para el buen desarrollo del servicio.' as tercero,
+        'El personal de LA EMPRESA se compromete a entregar los productos bajo las condiciones técinas previamente solicitadas, los mismos que tienen una garantía de 24 meses' as cuarto,
+        'El monto acordado es de ' + @TIPOMONEDA+@MONTO+' ('+@DESCMONTO +' '+@MONEDA+')  monto que incluye IGV, el que se cancelará de la siguiente manera: ' as quinto,
+        @ADELANTO as adelanto,
+        'En caso de la empresa no cumpla con lo pactado, EL CONTRATANTE podrá cobrar el 10% del total del contrato por concepto de penalidad.'+
+        'A continuación el representante de LA EMPRESA Y EL CONTRATANTE, suscriben el presente contrato, en señal de conformidad a los '+
+        @FECHA+'.' as sexto ,@REPRESENCOLE AS representanteCole, @REPREPROVE as repreProveedor,@COLE as cole,@PROVEEDOR as proveedor
+    </select>
+    <select id="obtenerDetContratoAdquisicion" resultType="pe.marista.sigma.bean.reporte.DetContratoAdquisicionRepBean" parameterType="map">
+        SELECT 
+        (case when ca.idcatalogo is not null then upper(ca.item) else upper(isnull(cb.item,'')) end) as item 
+        FROM ML_DetOrdenCompra do 
+        LEFT JOIN ML_Catalogo ca on ca.idcatalogo = do.idcatalogo
+        LEFT JOIN ML_CatalogoBlock cb on cb.idcatalogo = do.idcatalogo
+        where do.idOrdenCompra = #{idOrdenCompra} AND do.unineg=#{uniNeg}
+    </select>
+</mapper>

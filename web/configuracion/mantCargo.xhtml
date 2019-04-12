@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cargoMB.obtenerTodosCargo()}">
+            <h:panelGrid styleClass="centrado" >
+                <h:form id="frmMantCargos">
+                    <h:panelGrid styleClass="centrado" id="pnlDatosCargos" style="text-align: center !important ; font-weight: bold;" >
+                        <p:panel header="#{msgs.tituloInserModCargos}" style="width: 600px">
+                            <p:fieldset style="width: 500px" class="centrado">
+                                <h:panelGrid columns="3" id="pnlPersona" cellpadding="3" class="siseFontGrid4">
+                                    <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:inputText  value="#{cargoMB.cargoBean.nombre}" required="true"  label="#{msgs.etiquetaNombre}" size="40" maxlength="29"/> 
+                                    
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo}" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:inputText  value="#{cargoMB.cargoBean.codigo}" required="true"  label="#{msgs.etiquetaCodigo}" size="20" maxlength="20"/> 
+                                    
+                                    <h:outputLabel value="#{msgs.etiquetaCategoria}" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:selectOneMenu  value="#{cargoMB.cargoBean.tipoCategoriaCargoBean.idCodigo}" required="true"  label="#{msgs.etiquetaDocPer}" >
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{cargoMB.listaTipoCategoriaCargoBean}" var="cat" itemLabel="#{cat.codigo}" itemValue="#{cat.idCodigo}"/>
+                                    </p:selectOneMenu >
+                                            
+                                    <h:outputLabel value="#{msgs.etiquetaStatus}" class="negrita"/>
+                                    <h:outputText value="*"  class="requerido"/>
+                                    <p:inputSwitch value="#{cargoMB.cargoBean.status}" onLabel="#{msgs.etiquetaActivo}" offLabel="#{msgs.etiquetaInactivo}" />
+                                    
+                                    <h:outputLabel value="#{msgs.etiquetaAsignacion}" class="negrita"/>
+                                    <h:outputText value="*"  class="requerido"/>
+                                    <p:inputSwitch value="#{cargoMB.cargoBean.flgAsignacion}" onLabel="#{msgs.etiquetaSi}" offLabel="#{msgs.etiquetaNo}" />
+                                    
+                                    <h:outputText value="(*) Requerido" class="requerido"/>
+                                    <h:inputHidden value="#{cargoMB.cargoBean.idCargo}"/>
+                                    <h:inputHidden />
+                                </h:panelGrid>
+                            </p:fieldset>
+                            <h:panelGrid class="centrado" columns="2">
+                                <p:commandButton actionListener="#{cargoMB.guardarSoloCargo()}" 
+                                                 update=":frmDatosCargos:pnlTablaCargos,msgsAddPer,:frmDatosCargos:tblCargos"
+                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                 value="#{msgs.botonGrabar}">
+                                </p:commandButton>
+                                <p:commandButton actionListener="#{cargoMB.limpiarCargo()}" 
+                                                 update=":frmMantCargos:pnlDatosCargos,msgsAddPer,:frmDatosCargos:tblCargos"                                                                 
+                                                 value="#{msgs.botonNuevo}" process="@this">
+                                </p:commandButton>
+                            </h:panelGrid>
+                            <p:growl id="msgsAddPer" showDetail="true" showSummary="true"/>
+                        </p:panel>
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmDatosCargos">
+                    <h:panelGrid  id="pnlTablaCargos">
+                        <p:dataTable id="tblCargos" value="#{cargoMB.listaCargoBean}" widgetVar="tblCargos"
+                                     paginator="true" selectionMode="single" scrollable="true" 
+                                     selection="#{cargoMB.cargoBean}" paginatorPosition="bottom"
+                                     var="cargo" rowKey="#{cargo.idCargo}" rows="10" 
+                                     rendered="#{not empty cargoMB.listaCargoBean}" 
+                                     style="width: 1000px; overflow-x: auto;font-size:14px !important;">
+                            <p:ajax event="rowSelect" listener="#{cargoMB.rowSelect}" update=":frmMantCargos:pnlDatosCargos" />
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloCargos}" />  
+                            </f:facet>
+                            <p:column filterBy="#{cargo.nombre}" sortBy="#{cargo.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="100" styleClass="nombre2Filtro siseFontTable3">
+                                <h:outputText value="#{cargo.nombre}"/>
+                            </p:column>
+                            <p:column filterBy="#{cargo.codigo}" sortBy="#{cargo.codigo}" headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="50" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                <h:outputText value="#{cargo.codigo}"/>
+                            </p:column>                             
+                            <p:column filterBy="#{cargo.tipoCategoriaCargoBean.codigo}" sortBy="#{cargo.tipoCategoriaCargoBean.codigo}" filterMatchMode="in" headerText="#{msgs.etiquetaCategoria}" width="70" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="filter">
+                                    <p:selectCheckboxMenu label="#{msgs.comboSeleccionarLabel}" onchange="PF('tblCargos').filter()" style="width: 150px" panelStyle="width:200px" scrollHeight="200">
+                                        <f:selectItems value="#{cargoMB.listaTipoCategoriaCargoBean}" var="cate" itemLabel="#{cate.codigo}" itemValue="#{cate.codigo}"/>
+                                    </p:selectCheckboxMenu>
+                                </f:facet>
+                                <h:outputText value="#{cargo.tipoCategoriaCargoBean.codigo}" />
+                            </p:column>
+                           <p:column filterBy="#{cargo.status}" headerText="#{msgs.etiquetaStatus}" filterMatchMode="exact" width="60" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="filter">
+                                    <p:selectOneMenu onchange="PF('tblCargos').filter()" style="width: 100px" >
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                        <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.comboActivo}"/>
+                                        <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.comboInactivo}"/>
+                                    </p:selectOneMenu>
+                                </f:facet> 
+                                <h:outputText value="#{cargo.statusVista}" />
+                            </p:column>
+                        </p:dataTable>
+                        <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmElimina">
+                    <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                        <h:panelGrid columns="2">
+                            <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                            <h:panelGrid columns="1" id="pnlDatosElimina">
+                                <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                                <h:outputLabel value="#{msgs.etiquetaNombre}: #{cargoMB.cargoBean.nombre}"/>
+                            </h:panelGrid>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" class="centrado">
+                            <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cargoMB.eliminarCargo()}" 
+                                             styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                             update=":frmDatosCargos:pnlTablaCargos,msgsDelProc,:frmDatosCargos:tblCargos"
+                                             oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                            <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                             icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                        </h:panelGrid>
+                        <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                    </p:dialog>
+                </h:form>
+            </h:panelGrid>
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popDone').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmStatus">
+                <p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()" />
+                <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+                    <h:graphicImage value="/resources/images/ajaxloader.gif"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

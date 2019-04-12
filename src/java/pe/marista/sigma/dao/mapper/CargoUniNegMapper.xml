@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.CargoUniNegDAO">  
+    <sql id="consultaCampos">
+        SELECT  
+        cun.uniNeg
+        ,cun.idCargo
+        ,cun.asigCargo
+        ,cun.status as statusCU
+        ,un.uniNeg as idUniNeg
+        ,un.nombreUniNeg 
+        ,car.idCargo as idCar
+        ,car.nombre as nombreC
+        ,car.codigo as codigoC
+        ,car.status as statusC
+        ,codCat.codigo as nomCatCargo
+        FROM  MO_CargoUniNeg cun
+        Inner join  MO_UnidadNegocio un on cun.unineg=un.unineg
+        Inner JOIN MO_Cargo car on cun.idcargo=car.idcargo
+        INNER JOIN MO_Codigo codCat ON car.idtipocategoriacargo=codCat.idcodigo
+    </sql>
+    <resultMap id="cargoUniNegResultado" type="pe.marista.sigma.bean.CargoUniNegBean">
+        <id property="cargoBean.idCargo" column="idCargo"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <result property="asigCargo" column="asigCargo"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="status" column="statusCU"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="cargoBean" column="idCargo"
+                     javaType="pe.marista.sigma.bean.CargoBean"
+                     resultMap="cargoResultado"/>
+    </resultMap>
+    
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="idUniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <resultMap id="cargoResultado" type="pe.marista.sigma.bean.CargoBean">
+        <id property="idCargo" column="idCar"/>
+        <result property="nombre" column="nombreC"/>
+        <result property="codigo" column="codigoC"/>
+        <result property="status" column="statusC"/> 
+        <association property="tipoCategoriaCargoBean" column="idTipoCategoriaCargo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaCargoResultado"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaCargoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codTipoCatCargo"/>
+        <result property="codigo" column="nomCatCargo"/>
+    </resultMap>     
+ 
+    <select id="obtenerCargoUniNegPorUniNeg" resultMap="cargoUniNegResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        where cun.uniNeg=#{uniNeg}
+        order by cun.idCargo
+    </select>
+    
+    <select id="obtenerCargoUniNegPorId" resultMap="cargoUniNegResultado" parameterType="pe.marista.sigma.bean.CargoUniNegBean">
+        <include refid="consultaCampos" />
+        where cun.uniNeg=#{unidadNegocioBean.uniNeg} and cun.idCargo=#{cargoBean.idCargo}
+    </select>
+   
+    <select id="obtenerCargoPorCategoria" resultMap="cargoResultado" parameterType="pe.marista.sigma.bean.CodigoBean">
+        <include refid="consultaCampos" />
+        where  codCat.codigo=#{codigo} 
+    </select>
+     
+    <!--
+    <sql id="consultaCamposCargo">
+        SELECT  
+        cun.idCargo
+        ,car.nombre
+        FROM  MO_CargoUniNeg cun
+        Inner JOIN MO_Cargo car on cun.idcargo=car.idcargo
+    </sql>
+    -->
+    
+    <update id="cambiarEstadoCargoUniNeg" parameterType="pe.marista.sigma.bean.CargoUniNegBean">
+        UPDATE MO_CargoUniNeg
+        SET 
+        status = #{status}
+        Where idCargo = #{cargoBean.idCargo} and unineg=#{unidadNegocioBean.uniNeg}
+    </update> 
+    
+    <insert id="insertarCargoUniNeg" parameterType="pe.marista.sigma.bean.CargoUniNegBean"  >
+        INSERT INTO MO_Cargo (unineg,idcargo,asigcargo,creaPor,creafecha,status)
+        Values (#{unidadNegocioBean.uniNeg},#{asigCargo},#{creaPor},getDate(),#{status})
+    </insert> 
+</mapper>

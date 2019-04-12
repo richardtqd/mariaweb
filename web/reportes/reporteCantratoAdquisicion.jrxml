@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteCantratoAdquisicion" language="groovy" pageWidth="595" pageHeight="842" columnWidth="485" leftMargin="55" rightMargin="55" topMargin="55" bottomMargin="55" uuid="59503a0b-0747-4b80-b230-1f93051c9e8b">
+	<property name="ireport.zoom" value="1.2100000000000002"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["C:\\Program Files (x86)\\Jaspersoft\\iReport-5.1.0\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[DECLARE @RUC VARCHAR(11),@RUCCOLEGIO VARCHAR(11), @COLEUNI VARCHAR(6) ,@IDORDENCOMPRA INT
+SET @RUC ='20543609758'
+SET @COLEUNI='CHAMPS'
+SET @IDORDENCOMPRA = 6
+SET @RUCCOLEGIO = (select  ruc from MO_UnidadNegocio where unineg=@COLEUNI)
+
+DECLARE
+
+@PROVEEDOR VARCHAR(100) = (SELECT nombre FROM MO_Entidad WHERE ruc=@RUC)
+,@CONTACTO VARCHAR(100)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad WHERE ruc=@RUC)+(SELECT representante FROM MO_Entidad WHERE ruc=@RUC)+' identificado con DNI'+(SELECT dnirepresentante FROM MO_Entidad WHERE ruc=@RUC)
+,@DIRECCION VARCHAR(250) = (SELECT direccion FROM MO_Entidad WHERE ruc=@RUC)
+,@UNINEG VARCHAR(50)=(SELECT un.nombreUniNeg FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC)
+,@RUCUNINEG VARCHAR(20)= (' con RUC '+(SELECT un.ruc FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC))
+,@REPRESENTANTECOLE VARCHAR(500)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+(SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+' identificado con D.N.I. Nº '+(SELECT e.dnirepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+', con domicilio en '+(SELECT e.direccion FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
++', distrito de '+(SELECT d.nombre FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg inner join MO_Distrito d on d.iddistrito=e.iddistrito WHERE e.RUC=@RUCCOLEGIO)
+,@DESCRIPCION VARCHAR(100) =(SELECT obs FROM ML_OrdenCompra where idordencompra=@IDORDENCOMPRA)
+,@FECHAENTREGA VARCHAR(50) =(select  DateName(dw,fechaentrega)+  DATENAME(day, fechaentrega)+' de '+DateName(month,fechaentrega)+' de '+
+DateName(year,fechaentrega) from ML_OrdenCompra where idordencompra=@IDORDENCOMPRA)
+,@TIPOMONEDA VARCHAR(10) = (SELECT DISTINCT CASE WHEN c.codigo='Soles' then 'S/.' when c.codigo='Dolares' then 'US$' END as tipoMoneda FROM ML_DetOrdenCompra do INNER JOIN ML_DETREQUERIMIENTO dr on dr.idrequerimiento= do.idrequerimiento INNER JOIN MO_Codigo c ON c.IDCODIGO= dr.idtipomoneda where idordencompra=@IDORDENCOMPRA)
+,@MONTO VARCHAR(100) =(SELECT SUM(cantidad*importe)FROM ML_DetOrdenCompra  where idordencompra=@IDORDENCOMPRA)
+,@DESCMONTO VARCHAR(100) =(SELECT DBO.CantidadConLetra (SUM(cantidad*importe)) FROM ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA)
+,@MONEDA VARCHAR(50) = (SELECT DISTINCT CASE WHEN c.codigo='Soles' then 'Soles' when c.codigo='Dolares' then 'DOLARES AMERICANOS' END as tipoMoneda FROM ML_DetOrdenCompra do INNER JOIN ML_DETREQUERIMIENTO dr on dr.idrequerimiento= do.idrequerimiento INNER JOIN MO_Codigo c ON c.IDCODIGO= dr.idtipomoneda where idordencompra=@IDORDENCOMPRA)
+,@FECHA VARCHAR(100)=(select  lower(DBO.FechaConLetra(DATENAME(day, getdate())))+' días del mes de ' +DateName(month,getdate())+' de '+lower(DBO.FechaConLetra(DateName(year,getdate()))))
+,@ADELANTO VARCHAR(500) = (select case when flgadelanto=1 then convert(varchar ,importeadelanto,103) +'% de adelanto de la compra '
+ + 'y el '+(select distinct convert(varchar ,(100-importeadelanto),103) from ML_OrdenCompra where idordencompra = @IDORDENCOMPRA)
++' a la entrega del material, prevía presentación de la factura.'when flgadelanto is null then '100% a la entrega del material, previa presentación de la factura.'
+end as importe from ML_OrdenCompra where idordencompra = @IDORDENCOMPRA)
+,@REPRESENCOLE VARCHAR(50)= (SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
+,@REPREPROVE VARCHAR(50)= (SELECT representante FROM MO_Entidad WHERE ruc=@RUC)
+,@COLE VARCHAR(50)=(SELECT nombre FROM MO_Entidad WHERE RUC=@RUCCOLEGIO)
+select
+'Conste por el presente documento, el contrato de compra que celebran por una parte  la empresa '
++ @PROVEEDOR+' con RUC Nº '+ @RUC+', representada por  '+@CONTACTO+', con domicilio en '+@DIRECCION+
+' a quien en adelante se le denominará "LA EMPRESA” y por otra parte el  '+@UNINEG + @RUCUNINEG+
+', a quien en adelante se le denominará “EL CONTRATANTE”  representado legalmente por el '+@REPRESENTANTECOLE+'.' as contrato,
+'Por el presente contrato la empresa se compromete a entregar según proforma los siguientes productos.'as primero,
+@DESCRIPCION  as descripcionn,
+'La entrega se realizará el día '+@FECHAENTREGA+' en las instalaciones de EL CONTRATANTE en cada oficina de apoyo según detalle.' as segundo,
+'EL CONTRATANTE se compromete a brindar las facilidades para el ingreso y permanencia del personal del contratante, para el buen desarrollo del servicio.' as tercero,
+'El personal de LA EMPRESA se compromete a entregar los productos bajo las condiciones técinas previamente solicitadas, los mismos que tienen una garantía de 24 meses' as cuarto,
+'El monto acordado es de ' + @TIPOMONEDA+@MONTO+' ('+@DESCMONTO +' '+@MONEDA+')  monto que incluye IGV, el que se cancelará de la siguiente manera: ' as quinto,
+@ADELANTO as adelanto,
+'En caso de la empresa no cumpla con lo pactado, EL CONTRATANTE podrá cobrar el 10% del total del contrato por concepto de penalidad.'+
+'A continuación el representante de LA EMPRESA Y EL CONTRATANTE, suscriben el presente contrato, en señal de conformidad a los '+
+@FECHA+'.' as sexto ,@REPRESENCOLE AS representanteCole, @REPREPROVE as repreProveedor,@COLE as cole,@PROVEEDOR as proveedor]]>
+	</queryString>
+	<field name="contrato" class="java.lang.String"/>
+	<field name="primero" class="java.lang.String"/>
+	<field name="descripcionn" class="java.lang.String"/>
+	<field name="segundo" class="java.lang.String"/>
+	<field name="tercero" class="java.lang.String"/>
+	<field name="cuarto" class="java.lang.String"/>
+	<field name="quinto" class="java.lang.String"/>
+	<field name="adelanto" class="java.lang.String"/>
+	<field name="sexto" class="java.lang.String"/>
+	<field name="representanteCole" class="java.lang.String"/>
+	<field name="repreProveedor" class="java.lang.String"/>
+	<field name="cole" class="java.lang.String"/>
+	<field name="proveedor" class="java.lang.String"/>
+	<field name="listaContrato" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="164" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="false">
+				<reportElement uuid="7214e232-99db-4f24-aee3-768881f4a365" positionType="Float" x="0" y="68" width="485" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{contrato}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="818467aa-42d7-4baf-958e-a6a07f1f1f1d" positionType="Float" x="0" y="36" width="485" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[CONTRATO DE COMPRA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="04d0a3ca-9010-49e4-9436-74e42c838ea7" positionType="Float" x="0" y="94" width="485" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRIMERO:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="e1cc3873-52fb-470d-b5fb-73df30cbe78b" positionType="Float" x="0" y="114" width="485" height="20"/>
+				<textElement textAlignment="Justified"/>
+				<textFieldExpression><![CDATA[$F{primero}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="57fd1ce6-352d-4d04-999a-12c29923a089" positionType="Float" x="0" y="143" width="485" height="20"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{descripcionn}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="24" splitType="Immediate">
+			<subreport>
+				<reportElement uuid="4b66767d-27e9-40fd-bb53-dc8389e27d22" positionType="Float" x="0" y="0" width="485" height="24"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaContrato}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "reporteCantratoAdquisicion_subreport1.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<summary>
+		<band height="369" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="e24d1fc2-664e-4d3d-b5ea-6d97f7d87f24" positionType="Float" x="0" y="0" width="485" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SEGUNDO:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="912cb89c-6747-4af4-8946-83038b940575" positionType="Float" x="0" y="20" width="485" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{segundo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="e4686926-6649-4058-b0eb-049a2e01e294" positionType="Float" x="0" y="51" width="485" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TERCERO:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="0527cdcd-4236-4660-9f96-df732d945433" positionType="Float" x="0" y="71" width="485" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{tercero}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="bce03778-6f36-4b3a-8888-dd3fc8580ef8" positionType="Float" x="0" y="98" width="485" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[CUARTO:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="5f327784-8a49-4f04-b11a-7d4d5a1f3f55" positionType="Float" x="0" y="118" width="485" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{cuarto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2716dd6e-9a5c-4cd5-a1ad-e1e5da641718" positionType="Float" x="0" y="147" width="485" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[QUINTO:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="c78ed922-5315-4043-808c-9bf79c892fa2" positionType="Float" x="0" y="167" width="485" height="20"/>
+				<textElement textAlignment="Justified"/>
+				<textFieldExpression><![CDATA[$F{quinto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="721beebe-a361-4d02-ba53-0f2c88336ce7" positionType="Float" x="0" y="223" width="485" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SEXTO:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="b9efc6e0-624a-44e3-8366-1f136ea27405" positionType="Float" x="0" y="243" width="485" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{sexto}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="fc605790-14ce-45e0-aff2-93c2d390b368" positionType="Float" x="68" y="328" width="151" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="456acb4c-5afe-49a0-be3d-c3730bedc355" positionType="Float" x="330" y="328" width="151" height="1"/>
+			</line>
+			<textField>
+				<reportElement uuid="7afce02d-6708-4a5c-88e3-de4c8dfe89ff" positionType="Float" x="68" y="329" width="151" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{repreProveedor}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="32cd61c1-c04c-4d84-bd28-42ffcf1011fb" positionType="Float" x="330" y="329" width="151" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{representanteCole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="89c6a6c3-c5f1-4b9c-84f6-ad9e042dace6" positionType="Float" x="330" y="349" width="151" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{cole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="f84995b8-da6d-40f8-be0e-2e2d20f16bf3" positionType="Float" x="68" y="349" width="151" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{proveedor}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="c80e8ff4-97f4-436c-af8b-e8a576f48294" positionType="Float" x="48" y="194" width="437" height="20"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{adelanto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5ad7d5c5-86b7-4124-8135-dc6fb7cf293c" positionType="Float" x="28" y="190" width="20" height="28"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="22"/>
+				</textElement>
+				<text><![CDATA[*]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PersonalDocumentoDAO">
+     
+    <sql id="consultaCampos">
+        SELECT
+        PDOC.idPersonalDocumento
+        ,PDOC.uniNeg as uniNegP
+        ,PDOC.idPersonal
+        ,PDOC.idDocumento
+        ,PDOC.status as status
+        ,PDOC.flgCaduca as flgCaduca
+        ,PDOC.fechaCaduca
+        ,PDOC.idTipoCopia
+        ,PDOC.flgObligatorio
+        ,PDOC.flgPresentacion
+        ,PDOC.fechaPresentacion
+        ,doc.idDocumento as codDoc
+        ,doc.nombre as nombreDoc
+        ,per.idPersonal as codPersonal
+        ,cop.idcodigo as codTipoCop
+        ,cop.codigo as nomTipoCop
+        FROM MO_PersonalDocumento PDOC
+        INNER JOIN MO_Personal PER      on PDOC.idPersonal=PER.idPersonal  and PDOC.unineg=per.unineg
+        INNER JOIN MO_Documento doc on  PDOC.idDocumento = doc.idDocumento
+        left Join MO_Codigo cop ON PDOC.idTipoCopia=cop.idcodigo
+    </sql>
+    <resultMap id="personalDocumentoResultado" type="pe.marista.sigma.bean.PersonalDocumentoBean">
+        <id property="idPersonalDocumento" column="idPersonalDocumento" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="status" column="status" />
+        <result property="flgCaduca" column="flgCaduca" />
+        <result property="fechaCaduca" column="fechaCaduca" />
+        <result property="flgOriginal" column="flgOriginal" />
+        <result property="flgObligatorio" column="flgObligatorio" />
+        <result property="flgPresentacion" column="flgPresentacion" />
+        <result property="fechaPresentacion" column="fechaPresentacion" />
+        <result property="modiPor" column="modiPor" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" jdbcType="DATE"/> 
+        <association property="unidadNegocioBean" column="uniNegP"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/> 
+   
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <!--2 idDocumento>     -->           
+        <association property="documentoBean" column="idDocumento"
+                     javaType="pe.marista.sigma.bean.DocumentoBean"
+                     resultMap="documentoResultado"/>  
+        <!--3 idTipoCopia>     -->       
+        <association property="tipoCopiaBean" column="idTipoCopia"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCopiaResultado"/>
+    </resultMap>
+    
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegP"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>
+    
+    <!--1 idPersonal-->         
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="codPersonal"/>
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+    </resultMap>
+    
+    <resultMap id="documentoResultado" type="pe.marista.sigma.bean.DocumentoBean">
+        <id property="idDocumento" column="codDoc"/>
+        <result property="nombre" column="nombreDoc"/>
+    </resultMap>
+       
+    <resultMap id="tipoCopiaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codTipoCop"/>
+        <result property="codigo" column="nomTipoCop"/>
+    </resultMap> 
+    <select id="obtenerPersonalDocumentoPorPersonal" resultMap="personalDocumentoResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />
+        where PDOC.idPersonal=#{idPersonal} and pdoc.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonalDocumentoPorId" resultMap="personalDocumentoResultado" parameterType="pe.marista.sigma.bean.PersonalDocumentoBean">
+        <include refid="consultaCampos" />
+        where PDOC.idPersonalDocumento=#{idPersonalDocumento} and pdoc.unineg=#{unidadNegocioBean.uniNeg}
+    </select>     
+    <insert id="insertarPersonalDocumento" parameterType="pe.marista.sigma.bean.PersonalDocumentoBean">
+        INSERT INTO  MO_PersonalDocumento
+        (unineg,idPersonal,idDocumento,status,flgCaduca,
+        fechaCaduca,idTipoCopia,flgObligatorio,flgPresentacion,fechaPresentacion,creaPor)
+        Values
+        (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{documentoBean.idDocumento},#{status},#{flgCaduca},
+        #{fechaCaduca},#{tipoCopiaBean.idCodigo},#{flgObligatorio},#{flgPresentacion},#{fechaPresentacion},#{creaPor})
+    </insert>                                                                                                       
+     
+    <update id="modificarPersonalDocumento" parameterType="pe.marista.sigma.bean.PersonalDocumentoBean">
+        Update MO_PersonalDocumento set
+        fechaCaduca = #{fechaCaduca}
+        ,flgPresentacion = #{flgPresentacion}
+        ,fechaPresentacion = #{fechaPresentacion}
+        ,status = #{status}
+        ,modiPor=#{modiPor}
+        where idPersonalDocumento=#{idPersonalDocumento} and  unineg=#{unidadNegocioBean.uniNeg} 
+    </update>
+     
+    <delete id="eliminarPersonalDocumento" parameterType="pe.marista.sigma.bean.PersonalDocumentoBean">
+        Delete From MO_PersonalDocumento Where idPersonalDocumento = #{idPersonalDocumento} and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+
+    <select  id="obtenerDocumentoPorPersonalRep" parameterType="map" resultType="pe.marista.sigma.bean.reporte.PersonalDocumentoRepBean"> 
+        SELECT 
+        doc.nombre as nombreDoc, pd.fechacaduca,pd.flgcaduca,
+        isnull(tipo.codigo,' ') as tipoCopia, 
+        (case when pd.flgcaduca = 1 then ((case when pd.fechacaduca is not null then (CONVERT(VARCHAR(10),  pd.fechacaduca, 103)) when pd.flgcaduca  is   null then '      /   /' else '' end)) when pd.flgcaduca = 0 then '   /   /' else '' end) as fechaCaduca,
+        (case when pd.flgoriginal = 1 then 'SÍ' when pd.flgoriginal = 0 then 'NO' else '' end) as original,
+
+        (case when pd.flgobligatorio = 1 then 'Sí' when pd.flgobligatorio = 0 then 'No' else '' end) as obligatorio,
+        (case when pd.flgpresentacion = 1 then (CONVERT(VARCHAR(10),  pd.fechapresentacion, 103)) when pd.flgpresentacion = 0 then '      /   /' else '' end) as fechaPresentacion,
+
+        (case when pd.status = 1 then 'Entregado' when pd.status = 0 then 'Pendiente' else '' end) as estado
+        FROM MO_PersonalDocumento  PD
+        inner join MO_Documento doc on doc.iddocumento=pd.iddocumento
+        inner join MO_Codigo tipo on tipo.idcodigo = pd.idtipocopia        
+        where pd.idpersonal=#{idPersonal} and pd.unineg=#{uniNeg}
+        order by doc.nombre   
+    </select>    
+         
+    <sql id="consultaCamposPDF">
+        SELECT  
+        uni.unineg as uniNegP ,
+        per.idpersonal as idPersonal,
+        pdf.idpersonalpdf as idPersonalPdf,
+        pdf.objeto as objeto,
+        pdf.idobjeto as idObjeto,
+        pdf.nombrepdf as nombrePdf, 
+        pdf.creapor as creaPor,
+        pdf.creafecha as creaFecha,
+        pdf.modipor as modiPor 
+        FROM MO_PersonalPDF PDF
+        INNER JOIN MO_UnidadNegocio uni on uni.unineg=pdf.unineg
+        inner join MO_Personal per on per.idpersonal=pdf.idpersonal
+    </sql>
+    <resultMap id="personalPDFResultado" type="pe.marista.sigma.bean.PersonalPDFBean">
+        <id property="idPersonalPdf" column="idPersonalPdf" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="objeto" column="objeto" />
+        <result property="idObjeto" column="idObjeto" />
+        <result property="nombrePdf" column="nombrePdf" />
+        <result property="modiPor" column="modiPor" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" jdbcType="DATE"/> 
+        <association property="unidadNegocioBean" column="uniNegP"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>  
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/> 
+    </resultMap>
+    <insert id="insertarPersonalPDF" parameterType="pe.marista.sigma.bean.PersonalPDFBean">
+        INSERT INTO  MO_PersonalPDF
+        (unineg,idPersonal,objeto,idobjeto,nombrepdf,creaPor)
+        Values
+        (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{objeto},#{idObjeto},
+        #{nombrePdf},#{creaPor})
+    </insert>      
+    <select id="obtenerPersonalPDFPorPersonal" resultMap="personalPDFResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCamposPDF" />
+        where per.idPersonal=#{idPersonal} and uni.unineg=#{unidadNegocioBean.uniNeg}
+        order by pdf.idobjeto asc
+    </select>
+</mapper>

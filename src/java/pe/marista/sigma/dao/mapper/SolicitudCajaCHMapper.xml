@@ -1,0 +1,1528 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.SolicitudCajaCHDAO">
+    <sql id="consultaSolicitudCCH">
+        Select 
+        sol.uniNeg as uniNegSol
+        ,sol.idSolicitudCajaCh
+        ,sol.nivelAutoriza
+        
+        ,sol.idPersonal as idPersonalSol
+        ,sol.idTipoSolicitante
+        ,(
+        case when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end
+        ) as nombreSolicitante
+        ,sol.idTipoRespCheque
+        ,sol.idRespCheque
+        ,isnull(sol.nomRespCheque,'-') as nomRespCheque
+        ,per.uniNeg as uniNegPer
+      
+        ,uo.idUniOrg as idUniOrgPer
+        ,uo.nombreUniOrg as nomUniOrgPer  
+        ,sol.idUniOrg 
+        ,sol.idConcepto
+        ,cat.idTipoConcepto
+        ,cat.nombre as nombreTC
+        ,con.nombre as nombreConcepto
+        ,con.cuentad 
+        ,con.cuentah
+        ,sol.idTipoStatusSolCajaCh
+        ,sol.idTipoMoneda
+        ,mon.codigo as codigoMoneda
+        ,sol.monto
+        ,sol.montoAprobado
+        ,sol.fechaSol  
+        ,(CASE WHEN sol.fechaSol IS NOT NULL THEN  CONVERT(VARCHAR(10), sol.fechaSol, 103) + ' '  + convert(VARCHAR(8), sol.fechaSol, 14) ELSE ' /  /' END) as  fechaSolView
+
+        ,sol.cr
+        ,cr.nombre nombreCR
+        ,sol.motivo
+        ,sol.obs
+        ,sol.idTipoSolicitud as idTipoSolicitudTS
+        ,ts.nombre as nombreTS
+        ,ts.idTipoAutoriza1
+        ,ts.idTipoAutoriza2
+        ,ts.idTipoAutoriza3
+        ,sol.idTipoPrioridad
+        ,tipPrio.codigo as tipPrio
+        ,tipStaSol.codigo as tipStaSol
+        ,sol.idAutoriza1
+        ,perA1.nombre as nomA1
+        ,perA1.apepat as apePatA1
+        ,perA1.apemat as apeMatA1
+        ,sol.flgAutoriza1
+        ,sol.fecAutoriza1
+       
+        ,sol.idAutoriza2
+        ,perA2.nombre as nomA2
+        ,perA2.apepat as apePatA2
+        ,perA2.apemat as apeMatA2
+        ,sol.flgAutoriza2
+        ,sol.flgAutoriza3 
+        ,sol.fecAutoriza2
+        
+        ,sol.idAutoriza3
+        ,perA3.nombre as nomA3
+        ,perA3.apepat as apePatA3
+        ,perA3.apemat as apeMatA3
+        ,sol.flgAutoriza3
+        ,sol.fecAutoriza3
+        
+        ,sol.fecAutoriza1
+        ,sol.fecAutoriza2
+        ,sol.fecAutoriza3
+        ,sol.nivelautoriza
+        <!--,((SELECT ISNULL((select top 1 detCR.idtipodistribucion
+        from MT_DetSolicitudCajaChCR detCR 
+        left join MT_SolicitudCajaCh re on re.idsolicitudcajach= detCR.idsolicitudcajach and re.unineg =detcr.unineg
+        WHERE  sol.uniNeg=#{unidadNegocioBean.uniNeg} and sol.idSolicitudCajaCh = #{idSolicitudCajaCh}),19501)))
+        AS codDistribucion-->
+        ,sol.idSolicitudCajaCh as idSolCaja
+        ,sol.motivo as glosaDoc
+        ,msj.idtipomodopago as idTipoModoPago   
+        ,isnull(tipModPag.codigo,'') as codModoPago
+        ,msj.numCuenta as numCuenta
+        ,msj.rucBanco as rucBanco ,
+        sol.dsctoNotCred as dsctoNotCred,
+        sol.nroNotaCredito as nroNotaCredito
+        From MT_SolicitudCajaCh sol  
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+        left join MO_UnidadOrganica uo on sol.idUniOrg=uo.idUniOrg
+        Left Join MT_Concepto con ON sol.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto 
+        Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda   
+        Left Join MO_Codigo tipStaSol ON tipStaSol.idCodigo = sol.idTipoStatusSolCajaCh
+        Left Join MO_Codigo tipPrio ON tipPrio.idCodigo = sol.idTipoPrioridad
+        left Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud AND TS.unineg=SOL.unineg
+        left join MO_Personal perA1 on sol.idAutoriza1=perA1.idPersonal and perA1.uniNeg=sol.uniNeg
+        left join MO_Personal perA2 on sol.idAutoriza2=perA2.idPersonal and perA2.uniNeg=sol.uniNeg
+        left join MO_Personal perA3 on sol.idAutoriza3=perA3.idPersonal and perA3.uniNeg=sol.uniNeg
+        left join MT_CentroResponsabilidad cr on sol.cr=cr.cr
+        left join MM_Mensaje msj on msj.idobjeto=sol.idsolicitudcajach and msj.unineg=sol.unineg
+        and msj.objeto='MT_SolicitudCajaCh'
+        Left Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago
+    </sql> 
+    <resultMap id="solicitudCCHResultado" type="pe.marista.sigma.bean.SolicitudCajaCHBean"> 
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idSolicitudCajaCh" column="idSolicitudCajaCh"/>
+        <result property="monto" column="monto"/>
+        <result property="montoAprobado" column="montoAprobado"/>
+        <result property="fechaSol" column="fechaSol"/> 
+        <result property="motivo" column="motivo"/>
+        <result property="obs" column="obs"/>
+        <result property="objeto" column="objeto"/>
+        <result property="nivelAutoriza" column="nivelAutoriza"/>
+        <result property="flgAutoriza1" column="flgAutoriza1"/>
+        <result property="flgAutoriza2" column="flgAutoriza2"/>
+        <result property="flgAutoriza3" column="flgAutoriza3"/>
+        <result property="fecAutoriza1" column="fecAutoriza1"/>
+        <result property="fecAutoriza2" column="fecAutoriza2"/>
+        <result property="fecAutoriza3" column="fecAutoriza3"/> 
+        <result property="montoMaxMovSol" column="montoMaxMovSol"/> 
+        <result property="montoMaxMovDol" column="montoMaxMovDol"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/> 
+        <result property="codDistribucion" column="codDistribucion"/> 
+        <result property="modiPor" column="modiPor"/>
+        <result property="montoPagado" column="montoPagado"/>
+        <result property="sumaLiquidacion" column="sumaLiquidacion"/>
+        <result property="diferenciaAdevolver" column="diferenciaAdevolver"/>
+        <result property="idTipoSolicitante" column="idTipoSolicitante"/>
+        <result property="idTipoRespCheque" column="idTipoRespCheque"/> 
+        <result property="idRespCheque" column="idRespCheque"/>
+        <result property="nomRespCheque" column="nomRespCheque"/>
+        <result property="nombreSolicitante" column="nombreSolicitante"/>
+        <result property="idPersonalSol" column="idPersonalSol"/>
+        <result property="idSolCaja" column="idSolCaja"/>
+        <result property="glosaDoc" column="glosaDoc"/>
+        <result property="fechaSolView" column="fechaSolView"/>
+        <result property="idTipoModoPago" column="idTipoModoPago"/>
+        <result property="codModoPago" column="codModoPago"/>
+        <result property="referencia" column="referencia"/>
+        <result property="rucBanco" column="rucBanco"/>
+        <result property="numCuenta" column="numCuenta"/>
+        <result property="montoTotalSoles" column="montoTotalSoles"/>
+        <result property="montoTotalDolares" column="montoTotalDolares"/> 
+        <result property="nroNotaCredito" column="nroNotaCredito"/> 
+        <result property="dsctoNotCred" column="dsctoNotCred"/> 
+        <association property="tipoSolicitudBean" column="idTipoSolicitud"
+                     javaType="pe.marista.sigma.bean.TipoSolicitudBean"
+                     resultMap="tipoSolicitudResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/> 
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+        <association property="entidadBean" column="rucEnt"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/> 
+        <!--<association property="resChequeBean" column="idResCheque"
+        javaType="pe.marista.sigma.bean.PersonalBean"
+        resultMap="resChequeResultado"/> -->
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniNegBeanResultado"/> 
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResponsabilidadResultado"/> 
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/>
+        <association property="tipoStatusSolCajaChBean" column="idTipoStatusSolCajaCh"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusSolResultado"/>
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadResultado"/>
+        <association property="uniNegUniOrgBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.UniNegUniOrgBean"
+                     resultMap="uniNegUniOrgResultado"/>
+        <!-- autorizadores-->
+        <association property="idAutorizaPer1Bean" column="idAutoriza1"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="autoriza1Resultado"/>
+        <association property="idAutorizaPer2Bean" column="idAutoriza2"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="autoriza2Resultado"/>
+        <association property="idAutorizaPer3Bean" column="idAutoriza3"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="autoriza3Resultado"/>
+    </resultMap>
+    <resultMap id="uniNegUniOrgResultado" type="pe.marista.sigma.bean.UniNegUniOrgBean">
+        <id property="unidadOrganicaBean.idUniOrg" column="idUniOrg"/>  
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadOrganicaResultado"/>
+    </resultMap> 
+    <resultMap id="unidadOrganicaResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrgSol"/>
+    </resultMap>
+    <!-- TipoSolicitud-->
+    <resultMap id="tipoSolicitudResultado" type="pe.marista.sigma.bean.TipoSolicitudBean">  
+        <id property="idTipoSolicitud" column="idTipoSolicitudTS"/>
+        <result property="nombre" column="nombreTS"/>  
+        <result property="idAutoriza1Vista" column="idAutoriza1Vista"/>
+        <result property="idAutoriza2Vista" column="idAutoriza2Vista"/>
+        <result property="idAutoriza3Vista" column="idAutoriza3Vista"/>     
+        <result property="idTipoAutoriza1" column="idTipoAutoriza1"/>     
+        <result property="idTipoAutoriza2" column="idTipoAutoriza2"/>     
+        <result property="idTipoAutoriza3" column="idTipoAutoriza3"/>     
+    </resultMap>
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegSol"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+     
+    <!--Personal solicitante-->
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="codPer" column="codPerSol"/>
+        <result property="nombre" column="nomSol"/>
+        <result property="apepat" column="apePatSol"/>
+        <result property="apemat" column="apeMatSol"/> 
+        <result property="ruc" column="rucSol"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoPer"/> 
+        <association property="unidadOrganicaBean" column="idUniOrg" 
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean" 
+                     resultMap="unidadOrganicaResultadoPer"/>
+    </resultMap>  
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean"> 
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nomPerso"/>
+        <result property="apepat" column="apePerso"/>
+        <result property="apemat" column="apePerso"/>   
+    </resultMap>  
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean"> 
+        <id property="rucEnt" column="rucEnt"/>
+        <result property="nombre" column="nomEnt"/> 
+    </resultMap>
+    <resultMap id="unidadNegocioResultadoPer" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegPer"/>
+        <result property="nombreUniNeg" column="nombreUniNegPer"/> 
+    </resultMap> 
+    <resultMap id="unidadOrganicaResultadoPer" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrgPer" />
+        <result property="nombreUniOrg" column="nomUniOrgPer"/>
+    </resultMap>   
+    <!--Personal Responsable de cheque 
+    <resultMap id="resChequeResultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idResCheque"/>
+        <result property="codPer" column="codPerResC"/>
+        <result property="nombre" column="nomResC"/>
+        <result property="apepat" column="apePatResC"/>
+        <result property="apemat" column="apeMatResC"/> 
+        <result property="ruc" column="rucResC"/>  
+    </resultMap>   -->
+    <!--Personal autorizador 1-->
+    <resultMap id="autoriza1Resultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idAutoriza1"/>
+        <result property="nombre" column="nomA1"/>
+        <result property="apepat" column="apePatA1"/>
+        <result property="apemat" column="apeMatA1"/>  
+    </resultMap>   
+    <!--Personal autorizador 2-->
+    <resultMap id="autoriza2Resultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idAutoriza2"/>
+        <result property="nombre" column="nomA2"/>
+        <result property="apepat" column="apePatA2"/>
+        <result property="apemat" column="apeMatA2"/>  
+    </resultMap>   
+    <!--Personal autorizador 3-->
+    <resultMap id="autoriza3Resultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idAutoriza3"/>
+        <result property="nombre" column="nomA3"/>
+        <result property="apepat" column="apePatA3"/>
+        <result property="apemat" column="apeMatA3"/>  
+    </resultMap>   
+    <!--ConceptoUniNeg-->
+    <resultMap id="conceptoUniNegBeanResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean">
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoCon"/> 
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <!--Concepto-->
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <result property="descrip" column="descrip"/> 
+        <association property="planContableCuentaDBean" column="cuentad"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultado"/>
+        <association property="planContableCuentaHBean" column="cuentah"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultado"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultado"/>
+    </resultMap> 
+    <resultMap id="planContableDResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentad"/>
+        <result property="nombre" column="nombreCuentaD"/>
+    </resultMap>
+    <resultMap id="planContableHResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentah"/>
+        <result property="nombre" column="nombreCuentaH"/>
+    </resultMap>
+    <resultMap id="tipoConceptoResultado" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+        <id property="nombre" column="nombreTC"/>
+    </resultMap>
+     
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultadoCon" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    <!--Centro de Responsabilidad-->
+    <resultMap id="centroResponsabilidadResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/> 
+        <id property="nombre" column="nombreCR"/> 
+    </resultMap>
+    <resultMap id="tipoStatusSolResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusSolCajaCh"/>
+        <result property="codigo" column="tipStaSol"/> 
+    </resultMap>
+    <resultMap id="tipoPrioridadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="tipPrio"/> 
+    </resultMap>
+    <!--Codigo-->
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="codigoMoneda"/>
+    </resultMap> 
+   
+    <select id="obtenerSolicitudCajaCH" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH"/> 
+    </select>
+    <select id="obtenerSolicitudCajaCHBeanPorUniNeg" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH"/>
+        Where sol.uniNeg=#{personalBean.unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerSolicitudCajaCHBeanPorId" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH" />
+        WHERE  sol.uniNeg=#{unidadNegocioBean.uniNeg} and sol.idSolicitudCajaCh = #{idSolicitudCajaCh} 
+    </select> 
+    <update id="modificarSolicitudCajaCH" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        UPDATE MT_SolicitudCajaCh SET 
+        idConcepto=#{conceptoUniNegBean.conceptoBean.idConcepto},
+        idPersonal=#{personalBean.idPersonal},
+        idTipoMoneda=#{tipoMonedaBean.idCodigo},
+        monto=#{monto},
+        fechaSol=#{fechaSol}, 
+        motivo={motivo},
+        obs=#{obs},
+        cr=#{centroResponsabilidadBean.cr},
+        idTipoStatusSolCajaCh=#{tipoStatusSolCajaChBean.idCodigo},
+        modiPor = #{modiPor}   
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarMotivo" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        UPDATE MT_SolicitudCajaCh SET  
+        motivo=#{motivo},
+        modiPor = #{modiPor}   
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarTipoSol" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        UPDATE MT_SolicitudCajaCh  
+        set idtiposolicitud=#{tipoSolicitudBean.idTipoSolicitud}
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <delete id="eliminarSolicitudCajaCH" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Delete From MT_SolicitudCajaCh  Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+    <select id="obtenerSolicitudCajaCHBeanPorPersonal" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaSolicitudCCH" />
+        WHERE  per.uniNeg=#{unidadNegocioBean.uniNeg} and per.idPersonal=#{idPersonal} 
+    </select>
+    
+    <select id="obtenerSolicitudCajaCHBeanPorGestor" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH" />
+        WHERE   sol.creaPor=#{creaPor} 
+    </select>  
+    
+    <select id="obtenerPorIdCaja" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaSolicitudCCH" />
+        WHERE  per.idPersonal=#{idPersonal}  and unineg=#{unidadNegocioBean.uniNeg} 
+    </select>  
+    <update id="anularSolicitudCCH" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Update MT_SolicitudCajaCh set 
+        idTipoStatusSolCajaCh = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusSolCajaChBean.codigo} and idTipoCodigo=#{tipoStatusSolCajaChBean.tipoCodigoBean.descripcion}),
+        modiPor = #{modiPor}   
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{personalBean.unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoSolicitudMontoAprobadoCCh" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Update MT_SolicitudCajaCh set 
+        idTipoStatusSolCajaCh = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusSolCajaChBean.codigo} and idTipoCodigo=#{tipoStatusSolCajaChBean.tipoCodigoBean.descripcion}),
+        montoAprobado=#{montoAprobado},
+        motivo=#{motivo},
+        idconcepto=#{conceptoUniNegBean.conceptoBean.idConcepto},
+        obs=#{obs}
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            ,idTipoRespCheque=#{idTipoRespCheque} 
+        </if> 
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            ,idRespCheque=convert(varchar,#{idRespCheque})
+        </if>  
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            ,nomRespCheque=#{nomRespCheque}
+        </if>  
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoPagadoSolicitudCCh" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Update MT_SolicitudCajaCh set 
+        idTipoStatusSolCajaCh = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusSolCajaChBean.codigo} and idTipoCodigo=#{tipoStatusSolCajaChBean.tipoCodigoBean.descripcion})
+        ,nroNotaCredito=#{nroNotaCredito},
+        dsctoNotCred=#{dsctoNotCred}
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <insert id="insertarSolicitudCajaCH1" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        INSERT INTO MT_SolicitudCajaCh    
+        (idSolicitudCajaCH,uniNeg,idConcepto,
+        idPersonal,
+        idUniOrg,
+        idTipoMoneda,monto,montoAprobado,fechaSol,motivo,obs,
+        cr,idTipoStatusSolCajaCh,idTipoPrioridad,creaPor,creaFecha,
+        idTipoSolicitud,nivelAutoriza,idtiposolicitante,idtiporespcheque,idRespCheque,nomRespCheque
+        )
+        Values
+        (0,#{unidadNegocioBean.uniNeg},#{conceptoUniNegBean.conceptoBean.idConcepto}, 
+        <if test="idTipoSol = 1 and personaBean.idPersona ==null and entidadBean.ruc==null" >
+            #{personalBean.idPersonal},
+        </if> 
+        <if test="idTipoSol = 2  and personalBean.idPersonal ==null and entidadBean.ruc==null">
+            #{personaBean.idPersona},
+        </if> 
+        <if test="idTipoSol = 3  and personaBean.idPersona ==null and personalBean.idPersonal==null" >
+            #{entidadBean.ruc},
+        </if>  
+        #{personalBean.unidadOrganicaBean.idUniOrg},   
+        #{tipoMonedaBean.idCodigo},#{monto},#{montoAprobado},#{fechaSol},#{motivo},#{obs},
+        #{centroResponsabilidadBean.cr},
+        #{tipoStatusSolCajaChBean.idCodigo},#{tipoPrioridadBean.idCodigo},#{creaPor},getDate(),
+        #{tipoSolicitudBean.idTipoSolicitud}, 
+        <!--(select idTipoSolicitud from MM_TipoSolicitud where nombre=#{tipoSolicitudBean.nombre} and uniNeg=#{unidadNegocioBean.uniNeg}),-->
+        #{nivelAutoriza},#{idTipoSolicitante},#{idTipoRespCheque},#{idRespCheque},#{nomRespCheque})
+        <selectKey keyProperty="idSolicitudCajaCh" order="AFTER" resultType="Integer">
+            SELECT max(idSolicitudCajaCh) FROM MT_SolicitudCajaCh WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>
+    <select id="llamarProGetAutorizadores" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean" resultType="Object">
+        exec PRO_GET_AUTORIZADORES
+        @@unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idobjeto = #{idSolicitudCajaCh,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@objeto = #{objeto,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select> 
+    <select id="obtenerSolicitudPorFiltroGestor" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH"/>
+        <where>
+            sol.uniNeg = #{unidadNegocioBean.uniNeg} and sol.creaPor=#{creaPor}  
+            <if test="idSolicitudCajaCh != null and idSolicitudCajaCh != 0 ">
+                and sol.idSolicitudCajaCh = #{idSolicitudCajaCh}
+            </if>  
+            <!--<if test="personalBean.codPer != null and personalBean.codPer != 0 ">
+                and  per.codPer=#{personalBean.codPer}
+            </if> 
+            <if test="personalBean.apepat != null and personalBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personalBean.apepat},'%')
+            </if>
+            <if test="personalBean.apemat != null and personalBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personalBean.apemat},'%')
+            </if>
+            <if test="personalBean.nombre != null and personalBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personalBean.nombre},'%')
+            </if>-->
+            <if test="personalBean.unidadOrganicaBean.idUniOrg != null and personalBean.unidadOrganicaBean.idUniOrg!=0"> 
+                and uo.idUniOrg=#{personalBean.unidadOrganicaBean.idUniOrg}
+            </if>   
+            <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+                and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+            </if>
+            <if test="nombreSolicitante != null and nombreSolicitante != '' ">
+                and (case
+                when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),'',UPPER(per.nombre)) 
+                when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),'',UPPER(pers.nombre))  
+                when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre))  end
+                ) like concat('%',#{nombreSolicitante},'%') 
+            </if>  
+            <if test="nomRespCheque != null and nomRespCheque != '' ">
+                and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+            </if>  
+            <if test="idPersonalSol != null and idPersonalSol != '' ">
+                (case
+                when sol.idTipoSolicitante ='COL' then per.codper
+                when sol.idTipoSolicitante ='PER' then pers.idpersona
+                when sol.idTipoSolicitante ='PRO' then ent.ruc  end
+                ) = #{idPersonalSol}  
+            </if>  
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                and  sol.idRespCheque  = #{idRespCheque}  
+            </if>  
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+            </if>
+            <if test="motivo != null and motivo != ''">
+                and sol.motivo = #{motivo}
+            </if> 
+        </where>
+        order by sol.idSolicitudCajaCh desc
+    </select>
+    <select id="obtenerSolicitudPorFiltroGestorPorActividad" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Select 
+        d.cr,
+        sol.fechasol as fechaSol,
+        ( case when sol.idTipoSolicitante ='COL' 
+        then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre)) when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then (UPPER(ent.nombre)) end ) as nombreSolicitante ,
+        isnull(sol.nomRespCheque,'-') as nomRespCheque,
+        con.nombre as nombreConcepto,
+        ts.nombre as nombreTS ,
+        sol.motivo,
+        sol.obs,
+        sol.montoAprobado,
+        mon.codigo as codigoMoneda,
+        (case when ts.nombre='Contra Pago' then 'Efectivo' else isnull(tipModPag.codigo,'-')end) as codModoPago ,
+        tipStaSol.codigo as tipStaSol,
+        (select isnull(sum(montoaprobado),0.0) from MT_SolicitudCajaCh sol Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda where
+        sol.uniNeg = #{unidadNegocioBean.uniNeg} and sol.creaPor=#{creaPor} 
+        <if test="motivo != null and motivo != '' ">
+            and sol.motivo  like concat('%',#{motivo},'%') 
+        </if> and mon.idcodigo=14901  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+        </if>
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and sol.idRespCheque =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+        </if>) as montoTotalSoles
+        ,(select isnull(sum(montoaprobado),0.0) from MT_SolicitudCajaCh sol Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda where
+        sol.uniNeg = #{unidadNegocioBean.uniNeg} and sol.creaPor=#{creaPor} 
+        <if test="motivo != null and motivo != '' ">
+            and sol.motivo  like concat('%',#{motivo},'%') 
+        </if>  and mon.idcodigo=14902  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+        </if> 
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and sol.idRespCheque =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+        </if>) as montoTotalDolares  
+        From MT_SolicitudCajaCh sol  
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+        left join MO_UnidadOrganica uo on sol.idUniOrg=uo.idUniOrg
+        Left Join MT_Concepto con ON sol.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto 
+        Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda   
+        Left Join MO_Codigo tipStaSol ON tipStaSol.idCodigo = sol.idTipoStatusSolCajaCh
+        Left Join MO_Codigo tipPrio ON tipPrio.idCodigo = sol.idTipoPrioridad
+        left Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud AND TS.unineg=SOL.unineg
+        left join MO_Personal perA1 on sol.idAutoriza1=perA1.idPersonal and perA1.uniNeg=sol.uniNeg
+        left join MO_Personal perA2 on sol.idAutoriza2=perA2.idPersonal and perA2.uniNeg=sol.uniNeg
+        left join MO_Personal perA3 on sol.idAutoriza3=perA3.idPersonal and perA3.uniNeg=sol.uniNeg
+        left join MT_CentroResponsabilidad cr on sol.cr=cr.cr
+        left join MM_Mensaje msj on msj.idobjeto=sol.idsolicitudcajach and msj.unineg=sol.unineg
+        and msj.objeto='MT_SolicitudCajaCh'
+        Left Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago
+        left join MT_DetSolicitudCajaChCR d on d.idsolicitudCajach=sol.idsolicitudcajach
+        <where>
+            sol.uniNeg = #{unidadNegocioBean.uniNeg} and sol.creaPor=#{creaPor}  
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+            </if>
+            <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+                and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+            </if>
+            <if test="motivo != null and motivo != '' ">
+                and sol.motivo  like concat('%',#{motivo},'%') 
+            </if>
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                and sol.idRespCheque =#{idRespCheque} 
+            </if>
+            <if test="nomRespCheque != null and nomRespCheque != '' ">
+                and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+            </if>
+        </where>
+        union all 
+        select distinct
+        cta.cr,
+        fact.creafecha as fechaSol,	
+        concat(upper(p.apepat),' '+upper(p.apemat),', '+upper(p.nombre)) as nombreSolicitante,
+        e.nombre as nomRespCheque,
+        con.nombre as nombreConcepto,
+        ts.nombre as nombreTS ,
+        fact.glosa as motivo,
+        r.titulo as obs,
+        fact.montopago as montoAprobado,
+        mon.codigo as codigoMoneda,
+        (case when ts.nombre='Contra Pago' then 'Efectivo' else isnull(tipModPag.codigo,'-')end) as codModoPago ,
+        tipStaSol.codigo as tipStaSol,
+        (select isnull(sum(fact.montopago),0.0) from ML_FacturaCompra fact  Left Join MO_Codigo mon ON mon.idCodigo = fact.idtipomoneda 
+        inner join ML_CuentaFact d on d.idfacturacompra=fact.idfacturacompra
+        where
+        fact.uniNeg = #{unidadNegocioBean.uniNeg} and fact.creaPor=#{creaPor} 
+        <if test="motivo != null and motivo != '' ">
+            and fact.glosa  like concat('%',#{motivo},'%') 
+        </if> and mon.idcodigo=14901  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  fact.creafecha >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  fact.creafecha <= #{fechaFin}
+                ]]>
+        </if>
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and fact.idtipostatusfactura = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and e.ruc =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and e.nombre  like concat('%',#{nomRespCheque},'%') 
+        </if>) as montoTotalSoles
+        ,(select isnull(sum(fact.montopago),0.0) from ML_FacturaCompra fact  
+        Left Join MO_Codigo mon ON mon.idCodigo = fact.idtipomoneda 
+        inner join ML_CuentaFact d on d.idfacturacompra=fact.idfacturacompra
+        where
+        fact.unineg = #{unidadNegocioBean.uniNeg} and fact.creaPor=#{creaPor} 
+        <if test="motivo != null and motivo != '' ">
+            and fact.glosa  like concat('%',#{motivo},'%') 
+        </if>  and mon.idcodigo=14902  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  fact.creafecha >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  fact.creafecha <= #{fechaFin}
+                ]]>
+        </if> 
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and fact.idtipostatusfactura = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and e.ruc =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and e.nombre  like concat('%',#{nomRespCheque},'%') 
+        </if>) as montoTotalDolares 
+        from ML_FacturaCompra fact
+        left join ML_DetRegistroCompra dr on dr.idregistrocompra=fact.idregistrocompra 
+        left join ML_DetOrdenCompra do on do.idordencompra=dr.idordencompra
+        left join ML_DetRequerimiento dre on dre.idrequerimiento=do.idrequerimiento
+        left join ML_Requerimiento r on r.idrequerimiento=dre.idrequerimiento
+        left join MO_Personal p on p.idpersonal=r.idsolicitante
+        left join MO_Entidad e on e.ruc=dr.ruc
+        left join ML_CuentaFact cta on cta.idfacturacompra=fact.idfacturacompra
+        left join MT_Concepto con on con.idconcepto=cta.idconcepto
+        left join MM_TipoSolicitud ts on ts.idtiposolicitud=fact.idtiposolicitud
+        left Join MO_Codigo mon ON mon.idCodigo = fact.idTipoMoneda
+        left join MM_Mensaje msj on msj.idobjeto=fact.idfacturacompra
+        inner Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago
+        Left Join MO_Codigo tipStaSol ON tipStaSol.idCodigo = fact.idtipostatusfactura
+        <where>
+            fact.uniNeg = #{unidadNegocioBean.uniNeg}    and fact.creaPor=#{creaPor} 
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  fact.creafecha >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[  
+                and  fact.creafecha <= #{fechaFin}
+                ]]>
+            </if>
+            <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+                and fact.idtipostatusfactura = #{tipoStatusSolCajaChBean.idCodigo}
+            </if>
+            <if test="motivo != null and motivo != '' ">
+                and fact.glosa  like concat('%',#{motivo},'%') 
+            </if>
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                and sol.idRespCheque =#{idRespCheque} 
+            </if>
+            <if test="nomRespCheque != null and nomRespCheque != '' ">
+                and e.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+            </if>
+        </where>
+    </select>
+    <select id="obtenerSolicitudPorFiltroGestorPorActividadAdmi" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Select 
+        d.cr,
+        sol.fechasol as fechaSol,
+        ( case when sol.idTipoSolicitante ='COL' 
+        then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre)) when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then (UPPER(ent.nombre)) end ) as nombreSolicitante ,
+        isnull(sol.nomRespCheque,'-') as nomRespCheque,
+        con.nombre as nombreConcepto,
+        ts.nombre as nombreTS ,
+        sol.motivo,
+        sol.obs,
+        d.valor as montoAprobado,
+        mon.codigo as codigoMoneda,
+        (case when ts.nombre='Contra Pago' then 'Efectivo' else isnull(tipModPag.codigo,'-')end) as codModoPago ,
+        tipStaSol.codigo as tipStaSol,
+        (select isnull(sum(d.valor),0.0) from MT_SolicitudCajaCh sol Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda
+        inner join MT_DetSolicitudCajaChCR d on d.idsolicitudCajach=sol.idsolicitudcajach
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where
+        sol.uniNeg = #{unidadNegocioBean.uniNeg} 
+        <if test="motivo != null and motivo != '' ">
+            and sol.motivo  like concat('%',#{motivo},'%') 
+        </if> and mon.idcodigo=14901  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+        </if>
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and sol.idRespCheque =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+        </if>
+        <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+            and con.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+        </if>
+        <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+            and d.cr =#{centroResponsabilidadBean.cr}
+        </if>) as montoTotalSoles
+        ,(select isnull(sum(d.valor),0.0) from MT_SolicitudCajaCh sol Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda 
+        inner join MT_DetSolicitudCajaChCR d on d.idsolicitudCajach=sol.idsolicitudcajach
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where
+        sol.uniNeg = #{unidadNegocioBean.uniNeg}
+        <if test="motivo != null and motivo != '' ">
+            and sol.motivo  like concat('%',#{motivo},'%') 
+        </if>  and mon.idcodigo=14902  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+        </if> 
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and sol.idRespCheque =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+        </if>
+        <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+            and con.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+        </if>
+        <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+            and d.cr =#{centroResponsabilidadBean.cr}
+        </if>) as montoTotalDolares  
+        From MT_SolicitudCajaCh sol  
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+        left join MO_UnidadOrganica uo on sol.idUniOrg=uo.idUniOrg
+        Left Join MT_Concepto con ON sol.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto 
+        Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda   
+        Left Join MO_Codigo tipStaSol ON tipStaSol.idCodigo = sol.idTipoStatusSolCajaCh
+        Left Join MO_Codigo tipPrio ON tipPrio.idCodigo = sol.idTipoPrioridad
+        left Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud AND TS.unineg=SOL.unineg
+        left join MO_Personal perA1 on sol.idAutoriza1=perA1.idPersonal and perA1.uniNeg=sol.uniNeg
+        left join MO_Personal perA2 on sol.idAutoriza2=perA2.idPersonal and perA2.uniNeg=sol.uniNeg
+        left join MO_Personal perA3 on sol.idAutoriza3=perA3.idPersonal and perA3.uniNeg=sol.uniNeg
+        left join MT_CentroResponsabilidad cr on sol.cr=cr.cr
+        left join MM_Mensaje msj on msj.idobjeto=sol.idsolicitudcajach and msj.unineg=sol.unineg
+        and msj.objeto='MT_SolicitudCajaCh'
+        Left Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago
+        left join MT_DetSolicitudCajaChCR d on d.idsolicitudCajach=sol.idsolicitudcajach
+        <where>
+            sol.uniNeg = #{unidadNegocioBean.uniNeg}   
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+            </if>
+            <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+                and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+            </if>
+            <if test="motivo != null and motivo != '' ">
+                and sol.motivo  like concat('%',#{motivo},'%') 
+            </if>
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                and sol.idRespCheque =#{idRespCheque} 
+            </if>
+            <if test="nomRespCheque != null and nomRespCheque != '' ">
+                and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+            </if>
+            <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+                and con.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+            </if>
+            <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+                and d.cr =#{centroResponsabilidadBean.cr}
+            </if>
+        </where> 
+        union all
+        Select 
+        d.cr,
+        sol.fechasol as fechaSol,
+        ( case when sol.idTipoSolicitante ='COL' 
+        then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre)) when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then (UPPER(ent.nombre)) end ) as nombreSolicitante ,
+        isnull(sol.nomRespCheque,'-') as nomRespCheque,
+        con.nombre as nombreConcepto,
+        ts.nombre as nombreTS ,
+        sol.motivo,
+        sol.obs,
+        d.monto as montoAprobado,
+        mon.codigo as codigoMoneda,
+        (case when ts.nombre='Contra Pago' then 'Efectivo' else isnull(tipModPag.codigo,'-')end) as codModoPago ,
+        tipStaSol.codigo as tipStaSol,
+        (select isnull(sum(d.monto),0.0) from MT_SolicitudCajaCh sol  Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda
+        left join MT_CajaChicaLiquidacion ca on ca.idsolicitudcajach=sol.idsolicitudcajach
+        left join MT_Asiento d on d.idobjeto=ca.idcajachicaliquidacion and d.objeto='MT_CajaChicaLiquidacion'
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where
+        sol.uniNeg = #{unidadNegocioBean.uniNeg} 
+        <if test="motivo != null and motivo != '' ">
+            and sol.motivo  like concat('%',#{motivo},'%') 
+        </if> and mon.idcodigo=14901  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+        </if>
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and sol.idRespCheque =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+        </if>
+        <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+            and d.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+        </if>
+        <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+            and d.cr =#{centroResponsabilidadBean.cr}
+        </if>) as montoTotalSoles
+        ,(select isnull(sum(d.monto),0.0) from MT_SolicitudCajaCh sol  Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda 
+        left join MT_CajaChicaLiquidacion ca on ca.idsolicitudcajach=sol.idsolicitudcajach
+        left join MT_Asiento d on d.idobjeto=ca.idcajachicaliquidacion and d.objeto='MT_CajaChicaLiquidacion' 
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        where
+        sol.uniNeg = #{unidadNegocioBean.uniNeg}
+        <if test="motivo != null and motivo != '' ">
+            and sol.motivo  like concat('%',#{motivo},'%') 
+        </if>  and mon.idcodigo=14902  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+        </if> 
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and sol.idRespCheque =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+        </if>
+        <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+            and d.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+        </if>
+        <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+            and d.cr =#{centroResponsabilidadBean.cr}
+        </if>) as montoTotalDolares  
+        From MT_SolicitudCajaCh sol  
+        left join MO_Personal per on sol.idPersonal =per.idPersonal and per.uniNeg=sol.uniNeg
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+        left join MO_UnidadOrganica uo on sol.idUniOrg=uo.idUniOrg
+        Left Join MT_Concepto con ON sol.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto 
+        Left Join MO_Codigo mon ON mon.idCodigo = sol.idTipoMoneda   
+        Left Join MO_Codigo tipStaSol ON tipStaSol.idCodigo = sol.idTipoStatusSolCajaCh
+        Left Join MO_Codigo tipPrio ON tipPrio.idCodigo = sol.idTipoPrioridad
+        left Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud AND TS.unineg=SOL.unineg
+        left join MO_Personal perA1 on sol.idAutoriza1=perA1.idPersonal and perA1.uniNeg=sol.uniNeg
+        left join MO_Personal perA2 on sol.idAutoriza2=perA2.idPersonal and perA2.uniNeg=sol.uniNeg
+        left join MO_Personal perA3 on sol.idAutoriza3=perA3.idPersonal and perA3.uniNeg=sol.uniNeg
+        left join MT_CentroResponsabilidad cr on sol.cr=cr.cr
+        left join MM_Mensaje msj on msj.idobjeto=sol.idsolicitudcajach and msj.unineg=sol.unineg
+        and msj.objeto='MT_SolicitudCajaCh'
+        left join MT_CajaChicaLiquidacion ca on ca.idsolicitudcajach=sol.idsolicitudcajach
+        left join MT_DocEgreso doc on doc.idsolicitudcajach=sol.idsolicitudcajach
+        Left Join MO_Codigo tipModPag ON tipModPag.idCodigo = doc.idtipopago 
+        left join MT_Asiento d on d.idobjeto=ca.idcajachicaliquidacion and d.objeto='MT_CajaChicaLiquidacion'
+        <where>
+            sol.uniNeg = #{unidadNegocioBean.uniNeg}   
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[  
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+            </if>
+            <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+                and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+            </if>
+            <if test="motivo != null and motivo != '' ">
+                and sol.motivo  like concat('%',#{motivo},'%') 
+            </if>
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                and sol.idRespCheque =#{idRespCheque} 
+            </if>
+            <if test="nomRespCheque != null and nomRespCheque != '' ">
+                and sol.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+            </if>
+            <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+                and d.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+            </if>
+            <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+                and d.cr =#{centroResponsabilidadBean.cr}
+            </if>
+        </where> 
+        union all 
+        select distinct
+        cta.cr,
+        fact.creafecha as fechaSol,	
+        concat(upper(p.apepat),' '+upper(p.apemat),', '+upper(p.nombre)) as nombreSolicitante,
+        e.nombre as nomRespCheque,
+        con.nombre as nombreConcepto,
+        ts.nombre as nombreTS ,
+        fact.glosa as motivo,
+        r.titulo as obs,
+        cta.valor as montoAprobado,
+        mon.codigo as codigoMoneda,
+        (case when ts.nombre='Contra Pago' then 'Efectivo' else isnull(tipModPag.codigo,'-')end) as codModoPago ,
+        tipStaSol.codigo as tipStaSol,
+        (select isnull(sum(cta.valor),0.0) from ML_FacturaCompra fact  Left Join MO_Codigo mon ON mon.idCodigo = fact.idtipomoneda 
+        inner join ML_CuentaFact d on d.idfacturacompra=fact.idfacturacompra
+        inner join ML_CuentaFact cta on cta.idfacturacompra=fact.idfacturacompra
+        where
+        fact.uniNeg = #{unidadNegocioBean.uniNeg} 
+        <if test="motivo != null and motivo != '' ">
+            and fact.glosa  like concat('%',#{motivo},'%') 
+        </if> and mon.idcodigo=14901  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  fact.creafecha >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  fact.creafecha <= #{fechaFin}
+                ]]>
+        </if>
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and fact.idtipostatusfactura = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and e.ruc =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and e.nombre  like concat('%',#{nomRespCheque},'%') 
+        </if>
+        <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+            and cta.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+        </if>
+        <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+            and cta.cr =#{centroResponsabilidadBean.cr}
+        </if>) as montoTotalSoles
+        ,(select isnull(sum(cta.valor),0.0) from ML_FacturaCompra fact  
+        Left Join MO_Codigo mon ON mon.idCodigo = fact.idtipomoneda 
+        inner join ML_CuentaFact cta on cta.idfacturacompra=fact.idfacturacompra
+        inner join ML_CuentaFact d on d.idfacturacompra=fact.idfacturacompra
+        where
+        fact.unineg = #{unidadNegocioBean.uniNeg}
+        <if test="motivo != null and motivo != '' ">
+            and fact.glosa  like concat('%',#{motivo},'%') 
+        </if>  and mon.idcodigo=14902  
+        <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  fact.creafecha >= #{fechaInicio}
+                ]]>
+        </if>
+        <if test="fechaFin != null" >
+                <![CDATA[  
+                and  fact.creafecha <= #{fechaFin}
+                ]]>
+        </if> 
+        <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+            and fact.idtipostatusfactura = #{tipoStatusSolCajaChBean.idCodigo}
+        </if>
+        <if test="idRespCheque != null and idRespCheque != '' ">
+            and e.ruc =#{idRespCheque} 
+        </if>
+        <if test="nomRespCheque != null and nomRespCheque != '' ">
+            and e.nombre  like concat('%',#{nomRespCheque},'%') 
+        </if>
+        <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+            and cta.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+        </if>
+        <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+            and cta.cr =#{centroResponsabilidadBean.cr}
+        </if>) as montoTotalDolares 
+        from ML_FacturaCompra fact
+        left join ML_DetRegistroCompra dr on dr.idregistrocompra=fact.idregistrocompra 
+        left join ML_DetOrdenCompra do on do.idordencompra=dr.idordencompra
+        left join ML_DetRequerimiento dre on dre.idrequerimiento=do.idrequerimiento
+        left join ML_Requerimiento r on r.idrequerimiento=dre.idrequerimiento
+        left join MO_Personal p on p.idpersonal=r.idsolicitante
+        left join MO_Entidad e on e.ruc=dr.ruc
+        left join ML_CuentaFact cta on cta.idfacturacompra=fact.idfacturacompra
+        left join MT_Concepto con on con.idconcepto=cta.idconcepto
+        left join MM_TipoSolicitud ts on ts.idtiposolicitud=fact.idtiposolicitud
+        left Join MO_Codigo mon ON mon.idCodigo = fact.idTipoMoneda
+        left join MM_Mensaje msj on msj.idobjeto=fact.idfacturacompra
+        inner Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago
+        Left Join MO_Codigo tipStaSol ON tipStaSol.idCodigo = fact.idtipostatusfactura
+        <where>
+            fact.uniNeg = #{unidadNegocioBean.uniNeg}   
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  fact.creafecha >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[  
+                and  fact.creafecha <= #{fechaFin}
+                ]]>
+            </if>
+            <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+                and fact.idtipostatusfactura = #{tipoStatusSolCajaChBean.idCodigo}
+            </if>
+            <if test="motivo != null and motivo != '' ">
+                and fact.glosa  like concat('%',#{motivo},'%') 
+            </if>
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                and sol.idRespCheque =#{idRespCheque} 
+            </if>
+            <if test="nomRespCheque != null and nomRespCheque != '' ">
+                and e.nomRespCheque  like concat('%',#{nomRespCheque},'%') 
+            </if>
+            <if test="conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != null and conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta != 0 ">
+                and cta.cuentad =#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}
+            </if>
+            <if test="centroResponsabilidadBean.cr != null and centroResponsabilidadBean.cr != 0 ">
+                and cta.cr =#{centroResponsabilidadBean.cr}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerSolicitudPorFiltroPersonal" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH"/>
+        <where>
+            sol.uniNeg = #{unidadNegocioBean.uniNeg} 
+            <if test="personalBean.idPersonal != null and personalBean.idPersonal != 0 ">
+                and per.idPersonal=#{personalBean.idPersonal}
+            </if> 
+            <if test="conceptoUniNegBean.conceptoBean.idConcepto != null and conceptoUniNegBean.conceptoBean.idConcepto != 0 ">
+                and sol.idconcepto= #{conceptoUniNegBean.conceptoBean.idConcepto}
+            </if> 
+            <if test="idSolicitudCajaCh != null and idSolicitudCajaCh != 0 ">
+                and sol.idSolicitudCajaCh = #{idSolicitudCajaCh}
+            </if>  
+            <if test="personalBean.codPer != null and personalBean.codPer != 0 ">
+                and  per.codPer=#{personalBean.codPer}
+            </if> 
+            <if test="personalBean.apepat != null and personalBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personalBean.apepat},'%')
+            </if>
+            <if test="personalBean.apemat != null and personalBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personalBean.apemat},'%')
+            </if>
+            <if test="personalBean.nombre != null and personalBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personalBean.nombre},'%')
+            </if>
+            <if test="personalBean.unidadOrganicaBean.idUniOrg != null and personalBean.unidadOrganicaBean.idUniOrg!=0"> 
+                and uo.idUniOrg=#{personalBean.unidadOrganicaBean.idUniOrg}
+            </if>   
+            <if test="tipoStatusSolCajaChBean.idCodigo != null and tipoStatusSolCajaChBean.idCodigo != 0 ">
+                and sol.idTipoStatusSolCajaCh = #{tipoStatusSolCajaChBean.idCodigo}
+            </if>  
+            <if test="nombreSolicitante != null and nombreSolicitante != '' ">
+                and (case
+                when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),'',UPPER(per.nombre)) 
+                when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),'',UPPER(pers.nombre))  
+                when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre))  end
+                ) like concat('%',#{nombreSolicitante},'%') 
+            </if>  
+            <if test="nomRespCheque != null and nomRespCheque != '' "> 
+                and sol.nomRespCheque like concat('%',#{nomRespCheque},'%') 
+            </if>  
+            <if test="idPersonalSol != null and idPersonalSol != '' ">
+                (case
+                when sol.idTipoSolicitante ='COL' then per.codper
+                when sol.idTipoSolicitante ='PER' then pers.idpersona
+                when sol.idTipoSolicitante ='PRO' then ent.ruc  end
+                ) = #{idPersonalSol}  
+            </if>  
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                (case
+                when sol.idtiporespcheque ='COL' then per.codper
+                when sol.idtiporespcheque ='PER' then pers.idpersona
+                when sol.idtiporespcheque ='PRO' then ent.ruc  end
+                ) = #{idRespCheque}  
+            </if>  
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by sol.idSolicitudCajaCh desc
+    </select>
+    <select id="obtenerSolicitudPorFiltro" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH"/>
+        <where>
+            sol.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="idSolicitudCajaCh != null and idSolicitudCajaCh != 0 ">
+                and sol.idSolicitudCajaCh = #{idSolicitudCajaCh}
+            </if> 
+            <if test="personalBean.codPer != null and personalBean.codPer != 0 ">
+                and  per.codPer=#{personalBean.codPer}
+            </if> 
+            <if test="personalBean.apepat != null and personalBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personalBean.apepat},'%')
+            </if>
+            <if test="personalBean.apemat != null and personalBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personalBean.apemat},'%')
+            </if>
+            <if test="personalBean.nombre != null and personalBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personalBean.nombre},'%')
+            </if>
+            <if test="personalBean.unidadOrganicaBean.idUniOrg != null and personalBean.unidadOrganicaBean.idUniOrg!=0"> 
+                and uo.idUniOrg=#{personalBean.unidadOrganicaBean.idUniOrg}
+            </if>   
+            <if test="tipoStatusSolCajaChBean.codigo != null and tipoStatusSolCajaChBean.codigo != '' ">
+                and tipStaSol.codigo = #{tipoStatusSolCajaChBean.codigo}
+            </if>
+            <if test="tipoSolicitudBean.idTipoSolicitud != null and tipoSolicitudBean.idTipoSolicitud != '' ">
+                and sol.idTipoSolicitud = #{tipoSolicitudBean.idTipoSolicitud}
+            </if> 
+            <if test="motivo != null and motivo != '' ">
+                and sol.motivo = #{motivo}
+            </if> 
+            <if test="montoAprobado != null and montoAprobado != '' ">
+                and sol.montoAprobado = #{montoAprobado}
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+            </if>
+            <!-- CAMBIO JOHANC -->
+            and isnull(sol.montoAprobado,0) <![CDATA[ <= ]]> (select montoMaxMovSol from MT_CajaChica where unineg = #{unidadNegocioBean.uniNeg} and idcajachica = (select max(idcajachica) from MT_CajaChica where unineg = #{unidadNegocioBean.uniNeg}))
+        </where>
+        order by sol.idSolicitudCajaCh desc
+    </select>
+    <select id="obtenerSolicitudPorFiltroMenorA" resultMap="solicitudCCHResultado" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        <include refid="consultaSolicitudCCH"/>
+        <where>
+            sol.uniNeg = #{unidadNegocioBean.uniNeg}  
+            <if test="flgSoles != null and flgSoles == 1">
+                and  <![CDATA[ sol.montoAprobado>=#{montoMaxMovSol}]]> and sol.idTipoMoneda=#{tipoMonedaBean.idCodigo}
+            </if> 
+            <if test="flgSoles != null and flgSoles == 0">
+                and  <![CDATA[ sol.montoAprobado>=#{montoMaxMovDol} ]]> and sol.idTipoMoneda=#{tipoMonedaBean.idCodigo}
+            </if> 
+            <if test="idSolicitudCajaCh != null and idSolicitudCajaCh != 0 ">
+                and sol.idSolicitudCajaCh = #{idSolicitudCajaCh} 
+            </if> 
+            <if test="personalBean.codPer != null and personalBean.codPer != 0 ">
+                and  per.codPer=#{personalBean.codPer}
+            </if> 
+            <if test="personalBean.apepat != null and personalBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personalBean.apepat},'%')
+            </if>
+            <if test="personalBean.apemat != null and personalBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personalBean.apemat},'%')
+            </if>
+            <if test="personalBean.nombre != null and personalBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personalBean.nombre},'%')
+            </if>
+            <if test="personalBean.unidadOrganicaBean.idUniOrg != null and personalBean.unidadOrganicaBean.idUniOrg!=0"> 
+                and uo.idUniOrg=#{personalBean.unidadOrganicaBean.idUniOrg}
+            </if>   
+            <if test="tipoStatusSolCajaChBean.codigo != null and tipoStatusSolCajaChBean.codigo != '' ">
+                and tipStaSol.codigo = #{tipoStatusSolCajaChBean.codigo}
+            </if>
+            <if test="tipoSolicitudBean.idTipoSolicitud != null and tipoSolicitudBean.idTipoSolicitud != '' ">
+                and sol.idTipoSolicitud = #{tipoSolicitudBean.idTipoSolicitud}
+            </if> 
+            <if test="motivo != null and motivo != '' ">
+                and sol.motivo = #{motivo}
+            </if> 
+            <if test="monto != null and monto != '' ">
+                and sol.montoAprobado = #{monto}
+            </if>
+            <if test="nombreSolicitante != null and nombreSolicitante != '' ">
+                and (case
+                when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),'',UPPER(per.nombre)) 
+                when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),'',UPPER(pers.nombre))  
+                when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre))  end
+                ) like concat('%',#{nombreSolicitante},'%') 
+            </if>  
+            <if test="nomRespCheque != null and nomRespCheque != '' ">
+                <!-- and (case
+                when sol.idtiporespcheque ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),'',UPPER(per.nombre)) 
+                when sol.idtiporespcheque ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),'',UPPER(pers.nombre))  
+                when sol.idtiporespcheque ='PRO' then  (UPPER(ent.nombre))  end
+                ) like concat('%',#{nomRespCheque},'%') -->
+                and  UPPER(isnull(sol.nomrespcheque,'')) like concat('%',#{nomRespCheque},'%') 
+            </if>  
+            <if test="idPersonalSol != null and idPersonalSol != '' ">
+                (case
+                when sol.idTipoSolicitante ='COL' then per.codper
+                when sol.idTipoSolicitante ='PER' then pers.idpersona
+                when sol.idTipoSolicitante ='PRO' then ent.ruc  end
+                ) = #{idPersonalSol}  
+            </if>  
+            <if test="idRespCheque != null and idRespCheque != '' ">
+                (case
+                when sol.idtiporespcheque ='COL' then per.codper
+                when sol.idtiporespcheque ='PER' then pers.idpersona
+                when sol.idtiporespcheque ='PRO' then ent.ruc  end
+                ) = #{idRespCheque}  
+            </if>  
+            <if test="fechaInicio != null" >
+                <![CDATA[  
+                and  sol.fechaSol >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  sol.fechaSol <= #{fechaFin}
+                ]]>
+            </if>
+            <!-- CAMBIO JOHANC -->
+            <!--and sol.monto <![CDATA[ > ]]> (select montoMaxMovSol from MT_CajaChica where unineg = #{unidadNegocioBean.uniNeg} and idcajachica = (select max(idcajachica) from MT_CajaChica where unineg = #{unidadNegocioBean.uniNeg}))-->
+        </where>
+        order by sol.idSolicitudCajaCh desc
+    </select>
+    <!--Multi CR-->
+    <insert id="insertarDetSolicitudCajaChCR" parameterType="pe.marista.sigma.bean.DetSolicitudCajaChCRBean">
+        INSERT INTO MT_DetSolicitudCajaChCR(uniNeg,idSolicitudCajaCh,cr,idTipoDistribucion,valor,creaPor,creaFecha) 
+        VALUES(
+        #{solicitudCajaCHBean.unidadNegocioBean.uniNeg},
+        #{solicitudCajaCHBean.idSolicitudCajaCh},
+        #{centroResponsabilidadBean.cr},
+        #{tipoDistribucion.idCodigo},
+        #{valor},
+        #{creaPor},
+        getDate())
+    </insert>
+    <insert id="eliminarDetSolicitudCajaChCR" parameterType="map">
+        delete from  MT_DetSolicitudCajaChCR  
+        Where uniNeg = #{uniNeg} and  idSolicitudCajaCh = #{idSolicitudCajaCh}
+    </insert>
+    <select id="obtenerDetSolcitudCajaChCRPorSol" resultMap="consultaCR" parameterType="pe.marista.sigma.bean.DetSolicitudCajaChCRBean">
+        Select 
+        det.uniNeg,
+        det.idSolicitudCajaCh,
+        det.cr,
+        det.idTipoDistribucion,
+        cod.codigo,
+        det.valor,
+        C.idtipogrupocr AS tipoNivelCR
+        From MT_DetSolicitudCajaChCR det
+        Inner Join MO_Codigo cod On det.idTipoDistribucion=cod.idCodigo
+        INNER JOIN MT_CentroResponsabilidad C ON C.CR=DET.CR
+        Where det.uniNeg = #{solicitudCajaCHBean.unidadNegocioBean.uniNeg} and det.idSolicitudCajaCh = #{solicitudCajaCHBean.idSolicitudCajaCh}
+    </select>
+    <select id="obtenerDetSolcitudCajaChCRNotaCredito" resultType="String" parameterType="map">
+        Select 
+        distinct 
+        cod.codigo 
+        From MT_DetSolicitudCajaChCR det
+        Inner Join MO_Codigo cod On det.idTipoDistribucion=cod.idCodigo
+        Where det.uniNeg = #{uniNeg} and det.idSolicitudCajaCh = #{idSolicitudCajaCh}
+    </select>
+    <select id="obtenerDetSolcitudCajaChCRPorSolCaj" resultMap="consultaCR" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Select 
+        det.uniNeg,
+        det.idSolicitudCajaCh,
+        det.cr,
+        det.idTipoDistribucion,
+        cod.codigo,
+        cr.nombre as nombreCeR,
+        cr.idtipogrupocr as idTipoGrupoCR,
+        cr.cr as cr2,
+        det.valor
+        From MT_DetSolicitudCajaChCR det
+        Inner Join MO_Codigo cod On det.idTipoDistribucion=cod.idCodigo
+        left join MT_CentroResponsabilidad cr on cr.cr = det.cr
+        Where det.uniNeg = #{unidadNegocioBean.uniNeg} and det.idSolicitudCajaCh = #{idSolicitudCajaCh}
+    </select>
+    <resultMap id="consultaCR" type="pe.marista.sigma.bean.DetSolicitudCajaChCRBean">
+        <id property="solicitudCajaCHBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="solicitudCajaCHBean.idSolicitudCajaCh" column="idSolicitudCajaCh"/>
+        <id property="centroResponsabilidadBean.cr" column="cr"/>
+        <result property="tipoDistribucion.idCodigo" column="idTipoDistribucion"/>
+        <result property="tipoDistribucion.codigo" column="codigo"/>
+        <result property="valor" column="valor"/>
+        <result property="valorD" column="valor"/>
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResponsabilidadCRResultado"/>
+    </resultMap>
+    <resultMap id="centroResponsabilidadCRResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr2"/>
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombreCeR"/>
+        <result property="idTipoGrupoCR" column="idTipoGrupoCR"/>
+        <result property="idTipoGrupoCR" column="tipoNivelCR"/>
+    </resultMap>
+    <!--Rendiicon-->
+    <update id="modificarTipoEstRend" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean">
+        Update MT_SolicitudCajaCh set idTipoEstRend = #{tipoEstRend.idCodigo}
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </update>
+    <select id="obtenerPorTipoEstRend" parameterType="pe.marista.sigma.bean.SolicitudCajaCHBean" resultMap="solicitudCCHResultado">
+        Select  
+        sol.idSolicitudCajaCh,
+        sol.uniNeg as uniNegSol,
+        sol.idTipoMoneda,
+        codMon.codigo as codigoMoneda,
+        sol.montoAprobado,
+        sol.motivo,
+        egre.montoPagado, 
+         
+        isnull((select sum(montototal)
+        from MT_CajaChicaLiquidacion  c
+        Where c.idsolicitudcajach = sol.idsolicitudcajach and c.unineg = sol.uniNeg 
+        and c.idcajachicaliquidacion in (select distinct idobjeto from MT_Asiento where objeto='MT_CajaChicaLiquidacion'  and idobjeto in
+        (select idcajachicaliquidacion from MT_CajaChicaLiquidacion where idsolicitudcajach=sol.idsolicitudcajach )
+        and isnull(status,1)<![CDATA[  <> ]]>0)   
+        ),0) as sumaLiquidacion, 
+         
+        isnull((egre.montopagado-(select sum(montototal)
+        from MT_CajaChicaLiquidacion  c
+        Where c.idsolicitudcajach = sol.idsolicitudcajach and c.unineg = sol.uniNeg 
+        and c.idcajachicaliquidacion in (select distinct idobjeto from MT_Asiento where objeto='MT_CajaChicaLiquidacion'  and idobjeto in
+        (select idcajachicaliquidacion from MT_CajaChicaLiquidacion where idsolicitudcajach=sol.idsolicitudcajach )
+        and status<![CDATA[  <> ]]>0)
+        )),0) as diferenciaAdevolver 
+        from MT_SolicitudCajaCh sol
+        Inner Join MT_DocEgreso egre On sol.idsolicitudcajach=egre.idsolicitudcajach and egre.unineg=sol.unineg and isnull(flganulado,0)<![CDATA[  <> ]]>1
+        Inner Join MO_Codigo codMon On sol.idtipomoneda=codMon.idcodigo 
+        inner join MT_Concepto con on con.idconcepto=sol.idconcepto
+        Where 
+        (case when con.nombre like '%Entregas a rendir por cuenta de proveedores%' then convert(varchar,sol.idpersonal) else convert(varchar,sol.idrespcheque)  end) = convert(varchar,#{personalBean.idPersonal}) 
+        and sol.unineg = #{unidadNegocioBean.uniNeg} and sol.idTipoEstRend = #{tipoEstRend.idCodigo}
+        and isnull((egre.montopagado-(select sum(montototal)
+        from MT_CajaChicaLiquidacion  c
+        Where c.idsolicitudcajach = sol.idsolicitudcajach and c.unineg = sol.uniNeg 
+        and c.idcajachicaliquidacion in (select distinct idobjeto from MT_Asiento where objeto='MT_CajaChicaLiquidacion'  and idobjeto in
+        (select idcajachicaliquidacion from MT_CajaChicaLiquidacion where idsolicitudcajach=sol.idsolicitudcajach )
+        and status   <![CDATA[  <> ]]>  0)
+        )),0) !=0
+    </select>
+    <select id="obtenerPorTipoEstRendPorId" parameterType="map" resultMap="solicitudCCHResultado">
+        Select  
+        sol.idSolicitudCajaCh,
+        sol.uniNeg as uniNegSol,
+        sol.idTipoMoneda,
+        codMon.codigo as codigoMoneda,
+        sol.montoAprobado,
+        sol.motivo,
+        egre.montoPagado, 
+        isnull((select sum(montototal)
+        from MT_CajaChicaLiquidacion  c
+        Where c.idsolicitudcajach = sol.idsolicitudcajach and c.unineg = sol.uniNeg 
+        and c.idcajachicaliquidacion in (select distinct idobjeto from MT_Asiento where objeto='MT_CajaChicaLiquidacion'  and idobjeto in
+        (select idcajachicaliquidacion from MT_CajaChicaLiquidacion where idsolicitudcajach=sol.idsolicitudcajach )
+        and isnull(status,1)<![CDATA[  <> ]]>0)  
+        ),0) as sumaLiquidacion, 
+        isnull((egre.montopagado-(select sum(montototal)
+        from MT_CajaChicaLiquidacion  c
+        Where c.idsolicitudcajach = sol.idsolicitudcajach and c.unineg = sol.uniNeg 
+        and c.idcajachicaliquidacion in (select distinct idobjeto from MT_Asiento where objeto='MT_CajaChicaLiquidacion'  and idobjeto in
+        (select idcajachicaliquidacion from MT_CajaChicaLiquidacion where idsolicitudcajach=sol.idsolicitudcajach )
+        and status<![CDATA[  <> ]]>0)
+        )),0) as diferenciaAdevolver        
+        ,'SOL Nro: '+(case 
+        when egre.idtipodocegreso='A' then   right(replicate('0', 8) + rtrim(egre.idsolicitudcajach), 8)        
+        end)
+        + '   ' + 'CH/' +egre.numcheque
+        + '- F/'+  convert(varchar,isnull(egre.fechaemision,egre.creafecha),105) as referencia
+        from MT_SolicitudCajaCh sol
+        Inner Join MT_DocEgreso egre On sol.idsolicitudcajach=egre.idsolicitudcajach and egre.unineg=sol.unineg and isnull(flganulado,0)<![CDATA[  <> ]]>1
+        Inner Join MO_Codigo codMon On sol.idtipomoneda=codMon.idcodigo 
+        Where sol.unineg = #{uniNeg} and sol.idSolicitudCajaCh = #{idSolicitudCajaCh}        
+    </select>
+    <select id="obtenerTipoSolicitanteResCheque" parameterType="map" resultMap="solicitudCCHResultado">
+        Select  
+        idTipoSolicitante,idTipoRespCheque,idRespCheque,nomRespCheque,idPersonal as idPersonalSol
+        from MT_SolicitudCajaCh   
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and uniNeg = #{uniNeg}
+    </select>
+    <select id="obtenerTipoDistribucion" parameterType="map" resultType="Integer">
+        Select  top 1
+        idTipoDistribucion
+        from MT_DetSolicitudCajaChCR   
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and uniNeg = #{uniNeg}
+    </select>
+    <update id="modificarDetSolicitudCrAnulacion"  parameterType="map">
+        Update MT_DetSolicitudCajaChCR set
+        valor = 0,     
+        modiPor = #{modiPor}
+        Where uniNeg = #{uniNeg} and idSolicitudCajaCh = #{idSolicitudCajaCh}  
+    </update>
+    <update id="modificarDetalleCrValorNoC" parameterType="map"> 
+        update  MT_DetSolicitudCajaChCR
+        set  valor=#{valor}
+        where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{uniNeg}  and cr=#{cr}
+    </update>
+    <update id="modificarSolicitudAnulacion"  parameterType="map">
+        Update MT_SolicitudCajaCh set
+        monto = 0.00,     
+        montoaprobado = 0.00,     
+        motivo = <![CDATA['<---ANULADO---> ']]>+#{motivo},  
+        idtipostatussolcajach = 18704,  
+        modiPor = #{modiPor}
+        Where uniNeg = #{uniNeg} and idSolicitudCajaCh = #{idSolicitudCajaCh}  
+    </update>
+</mapper>

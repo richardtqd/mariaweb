@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteMedicamentoDAO">  
+    <sql id="consultaCampos">
+        Select  
+        estMed.idEstudianteMedicamento,
+        estMed.idEstudiante,
+        estMed.medicamento,
+        estMed.flgAutorizado
+        From MX_EstudianteMedicamento estMed
+    </sql>
+    <resultMap id="estudianteMedicamentoResultado" type="pe.marista.sigma.bean.EstudianteMedicamentoBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idEstudianteMedicamento" column="idEstudianteMedicamento"/>
+        <result property="medicamento" column="medicamento"/>
+        <result property="flgAutorizado" column="flgAutorizado"/>
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <!--Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+    </resultMap>
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+    </resultMap>
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    
+    <select id="obtenerEstMedicamentoPorId" resultMap="estudianteMedicamentoResultado" parameterType="pe.marista.sigma.bean.EstudianteMedicamentoBean">
+        <include refid="consultaCampos" />Where estMed.idEstudianteMedicamento = #{idEstudianteMedicamento}
+    </select>
+    <select id="obtenerEstMedicamentoPorEst" resultMap="estudianteMedicamentoResultado" parameterType="String">
+        <include refid="consultaCampos" />Where estMed.idEstudiante = #{idEstudiante}
+    </select>
+    <insert id="insertarEstMedicamento" parameterType="pe.marista.sigma.bean.EstudianteMedicamentoBean">
+        Insert Into MX_EstudianteMedicamento (uniNeg,idEstudiante,medicamento,creaPor,flgAutorizado) 
+        Values (#{unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona},#{medicamento},#{creaPor},#{flgAutorizado})  
+    </insert> 
+    <update id="modificarEstMedicamento" parameterType="pe.marista.sigma.bean.EstudianteMedicamentoBean">
+        Update MX_EstudianteMedicamento
+        Set 
+        medicamento = #{medicamento},
+        flgAutorizado= #{flgAutorizado},
+        modiPor = #{modiPor}
+        Where idEstudianteMedicamento = #{idEstudianteMedicamento}
+    </update>
+    <delete id="eliminarEstMedicamento" parameterType="pe.marista.sigma.bean.EstudianteMedicamentoBean">
+        Delete From MX_EstudianteMedicamento Where idEstudianteMedicamento = #{idEstudianteMedicamento}
+    </delete>
+    <select id="obtenerMedicamentos" resultType="pe.marista.sigma.bean.reporte.EstudianteMedicamentosRepBean" parameterType="map">
+        select 
+        isnull(me.medicamento,'Ninguno') as medicamento
+        ,isnull(convert(varchar,
+        case
+        when me.flgautorizado=1 then 'SI'
+        when me.flgautorizado=0 then 'NO'
+        END 
+        ,103),'-') as flgAutoriza
+        from MX_Estudiante e
+        left join MX_EstudianteMedicamento me on me.idestudiante= e.idestudiante
+        WHERE e.idestudiante=#{idEstudiante}  and e.unineg=#{uniNeg}
+    </select>
+</mapper>

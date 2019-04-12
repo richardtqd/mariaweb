@@ -1,0 +1,3151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.MatriculaDAO">  
+    <sql id="consultaMatricula">
+        Select  
+        mat.idMatricula,
+        mat.flgMatricula,
+        mat.flgBachillerato,
+        est.idEstudiante as idEstudiante,
+        per.idPersona as idEstudiante,
+        per.nombre nombreAlumno,
+        per.apePat as apellidoPat,
+        per.apeMat as apellidoMat,
+        per.uniNeg as uniNegPer,
+        per.correo,
+        est.idGradoHabilitado as idGradoHabi,
+        graHab.nombre as nombreGraAcaHab, 
+        naHab.idNivelAcademico as idNivelAcademicoHab,
+        naHab.nombre as nomNAHab, 
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        mat.uniNeg,
+        mat.anio,
+        mat.seccion,
+        mat.idTipoMatricula,
+        cod.codigo,
+        na.idNivelAcademico,
+        na.nombre as nomNA, 
+        mat.idGradoAcademico,
+        gra.idGradoAcademico as idGradoPostula,
+        gra.nombre as nombreGrado,
+        mat.idProgramacion,
+        pro.anio as anioProgra,
+        pro.seccion as seccionProgra,
+        pro.grupo as grupoProgra,
+        proce.anio as anioProce,
+        pro.seccion as seccionProgra,
+        mat.creaFecha, 
+        p.idpersona as idResPago,
+        p.nombre,
+        p.apepat,
+        p.apemat,
+        p.correo as correoResPago,
+        proce.descripcion as descripPro,
+        proce.idTipoProceso,
+        tipPro.idCodigo as codTipPro,
+        tipPro.codigo as codigoTipPro,
+        fa.nombre   as nombreFamilia,
+        isnull(est.viadomi,'SIN DIRECCIÓN') as direccion, 
+        dis.nombre  as distrito,
+        est.motivoStatusEst,
+        est.codigo as codigoColegio,
+        (select (case 
+        when est.idresppago is null then 'SIN RESPONSABLE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = est.idresppago) as nomRes,
+        (select (case 
+        when est.idapoderado is null then 'SIN APODERADO'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = est.idapoderado) as nomApo,
+        (select (case 
+        when fa.idpadre is null then 'SIN PADRE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = fa.idpadre) as nomPap,
+        (select (case 
+        when fa.idmadre is null then 'SIN MADRE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = fa.idmadre) as nomMam, 
+        mat.creapor as creaPor, 
+        mat.fechamatricula as fechaMatricula
+        ,(case 
+        when est.idtiporesppago=17401 then 'P'
+        when est.idtiporesppago=17402 then 'M'
+        when est.idtiporesppago=17403 then 'A'
+        end) as respEco,
+        isnull(convert(varchar,per.fecnac,103),'-') as fecNaciAl,
+        isnull(convert(varchar,pa.fecnac,103),'-') as fecNacPa,
+        isnull(convert(varchar,ma.fecnac,103),'-') as fecNacMa,
+        ISNULL(pa.nrodoc,'-') as dniPa,
+        ISNULL(ma.nrodoc,'-') as dniMa
+        ,isnull(convert(varchar,apo.fecnac,103),'-') as fecNacApo,
+        ISNULL(apo.nrodoc,'-') as dniApo,
+        cresp.codigo as respEco, cresp.idcodigo as idTipoRespPago
+        From MX_Matricula mat
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg
+        left join MX_Persona p on CONVERT(varchar(15),est.idresppago) = p.idpersona and est.unineg= mat.unineg
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg
+        Inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst 
+        left Join MX_GradoAcademico graHab On est.idGradoHabilitado=graHab.idGradoAcademico
+        left join MX_NivelAcademico naHab on graHab.idNivelAcademico = naHab.idNivelAcademico
+        left Join MO_Codigo cod On mat.idTipoMatricula=cod.idCodigo 
+        left Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico
+        left join MX_NivelAcademico na on gra.idNivelAcademico = na.idNivelAcademico
+        left Join MX_Programacion pro On mat.idProgramacion=pro.idProgramacion and pro.unineg = mat.unineg
+        left Join MX_Proceso proce On pro.idProceso=proce.idProceso and proce.unineg = mat.unineg
+        Left Join MO_Codigo tipPro ON proce.idTipoProceso=tipPro.idCodigo
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia and mat.unineg = fa.unineg
+        left join MX_Persona pa on pa.idpersona=fa.idpadre
+        left join MX_Persona ma on ma.idpersona=fa.idmadre
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg
+        left join MX_FamiliarEstudiante faes on faes.idestudiante=est.idestudiante and idtipoparentesco not in(12402,12403)
+        left join MX_Persona apo on apo.idpersona=faes.idfamiliar
+        left join MO_Entidad ent on uni.RUC = ent.ruc and ent.unineg= mat.unineg
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Codigo cresp on cresp.idcodigo=est.idtiporesppago
+    </sql>
+    <sql id="consultaMatriculaDeuda" >
+        Select  
+        mat.idMatricula,
+        mat.idEstudiante,
+        mat.flgMatricula,
+        mat.flgBachillerato,
+        per.nombre nombreAlumno,
+        per.apePat as apellidoPat,
+        per.apeMat as apellidoMat,
+        per.uniNeg as uniNegPer,
+        per.correo,
+        est.idGradoHabilitado as idGradoHabi,
+        graHab.nombre as nombreGraAcaHab, 
+        naHab.idNivelAcademico as idNivelAcademicoHab,
+        naHab.nombre as nomNAHab, 
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        mat.uniNeg,
+        mat.anio,
+        mat.seccion,
+        mat.fechaMatricula,
+        mat.idTipoMatricula,
+        cod.codigo,
+        na.idNivelAcademico,
+        na.nombre as nomNA, 
+        mat.idGradoAcademico,
+        gra.idGradoAcademico as idGradoPostula,
+        gra.nombre as nombreGrado,
+        gra.codigo as codigoGrado,
+        mat.idProgramacion,
+        pro.anio as anioProgra,
+        pro.seccion as seccionProgra,
+        pro.grupo as grupoProgra,
+        proce.anio as anioProce,
+        pro.seccion as seccionProgra,
+        mat.creaPor,
+        mat.creaFecha,
+        p.idpersona as idResPago,
+        p.nombre,
+        p.apepat,
+        p.apemat,
+        p.correo as correoResPago,
+        proce.descripcion as descripPro,
+        proce.idTipoProceso,
+        tipPro.idCodigo as codTipPro,
+        tipPro.codigo as codigoTipPro, 
+        fa.nombre   as nombreFamilia,
+        est.viadomi as direccion, 
+        ISNULL(dis.nombre,'SIN DIRECCIÓN')  as distrito,
+        (select (case 
+        when est.idresppago is null then 'SIN RESPONSABLE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = est.idresppago) as nomRes,
+        (select (case 
+        when est.idapoderado is null then 'SIN APODERADO'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = est.idapoderado) as nomApo,
+        (select (case 
+        when fa.idpadre is null then 'SIN PADRE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = fa.idpadre) as nomPap,
+        (select (case 
+        when fa.idmadre is null then 'SIN MADRE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = fa.idmadre) as nomMam 
+        From MX_Matricula mat
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idEstudiante  
+        left join MX_Persona p on CONVERT(varchar(11),est.idresppago) = p.idpersona 
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and per.unineg = est.unineg
+        Inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst 
+        left Join MX_GradoAcademico graHab On est.idGradoHabilitado=graHab.idGradoAcademico 
+        left join MX_NivelAcademico naHab on graHab.idNivelAcademico = naHab.idNivelAcademico 
+        left Join MO_Codigo cod On mat.idTipoMatricula=cod.idCodigo 
+        left Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico 
+        left join MX_NivelAcademico na on gra.idNivelAcademico = na.idNivelAcademico 
+        left Join MX_Programacion pro On mat.idProgramacion=pro.idProgramacion and mat.unineg = pro.unineg
+        left Join MX_Proceso proce On pro.idProceso=proce.idProceso and pro.unineg = proce.unineg
+        Left Join MO_Codigo tipPro ON proce.idTipoProceso=tipPro.idCodigo 
+    </sql> 
+    <sql id= "queryInicial">
+        select count(m.idmatricula) from mx_matricula m
+        inner join MX_GradoAcademico ga on ga.idgradoacademico = m.idgradoacademico
+        inner join MX_NivelAcademico na on ga.idnivelacademico = na.idnivelacademico
+        where na.nombre = 'Inicial'
+    </sql>
+    <sql id= "queryPrimaria">
+        select count(m.idmatricula) from mx_matricula m
+        inner join MX_GradoAcademico ga on ga.idgradoacademico = m.idgradoacademico
+        inner join MX_NivelAcademico na on ga.idnivelacademico = na.idnivelacademico
+        where na.nombre = 'Primaria'
+    </sql>
+    <sql id= "querySecundaria">
+        select count(m.idmatricula) from mx_matricula m
+        inner join MX_GradoAcademico ga on ga.idgradoacademico = m.idgradoacademico
+        inner join MX_NivelAcademico na on ga.idnivelacademico = na.idnivelacademico
+        where na.nombre = 'Secundaria'
+    </sql>
+    <sql id= "queryBachiller">
+        select count(m.idmatricula) from mx_matricula m
+        inner join MX_GradoAcademico ga on ga.idgradoacademico = m.idgradoacademico
+        inner join MX_NivelAcademico na on ga.idnivelacademico = na.idnivelacademico
+        where na.nombre = 'Secundaria' and anio=2015 and flgbachillerato=1
+    </sql>
+    <sql id="queryListaMeses">
+        declare @var Integer = 1
+        declare @list table(mes int)  
+    </sql>
+    <select id="obtenerMatricula" resultMap="matriculaResultado">
+        <include refid="consultaMatricula"/>
+    </select>
+    <select id="obtenerMatriculaUniNeg" resultMap="matriculaResultado" parameterType="String">
+        <include refid="consultaMatricula"/> where mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.anio = year(getdate())
+    </select>
+    <select id="obtenerMatriculaUniNegAnio" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/> where mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.anio = #{anioIni}
+    </select>
+    <resultMap id="matriculaResultado" type="pe.marista.sigma.bean.MatriculaBean">
+        <id property="idMatricula" column="idMatricula"/>
+        <result property="anio" column="anio"/>
+        <result property="seccion" column="seccion"/>
+        <result property="fechaMatricula" column="fechaMatricula"/>
+        <result property="flgBachillerato" column="flgBachillerato"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="flgMatricula" column="flgMatricula"/>
+        <result property="anioIni" column="anioIni"/>
+        <result property="anioFin" column="anioFin"/>
+        <result property="cont" column="cont"/> 
+        <result property="nomRes" column="nomRes"/>
+        <result property="nomApo" column="nomApo"/>
+        <result property="nomPap" column="nomPap"/>
+        <result property="nomMam" column="nomMam"/> 
+        <result property="flgMatriPend" column="flgMatriPend"/>
+        <result property="flgReProceso" column="flgReProceso"/>
+        <result property="fechaFin" column="fechaFin"/>
+        <result property="fechaInicio" column="fechaInicio"/>        
+        <result property="ctaMeses" column="ctaMeses"/>        
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="tipoMatriculaBean" column="idTipoMatricula"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/>
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>
+        <association property="programacionBean" column="idProgramacion"
+                     javaType="pe.marista.sigma.bean.ProgramacionBean"
+                     resultMap="programacionResultado"/>
+    </resultMap>
+    <!--Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante"/>
+        <id property="unidadNegocioBean" column="uniNegEst"/>
+        <result property="codigo" column="codigoColegio"/>
+        <result property="codigo" column="codigo"/>
+        <result property="anioIngreso" column="anioIngreso"/>
+        <result property="fechaIngreso" column="fechaIngreso"/>
+        <result property="foto" column="foto"/>
+        <result property="refeLugarNaci" column="refeLugarNaci"/>
+        <result property="viaDomi" column="viaDomi"/>
+        <result property="viaDomi" column="direccion"/>
+        <result property="nroDomi" column="nroDomi"/>
+        <result property="urbDomi" column="urbDomi"/>
+        <result property="refeDomi" column="refeDomi"/>
+        <result property="motivoStatusEst" column="motivoStatusEst"/>
+        <result property="seccion" column="seccion"/>
+        <result property="tipoSeguroAyuda" column="tipoSeguroAyuda"/>
+        <result property="telefono1Domi"  column="telefono1Domi"/>
+        <result property="telefono2Domi"  column="telefono2Domi"/>
+        <result property="NOMB_PAD"  column="NOMB_PAD"/>
+        <result property="TDOC_PAD"  column="TDOC_PAD"/>
+        <result property="LIBE_PAD"  column="LIBE_PAD"/>
+        <result property="FENA_PAD"  column="FENA_PAD"/>
+        <result property="EMAIL_PAD"  column="EMAIL_PAD"/>
+        <result property="DIRTR_PAD"  column="DIRTR_PAD"/>
+        <result property="CEL_PAD"  column="CEL_PAD"/>
+        <result property="VIVE_PAD"  column="VIVE_PAD"/>
+        <result property="NOMB_MAD"  column="NOMB_MAD"/>
+        <result property="TDOC_MAD"  column="TDOC_MAD"/>
+        <result property="LIBE_MAD"  column="LIBE_MAD"/>
+        <result property="FENA_MAD"  column="FENA_MAD"/>
+        <result property="EMAIL_MAD"  column="EMAIL_MAD"/>
+        <result property="DIRTR_MAD"  column="DIRTR_MAD"/>
+        <result property="CEL_MAD"  column="CEL_MAD"/>
+        <result property="VIVE_MAD"  column="VIVE_MAD"/>
+        <result property="NOMB_APO"  column="NOMB_APO"/>
+        <result property="TDOC_APO"  column="TDOC_APO"/>
+        <result property="LIBE_APO"  column="LIBE_APO"/>
+        <result property="FENA_APO"  column="FENA_APO"/>
+        <result property="EMAIL_APO"  column="EMAIL_APO"/>
+        <result property="DIRTR_APO"  column="DIRTR_APO"/>
+        <result property="CEL_APO"  column="CEL_APO"/>
+        <result property="VIVE_APO"  column="VIVE_APO"/>
+        <result property="PAREN_APO"  column="PAREN_APO"/>
+        <result property="obs_ViveCon"  column="obs_ViveCon"/>
+        <result property="viveCon"  column="viveCon"/>
+        <result property="USUARIO"  column="USUARIO"/>
+        <result property="FECMATRICULA"  column="FECMATRICULA"/>
+        <result property="HORA"  column="HORA"/>
+        <result property="APAT_PAD"  column="APAT_PAD"/>
+        <result property="AMAT_PAD"  column="AMAT_PAD"/>
+        <result property="NOMB_PAD"  column="NOMB_PAD"/>
+        <result property="APAT_MAD"  column="APAT_MAD"/>
+        <result property="AMAT_MAD"  column="AMAT_MAD"/>
+        <result property="NOMB_MAD"  column="NOMB_MAD"/>
+        <result property="APAT_APO"  column="APAT_APO"/>
+        <result property="AMAT_APO"  column="AMAT_APO"/>
+        <result property="NOMB_APO"  column="NOMB_APO"/>
+        <result property="nombreCompleto"  column="nombreCompleto"/>
+        <result property="NOMB_ALU"  column="NOMB_ALU"/>
+        <result property="APAT_ALU"  column="APAT_ALU"/>
+        <result property="AMAT_ALU"  column="AMAT_ALU"/>
+        <association property="unidadNegocioBean" column="uniNegPer"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoEst"/>
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+        <association property="tipoStatusEst" column="idTipoStatusEst"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusEstResultado"/>
+        <!--6. idGradoHabilitado (Grado Academico)-->
+        <association property="gradoHabilitado" column="idGradoHabi"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoHabilitadoResultado"/>
+        <!--Responsable de Pago-->
+        <association property="respPagoBean" column="idRespPago"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="resPagoResultado"/>
+        <association property="tipoRespPago" column="idTipoRespPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoRespPagoResultado"/> 
+        <!-- Famila -->
+        <association property="familiaBean" column="idFamilia"
+                     javaType="pe.marista.sigma.bean.FamiliaBean"
+                     resultMap="familiaResultado"/>
+        <!-- Grado Academico -->
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoEstResultado"/>
+        <association property="idDistritoNaci" column="idDistritoNaci"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoNaciResultado"/>
+        <association property="idDistritoDomi" column="idDistritoDomi"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoDomiResultado"/> 
+    </resultMap>
+    
+    <resultMap id="gradoAcademicoEstResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoPostula"/>
+        <result property="codigo" column="codigoGrado"/>
+        <result property="nombre" column="nomGra"/>
+        <association property="nivelAcademicoBean" column="idNivelAcademico"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultadoEst"/>
+    </resultMap>
+    
+    <resultMap id="familiaResultado" type="pe.marista.sigma.bean.FamiliaBean" >
+        <id property="idFamilia" column="idFamilia" />
+        <result property="nombre" column="nombreFamilia" />
+        <!--<association property="PadreBean" column="idPersona"
+        javaType="pe.marista.sigma.bean.FamiliarBean"
+        resultMap="personaPaResultado"/>
+<association property="madreBean" column="idPersona"
+        javaType="pe.marista.sigma.bean.PersonaBean"
+        resultMap="personaMaResultado"/>-->
+    </resultMap>
+    <!--  <resultMap id="personaPaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/> 
+        <result property="nroDoc" column="dniPa"/>
+        <result property="fecNac" column="fecNacPa"/>
+     </resultMap>
+    <resultMap id="personaMaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/> 
+        <result property="nroDoc" column="dniMa"/>
+        <result property="fecNac" column="fecNacMa"/>
+    </resultMap>-->
+    <!--Cambio-->
+    <resultMap id="distritoNaciResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistritoNaci"/>
+        <result property="nombre" column="nombreDistritoNaci"/>
+        <association property="provinciaBean" column="idProvinciaNaci"
+                     javaType="pe.marista.sigma.bean.ProvinciaBean"
+                     resultMap="provinciaNaciResultado"/>
+    </resultMap> 
+    <resultMap id="provinciaNaciResultado" type="pe.marista.sigma.bean.ProvinciaBean">
+        <id property="idProvincia" column="idProvinciaNaci"/>
+        <result property="nombre" column="nombreProvinciaNaci"/>
+        <association property="departamentoBean" column="idDepartamentoNaci"
+                     javaType="pe.marista.sigma.bean.DepartamentoBean"
+                     resultMap="departamentoNaciResultado"/>
+    </resultMap>
+    <resultMap id="departamentoNaciResultado" type="pe.marista.sigma.bean.DepartamentoBean">
+        <id property="idDepartamento" column="idDepartamentoNaci"/>
+        <result property="nombre" column="nombreDepartamentoNaci"/>
+    </resultMap>
+    <resultMap id="distritoDomiResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistritoDomi"/>
+        <result property="nombre" column="nombreDistritoDomic"/>
+        <association property="provinciaBean" column="idProvinciaDomi"
+                     javaType="pe.marista.sigma.bean.ProvinciaBean"
+                     resultMap="provinciaDomiResultado"/>
+    </resultMap>
+    <resultMap id="provinciaDomiResultado" type="pe.marista.sigma.bean.ProvinciaBean">
+        <id property="idProvincia" column="idProvinciaDomi"/>
+        <association property="departamentoBean" column="idDepartamentoDomi"
+                     javaType="pe.marista.sigma.bean.DepartamentoBean"
+                     resultMap="departamentoDomiResultado"/>
+    </resultMap>
+    <resultMap id="departamentoDomiResultado" type="pe.marista.sigma.bean.DepartamentoBean">
+        <id property="idDepartamento" column="idDepartamentoDomi"/>
+    </resultMap>
+    <resultMap id="resPagoResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idResPago"/> 
+        <result property="correo" column="correoResPago" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" /> 
+    </resultMap>
+    <resultMap id="tipoRespPagoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoRespPago"/>  
+        <result property="codigo" column="respEco" />
+    </resultMap>
+    <!--Cambio Fin-->
+    
+    <!--Unidad de Negocio Estudiante-->
+    <resultMap id="unidadNegocioResultadoEst" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegEst"/>  
+    </resultMap>   
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+        <result property="nombre" column="nombreAlumno"/>
+        <result property="apepat" column="apellidoPat"/>
+        <result property="apemat" column="apellidoMat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+        <result property="nombreCompleto" column="nombreCompleto"/>
+        <result property="fecNacAyuda" column="fecNacAyuda"/>
+        <result property="sexoAyuda" column="sexoAyuda"/>
+        <association property="unidadNegocioBean" column="uniNegPer"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoPer"/>
+    </resultMap> 
+    <!--Unidad de Negocio Persona-->
+    <resultMap id="unidadNegocioResultadoPer" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegPer"/> 
+    </resultMap>
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+        <association property="distritoBean" column="idDistrito"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoUniResultado"/>
+    </resultMap>
+    <!--Distrito Uni-->
+    <resultMap id="distritoUniResultado" type="pe.marista.sigma.bean.DistritoBean" >
+        <id property="idDistrito" column="idDistrito" />
+        <result property="nombre" column="distrito" />
+    </resultMap> 
+    <!--Codigo-->
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMatricula"/>
+        <result property="codigo" column="codigo"/>
+        <result property="valor" column="valor"/>
+    </resultMap>
+    <!--Grado Academico-->
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoPostula"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreGrado"/>
+        <association property="nivelAcademicoBean" column="idNivelAcademico"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultadoEst"/>
+    </resultMap>
+    <resultMap id="nivelResultadoEst" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNivelAcademico"/>
+        <result property="nombre" column="nomNA"/> 
+    </resultMap>
+    <!--Programacion-->
+    <resultMap id="programacionResultado" type="pe.marista.sigma.bean.ProgramacionBean">
+        <id property="idProgramacion" column="idProgramacion"/>
+        <result property="anio" column="anioProgra"/>
+        <result property="precio" column="precio"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="max" column="max"/>
+        <result property="min" column="min"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="horario" column="horario"/>
+        <result property="status" column="status"/>
+        <result property="seccion" column="seccionProgra"/>
+        <result property="grupo" column="grupoProgra"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <association property="procesoBean" column="idProceso"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="procesoResultado"/>
+    </resultMap>
+    <resultMap id="gradoHabilitadoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoHabi"/>
+        <result property="nombre" column="nombreGraAcaHab"/>
+        <association property="nivelAcademicoBean" column="idNivelAcademicoHab"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultado"/>
+    </resultMap> 
+    <resultMap id="nivelResultado" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNivelAcademicoHab"/>
+        <result property="nombre" column="nomNAHab"/> 
+    </resultMap> 
+    <resultMap id="tipoStatusEstResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusEst"/>
+        <result property="codigo" column="codigoStatusEst"/> 
+        <association property="tipoCodigoBean" column="idTipoCodigo"
+                     javaType="pe.marista.sigma.bean.TipoCodigoBean"
+                     resultMap="tipoCodigoResultado"/>
+    </resultMap>
+    <resultMap id="tipoCodigoResultado" type="pe.marista.sigma.bean.TipoCodigoBean">
+        <id property="idTipoCodigo" column="idTipoCodigo"/>
+        <result property="descripcion" column="descripcion"/>  
+    </resultMap>
+    
+    <!--Proceso-->
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBean">
+        <id property="idProceso" column="idProceso"/>
+        <result property="descripcion" column="descripPro"/>
+        <result property="anio" column="anioProce"/> 
+        <association property="codigoBean" column="idTipoProceso"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoProcesoResultado"/>
+    </resultMap>
+    <resultMap id="tipoProcesoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codTipPro"/>
+        <result property="codigo" column="codigoTipPro"/> 
+    </resultMap>
+    <!-- -->
+    <select id="obtenerMatriculaPorId" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula" />WHERE mat.idMatricula = #{idMatricula} and mat.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerMatriculaPorIdPeriodo" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula" />WHERE mat.idEstudiante = #{estudianteBean.personaBean.idPersona} and mat.anio = #{anio}
+    </select>
+    
+    <select id="obtenerBachiller" resultMap="matriculaResultado">
+        <include refid="queryBachiller" />
+    </select>
+    
+    <select id="obtenerFiltroMatriculados" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula" />  
+        <where> 
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.flgMatricula=1
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if> 
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(per.apepat,'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u')) 
+                like concat('%',REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(#{estudianteBean.personaBean.apepat},'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'%')
+                <!--and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')-->
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(per.apemat,'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u')) 
+                like concat('%',REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(#{estudianteBean.personaBean.apemat},'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'%')
+                <!--and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')-->
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(per.nombre,'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u')) 
+                like concat('%',REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(#{estudianteBean.personaBean.nombre},'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'%')
+                <!--and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')-->
+            </if> 
+            <if test="anio != null and anio != 0">
+                and mat.anio = #{anio}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerFiltroNoMatriculados" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where> 
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.flgMatricula=0
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>  
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(per.apepat,'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u')) 
+                like concat('%',REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(#{estudianteBean.personaBean.apepat},'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(per.apemat,'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u')) 
+                like concat('%',REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(#{estudianteBean.personaBean.apemat},'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(per.nombre,'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u')) 
+                like concat('%',REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(#{estudianteBean.personaBean.nombre},'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'%')
+            </if> 
+            <if test="anio != null and anio != 0">
+                and mat.anio = #{anio}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerFiltroMatriculadosPorUsuario" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where> 
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.flgMatricula=1 
+            <if test="creaPor != null and creaPor != ''">
+                and upper(mat.creaPor) like concat(#{creaPor},'%')
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and mat.fechaMatricula = #{fechaInicio}
+                ]]>
+            </if>
+            <if test="anio != null and anio != 0">
+                and mat.anio = #{anio}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerFiltroMatriculaMasivo" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where> 
+            mat.uniNeg = #{unidadNegocioBean.uniNeg}  <!--and mat.flgMatricula=0   -->
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if> 
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>   
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}
+            </if> 
+            <if test="anio != null and anio != 0">
+                and mat.anio = #{anio}
+            </if>
+        </where>
+        order by naHab.idNivelAcademico desc,graHab.nombre,mat.seccion,per.apepat
+        
+    </select> 
+    <sql id="consultaMatriculaLista" >
+        DECLARE @listaAnio table(anio Integer)
+        insert into @listaAnio
+        select distinct anio from MX_Matricula where unineg = #{unidadNegocioBean.uniNeg}
+        
+        Select  
+        mat.idMatricula,
+        mat.idEstudiante,
+        mat.flgMatricula,
+        mat.flgBachillerato,
+        per.nombre nombreAlumno,
+        per.apePat as apellidoPat,
+        per.apeMat as apellidoMat,
+        per.uniNeg as uniNegPer,
+        per.correo,
+        est.idGradoHabilitado as idGradoHabi,
+        graHab.nombre as nombreGraAcaHab, 
+        naHab.idNivelAcademico as idNivelAcademicoHab,
+        naHab.nombre as nomNAHab, 
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        mat.uniNeg,
+        mat.anio,
+        mat.seccion,
+        mat.fechaMatricula,
+        mat.idTipoMatricula,
+        cod.codigo,
+        na.idNivelAcademico,
+        na.nombre as nomNA, 
+        mat.idGradoAcademico,
+        gra.idGradoAcademico as idGradoPostula,
+        gra.nombre as nombreGrado,
+        mat.idProgramacion,
+        pro.anio as anioProgra,
+        pro.seccion as seccionProgra,
+        pro.grupo as grupoProgra,
+        proce.anio as anioProce,
+        pro.seccion as seccionProgra,
+        mat.creaPor,
+        mat.creaFecha,
+        p.idpersona as idResPago,
+        p.nombre,
+        p.apepat,
+        p.apemat,
+        p.correo as correoResPago,
+        proce.descripcion as descripPro,
+        proce.idTipoProceso,
+        tipPro.idCodigo as codTipPro,
+        tipPro.codigo as codigoTipPro,
+        fa.nombre   as nombreFamilia,
+        ISNULL(est.viadomi,'SIN DIRECCIÓN') as direccion, 
+        dis.nombre  as distrito,
+        (select (case 
+        when est.idresppago is null then 'SIN RESPONSABLE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = est.idresppago) as nomRes,
+        (select (case 
+        when est.idapoderado is null then 'SIN APODERADO'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = est.idapoderado) as nomApo,
+        (select (case 
+        when fa.idpadre is null then 'SIN PADRE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = fa.idpadre) as nomPap,
+        (select (case 
+        when fa.idmadre is null then 'SIN MADRE'
+        else CONCAT(p.apepat,' ',p.apemat,',',p.nombre)
+        end) as nombre from MX_Persona p where p.unineg = mat.unineg and p.idpersona = fa.idmadre) as nomMam  
+        From MX_Matricula mat
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg
+        left join MX_Persona p on CONVERT(varchar(15),est.idresppago) = p.idpersona and est.unineg= mat.unineg
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg
+        Inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst 
+        left Join MX_GradoAcademico graHab On est.idGradoHabilitado=graHab.idGradoAcademico
+        left join MX_NivelAcademico naHab on graHab.idNivelAcademico = naHab.idNivelAcademico
+        left Join MO_Codigo cod On mat.idTipoMatricula=cod.idCodigo 
+        left Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico
+        left join MX_NivelAcademico na on gra.idNivelAcademico = na.idNivelAcademico
+        left Join MX_Programacion pro On mat.idProgramacion=pro.idProgramacion and pro.unineg = mat.unineg
+        left Join MX_Proceso proce On pro.idProceso=proce.idProceso and proce.unineg = mat.unineg
+        Left Join MO_Codigo tipPro ON proce.idTipoProceso=tipPro.idCodigo
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia and mat.unineg = fa.unineg
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg
+        left join MO_Entidad ent on uni.RUC = ent.ruc and ent.unineg= mat.unineg
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+    </sql>
+    <!-- masivo -->
+    <select id="obtenerFiltroEstudianteMasivo" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatriculaLista"/>   
+        <where>      
+            mat.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="anioIni != null and anioIni != 0">
+                and mat.anio=#{anioIni} 
+            </if>  and 
+            mat.flgMatricula=1                       
+            and est.idTipoStatusEst in (Select idCodigo from MO_Codigo Where codigo = #{estudianteBean.tipoStatusEst.codigo} and idTipoCodigo=#{estudianteBean.tipoStatusEst.tipoCodigoBean.descripcion}) 
+            and gra.idGradoAcademico in (select idgradoacademico from MX_GradoAcademico)                                       
+            <if test="anioFin != null and anioFin != 0"> 
+                and  mat.idEstudiante NOT IN (Select idestudiante from mx_matricula where uniNeg=#{unidadNegocioBean.uniNeg} and anio not in (select anio from @listaAnio where anio <![CDATA[ <> ]]> #{anioFin}))
+                <!-- = #{anioFin}) -->
+            </if>
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+                and naHab.idNivelAcademico = #{estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and graHab.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if> 
+        </where>
+        order by naHab.idNivelAcademico desc,graHab.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <select id="obtenerFiltroEstudianteMasivoSeccion" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        declare @uniNeg varchar(6),@anio int,@grado int,@nivel int ,@seccion varchar(1)
+        set @uniNeg=#{unidadNegocioBean.uniNeg}
+        set @anio=#{anio}
+        set @grado=#{gradoAcademicoBean.idGradoAcademico}
+        set @nivel=#{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+        set @seccion=#{seccion}
+        Select  
+        concat(per.apepat,' '+per.apemat,', '+per.nombre) as nombreCompleto,
+        est.idEstudiante, 
+        per.sexo,
+        per.nroDoc, 
+        est.codigo,
+        est.idTipoStatusEst, 
+        est.idTipoIngresoEst, 
+        est.idGradoIngreso, 
+        est.fechaIngreso,   
+        est.idGradoHabilitado,
+        mat.seccion,
+        graAca.nombre as nombreGrado, 
+        niv.nombre as nomNA,
+        est.fechaStatusEst, 
+        est.idFamilia,
+        est.idRespPago,
+        perRes.nombre as nombreResp,
+        perRes.apepat as apepatResp,
+        perRes.apemat as apematResp 
+        From MX_Matricula mat
+        inner join MX_Estudiante est on est.idestudiante=mat.idestudiante
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg=per.unineg 
+        Left Join MX_GradoAcademico graAca On graAca.idGradoAcademico=mat.idgradoacademico
+        left join MX_NivelAcademico niv on niv.idnivelacademico=graAca.idnivelacademico
+        Left Join MX_Persona perRes On CONVERT(varchar(15), est.idRespPago)=perRes.idPersona and perRes.unineg=est.unineg
+        <where>      
+            mat.uniNeg = @uniNeg and est.idtipostatusest not in(18001,18002,18005,18006,18007)
+            <if test="anio != null and anio != 0">
+                and mat.anio=@anio
+            </if>      
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and niv.idNivelAcademico = @nivel
+            </if> 
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0">
+                and graAca.idGradoAcademico = @grado
+            </if> 
+            <if test="seccion != null and seccion != ''">
+                and mat.seccion = @seccion
+            </if> 
+        </where>
+        order by niv.idNivelAcademico desc,graAca.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <select id="obtenerFiltroEstudianteMasivoLista" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatriculaLista"/>  
+        <where>      
+            mat.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="anioIni != null and anioIni != 0">
+                and mat.anio=#{anioIni} 
+            </if>                                  
+            and est.idTipoStatusEst in (Select idCodigo from MO_Codigo Where codigo = 'Activo' and idTipoCodigo='tipoStatusEst') 
+            and gra.idGradoAcademico in (select idgradoacademico from MX_GradoAcademico)                                       
+            <if test="anioFin != null and anioFin != 0"> 
+                and  mat.idEstudiante NOT IN (Select idestudiante from mx_matricula where uniNeg=#{unidadNegocioBean.uniNeg} and anio not in (select anio from @listaAnio where anio <![CDATA[ <> ]]> #{anioFin}))
+                <!-- = #{anioFin}) -->
+            </if>
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+                and naHab.idNivelAcademico = #{estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and graHab.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>   
+        </where>
+        order by naHab.idNivelAcademico desc,graHab.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    
+    <select id="obtenerFiltroEstudianteMasivoDeudor" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatriculaDeuda"/> 
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia and est.unineg = fa.unineg
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg   
+        left join MO_Entidad ent on uni.RUC = ent.ruc and uni.unineg = ent.unineg
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito 
+        <!--left join MT_CtasxCobrar cta on mat.idestudiante = cta.idestudiante-->
+        <where>      
+            mat.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="anioIni != null and anioIni != 0">
+                and mat.anio=#{anioIni} 
+            </if>                                    and 
+            mat.flgMatricula=1                       
+            and est.idTipoStatusEst in (Select idCodigo from MO_Codigo Where codigo = #{estudianteBean.tipoStatusEst.codigo} and idTipoCodigo=#{estudianteBean.tipoStatusEst.tipoCodigoBean.descripcion}) 
+            and gra.idGradoAcademico in (select idgradoacademico from MX_GradoAcademico)                                       
+            <if test="anioFin != null and anioFin != 0"> 
+                and  mat.idEstudiante NOT IN (Select idestudiante from mx_matricula where uniNeg=#{unidadNegocioBean.uniNeg} and anio=#{anioFin})
+            </if>
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+                and naHab.idNivelAcademico = #{estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and graHab.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>
+            <if test="dato == 1"> 
+                and mat.idestudiante in ( select idestudiante from MT_CtasxCobrar where idtipostatusctacte = 19401)
+            </if>
+        </where>
+        order by naHab.idNivelAcademico desc,graHab.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+     
+    <select id="obtenerFiltroEstudianteMasivoDeudorMes" resultMap="matriculaResultado" parameterType="map">
+        <include refid="queryListaMeses" />   
+        <foreach item="item" index="index" collection="listaMeses"
+                 open="insert into @list(mes) select " separator=" insert into @list(mes) select " >
+            #{item}
+        </foreach> 
+        <include refid="consultaMatriculaDeuda"/>
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia and est.unineg = fa.unineg
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg
+        left join MO_Entidad ent on uni.RUC = ent.ruc and uni.unineg = ent.unineg
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito 
+        <where>     
+            mat.uniNeg = #{matriculaBean.unidadNegocioBean.uniNeg} 
+            <if test="matriculaBean.anioIni != null and matriculaBean.anioIni != 0">
+                and mat.anio = #{matriculaBean.anioIni} 
+            </if> and 
+            mat.flgMatricula=1                       
+            and est.idTipoStatusEst in (Select idCodigo from MO_Codigo Where codigo = #{matriculaBean.estudianteBean.tipoStatusEst.codigo} and idTipoCodigo=#{matriculaBean.estudianteBean.tipoStatusEst.tipoCodigoBean.descripcion}) 
+            and gra.idGradoAcademico in (select idgradoacademico from MX_GradoAcademico)       
+            <if test="matriculaBean.anioFin != null and matriculaBean.anioFin != 0"> 
+                and  mat.idEstudiante NOT IN (Select idestudiante from mx_matricula where uniNeg=#{matriculaBean.unidadNegocioBean.uniNeg} and anio=#{matriculaBean.anioFin})
+            </if> 
+            <if test="matriculaBean.estudianteBean.personaBean.idPersona != null and matriculaBean.estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{matriculaBean.estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.apepat != null and matriculaBean.estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{matriculaBean.estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.apemat != null and matriculaBean.estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{matriculaBean.estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.nombre != null and matriculaBean.estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{matriculaBean.estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="matriculaBean.estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and matriculaBean.estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+                and naHab.idNivelAcademico = #{matriculaBean.estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and graHab.idGradoAcademico = #{matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>
+            <if test="matriculaBean.dato == 1"> 
+                and (select count(c.mes) from MT_CtasxCobrar c 
+                where c.unineg = #{matriculaBean.unidadNegocioBean.uniNeg} and c.idtipostatusctacte = 19401 and c.idestudiante = mat.idestudiante) = (select COUNT(*) from @list)
+                <!--
+                and mat.idestudiante in ( select idestudiante from MT_CtasxCobrar where idtipostatusctacte = 19401) 
+                and mat.idestudiante in (select cta.idestudiante from MT_CtasxCobrar cta
+                inner join MX_Matricula mat on cta.idmatricula = mat.idmatricula and cta.unineg = mat.unineg
+                where cta.idestudiante = mat.idestudiante and cta.unineg = #{matriculaBean.unidadNegocioBean.uniNeg}  
+                and cta.idtipostatusctacte = 19401 
+                and cta.mes in(select mes from @list) and cta.anio = #{matriculaBean.anioIni})
+                -->
+            </if>
+        </where>
+        order by naHab.idNivelAcademico desc,graHab.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+     
+    <select id="obtenerAlumnoEsquela" parameterType="map" resultMap="matriculaResultado" >
+        Select  
+        mat.idMatricula,
+        mat.idEstudiante,
+        mat.flgMatricula,
+        mat.flgBachillerato,
+        per.nombre nombreAlumno,
+        per.apePat as apellidoPat,
+        per.apeMat as apellidoMat,
+        per.uniNeg as uniNegPer,
+        per.correo,
+        est.idGradoHabilitado as idGradoHabi,
+        graHab.nombre as nombreGraAcaHab, 
+        naHab.idNivelAcademico as idNivelAcademicoHab,
+        naHab.nombre as nomNAHab, 
+        est.idTipoStatusEst,
+        codStaEst.Codigo as codigoStatusEst,
+        mat.uniNeg,
+        mat.anio,
+        mat.seccion,
+        mat.fechaMatricula,
+        mat.idTipoMatricula,
+        cod.codigo,
+        na.idNivelAcademico,
+        na.nombre as nomNA, 
+        mat.idGradoAcademico,
+        gra.idGradoAcademico as idGradoPostula,
+        gra.nombre as nombreGrado,
+        mat.idProgramacion,
+        pro.anio as anioProgra,
+        pro.seccion as seccionProgra,
+        pro.grupo as grupoProgra,
+        proce.anio as anioProce,
+        pro.seccion as seccionProgra,
+        mat.creaPor,
+        mat.creaFecha,
+        p.idpersona as idResPago,
+        p.nombre,
+        p.apepat,
+        p.apemat,
+        p.correo as correoResPago,
+        proce.descripcion as descripPro,
+        proce.idTipoProceso,
+        tipPro.idCodigo as codTipPro,
+        tipPro.codigo as codigoTipPro,
+        fa.nombre   as nombreFamilia,
+        est.viadomi as direccion, 
+        dis.nombre  as distrito,
+        (select COUNT(idestudiante) from MM_DetEsquela where idestudiante = mat.idestudiante and idestudiante in(select idestudiante from MX_Matricula) and CONCAT(DAY(creafecha),'-',CONCAT('0',MONTH(creafecha)),'-',YEAR(creafecha)) = #{creaFecha} and idesquela = #{idEsquela} and unineg = #{uniNeg} and status = #{status}) as cont,
+        graHab.nombre as nomGra
+        From MX_Matricula mat
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idEstudiante 
+        left join MX_Persona p on CONVERT(varchar(11),est.idresppago) = p.idpersona
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona
+        Inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst
+        left Join MX_GradoAcademico graHab On est.idGradoHabilitado=graHab.idGradoAcademico
+        left join MX_NivelAcademico naHab on graHab.idNivelAcademico = naHab.idNivelAcademico
+        left Join MO_Codigo cod On mat.idTipoMatricula=cod.idCodigo 
+        left Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico
+        left join MX_NivelAcademico na on gra.idNivelAcademico = na.idNivelAcademico
+        left Join MX_Programacion pro On mat.idProgramacion=pro.idProgramacion
+        left Join MX_Proceso proce On pro.idProceso=proce.idProceso
+        Left Join MO_Codigo tipPro ON proce.idTipoProceso=tipPro.idCodigo
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg
+        left join MO_Entidad ent on uni.RUC = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        where mat.idestudiante in (select idestudiante from MM_DetEsquela where CONCAT(DAY(creafecha),'-',CONCAT('0',MONTH(creafecha)),'-',YEAR(creafecha)) = #{creaFecha} and idesquela = #{idEsquela} and uniNeg = #{uniNeg} and status = #{status}) and mat.uniNeg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerFiltroEstudianteMasivoDepuracionMatri" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where>      
+            mat.uniNeg = #{unidadNegocioBean.uniNeg}  and mat.anio=#{anio} and  mat.flgMatricula=0         
+             
+            <if test="anioFin != null and anioFin != 0"> 
+                and  mat.idEstudiante NOT IN (Select idestudiante from mx_matricula where uniNeg=#{unidadNegocioBean.uniNeg} and anio=#{anioFin})
+            </if>
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+                and naHab.idNivelAcademico = #{estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and graHab.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>  
+            <!--<if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}
+            </if> -->  
+        </where>
+        order by naHab.idNivelAcademico desc,graHab.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <select id="obtenerFiltroEstudianteMasivoCorreccionGrado" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where>      
+            mat.uniNeg = #{unidadNegocioBean.uniNeg}   and   gra.nombre != #{gradoAcademicoFiltro}      
+            <if test="anio != null and anio != 0">
+                and mat.anio=#{anio} 
+            </if> 
+            <!--and  mat.flgMatricula=0-->
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if>
+            <if test="estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != null and estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico != 0">
+                and naHab.idNivelAcademico = #{estudianteBean.gradoHabilitado.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and graHab.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>    
+        </where>
+        order by naHab.idNivelAcademico desc,graHab.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <!-- fin masivo -->
+    <!-- masivo -->
+    <select id="obtenerFiltroEstudianteCtasPorCobrarMasivo" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where>      
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and 
+            mat.anio=#{anio}                       
+            <!-- SI ES != DE NULL MUESTRA TODOS-->       
+            <if test="anioFin != null and anioFin != 0"> 
+                and  mat.idEstudiante NOT IN (Select distinct idEstudiante from MT_CtasxCobrar where uniNeg=#{unidadNegocioBean.uniNeg} and anio=#{anio} and isnull(mes,2)<![CDATA[ > ]]>3 )
+            </if>
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if> 
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}
+            </if>   
+        </where>
+        order by na.idNivelAcademico desc,gra.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <select id="obtenerFiltroSaldoPensiones" parameterType="map" resultMap="matriculaResultado">
+        <include refid="consultaMatricula"/>
+        <where>      
+            mat.uniNeg = #{uniNeg} and 
+             <!-- SI ES != DE NULL MUESTRA TODOS-->       
+            <if test="anio != null and anio != 0"> 
+                 mat.anio=#{anio}   
+            </if>    
+            <if test="idNivelAcademico != null and idNivelAcademico != 0">
+                and na.idNivelAcademico = #{idNivelAcademico}
+            </if> 
+            <if test="idGradoAcademico != null and idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{idGradoAcademico}
+            </if>   
+        </where>
+        order by na.idNivelAcademico desc,gra.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <select id="obtenerFiltroEstudianteImpCompMasivo" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where>  
+            <!--Solo Matriculados, por el momento-->    
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.anio=#{anio} <!--and faes.status is null-->
+            <!--    and est.idtipostatusest in(18004)-->
+            <if test="flgMatriculaVista != null" >
+                and mat.flgMatricula in (#{flgMatriculaVista})
+            </if> 
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>   
+            <if test="seccion != null and seccion != ''">
+                and  mat.seccion = #{seccion}
+            </if>   
+            <if test="creaPor != null and creaPor != ''">
+                and  mat.creaPor = #{creaPor}
+            </if>     
+            <if test="fechaMatricula != null">
+                and convert(date,mat.fechaMatricula) <![CDATA[ >= ]]> #{fechaInicio} 
+                and convert(date,mat.fechaMatricula) <![CDATA[ <= ]]> #{fechaFin} 
+            </if>        
+        </where>
+        order by per.apepat,per.apemat,per.nombre asc
+    </select>
+    <select id="obtenerListaEstudiantesMatr" resultType="pe.marista.sigma.bean.reporte.ListaAlumnosRepBean" parameterType="map">
+        declare @unineg varchar(20)=#{uniNeg},@anio int =#{anio},
+        @flg int =#{flg},@idGrado int =#{idGrado},@idNivel int =#{idNivel},
+        @seccion varchar(4)=#{seccion}
+        select distinct
+        concat(n.nombre,' - '+g.nombre,' - '+m.seccion) as nombreGraSec,
+        uni.nombreUniNeg,
+        'REGISTRO DE ALUMNOS '+ 
+        (case when @flg=1 then 'MATRICULADOS RETIRADOS '
+        when @flg=2 then 'MATRICULADOS ACTIVOS ' 
+        when @flg=3 then 'NO MATRICULADOS ' 
+        when @flg =4 then 'MATRICULADOS Y NO MATRICULAS ' end )+convert(varchar(5),m.anio)
+        AS titulo,
+        m.seccion as seccion, g.idgradoacademico as idGrado, n.idnivelacademico as idNivel   
+        from MX_Matricula m
+        inner join MO_UnidadNegocio uni on uni.unineg=m.unineg
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante
+        inner join MX_Persona p on p.idpersona=e.idestudiante
+        inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        where uni.unineg=@unineg and m.anio=@anio 
+        <if test="flg==1">
+            and fechamatricula is not null
+            and m.flgmatricula in(1)
+        </if>
+        <if test="flg==2">
+            and fechamatricula is not null
+            and m.flgmatricula in(1)
+            and e.idtipostatusest=18004
+        </if>
+        <if test="flg==3">
+            and fechamatricula is null
+            and m.flgmatricula in(0)
+        </if>  
+        <if test="flg==4"> 
+            and m.flgmatricula in(0,1)
+        </if>  
+        <if test="idGrado!= null">
+            and g.idgradoacademico=@idGrado
+        </if>
+        <if test="idNivel!= null">
+            and n.idnivelacademico=@idNivel
+        </if>  
+        <if test="seccion!= null and seccion != ''">
+            and m.seccion=@seccion
+        </if>  
+        ORDER BY idNivel DESC, idGrado
+    </select>
+    <select id="obtenerListaEstudiantesMatrDetalle" resultType="pe.marista.sigma.bean.reporte.ListaAlumnosRepBean" parameterType="map">
+        declare @unineg varchar(20)=#{uniNeg},@anio int =#{anio},
+        @flg int =#{flg},@idGrado int =#{idGrado},@idNivel int =#{idNivel},
+        @seccion varchar(4)=#{seccion}
+        select concat(p.apepat,' '+p.apemat,', '+p.nombre) as nombreCompleto, e.idestudiante as idEstudiante,
+        (case when m.fechamatricula is not null and m.flgmatricula=1 then 'MATRICULADO'
+        when m.fechamatricula is null and m.flgmatricula=0 then 'NO MATRICULADO' end) as estadoMatricula,
+        co.codigo AS estadoEstudiante 
+        from MX_Matricula m
+        inner join MO_UnidadNegocio uni on uni.unineg=m.unineg
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante
+        inner join MX_Persona p on p.idpersona=e.idestudiante
+        inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        inner join MO_Codigo co on co.idcodigo=e.idtipostatusest
+        where uni.unineg=@unineg and m.anio=@anio 
+        <if test="flg==1">
+            and fechamatricula is not null
+            and m.flgmatricula in(1)
+        </if>
+        <if test="flg==2">
+            and fechamatricula is not null
+            and m.flgmatricula in(1)
+            and e.idtipostatusest=18004
+        </if>
+        <if test="flg==3">
+            and fechamatricula is null
+            and m.flgmatricula in(0)
+        </if>  
+        <if test="flg==4"> 
+            and m.flgmatricula in(0,1)
+        </if>  
+        <if test="idGrado!= null">
+            and g.idgradoacademico=@idGrado
+        </if>
+        <if test="idNivel!= null">
+            and n.idnivelacademico=@idNivel
+        </if>  
+        <if test="seccion!= null">
+            and m.seccion=@seccion
+        </if>  
+        order by concat(p.apepat,' '+p.apemat,', '+p.nombre)
+    </select>
+    <select id="obtenerFiltroEstudianteGenerarRecibo" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where>  
+            <!--Solo Matriculados, por el momento-->    
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.anio=#{anio}
+            <!--    and est.idtipostatusest in(18004)-->
+            <if test="flgMatriculaVista != null" >
+                and mat.flgMatricula in (#{flgMatriculaVista})
+            </if> 
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>   
+            <if test="seccion != null and seccion != ''">
+                and  mat.seccion = #{seccion}
+            </if>   
+            <if test="creaPor != null and creaPor != ''">
+                and  mat.creaPor = #{creaPor}
+            </if>     
+            <if test="fechaMatricula != null">
+                and convert(date,mat.fechaMatricula) <![CDATA[ >= ]]> #{fechaInicio} 
+                and convert(date,mat.fechaMatricula) <![CDATA[ <= ]]> #{fechaFin} 
+            </if>   
+            </where>    
+        order by na.idNivelAcademico desc,gra.idGradoAcademico,per.apepat,per.apemat,per.nombre asc
+    </select>
+    <select id="obtenerFiltroEstudianteGenerarSinRecibo" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        inner join MT_CtasxCobrar c on c.idestudiante=mat.idestudiante and c.mes=#{mes} and c.anio=#{anio}
+        <where>    
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.anio=#{anio} and c.iddocingreso is null
+        </where>    
+        order by na.idNivelAcademico desc,gra.idGradoAcademico,per.apepat,per.apemat,per.nombre asc
+    </select>
+    <select id="obtenerImpresionPorDeUsuarioMat" resultType="pe.marista.sigma.bean.reporte.EstudianteGeneralRepBean" parameterType="map">
+        declare  @anio int ,@unineg varchar(6) ,@creaPor varchar(20),@fechaMatricula Date
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        set @creaPor=#{creaPor}
+        set @fechaMatricula=#{fechaMatricula}
+        Select distinct
+        mat.anio,
+        concat(per.nombre,' '+per.apePat,' '+per.apeMat) as nombre,  
+        graHab.nombre as grado, 
+        mat.fechamatricula as fechaMatricula,
+        RIGHT( CONVERT(varchar, mat.fechamatricula, 108),8) AS horaMatricula,
+        mat.creapor as creaPor,
+        (case 
+        when est.idtiporesppago=17401 then 'P'
+        when est.idtiporesppago=17402 then 'M'
+        when est.idtiporesppago=17403 then 'A'
+        end) as respEco,
+        isnull(convert(varchar,per.fecnac,103),'-') as fecNaciAl,
+        isnull(convert(varchar,pa.fecnac,103),'-') as fecNaciPa,
+        isnull(convert(varchar,ma.fecnac,103),'-') as fecNaciMa,
+        isnull(convert(varchar,apo.fecnac,103),'-') as fecNaciApo,
+        ISNULL(pa.nrodoc,'-') as dniPa,
+        ISNULL(ma.nrodoc,'-') as dniMa,
+        isnull(apo.nrodoc,'-') as dniApo,
+        uni.nombreUniNeg as nomUniNeg,
+        na.idNivelAcademico as idNivelAcademicoHab,
+        gra.idGradoAcademico
+        From MX_Matricula mat 
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg 
+        left join MX_Persona p on CONVERT(varchar(15),est.idresppago) = p.idpersona and est.unineg= mat.unineg 
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg 
+        Inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst 
+        left Join MX_GradoAcademico graHab On est.idGradoHabilitado=graHab.idGradoAcademico 
+        left join MX_NivelAcademico naHab on graHab.idNivelAcademico = naHab.idNivelAcademico 
+        left Join MO_Codigo cod On mat.idTipoMatricula=cod.idCodigo 
+        left Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico 
+        left join MX_NivelAcademico na on gra.idNivelAcademico = na.idNivelAcademico 
+        left Join MX_Programacion pro On mat.idProgramacion=pro.idProgramacion and pro.unineg = mat.unineg 
+        left Join MX_Proceso proce On pro.idProceso=proce.idProceso and proce.unineg = mat.unineg 
+        Left Join MO_Codigo tipPro ON proce.idTipoProceso=tipPro.idCodigo
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia and mat.unineg = fa.unineg 
+        left join MX_Persona pa on pa.idpersona=fa.idpadre
+        left join MX_Persona ma on ma.idpersona=fa.idmadre
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg 
+        left join MX_FamiliarEstudiante faes on faes.idestudiante=est.idestudiante and idtipoparentesco not in(12402,12403) AND FAES.status IS NULL
+        left join MX_Persona apo on apo.idpersona=faes.idfamiliar
+        left join MO_Entidad ent on uni.RUC = ent.ruc and ent.unineg= mat.unineg left join MO_Distrito dis on ent.iddistrito = dis.iddistrito 
+        WHERE mat.uniNeg = #{uniNeg} and mat.flgMatricula in (1) and mat.anio=#{anio} and faes.status is null
+        <if test="creaPor != null and creaPor != '' " >
+            and mat.creaPor=#{creaPor}
+        </if>  
+        and convert(date,mat.fechaMatricula) = @fechaMatricula
+        order by mat.creaPor desc,na.idNivelAcademico desc,gra.idGradoAcademico
+    </select>
+    <select id="obtenerTablaParaExcel" parameterType="map" resultMap="matriculaResultado">
+        declare  @anio int ,@unineg varchar(6),@fechaInicio Date,@fechaFin Date
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        set @fechaInicio=#{fechaInicio}
+        set @fechaFin=#{fechaFin} 
+        Select  
+        per.apePat AS APAT_ALU,
+        per.apeMat AS AMAT_ALU,
+        per.nombre as NOMB_ALU,
+        (case
+        when per.sexo=1 then 'H'
+        when per.sexo=0 then 'M'
+        else '-' end)AS sexoAyuda,
+        ISNULL(per.nrodoc,'-') as nroDoc,	
+        isnull(convert(varchar,per.fecnac,103),'-') as fecNacAyuda,
+        ISNULL(DEP.nombre,'-') AS nombreDepartamentoNaci,
+        ISNULL(PROV.nombre,'-') AS nombreProvinciaNaci,
+        ISNULL(DISAL.nombre,'-') AS nombreDistritoNaci,
+        ISNULL(EST.codigo,'-') AS codigoColegio,
+        ISNULL(GRA.NOMBRE,'-') AS nomGra,
+        ISNULL(EST.seccion,'-') AS seccion,
+        ISNULL(EST.viadomi,'-') AS viaDomi,
+        ISNULL(EST.telefono1domi,'-') AS telefono1Domi,
+        ISNULL(DISDOM.NOMBRE,'-') AS nombreDistritoDomic,
+        ISNULL(EST.refedomi,'-') AS refeDomi,
+        ISNULL(EST.telefono2domi,'-') AS telefono2Domi,
+        (CASE 
+        WHEN EST.idtiporesppago=17401 THEN 'P'
+        WHEN EST.idtiporesppago=17402 THEN 'M'
+        WHEN EST.idtiporesppago=17403 THEN 'A'
+        ELSE '-'
+        END) AS respEco,
+        ISNULL(TIPOSEG.CODIGO,'-') AS tipoSeguroAyuda, 
+        pa.apepat as APAT_PAD,
+        pa.apemat as AMAT_PAD,
+        pa.nombre as NOMB_PAD,
+        (CASE 
+        WHEN PA.idtipodocper=10701 THEN 'DNI'
+        WHEN PA.idtipodocper=10702 THEN 'CARNET DE ESTRANJERIA' 
+        WHEN PA.idtipodocper=10703 THEN 'PASAPORTE'
+        WHEN PA.idtipodocper=10704 THEN 'P. Nac.'
+        ELSE '-'
+        END) AS TDOC_PAD,
+        ISNULL(pa.nrodoc,'-') as LIBE_PAD,
+        isnull(convert(varchar,pa.fecnac,103),'-') as FENA_PAD,
+        ISNULL(PA.correo,'-') AS EMAIL_PAD,
+        ISNULL(FAMPAPA.direccion,'-') AS DIRTR_PAD,
+        ISNULL(FAMPAPA.telefonocelular,'-') AS CEL_PAD, 
+        (CASE
+        WHEN FAMPAPA.flgvive=1 THEN 'SI' 
+        WHEN FAMPAPA.FLGVIVE=0 THEN 'NO'
+        ELSE '-' END)AS VIVE_PAD, 
+        ma.apepat as APAT_MAD,
+        ma.apemat as AMAT_MAD,
+        ma.nombre as NOMB_MAD,
+        (CASE 
+        WHEN MA.idtipodocper=10701 THEN 'DNI'
+        WHEN MA.idtipodocper=10702 THEN 'CARNET DE ESTRANJERIA' 
+        WHEN MA.idtipodocper=10703 THEN 'PASAPORTE'
+        WHEN MA.idtipodocper=10704 THEN 'P. Nac.'
+        ELSE '-'
+        END) AS TDOC_MAD,
+        isnull(ma.nrodoc,'-') as LIBE_MAD,
+        isnull(convert(varchar,ma.fecnac,103),'-') as FENA_MAD,
+        isnull(MA.correo,'-') AS EMAIL_MAD,
+        isnull(FAMMAMA.direccion,'-') AS DIRTR_MAD,
+        isnull(FAMMAMA.telefonocelular,'-') AS CEL_MAD,
+        (CASE
+        WHEN FAMMAMA.flgvive=1 THEN 'SI' 
+        WHEN FAMMAMA.FLGVIVE=0 THEN 'NO'
+        ELSE '-' END)AS VIVE_MAD, 
+        apo.apepat as APAT_APO,
+        apo.apemat as AMAT_APO,
+        apo.nombre as NOMB_APO,
+        (CASE 
+        WHEN APO.idtipodocper=10701 THEN 'DNI'
+        WHEN APO.idtipodocper=10702 THEN 'CARNET DE ESTRANJERIA' 
+        WHEN APO.idtipodocper=10703 THEN 'PASAPORTE'
+        WHEN APO.idtipodocper=10704 THEN 'P. Nac.'
+        ELSE '-'
+        END) AS TDOC_APO,
+        isnull(apo.nrodoc,'-') as LIBE_APO,
+        isnull(APO.correo,'-') AS EMAIL_APO,
+        isnull(FAMAPO.direccion,'-') AS DIRTR_APO,
+        isnull(FAMAPO.telefonocelular,'-') AS CEL_APO, 
+        (CASE
+        WHEN FAMAPO.flgvive=1 THEN 'SI' 
+        WHEN FAMAPO.FLGVIVE=0 THEN 'NO'
+        ELSE '-' END)AS VIVE_APO,
+        isnull(FAMPAREN.codigo,'-') AS PAREN_APO,
+        vivecon.codigo as viveCon,
+        ESTINFO.obsfamiliar as obs_ViveCon,
+        MAT.creapor as USUARIO, 
+        CONVERT (varchar, fechamatricula,103) as FECMATRICULA,
+        SUBSTRING (CONVERT(CHAR(38),fechamatricula,121), 12,8) AS HORA
+        From MX_Matricula mat
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg 
+        LEFT JOIN MO_Distrito DISAL ON DISAL.iddistrito=EST.iddistritonaci
+        LEFT JOIN MO_Provincia PROV ON PROV.idprovincia=DISAL.idprovincia
+        LEFT JOIN MO_Departamento DEP ON DEP.iddepartamento=PROV.iddepartamento
+        LEFT JOIN MO_Distrito DISDOM ON DISDOM.iddistrito=EST.iddistritodomi
+        LEFT JOIN MO_Provincia PRODOMIC ON PRODOMIC.idprovincia=DISDOM.idprovincia
+        LEFT JOIN MO_Departamento DEPDOC ON DEPDOC.iddepartamento=PRODOMIC.iddepartamento
+        LEFT JOIN MX_EstudianteInfo ESTINFO ON ESTINFO.idestudiante=EST.idestudiante
+        left join MO_Codigo vivecon on vivecon.idcodigo=ESTINFO.idtipovivecon
+        LEFT JOIN MO_Codigo TIPOSEG ON TIPOSEG.idcodigo=ESTINFO.idtiposeguro
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg 
+        left Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico
+        left join MX_NivelAcademico na on gra.idNivelAcademico = na.idNivelAcademico 
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia and mat.unineg = fa.unineg
+        left join MX_Persona pa on pa.idpersona=fa.idpadre
+        left join MX_Persona ma on ma.idpersona=fa.idmadre
+        LEFT JOIN MX_Familiar FAMPAPA ON FAMPAPA.idfamiliar=PA.idpersona
+        LEFT JOIN MX_Familiar FAMMAMA ON FAMMAMA.idfamiliar=MA.idpersona 
+        left join MX_FamiliarEstudiante faes on faes.idestudiante=est.idestudiante and idtipoparentesco not in(12402,12403) AND FAES.status IS NULL
+        LEFT JOIN MX_Familiar FAMAPO ON FAMAPO.idfamiliar=FAES.idfamiliar
+        LEFT JOIN MO_Codigo FAMPAREN ON FAMPAREN.idcodigo=FAES.idtipoparentesco
+        left join MX_Persona apo on apo.idpersona=faes.idfamiliar   
+        WHERE mat.uniNeg = @UNINEG  and faes.status is null 
+        <if test="matricula == 1" >
+            and mat.flgmatricula=1 and
+            mat.anio=@ANIO
+            and convert(date,mat.fechaMatricula) <![CDATA[ >= ]]> @fechaInicio
+            and convert(date,mat.fechaMatricula) <![CDATA[ <= ]]> @fechaFin
+        </if> 
+        <if test="matricula == 2" >
+            and mat.flgmatricula =0 and mat.anio=@ANIO OR (  flgmatricula =1 AND
+            mat.anio=@ANIO
+            AND convert(date,mat.fechaMatricula) NOT IN(SELECT FECHAMATRICULA FROM MX_Matricula WHERE convert(date,mat.fechaMatricula)<![CDATA[ >= ]]> @fechaInicio
+            and convert(date,mat.fechaMatricula) <![CDATA[ <= ]]> @fechaFin))
+        </if> 
+        <if test="matricula == 3" >
+            and mat.flgmatricula in(1,0) AND
+            mat.anio=@ANIO
+        </if>  
+        order by mat.creaPor desc,na.idNivelAcademico desc,gra.idGradoAcademico 
+    </select>
+    <select id="obtenerFiltroEstudianteImpCompMasivoAfter" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        
+        <if test="flgMas == 5" >
+            declare @listaMes as table(mes Integer)
+            ;with listaMes as(
+            select 1 as mes
+            union all
+            select 2 as mes
+            union all
+            select 3 as mes
+            union all
+            select 4 as mes
+            union all
+            select 5 as mes
+            union all
+            select 6 as mes
+            union all
+            select 7 as mes
+            union all
+            select 8 as mes
+            union all
+            select 9 as mes
+            union all
+            select 10 as mes
+            union all
+            select 11 as mes
+            union all
+            select 12 as mes)
+            insert into @listaMes
+            select mes from listaMes
+        </if>
+        ;with listaEstudiante as(
+        Select distinct
+        mat.unineg,
+        mat.idEstudiante,
+        est.codigo as codigoColegio,
+        mat.anio,
+        mat.flgMatricula,
+        per.nombre nombreAlumno,
+        per.apePat as apellidoPat,
+        per.apeMat as apellidoMat,   
+        mat.seccion,     
+        gra.nombre as nombreGrado, 
+        <if test="flgMas == 1 and flgMasivo != null">
+            (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+            inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+            Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg and det.idctasxcobrar = cta.idctasxcobrar and det.unineg = cta.unineg
+            where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+            and cta.idtipostatusctacte = 19404 and doc.flgmasivo = 'b' and DATEDIFF(DAY,cta.fechapago,cta.fechavenc) <![CDATA[ >= ]]> 0
+            <if test="tipoImpresion == 1" >
+                and doc.flgimpresion is not null
+            </if>
+            <if test="tipoImpresion == 2" >
+                and doc.flgimpresion is null
+            </if>
+            order by cta.mes FOR XML PATH('')) as ctaMeses,
+        </if>
+        <if test="flgMas == 2 and flgMasivo != null" >
+            (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+            inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+            Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg and det.idctasxcobrar = cta.idctasxcobrar and det.unineg = cta.unineg
+            where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+            and cta.idtipostatusctacte = 19404 and doc.flgmasivo in ('g','c')
+            <if test="tipoImpresion == 1" >
+                and doc.flgimpresion is not null
+            </if>
+            <if test="tipoImpresion == 2" >
+                and doc.flgimpresion is null
+            </if>
+            order by cta.mes FOR XML PATH('')) as ctaMeses,
+        </if>
+        <if test="flgMas == 3" >
+            (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+            inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+            Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg and det.idctasxcobrar = cta.idctasxcobrar and det.unineg = cta.unineg
+            where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+            and doc.flgmasivo in ('g','c','b')
+            <if test="tipoImpresion == 1" >
+                and doc.flgimpresion is not null
+            </if>
+            <if test="tipoImpresion == 2" >
+                and doc.flgimpresion is null
+            </if>
+            order by cta.mes FOR XML PATH('')) as ctaMeses,
+        </if> 
+        <if test="flgMas == 4" >
+            (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+            inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg  
+            where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+            and ISNULL(cta.idtipostatusctacte,19401) = 19401 and doc.flgmasivo = 'g'
+            <if test="tipoImpresion == 1" >
+                and doc.flgimpresion is not null
+            </if>
+            <if test="tipoImpresion == 2" >
+                and doc.flgimpresion is null
+            </if>
+            order by cta.mes FOR XML PATH('')) as ctaMeses,
+        </if>
+        <if test="flgMas == 5" >
+            (SELECT distinct CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+            inner join MX_Matricula m on cta.idmatricula = m.idmatricula and cta.unineg = m.unineg and cta.anio = m.anio
+            inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+            Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg and cta.iddocingreso = det.iddocingreso and cta.idctasxcobrar = det.idctasxcobrar and det.unineg = cta.unineg
+            and doc.flgmasivo in ('b') and DATEDIFF(DAY,cta.fechapago,cta.fechavenc) <![CDATA[ > ]]> 0 and cta.idtipostatusctacte = 19404 
+            <if test="tipoImpresion == 1" >
+                and doc.flgimpresion is not null
+            </if>
+            <if test="tipoImpresion == 2" >
+                and doc.flgimpresion is null
+            </if> 
+            and YEAR(cta.fechapago) = #{anio} and mat.idmatricula = m.idmatricula and MONTH(cta.fechapago) <![CDATA[ = ]]> #{mes}
+            and cta.mes in (select mes from @listaMes where mes <![CDATA[ <> ]]> #{mes} and mes <![CDATA[ > ]]> #{mes})
+            FOR XML PATH('')) as ctaMeses,
+        </if>
+        <if test="flgMas == 6" > 
+            (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+            inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+            Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg and det.idctasxcobrar = cta.idctasxcobrar and det.unineg = cta.unineg
+            where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+            and cta.idtipostatusctacte = 19404 and doc.flgmasivo in ('b') and DATEDIFF(DAY,cta.fechapago,cta.fechavenc) <![CDATA[ < ]]> 0
+            <if test="tipoImpresion == 1" >
+                and doc.flgimpresion is not null
+            </if>
+            <if test="tipoImpresion == 2" >
+                and doc.flgimpresion is null
+            </if>
+            order by cta.mes FOR XML PATH('')) as ctaMeses,
+        </if>
+        na.idNivelAcademico,gra.idGradoAcademico
+        From MX_Matricula mat
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg and mat.idEstudiante = per.idPersona and mat.unineg = per.unineg
+        Inner Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico
+        Inner join MX_NivelAcademico na On gra.idNivelAcademico = na.idNivelAcademico
+        <where>   
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.flgMatricula = #{flgMatriculaVista} and
+            mat.anio=#{anio}                     
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>
+            <if test="flgMas == 1 and flgMasivo != null">
+                and (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+                inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+                Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg
+                where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+                and cta.idtipostatusctacte = 19404 and doc.flgmasivo = 'b' and DATEDIFF(DAY,cta.fechapago,cta.fechavenc) <![CDATA[ >= ]]> 0
+                <if test="tipoImpresion == 1" >
+                    and doc.flgimpresion is not null
+                </if>
+                <if test="tipoImpresion == 2" >
+                    and doc.flgimpresion is null
+                </if>
+                order by cta.mes FOR XML PATH('')) is not null
+            </if>
+            <if test="flgMas == 2 and flgMasivo != null" >
+                and (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+                inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+                Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg
+                where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+                and cta.idtipostatusctacte = 19404 and doc.flgmasivo in ('g','c')
+                <if test="tipoImpresion == 1" >
+                    and doc.flgimpresion is not null
+                </if>
+                <if test="tipoImpresion == 2" >
+                    and doc.flgimpresion is null
+                </if>
+                order by cta.mes FOR XML PATH('')) is not null
+            </if>
+            <if test="flgMas == 3" >
+                and (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+                inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+                Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg
+                where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+                and doc.flgmasivo in ('g','c','b')
+                <if test="tipoImpresion == 1" >
+                    and doc.flgimpresion is not null
+                </if>
+                <if test="tipoImpresion == 2" >
+                    and doc.flgimpresion is null
+                </if>
+                order by cta.mes FOR XML PATH('')) is not null
+            </if> 
+            <if test="flgMas == 4" >
+                and (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+                inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg  
+                where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+                and ISNULL(cta.idtipostatusctacte,19401) = 19401 and doc.flgmasivo = 'g'
+                <if test="tipoImpresion == 1" >
+                    and doc.flgimpresion is not null
+                </if>
+                <if test="tipoImpresion == 2" >
+                    and doc.flgimpresion is null
+                </if>
+                order by cta.mes FOR XML PATH('')) is not null
+            </if>
+            <if test="flgMas == 5" >
+                and (SELECT distinct CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+                inner join MX_Matricula m on cta.idmatricula = m.idmatricula and cta.unineg = m.unineg and cta.anio = m.anio
+                inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+                Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg and cta.iddocingreso = det.iddocingreso and cta.idctasxcobrar = det.idctasxcobrar and det.unineg = cta.unineg
+                and doc.flgmasivo in ('b') and DATEDIFF(DAY,cta.fechapago,cta.fechavenc) <![CDATA[ > ]]> 0 and cta.idtipostatusctacte = 19404 
+                <if test="tipoImpresion == 1" >
+                    and doc.flgimpresion is not null
+                </if>
+                <if test="tipoImpresion == 2" >
+                    and doc.flgimpresion is null
+                </if> 
+                and YEAR(cta.fechapago) = #{anio} and mat.idmatricula = m.idmatricula and MONTH(cta.fechapago) <![CDATA[ = ]]> #{mes}
+                and cta.mes in (select mes from @listaMes where mes <![CDATA[ <> ]]> #{mes} and mes <![CDATA[ > ]]> #{mes})
+                FOR XML PATH('')) is not null
+            </if>
+            <if test="flgMas == 6" >
+                and (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' FROM MT_CtasxCobrar cta 
+                inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+                Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg
+                where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg
+                and cta.idtipostatusctacte = 19404 and doc.flgmasivo in ('b') and DATEDIFF(DAY,cta.fechapago,cta.fechavenc) <![CDATA[ < ]]> 0
+                <if test="tipoImpresion == 1" >
+                    and doc.flgimpresion is not null
+                </if>
+                <if test="tipoImpresion == 2" >
+                    and doc.flgimpresion is null
+                </if>
+                order by cta.mes FOR XML PATH('')) is not null
+            </if>
+        </where>)
+        select l.unineg,l.idestudiante,l.codigoColegio,l.anio,l.flgmatricula,l.nombre,l.apellidoPat,l.apellidoMat,l.seccion,l.nombreGrado,l.ctaMeses,l.idnivelacademico,l.idgradoacademico 
+        from listaEstudiante l order by l.codigoColegio  
+        <!-- cambio gilmar, pensiones a tiempo em banco
+        declare @mes int
+        set @mes=4
+        ;with listaEstudiante as 
+        ( Select distinct
+        mat.unineg,
+        mat.idEstudiante,
+        est.codigo as codigoColegio,
+        mat.anio,
+        mat.flgMatricula,
+        per.nombre, 
+        per.apePat as apellidoPat, 
+        per.apeMat as apellidoMat,
+        mat.seccion,
+        gra.nombre as nombreGrado, 
+        (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()'
+        FROM MT_CtasxCobrar cta 
+        inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+        Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg
+        and det.idctasxcobrar = cta.idctasxcobrar and det.unineg = cta.unineg 
+        where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg 
+        and cta.idtipostatusctacte = 19404  and doc.flgmasivo = 'b' and cta.mes=@mes
+        and convert(date,cta.fechapago) <![CDATA[ <= ]]> convert(date,cta.fechavenc) order by cta.mes FOR XML PATH(''))
+        as ctaMeses, na.idNivelAcademico,gra.idGradoAcademico 
+        From MX_Matricula mat 
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg and mat.idEstudiante = per.idPersona and mat.unineg = per.unineg 
+        Inner Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico
+        Inner join MX_NivelAcademico na On gra.idNivelAcademico = na.idNivelAcademico 
+        WHERE mat.uniNeg = 'champs' and mat.flgMatricula = 1 and mat.anio=2017
+        and (
+        SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' 
+        FROM MT_CtasxCobrar cta inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+        Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg 
+        where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg and cta.idtipostatusctacte = 19404 
+        and doc.flgmasivo = 'b' and convert(date,cta.fechapago) <![CDATA[ <= ]]> convert(date,cta.fechavenc) and cta.mes=@mes order by cta.mes FOR XML PATH('')) is not null) 
+	   
+        select l.unineg,
+        l.idestudiante,
+        l.codigoColegio,
+        l.anio,
+        l.flgmatricula,
+        l.nombre,
+        l.apellidoPat,
+        l.apellidoMat,
+        l.seccion,
+        l.nombreGrado,
+        l.ctaMeses,
+        l.idnivelacademico,
+        l.idgradoacademico 
+        from listaEstudiante l 
+        order by l.idnivelacademico desc,l.idgradoacademico, l.seccion,l.apellidoPat,l.apellidoMat, l.nombre
+        
+        
+        declare @mes int
+        set @mes=4
+        ;with listaEstudiante as 
+        ( Select distinct
+        mat.unineg,
+        mat.idEstudiante,
+        est.codigo as codigoColegio,
+        mat.anio,
+        mat.flgMatricula,
+        per.nombre, 
+        per.apePat as apellidoPat, 
+        per.apeMat as apellidoMat,
+        mat.seccion,
+        gra.nombre as nombreGrado, 
+        (SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()'
+        FROM MT_CtasxCobrar cta 
+        inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+        Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg
+        and det.idctasxcobrar = cta.idctasxcobrar and det.unineg = cta.unineg 
+        where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg 
+        and cta.idtipostatusctacte = 19404 
+        and cta.anio=2017  
+        and year(cta.fechapago)=2017 
+        and month(cta.fechapago)=@mes
+        and doc.idtipolugarpago in (19301,19302)
+        and convert(date,cta.fechapago) <![CDATA[  > ]]> convert(date,cta.fechavenc)  
+        and mes!=2 and cta.mes <![CDATA[  < ]]> @mes
+        order by cta.mes FOR XML PATH(''))
+        as ctaMeses, na.idNivelAcademico,gra.idGradoAcademico 
+        From MX_Matricula mat 
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg and mat.idEstudiante = per.idPersona and mat.unineg = per.unineg 
+        Inner Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico
+        Inner join MX_NivelAcademico na On gra.idNivelAcademico = na.idNivelAcademico 
+        WHERE mat.uniNeg = 'champs' and mat.flgMatricula = 1 and mat.anio=2017
+        and (
+        SELECT CAST(cta.mes AS varchar(2)) + ':' AS 'data()' 
+        FROM MT_CtasxCobrar cta inner join MT_DocIngreso doc on cta.iddocingreso = doc.iddocingreso and cta.unineg = doc.unineg 
+        Inner Join MT_DetDocIngreso det On doc.iddocingreso = det.iddocingreso and doc.unineg = det.unineg 
+        where cta.idestudiante = mat.idestudiante and cta.anio = mat.anio and cta.unineg = mat.unineg 
+        and cta.idtipostatusctacte = 19404 
+        and cta.anio=2017  
+        and year(cta.fechapago)=2017 
+        and month(cta.fechapago)=@mes
+        and doc.idtipolugarpago in (19301,19302)
+        and convert(date,cta.fechapago) <![CDATA[  > ]]>  convert(date,cta.fechavenc)  
+        and mes!=2 and cta.mes <![CDATA[  < ]]> @mes
+        order by cta.mes FOR XML PATH('')) is not null) 
+	   
+        select l.unineg,
+        l.idestudiante,
+        l.codigoColegio,
+        l.anio,
+        l.flgmatricula,
+        l.nombre,
+        l.apellidoPat,
+        l.apellidoMat,
+        l.seccion,
+        l.nombreGrado,
+        l.ctaMeses,
+        l.idnivelacademico,
+        l.idgradoacademico 
+        from listaEstudiante l 
+        order by l.idnivelacademico desc,l.idgradoacademico, l.seccion,l.apellidoPat,l.apellidoMat, l.nombre-->
+    </select>
+    <select id="obtenerFiltroEstudianteMatriculadosPorUsu" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        Select  
+        uni.nombreUniNeg as nomUniNeg,
+        mat.idEstudiante as idestudiante,
+        concat(per.apePat,' ',per.apemat,', ',per.nombre) as nombre,
+        graHab.nombre as grado,   
+        graHab.nombre as nombreGrado,   
+        isnull(mat.seccion,'-') as seccion,
+        <!--convert(varchar,mat.fechaMatricula,103) as fechaMatricula,  -->
+        mat.fechaMatricula AS fechaMatricula,
+        concat(perso.apePat,' ',perso.apemat,', ',perso.nombre) + ' (' +mat.creaPor+')' as creaPor 
+        From MX_Matricula mat
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg 
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg 
+        Inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst 
+        left Join MX_GradoAcademico graHab On mat.idgradoacademico=graHab.idGradoAcademico 
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg   
+        left join MM_Usuario usu on usu.usuario=mat.creaPor and usu.unineg=mat.unineg
+        left join MO_Personal perso on perso.idpersonal=usu.idpersonal and perso.unineg=usu.unineg 
+        <where>  
+            <!--Solo Matriculados, por el momento-->    
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.flgMatricula = 1                
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>   
+         
+            <if test="fechaInicio != null" >
+                <![CDATA[  
+                and  mat.fechaMatricula >= #{fechaInicio}
+                ]]>
+            </if>  
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  mat.fechaMatricula <= #{fechaFin}
+                ]]>
+            </if>  
+            <if test="creaPor != null and creaPor != ''">
+                and   mat.creaPor = #{creaPor} 
+            </if> 
+            <!--
+            <if test="creaPor != null and creaPor != ''">
+                and ( mat.creaPor = #{creaPor} or mat.modiPor = #{creaPor} )
+            </if> -->
+        </where>
+        <!--GROUP BY uni.nombreUniNeg,mat.idEstudiante,graHab.nombre,graHab.idgradoacademico,
+        per.apePat,per.apemat,per.nombre,mat.anio,mat.seccion,mat.fechaMatricula ,mat.creaPor,
+        perso.apePat,perso.apemat,perso.nombre,graHab.idnivelacademico-->
+        order by mat.fechamatricula,graHab.idnivelacademico desc,graHab.idgradoacademico,per.apepat,per.apemat,per.nombre 
+    </select>
+    <select id="obtenerFiltroEstudianteMatriculados" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        <where>  
+            <!--Solo Matriculados, por el momento-->    
+            mat.uniNeg = #{unidadNegocioBean.uniNeg} and mat.flgMatricula = 1 and
+            mat.anio=#{anio}                     
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="estudianteBean.personaBean.apepat != null and estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.apemat != null and estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="estudianteBean.personaBean.nombre != null and estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="estudianteBean.gradoHabilitado.idGradoAcademico != null and estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>   
+        </where>
+        order by na.idNivelAcademico desc,gra.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <!-- fin masivo -->
+    <insert id="insertarMatricula" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        INSERT INTO MX_Matricula (idEstudiante,uniNeg,anio,seccion,fechaMatricula,idTipoMatricula,idGradoAcademico,idProgramacion,creaPor,creaFecha,flgMatricula,flgBachillerato)
+        Values (#{estudianteBean.personaBean.idPersona},#{unidadNegocioBean.uniNeg},#{anio},#{seccion},#{fechaMatricula},#{tipoMatriculaBean.idCodigo},
+        #{gradoAcademicoBean.idGradoAcademico},#{programacionBean.idProgramacion},#{creaPor},getDate(),#{flgMatricula},#{flgBachillerato})
+        <selectKey keyProperty="idMatricula" order="AFTER" resultType="Integer">
+            SELECT max(idMatricula) FROM MX_Matricula WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>
+    <insert id="insertarMatriculaAll" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        INSERT INTO MX_Matricula
+        (idEstudiante,
+        uniNeg,
+        anio,
+        seccion,
+        fechaMatricula,
+        idTipoMatricula,
+        idGradoAcademico,
+        <!--idProgramacion,-->
+        creaPor,
+        creaFecha,
+        flgMatricula,
+        flgBachillerato)
+        Values 
+        (#{estudianteBean.personaBean.idPersona},
+        #{unidadNegocioBean.uniNeg},
+        #{anio},
+        (select seccion from MX_Matricula where unineg = #{unidadNegocioBean.uniNeg} and idestudiante = #{estudianteBean.personaBean.idPersona} and anio = #{anio}),
+        #{fechaMatricula},
+        #{tipoMatriculaBean.idCodigo},
+        #{gradoAcademicoBean.idGradoAcademico},
+        <!--#{programacionBean.idProgramacion},-->
+        #{creaPor},
+        getDate(),
+        #{flgMatricula},
+        #{flgBachillerato})
+        <selectKey keyProperty="idMatricula" order="AFTER" resultType="Integer">
+            SELECT max(idMatricula) FROM MX_Matricula WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>
+    <insert id="insertarMatriculaEspecial" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        INSERT INTO MX_Matricula
+        (idEstudiante,
+        uniNeg,
+        anio,
+        fechaMatricula,
+        idTipoMatricula,
+        idGradoAcademico,
+        creaPor,
+        creaFecha,
+        flgMatricula,
+        flgBachillerato)
+        Values 
+        (#{estudianteBean.personaBean.idPersona},
+        #{unidadNegocioBean.uniNeg},
+        YEAR(#{fechaMatricula}),
+        null,
+        #{tipoMatriculaBean.idCodigo},
+        #{gradoAcademicoBean.idGradoAcademico},
+        #{creaPor},
+        getDate(),
+        #{flgMatricula},
+        #{flgBachillerato})
+        <selectKey keyProperty="idMatricula" order="AFTER" resultType="Integer">
+            SELECT max(idMatricula) FROM MX_Matricula WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    <update id="modificarMatricula" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        UPDATE MX_Matricula SET  
+        fechaMatricula = #{fechaMatricula},
+        idTipoMatricula = #{tipoMatriculaBean.idCodigo},
+        idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico},
+        <!-- idProgramacion = #{programacionBean.idProgramacion},-->
+        flgMatricula = #{flgMatricula},
+        flgBachillerato = #{flgBachillerato},
+        modiPor=#{modiPor},
+        creaPor=#{creaPor},
+        seccion=#{seccion}
+        <!--modiPor=#{modiPor}-->
+        Where idMatricula = #{idMatricula} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="corregirMatriculaOff" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        UPDATE MX_Matricula SET  
+        fechaMatricula = null,  
+        flgMatricula = 0, 
+        modiPor=null 
+        Where idestudiante = #{estudianteBean.idEstudiante} and unineg=#{unidadNegocioBean.uniNeg} and anio=#{anio}
+    </update>
+    <update id="modificarMatriculaSeccion" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        UPDATE MX_Matricula SET   
+        seccion=#{seccion} 
+        Where unineg=#{unidadNegocioBean.uniNeg} and anio=#{anio} and idestudiante=#{estudianteBean.personaBean.idPersona}
+    </update>
+    <update id="modificarMatriculaGradoAca" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        UPDATE MX_Matricula SET    
+        idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}, 
+        modiPor=#{modiPor}
+        Where uniNeg=#{unidadNegocioBean.uniNeg} 
+        and anio=#{anio} 
+        and idMatricula=#{idMatricula} 
+    </update>
+    <delete id="eliminarMatricula" parameterType="Integer">
+        Delete From MX_Matricula Where idMatricula = #{idMatricula} and unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+    <select id="llamarGenerarCtasxCobrar" parameterType="pe.marista.sigma.bean.MatriculaBean" resultType="Object">
+        exec PRO_GENERA_CTASXCOBRAR_V2
+        @@unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@anio = #{anio,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@idDiscente = #{estudianteBean.personaBean.idPersona,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@flgMatriPend = #{flgMatriPend,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@flgReProceso = #{flgReProceso,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@crIni = #{crIni,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@crPri = #{crPri,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@crSec = #{crSec,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@crBac = #{crBac,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        <!-- @@mes = #{mes,javaType=int,jdbcType=NUMERIC,mode=IN},-->
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@resultado = 1  
+    </select>  
+    <select id="llamarGenerarMatricula" parameterType="pe.marista.sigma.bean.MatriculaBean" resultType="Object">
+        exec PRO_GENERA_MATRICULA
+        @@unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@anio = #{anio,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@idDiscente = #{estudianteBean.personaBean.idPersona,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@idMatricula = #{idMatricula,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@crIni = #{crIni,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@crPri = #{crPri,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@crSec = #{crSec,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@crBac = #{crBac,javaType=int,jdbcType=NUMERIC,mode=IN}, 
+        @@creaPor= #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@resultado = 1
+    </select>  
+    <!--select id="llamarGenerarCtasxCobrar" parameterType="map" statementType="CALLABLE">
+        exec PRO_GENERA_CTASXCOBRAR
+        @@unineg = #{param.uniNeg,javaType=String,jdbcType=VARCHAR},
+        @@anio = #{param.anio,javaType=int,jdbcType=NUMERIC},
+        @@idDiscente = #{param.idDiscente,javaType=int,jdbcType=NUMERIC},
+        @@resultado = #{param,resultado,javaType=int,jdbcType=NUMERIC}
+    </select-->  
+    <delete id="eliminarCtasxcobrar" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        Delete From MT_CtasxCobrar Where idEstudiante = #{estudianteBean.personaBean.idPersona} and anio = #{anio}
+    </delete>
+    <!-- matricula vista --> 
+    <resultMap id="viewEntidadResultado" type="pe.marista.sigma.bean.ViewMatriculaBean">
+        <result property="anio" column="anioVista"/>
+        <result property="nivel" column="nivelVista"/>
+        <result property="uniNeg" column="uniNeg"/>
+        <result property="seccion" column="seccionVista"/> 
+        <result property="grado" column="gradoVista"/> 
+        <result property="matriculados" column="matriculadosVista"/>
+        <result property="pendientes" column="pendientesVista"/>
+        <result property="total" column="totalVista"/> 
+        <result property="totalIni" column="totalIni"/> 
+        <result property="totalPri" column="totalPri"/> 
+        <result property="totalSec" column="totalSec"/> 
+        <result property="totalSecB" column="totalSecB"/> 
+        <result property="totalIniPriSec" column="totalIniPriSec"/> 
+    </resultMap>
+    <!--<select id="verEstadisticasMatriculaPorAnio" resultMap="viewEntidadResultado" parameterType="pe.marista.sigma.bean.ViewMatriculaBean"> 
+        Select 
+        anio   as anioVista
+        ,nivel  as nivelVista 
+        ,seccion as seccionVista
+        ,grado   as gradoVista
+        ,matriculados as matriculadosVista
+        ,pendientes as pendientesVista
+        ,total as totalVista 
+        From VW_Estadistica_Matricula    
+        <where>   
+            <if test="anio != null and anio != 0">
+                anio = #{anio}
+            </if>
+        </where>
+    </select> 
+    -->
+    <select id="verEstadisticasMatriculaPorAnio" resultMap="viewEntidadResultado" parameterType="pe.marista.sigma.bean.ViewMatriculaBean"> 
+        Select 
+        anio   as anioVista
+        ,nivel  as nivelVista 
+        ,seccion as seccionVista
+        ,grado   as gradoVista
+        ,matriculados as matriculadosVista
+        ,pendientes as pendientesVista
+        ,total as totalVista 
+        from  estadisticamatricula (#{uniNeg}) 
+        <where>   
+            <if test="anio != null and anio != 0">
+                anio = #{anio}
+            </if>
+        </where>
+    </select> 
+    <select id="obtenerEstudiantePorMatricula" resultMap="matriculaResultado" parameterType="pe.marista.sigma.bean.MatriculaBean">
+        <include refid="consultaMatricula"/>
+        where per.idPersona =#{estudianteBean.personaBean.idPersona} and mat.uniNeg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerMaxId" parameterType="pe.marista.sigma.bean.MatriculaBean" resultType="Integer" >
+        select max(IDMATRICULA) from mx_matricula where unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerEstadisticaMatriculaCabecera" resultType="pe.marista.sigma.bean.reporte.EstMatriculaRepBean" parameterType="map">
+        update  MX_Matricula set seccion='' where seccion is null and anio=#{anio}
+        DECLARE
+        @anio int ,@tipofor varchar(30),@unineg varchar(6) ,@flg int, @fechaInicio date , @fechaFin date 
+        set @fechaInicio=#{fechaInicio}
+        set @fechaFin=#{fechaFin}
+        set @flg=#{flg}
+        set @anio=#{anio}
+        set @tipofor=#{tipFor}  
+        set @unineg=#{uniNeg} 
+        declare
+        @titulo varchar(200) = (case when @flg=1 then 'ESTADÍSTICAS '+convert(varchar,@anio)+ ' - ALUMNOS MATRICULADOS' 
+        when @flg=0 then 'ESTADÍSTICAS '+convert(varchar,@anio)+ ' - ALUMNOS INSCRITOS' end ),
+        @pie varchar(100)=(case when @flg=1 then 'TOTAL DE ALUMNOS MATRICULADOS' 
+        when @flg=0 then 'TOTAL DE ALUMNOS INSCRITOS' end ),
+        @cantM int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo=1 and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if> 
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo=1 and m.unineg=@unineg 
+        <if test="flg == 1">
+            and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+            and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantF int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo=0 and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if> 
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+         and tip.nombre=@tipofor and p.sexo=0 and m.unineg=@unineg
+        <if test="flg == 1">
+            and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+            and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        
+        @cantTotal int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo in (0,1) and m.unineg=@unineg and e.idtipostatusest =18004
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo in (0,1) and m.unineg=@unineg 
+        <if test="flg == 1">
+            and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+            and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>))
+        
+        ,@nombreunineg varchar(60)=(select nombreUniNeg from MO_UnidadNegocio where unineg=@unineg)
+        ,@rucunineg varchar(60)='R.U.C. '+(select RUC from MO_UnidadNegocio where unineg=@unineg)
+ 
+        select top 1 UPPER(@nombreunineg)as nombreUniNeg, @rucunineg as rucUniNeg, @cantM as cantM ,@cantF AS cantF,@cantTotal as cantTotal,@titulo as titulo,@pie as pie
+        from MX_Matricula m
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and m.unineg=@unineg
+        group by   niv.nombre  order by 1  
+    </select>
+    <select id="obtenerNiveles" resultType="pe.marista.sigma.bean.reporte.EstMatriculaNivelRepBean" parameterType="map">
+        DECLARE
+        @anio int ,@tipofor varchar(30),@unineg varchar(6),@flg int, @fechaInicio date , @fechaFin date 
+        set @fechaInicio=#{fechaInicio}
+        set @fechaFin=#{fechaFin}
+        set @flg=#{flg}
+        set @anio=#{anio}
+        set @tipofor=#{tipFor}
+        set @unineg=#{uniNeg}
+        declare 
+        @cantM int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio   
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo=1 and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>   
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo =1 and m.unineg=@unineg 
+        <if test="flg == 1">
+            and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+            and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantF int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if> 
+        and tip.nombre=@tipofor and p.sexo=0 and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if> 
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo=0 and m.unineg=@unineg 
+        <if test="flg == 1">
+            and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+            and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantTotal int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo in (0,1) and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo in (0,1) and m.unineg=@unineg 
+        <if test="flg == 1">
+            and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+            and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>))
+        
+        select distinct upper(niv.nombre) as nivel,@cantM as cantM ,@cantF AS cantF,@cantTotal as cantTotal
+        from MX_Matricula m
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where anio=@anio   
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and m.unineg=@unineg
+        group by   niv.nombre  order by 1  
+    </select>
+    
+    <select id="obtenerGradosAcademicoPorNivel" resultType="pe.marista.sigma.bean.reporte.EstMatriculaGradoAcaRepBean" parameterType="map">
+        DECLARE
+        @anio int ,@tipofor varchar(30),@nivel varchar(30),@unineg varchar(6),@flg int, @fechaInicio date , @fechaFin date 
+        set @fechaInicio=#{fechaInicio}
+        set @fechaFin=#{fechaFin}
+        set @flg=#{flg}
+        set @anio=#{anio}
+        set @tipofor=#{tipFor} 
+        set @nivel=#{nivel}
+        set @unineg=#{uniNeg}
+        declare
+        @cantM int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo=1 and niv.nombre=@nivel and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo =1 and niv.nombre=@nivel and m.unineg=@unineg 
+        <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantF int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo=0 and niv.nombre=@nivel and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo =0 and niv.nombre=@nivel and m.unineg=@unineg 
+        <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantTotal int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo in (0,1) and niv.nombre=@nivel and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and p.sexo in (0,1) and niv.nombre=@nivel and m.unineg=@unineg 
+        
+        <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>))
+        select distinct gra.idgradoacademico as idGradoAcademico,UPPER(gra.nombre) as nombreGradoAca, @cantM as cantM ,@cantF AS cantF,@cantTotal as cantTotal
+        from MX_Matricula m
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and tip.nombre=@tipofor and niv.nombre=@nivel and m.unineg=@unineg
+        group by   gra.idgradoacademico,gra.nombre order by 1 
+    </select>
+    <select id="obtenerSeccionesPorGradoAca" resultType="pe.marista.sigma.bean.reporte.EstMatriculaSeccGradoAcaRepBean" parameterType="map">
+        declare  @anio int ,@tipofor varchar(30),@nivel varchar(30),@idgradoaca int,@unineg varchar(6),@flg int, @fechaInicio date , @fechaFin date 
+        set @fechaInicio=#{fechaInicio}
+        set @fechaFin=#{fechaFin}
+        set @flg=#{flg}       
+        set @anio=#{anio}
+        set @tipofor=#{tipFor}
+        set @unineg=#{uniNeg}
+        set @idgradoaca=#{idGradoAcademico}
+        set @nivel=#{nivel}
+        DECLARE
+        @cantM int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico 
+        where (anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo=1 and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo =1 and m.unineg=@unineg 
+        
+        <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantF int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico 
+        where (anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo=0 and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo =0 and m.unineg=@unineg <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantTotal int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca  and p.sexo in (0,1) and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if>
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo in (0,1) and m.unineg=@unineg <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>))
+ 
+        select  isnull(m.seccion,'X') as seccion,@cantM as cantM ,@cantF AS cantF,@cantTotal as cantTotal
+        from MX_Matricula m 
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and niv.nombre=@nivel    and m.idgradoacademico=@idgradoaca and m.unineg=@unineg
+        group by   m.seccion order by 1 
+
+    </select>
+    <select id="obtenerDetSeccionPorGradoAca" resultType="pe.marista.sigma.bean.reporte.EstMatriculaSeccionRepBean" parameterType="map">
+        declare  @anio int ,@tipofor varchar(30),@nivel varchar(30),@idgradoaca int,@secc varchar(2),@unineg varchar(6),@flg int, @fechaInicio date , 
+        @fechaFin date 
+        set @fechaInicio=#{fechaInicio}
+        set @fechaFin=#{fechaFin}
+        set @flg=#{flg}
+        set @anio=#{anio}
+        set @tipofor=#{tipFor}
+        set @unineg=#{uniNeg}
+        set @idgradoaca=#{idGradoAcademico}
+        set @secc=#{secc} 
+        set @nivel=#{nivel}
+        DECLARE
+        @cantM int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico 
+        where (anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo=1 and m.seccion=@secc and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if> 
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo =1 and m.seccion=@secc and m.unineg=@unineg 
+        <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantF int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico 
+        where (anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo=0 and m.seccion=@secc and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if> 
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo =0 and m.seccion=@secc and m.unineg=@unineg 
+        <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>)),
+        @cantTotal int=(select count(*) as cant
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+        inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where (anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca  and p.sexo in (0,1) and m.seccion=@secc and m.unineg=@unineg and e.idtipostatusest =18004 
+        <if test="flg == 1">
+            and m.fechamatricula <![CDATA[ >= ]]> @fechaInicio 
+            and m.fechamatricula <![CDATA[ <= ]]> @fechaFin
+        </if> 
+        ) or 
+        ( anio=@anio 
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and m.idgradoacademico=@idgradoaca and p.sexo in (0,1) and m.seccion=@secc and m.unineg=@unineg 
+        <if test="flg == 1">
+        and e.idtipostatusest=(case when e.idtipostatusest=18002  and m.fechamatricula<![CDATA[ >= ]]>@fechaInicio  
+        and m.fechamatricula<![CDATA[ <= ]]>@fechaFin then 18002 else 0 end)
+        </if>))
+        select  REPLACE(m.seccion,' ','SS') AS seccion,@cantM as cantM ,@cantF AS cantF,@cantTotal as cantTotal
+        from MX_Matricula m 
+        inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+        inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+        where anio=@anio  
+        <if test="flg == 0">
+            and flgmatricula in (0,1)
+        </if>
+        <if test="flg == 1">
+            and flgmatricula=1 
+        </if>
+        and niv.nombre=@nivel  and m.idgradoacademico=@idgradoaca and m.seccion=@secc and m.unineg=@unineg
+        group by   m.seccion order by 1 
+    </select>
+    
+    <!-- METODO ENVIO MASIVO -->
+    <select id="obtenerFiltroEstudianteImpCompMasivoDeuda" resultMap="matriculaResultado" parameterType="map">
+        <include refid="consultaMatricula"/>
+        <where>  
+            <!--Solo Matriculados, por el momento-->    
+            mat.uniNeg = #{matriculaBean.unidadNegocioBean.uniNeg} and mat.flgMatricula = #{matriculaBean.flgMatriculaVista} and
+            mat.anio=#{matriculaBean.anio}                     
+            <if test="matriculaBean.estudianteBean.personaBean.idPersona != null and matriculaBean.estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{matriculaBean.estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.apepat != null and matriculaBean.estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{matriculaBean.estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.apemat != null and matriculaBean.estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{matriculaBean.estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.nombre != null and matriculaBean.estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{matriculaBean.estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>
+            and mat.idmatricula in 
+            (select cta.idmatricula from MT_CtasxCobrar cta where cta.unineg = #{matriculaBean.unidadNegocioBean.uniNeg} and cta.mes in 
+            <foreach item="item" index="index" collection="listaMeses" open="(" separator=" , " close=")" >
+                #{item}
+            </foreach>  and cta.idtipostatusctacte = #{matriculaBean.idTipoEstado})    and est.idtipostatusest in(18004)  
+        </where>
+        order by na.idNivelAcademico desc,gra.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    <select id="obtenerFiltroEstudianteImpCompMasivoDeudaCole" resultMap="matriculaResultado" parameterType="map">
+        <include refid="consultaMatricula"/>
+        <where>  
+            <!--Solo Matriculados, por el momento-->    
+            mat.uniNeg = #{matriculaBean.unidadNegocioBean.uniNeg} and mat.flgMatricula = #{matriculaBean.flgMatriculaVista} and
+            mat.anio=#{matriculaBean.anio} and est.idestudiante  in (select idestudiante from BASA2017.dbo.AVISO)              
+            <if test="matriculaBean.estudianteBean.personaBean.idPersona != null and matriculaBean.estudianteBean.personaBean.idPersona != ''">
+                and mat.idEstudiante = #{matriculaBean.estudianteBean.personaBean.idPersona} 
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.apepat != null and matriculaBean.estudianteBean.personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{matriculaBean.estudianteBean.personaBean.apepat},'%')
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.apemat != null and matriculaBean.estudianteBean.personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{matriculaBean.estudianteBean.personaBean.apemat},'%')
+            </if>
+            <if test="matriculaBean.estudianteBean.personaBean.nombre != null and matriculaBean.estudianteBean.personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{matriculaBean.estudianteBean.personaBean.nombre},'%')
+            </if> 
+            <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null and matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != 0">
+                and na.idNivelAcademico = #{matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != 0">
+                and  mat.idGradoAcademico = #{matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico}
+            </if>
+            and mat.idmatricula in 
+            (select cta.idmatricula from MT_CtasxCobrar cta where cta.unineg = #{matriculaBean.unidadNegocioBean.uniNeg} and cta.mes in 
+            <foreach item="item" index="index" collection="listaMeses" open="(" separator=" , " close=")" >
+                #{item}
+            </foreach>  and cta.idtipostatusctacte = #{matriculaBean.idTipoEstado})    
+        </where>
+        order by na.idNivelAcademico desc,gra.idGradoAcademico,mat.seccion,per.apepat,per.apemat
+    </select>
+    
+    <!-- METODO POR GRADO -->
+    <select id="obtenerImpresionPorDeUsuarioMatPorGrado" resultType="pe.marista.sigma.bean.reporte.EstudianteGeneralRepBean" parameterType="map">
+        declare  @anio int ,@unineg varchar(6) ,@creaPor varchar(20),@fechaMatriculaInicio Date,@fechaMatriculaFin Date
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        set @creaPor=#{creaPor}
+        set @fechaMatriculaInicio=#{fechaMatriculaInicio}
+        set @fechaMatriculaFin=#{fechaMatriculaFin}
+        Select distinct
+        mat.anio,
+        concat(per.apePat,' '+per.apeMat,' '+per.nombre) as nombre,  
+        per.nombre as nom,per.apePat,per.apeMat,
+        graHab.nombre as grado, 
+        mat.fechamatricula as fechaMatricula,
+        RIGHT( CONVERT(varchar, mat.fechamatricula, 108),8) AS horaMatricula,
+        mat.creapor as creaPor,
+        (case 
+        when est.idtiporesppago=17401 then 'P'
+        when est.idtiporesppago=17402 then 'M'
+        when est.idtiporesppago=17403 then 'A'
+        end) as respEco,
+        isnull(convert(varchar,per.fecnac,103),'-') as fecNaciAl,
+        isnull(convert(varchar,pa.fecnac,103),'-') as fecNaciPa,
+        isnull(convert(varchar,ma.fecnac,103),'-') as fecNaciMa,
+        isnull(convert(varchar,apo.fecnac,103),'-') as fecNaciApo,
+        pa.nrodoc as dniPa,
+        ma.nrodoc as dniMa,
+        isnull(apo.nrodoc,'-') as dniApo,
+        uni.nombreUniNeg as nomUniNeg,
+        na.idNivelAcademico as idNivelAcademicoHab,
+        gra.idGradoAcademico
+        From MX_Matricula mat 
+        Inner Join MX_Estudiante est On mat.idEstudiante=est.idestudiante and est.unineg = mat.unineg 
+        left join MX_Persona p on CONVERT(varchar(15),est.idresppago) = p.idpersona and est.unineg= mat.unineg 
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and est.unineg= mat.unineg 
+        Inner join MO_Codigo codStaEst on codStaEst.idCodigo = est.idTipoStatusEst 
+        left Join MX_GradoAcademico graHab On mat.idgradoacademico=graHab.idGradoAcademico 
+        left join MX_NivelAcademico naHab on graHab.idNivelAcademico = naHab.idNivelAcademico 
+        left Join MO_Codigo cod On mat.idTipoMatricula=cod.idCodigo 
+        left Join MX_GradoAcademico gra On mat.idGradoAcademico=gra.idGradoAcademico 
+        left join MX_NivelAcademico na on gra.idNivelAcademico = na.idNivelAcademico 
+        left Join MX_Programacion pro On mat.idProgramacion=pro.idProgramacion and pro.unineg = mat.unineg 
+        left Join MX_Proceso proce On pro.idProceso=proce.idProceso and proce.unineg = mat.unineg 
+        Left Join MO_Codigo tipPro ON proce.idTipoProceso=tipPro.idCodigo
+        left join MX_Familia fa on est.idfamilia = fa.idfamilia and mat.unineg = fa.unineg 
+        left join MX_Persona pa on pa.idpersona=fa.idpadre
+        left join MX_Persona ma on ma.idpersona=fa.idmadre
+        left join MO_UnidadNegocio uni on est.unineg = uni.unineg 
+        left join MX_FamiliarEstudiante faes on faes.idestudiante=est.idestudiante and idtipoparentesco not in(12402,12403)
+        left join MX_Persona apo on apo.idpersona=faes.idfamiliar
+        left join MO_Entidad ent on uni.RUC = ent.ruc and ent.unineg= mat.unineg left join MO_Distrito dis on ent.iddistrito = dis.iddistrito 
+        WHERE mat.uniNeg = #{uniNeg} and mat.flgMatricula in (1) and mat.anio=#{anio} and faes.status is null
+        <if test="creaPor != null and creaPor != '' " >
+            and mat.creaPor=#{creaPor}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null" >
+            and graHab.idnivelacademico = #{matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+        </if> 
+        <if test="matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null" >
+            and graHab.idgradoacademico = #{matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico}
+        </if> 
+        <if test="fechaMatriculaInicio != null">
+            and convert(date,mat.fechaMatricula) <![CDATA[ >= ]]> @fechaMatriculaInicio
+            and convert(date,mat.fechaMatricula) <![CDATA[ <= ]]> @fechaMatriculaFin
+        </if>        
+        <!--order by mat.creaPor desc,na.idNivelAcademico desc,gra.idGradoAcademico-->
+        <!--order by na.idNivelAcademico desc,gra.idGradoAcademico,per.apePat,per.apeMat,per.nombre-->
+        order by per.apePat,per.apeMat,per.nombre asc
+    </select>
+    <select id="obtenerSeccionPorGrado" parameterType="map" resultMap="matriculaResultado">
+        declare  @anio int, @idGradoAcademico int, @unineg varchar(6), @secc varchar(3)
+        set @anio=#{anio}
+        set @unineg=#{uniNeg} 
+        set @idGradoAcademico=#{idGradoAcademico}
+        select distinct m.seccion as seccion from MX_Matricula m
+        inner join MX_GradoAcademico gra on m.idgradoacademico=gra.idgradoacademico
+        where m.anio=#{anio} and m.idgradoacademico=#{idGradoAcademico} and m.unineg=#{uniNeg}         
+    </select>
+    <select id="obtenerCabeceraIngresantesRetiradosTotal" parameterType="map" resultType="pe.marista.sigma.bean.reporte.AlumnosIngresantesRetiradosRepBean">
+        DECLARE @anio INT= #{anio}
+        DECLARE @unineg varchar(6)=#{uniNeg}
+        declare @fechaInicioClases date=#{fechaInicioClases}
+        declare @fechaFinFiltro date =#{fechaFinFiltro}
+        select distinct
+        (select count(*) from MX_Matricula m
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaInicioClases ) as cantidadEstudianteInicio,
+        (select count(*) from MX_Matricula m
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ > ]]>@fechaInicioClases and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro) as cantidadIngresantes,
+        (select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002 and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro) as cantidadRetirados,
+        ((select count(*) from MX_Matricula m
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro)-
+        (select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002 and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro)) as cantidadTotal,
+        uni.nombreUniNeg ,
+        CONCAT('REPORTE DE ESTADO DE INGRESO Y RETIRO DE ALUMNOS DEL AÑO ',+CONVERT(VARCHAR(6),M.ANIO)) AS titulo,
+        'CANTIDAD DE ESTUDIANTES AL '+CONVERT(VARCHAR(20),@fechaInicioClases,103)AS SUB1,
+        'CANTIDAD DE ESTUDIANTES MATRICULADOS HASTA EL '+CONVERT(VARCHAR(20),@fechaFinFiltro,103)AS SUB2 ,
+        'Del: '+convert(varchar(20),@fechaInicioClases,103) +' al '+convert(varchar(20),@fechaFinFiltro,103) as sub3,
+        '' as usuario
+        FROM MX_Matricula M
+        INNER JOIN MO_UnidadNegocio uni on uni.unineg=m.unineg
+        inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE m.anio=@anio and uni.unineg=@unineg
+    </select>
+    <select id="obtenerNivelesIngresantesRetiradosTotal" parameterType="map" resultType="pe.marista.sigma.bean.reporte.AlumnosIngresantesRetiradosRepBean">
+        DECLARE @anio INT= #{anio}
+        DECLARE @unineg varchar(6)=#{uniNeg}
+        declare @fechaInicioClases date=#{fechaInicioClases}
+        declare @fechaFinFiltro date =#{fechaFinFiltro}
+        select distinct
+        (select count(*) from MX_Matricula m
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaInicioClases ) as cantidadEstudianteInicio,
+        (select count(*) from MX_Matricula m
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ > ]]>@fechaInicioClases and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro) as cantidadIngresantes,
+        (select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002 and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro) as cantidadRetirados,
+        ((select count(*) from MX_Matricula m
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro)-
+        ((select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002 and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro)))as cantidadTotal, 
+        upper(n.nombre) as nombreNivel,N.idnivelacademico as idNivelAcademico
+        FROM MX_Matricula M
+        INNER JOIN MO_UnidadNegocio uni on uni.unineg=m.unineg
+        inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE m.anio=@anio and uni.unineg=@unineg
+    </select>
+    <select id="obtenerDetalleIngresantesRetiradosTotal" parameterType="map" resultType="pe.marista.sigma.bean.reporte.AlumnosIngresantesRetiradosRepBean">
+        DECLARE @anio INT= #{anio}
+        DECLARE @unineg varchar(6)=#{uniNeg}
+        declare @fechaInicioClases date=#{fechaInicioClases}
+        declare @fechaFinFiltro date =#{fechaFinFiltro}
+        declare @idNivel int=#{idNivel}
+        SELECT distinct 
+        (select count(*) from MX_Matricula m
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaInicioClases and N.idnivelacademico=@idNivel) as cantidadEstudianteInicio,
+        (select count(*) from MX_Matricula m
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ > ]]>@fechaInicioClases and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro  
+        and N.idnivelacademico=@idNivel) as cantidadIngresantes,
+        (select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante 
+        inner join MX_GradoAcademico  g on g.idgradoacademico=ma.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002  and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases
+        and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro  and N.idnivelacademico=@idNivel) as cantidadRetirados,
+        ((select count(*) from MX_Matricula m
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro and N.idnivelacademico=@idNivel)-
+        (select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante 
+        inner join MX_GradoAcademico  g on g.idgradoacademico=ma.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002 and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases
+        and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro  and N.idnivelacademico=@idNivel)) as cantidadTotal,
+
+        G.nombre as nombreGrado,g.idgradoacademico as idGrado
+        FROM MX_Matricula M
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        INNER JOIN MO_UnidadNegocio uni on uni.unineg=m.unineg
+        WHERE m.anio=@anio and uni.unineg=@unineg  and n.idnivelacademico=@idNivel         
+    </select>
+    <select id="obtenerSubDetalleIngresantesRetiradosTotal" parameterType="map" resultType="pe.marista.sigma.bean.reporte.AlumnosIngresantesRetiradosRepBean">
+        DECLARE @anio INT= #{anio}
+        DECLARE @unineg varchar(6)=#{uniNeg}
+        declare @fechaInicioClases date=#{fechaInicioClases}
+        declare @fechaFinFiltro date =#{fechaFinFiltro}
+        declare @idGrado int=#{idGrado}
+        SELECT distinct  
+        (select count(*) from MX_Matricula m
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaInicioClases and g.idgradoacademico=@idGrado) as cantidadEstudianteInicio,
+        (select count(*) from MX_Matricula m
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ > ]]>@fechaInicioClases and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro  
+        and g.idgradoacademico=@idGrado) as cantidadIngresantes,
+        (select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante 
+        inner join MX_GradoAcademico  g on g.idgradoacademico=ma.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002 and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases
+        and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro  and g.idgradoacademico=@idGrado) as cantidadRetirados,
+        ((select count(*) from MX_Matricula m
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE anio=@anio and unineg=@unineg
+        and fechamatricula<![CDATA[ <= ]]>@fechaFinFiltro and g.idgradoacademico=@idGrado)-
+        (select count(*) from MX_Matricula ma
+        inner join MX_Estudiante es on es.idestudiante=ma.idestudiante 
+        inner join MX_GradoAcademico  g on g.idgradoacademico=ma.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        WHERE ma.anio=@anio and ma.unineg=@unineg
+        and es.idtipostatusest=18002 and flgmatricula=1
+        and es.fechastatusest<![CDATA[ >= ]]>@fechaInicioClases
+        and es.fechastatusest<![CDATA[ <= ]]>@fechaFinFiltro  and g.idgradoacademico=@idGrado))as cantidadTotal
+        FROM MX_Matricula M
+        inner join MX_GradoAcademico  g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        INNER JOIN MO_UnidadNegocio uni on uni.unineg=m.unineg
+        WHERE m.anio=@anio and uni.unineg=@unineg  and g.idgradoacademico=@idGrado
+    </select>
+    <select id="obtenerDeclaracionJuradaCabecera" parameterType="map" resultType="pe.marista.sigma.bean.reporte.DeclaracionJuradaRepBean">
+        declare @uniNeg varchar(20)=#{uniNeg}
+        DECLARE @anio INT=#{anio}
+        select  
+        u.nombreUniNeg,
+        'R.D.USE 07 N° 02315-1997' as primeraCabezal,
+        'R.D. 1652-2005' AS segundaCabezal,
+        'DECLARACIÓN DEL PADRE DE FAMILIA TUTOR LEGAL O APODERADO AÑO ELECTIVO '+convert(varchar(20),@anio) as titulo
+        from MO_UnidadNegocio u
+        where u.unineg=@uniNeg
+    </select>
+    <select id="obtenerDeclaracionJuradaPrimera" parameterType="map" resultType="pe.marista.sigma.bean.reporte.DeclaracionJuradaRepBean">
+        declare @idEstudiante varchar(15)=#{idEstudiante}
+        declare @uniNeg varchar(20)=#{uniNeg}
+        DECLARE @anio INT=#{anio}
+        select
+        CONCAT(p.apepat,' '+p.apemat,', '+p.nombre) as nombreAlumno,
+        e.codigo as codigoAlumno
+        from MX_Matricula m
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante
+        inner join MX_Persona p on p.idpersona=e.idestudiante
+        inner join MO_UnidadNegocio u on u.unineg=e.unineg
+        where u.unineg=@uniNeg and m.anio=@anio and flgmatricula=1
+        and m.idestudiante=@idEstudiante
+    </select>
+    <select id="obtenerDeclaracionJuradaSegunda" parameterType="map" resultType="pe.marista.sigma.bean.reporte.DeclaracionJuradaRepBean">
+        declare @idEstudiante varchar(15)=#{idEstudiante}
+        declare @uniNeg varchar(20)=#{uniNeg}
+        DECLARE @anio INT=#{anio}
+        select CONCAT(resp.apepat,' '+resp.apemat,', '+resp.nombre) as nombreRespPago, 
+        isnull(resp.nrodoc,'-') as dni,
+        isnull(f.direccion,'-') as direccion
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante 
+        left join MX_Persona resp on resp.idpersona=e.idresppago 
+        left join MX_Familiar f on f.idfamiliar=resp.idpersona
+        inner join MO_UnidadNegocio u on u.unineg=e.unineg 
+        where u.unineg=@uniNeg and m.anio=@anio and flgmatricula=1 and m.idestudiante=@idEstudiante
+    </select>
+    <select id="obtenerDeclaracionJuradaTercera" parameterType="map" resultType="pe.marista.sigma.bean.reporte.DeclaracionJuradaRepBean">
+        declare @idEstudiante varchar(15)=#{idEstudiante}
+        declare @uniNeg varchar(20)=#{uniNeg}
+        DECLARE @anio INT=#{anio}
+        select CONCAT(resp.apepat,' '+resp.apemat,', '+resp.nombre) as nombreRespPago, 
+        DATEPART(dd,GETDATE()) as dia,DATEname(mm,GETDATE()) as mes,
+        (select nrodoc from MO_PersonalCargo pc
+        inner join MO_Personal p on p.idpersonal=pc.idpersonal
+        where idcargo=20) as dniDirector
+        from MX_Matricula m 
+        inner join MX_Estudiante e on e.idestudiante=m.idestudiante 
+        left join MX_Persona resp on resp.idpersona=e.idresppago 
+        left join MX_Familiar f on f.idfamiliar=resp.idpersona
+        inner join MO_UnidadNegocio u on u.unineg=e.unineg 
+        where u.unineg=@uniNeg and m.anio=@anio and flgmatricula=1 and m.idestudiante=@idEstudiante
+    </select>
+</mapper>

@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.CatalogoDAO">  
+    
+    <!--<sql id="queryFamilia">
+        select idcatalogofamilia,nombre as nomFam from ML_CatalogoFamilia
+    </sql>-->
+    
+    <sql id="consultaCampos">
+        select	
+        c.idCatalogo,c.idtipocategoria,c.item,
+        c.precioref,c.cuenta,c.idtipounimed,c.creapor,
+        c.creafecha, c.idtipomoneda,
+        co.codigo as tipoCategoria ,
+        um.idcodigo as idTipoUnidadMedida,
+        um.codigo as tipoUnidadMedida,
+        ia.idinventarioactivo as inventarioActivo,   
+        inv.nroalmacen as nroAlmacen, 
+        tm.codigo as tipoMoneda,
+        inv.stockmin as stockMinInvAlm,inv.idCatalogo as idCatalogoIA,inv.stockactual as stockActInvAlm,
+        en.ruc, en.nombre  as nomEntidad,
+        ia.stockActual as stockActInvAct,ia.modelo
+        from ml_catalogo c
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        inner join MO_Codigo tm on c.idtipomoneda = tm.idcodigo 
+        left join ML_InventarioAlmacen inv on inv.idcatalogo = c.idcatalogo
+        left join ML_InventarioActivo ia on ia.idcatalogo = c.idcatalogo
+        left join MO_Entidad en on c.ruc = en.ruc
+        left join MO_Codigo co ON c.idtipocategoria = co.idcodigo 
+    </sql>
+    
+    <sql id="queryMaterial">
+        select 
+        un.unineg as uniNeg, ia.nroalmacen as nroAlmacen, 
+        c.idcatalogo,c.idtipocategoria,c.item,isnull(ia.stockactual,0) as stockActual,c.precioref,c.cuenta,
+        um.idcodigo as idTipoUnidadMedida,um.codigo as tipoUnidadMedida,tm.idcodigo as idTipoMoneda,tm.codigo as tipoMoneda
+        from ML_Catalogo c      
+        left join ML_InventarioAlmacen ia on c.idcatalogo = ia.idcatalogo
+        left join mo_codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on c.idtipomoneda = tm.idcodigo
+        left join MO_UnidadNegocio un on un.unineg=ia.unineg
+        WHERE c.idtipocategoria = 18201 and ia.unineg = #{uniNeg}
+    </sql>
+    
+    <sql id="queryActivo">
+        select c.idcatalogo,c.idtipocategoria,c.item,1 as stockActual,c.precioref,c.cuenta,
+        um.idcodigo as idTipoUnidadMedida,um.codigo as tipoUnidadMedida,tm.idcodigo as idTipoMoneda,tm.codigo as tipoMoneda ,
+        un.unineg as uniNeg
+        from ML_Catalogo c
+        left join ML_InventarioActivo ia on c.idcatalogo = ia.idcatalogo
+        left join mo_codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on c.idtipomoneda = tm.idcodigo
+        left join MO_UnidadNegocio un on un.unineg=ia.unineg
+        WHERE c.idtipocategoria = 18202 and ia.unineg = #{uniNeg}
+    </sql>
+    
+    <sql id="queryServicio">
+        select c.idcatalogo,c.idtipocategoria,c.item,1 as stockActual,c.precioref,c.cuenta,
+        um.idcodigo as idTipoUnidadMedida,um.codigo as tipoUnidadMedida,tm.idcodigo as idTipoMoneda,tm.codigo as tipoMoneda
+        from ML_Catalogo c
+        left join mo_codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on c.idtipomoneda = tm.idcodigo
+        where idtipocategoria= 18203
+    </sql>
+    
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/>
+        <result property="stockActual" column="stockActual"/>
+        <result property="precioRef" column="precioRef"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="cantidad" column="cantidad"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="creaFecha" column="creafecha"/>
+        <association property="tipoUnidadMedidaBean" column="idTipoUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="uniMedidaResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado"/>
+        <association property="inventarioAlmacenBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.InventarioAlmacenBean"
+                     resultMap="inventarioAlmacenResultado"/><!--AUMENTE--> 
+        <association property="inventarioActivoBean" column="idInventarioActivo"
+                     javaType="pe.marista.sigma.bean.InventarioActivoBean"
+                     resultMap="inventarioActivoResultado"/><!--AUMENTE-->
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/><!--AUMENTE-->
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="categoriaResultado"/><!--AUMENTE-->
+    </resultMap>
+     
+    <resultMap id="uniMedidaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUnidadMedida"/>
+        <result property="codigo" column="tipoUnidadMedida"/>
+    </resultMap>
+    <resultMap id="monedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="inventarioAlmacenResultado" type="pe.marista.sigma.bean.InventarioAlmacenBean">
+        <id property="idCatalogo" column="idCatalogoIA"/>
+        <result property="precioRef" column="precioRef"/>
+        <result property="nroAlmacen" column="nroAlmacen"/>
+        <result property="stockMin" column="stockMinInvAlm"/>
+        <result property="stockActual" column="stockActInvAlm"/> <!--AUMENTE-->  
+    </resultMap>
+    <resultMap id="inventarioActivoResultado" type="pe.marista.sigma.bean.InventarioActivoBean">
+        <id property="idInventarioActivo" column="inventarioActivo"/>
+        <result property="stockActual" column="stockActInvAct"/> <!--AUMENTE-->
+    </resultMap>
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nomentidad"/> <!--AUMENTE-->
+    </resultMap>
+    <resultMap id="categoriaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/> <!--AUMENTE-->
+    </resultMap>
+    
+    <select id="obtenerTodos" resultMap="catalogoResultado" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        <include refid="consultaCampos" />
+        order by idcatalogo
+    </select>
+    <select id="obtenerCatalogoPorId" resultMap="catalogoResultado">
+        <include refid="consultaCampos" /> where c.idCatalogo = #{idCatalogo}
+    </select>
+    
+    <select id="obtenerMateriales" resultMap="catalogoResultado" parameterType="String">
+        <include refid="queryMaterial" /> 
+        order by c.creafecha desc
+    </select>
+    <select id="obtenerActivos" resultMap="catalogoResultado" parameterType="String">
+        <include refid="queryActivo" />
+        order by c.creafecha desc
+    </select> 
+    <select id="obtenerCatalogoPorNombre" parameterType="String" resultMap="catalogoResultado">
+        <include refid="consultaCampos" />
+        where item = #{item}
+        order by item
+    </select> 
+    <select id="obtenerServicios" parameterType="Integer" resultMap="catalogoResultado">
+        <include refid="queryServicio" />
+        <!--     where cf.idcatalogofamilia = #{idCatalogoFamilia}-->
+        order by c.creafecha desc
+    </select> 
+    <select id="obtenerPorCatalogo" resultMap="catalogoResultado" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        <include refid="consultaCampos" />
+        where idCatalogo = #{idCatalogo} 
+    </select> 
+    <select id="obtenerPorId" resultMap="catalogoResultado" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        <include refid="consultaCampos" />where c.idCatalogo = #{idCatalogo}
+    </select> 
+    <select id="obtenerPorFiltro" resultMap="catalogoResultado" parameterType="pe.marista.sigma.bean.CatalogoBean" >
+        <include refid="consultaCampos" />
+        <where>
+            <if test="item != null and item  != '' ">
+                and upper(c.item) like concat('%',#{item},'%')
+            </if>
+        </where>
+    </select>
+    
+    <select id="obtenerPorFiltroCat" resultMap="catalogoResultado" parameterType="pe.marista.sigma.bean.CatalogoBean" >
+        <include refid="consultaCampos" />
+        <where>
+            <if test="item != null and item != ''">
+                upper(c.item) like concat('%',#{item},'%') 
+            </if>
+            <if test="tipoUnidadMedidaBean.idCodigo != null" >
+                and UPPER(c.idtipounimed) like concat('%',#{tipoUnidadMedidaBean.idCodigo},'%')
+            </if>
+            <if test="tipoCategoriaBean.idCodigo != null">
+                and UPPER(c.idtipocategoria) like concat('%',#{tipoCategoriaBean.idCodigo},'%')
+            </if>
+            <if test="tipoMonedaBean.idCodigo != null">
+                and UPPER(c.idtipomoneda) like concat('%',#{tipoMonedaBean.idCodigo},'%')
+            </if>
+            <if test="entidadBean.ruc != null and entidadBean.ruc != ''">
+                and UPPER(c.ruc) like concat('%',#{entidadBean.ruc},'%')
+            </if>
+        </where>
+    </select>
+    
+    <!-- FILTRO DE PRUEBA -->
+    <select id="obtenerPorFiltroCategoria" resultMap="catalogoResultado" parameterType="pe.marista.sigma.bean.CatalogoBean" >
+        <include refid="consultaCampos" />
+        <where>
+            <if test="item != null and item != ''">
+                upper(c.item) like concat('%',#{item},'%') 
+            </if>
+            <if test="idTipoUnidadMedida != null" >
+                and c.idtipounimed = idTipoUnidadMedida
+            </if>
+            <if test="idTipoCategoria != null">
+                and c.idtipocategoria = #{idTipoCategoria}
+            </if>
+            <if test="idtipoMoneda != null">
+                and c.idtipomoneda = #{idtipoMoneda}
+            </if>
+            <if test="ruc != null and ruc != ''">
+                and UPPER(c.ruc) like concat('%',#{ruc},'%')
+            </if>
+        </where>
+    </select>
+        
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        <!--insert into ml_catalogo (item,idCatalogoCategoria,idTipoUniMed,idTipoMoneda,precioRef,cuenta,creaPor)
+ values(#{item},#{catalogoCategoriaBean.idCatalogoCategoria},#{tipoUnidadMedidaBean.idCodigo},
+        #{tipoMonedaBean.idCodigo},#{precioRef},#{cuenta},#{creaPor})-->
+        insert into ml_catalogo (item,idtipoCategoria,idtipounimed,idTipoMoneda,precioRef,cuenta,creaPor,creafecha,ruc)
+        values(#{item},#{tipoCategoriaBean.idCodigo},#{tipoUnidadMedidaBean.idCodigo},
+        #{tipoMonedaBean.idCodigo},#{precioRef},#{cuenta},#{creaPor},getDate(),#{entidadBean.ruc})
+        <selectKey keyProperty="idCatalogo" order="AFTER" resultType="Integer">
+            SELECT max(idCatalogo) from ML_Catalogo 
+        </selectKey>  
+    </insert>  
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        <!--
+        update ml_catalogo 
+        set 
+        item = #{item},
+        idCatalogoCategoria = #{catalogoCategoriaBean.idCatalogoCategoria},
+        idTipoUniMed = #{tipoUnidadMedidaBean.idCodigo},
+        idTipoMoneda = #{tipoMonedaBean.idCodigo},
+        precioRef = #{precioRef},
+        cuenta = #{cuenta},
+        creaPor = #{creaPor}
+        where idCatalogo = #{idCatalogo}
+        -->
+        update ml_catalogo 
+        set 
+        item = #{item},
+        idtipounimed = #{tipoUnidadMedidaBean.idCodigo},
+        idTipoMoneda = #{tipoMonedaBean.idCodigo},
+        idTipoCategoria = #{tipoCategoriaBean.idCodigo},
+        precioRef = #{precioRef},
+        cuenta = #{cuenta},
+        modiPor = #{modiPor},
+        ruc = #{entidadBean.ruc}
+        where idCatalogo = #{idCatalogo}
+    </update> 
+    <update id="actualizarPrecioRef" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        update ml_catalogo 
+        set  
+        precioRef = #{precioRef}  
+        where idCatalogo = #{idCatalogo}
+    </update>  
+    <update id="modificarItemDetalleOrdenCompra" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        update ml_catalogo 
+        set  
+        item = #{item}  
+        where idCatalogo = #{idCatalogo}
+    </update>  
+    <update id="modificarPorEntidad" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        update ml_catalogo 
+        set  
+        ruc = #{entidadBean.ruc}  
+        where idCatalogo = #{idCatalogo}
+    </update>
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        delete from ml_catalogo
+        where idCatalogo = #{idCatalogo}
+    </delete>  
+    
+    <!-- METODOS NEW INVENTARIO ALMACEN -->
+    <select id="obtenerCatalogoPorAlmacen" resultMap="catalogoResultado" parameterType="String">
+        select	
+        c.idCatalogo,c.idtipocategoria,c.item,
+        c.precioref,c.cuenta,c.idtipounimed,c.creapor,
+        c.creafecha, c.idtipomoneda,
+        co.codigo as tipoCategoria ,
+        um.idcodigo as idTipoUnidadMedida,
+        um.codigo as tipoUnidadMedida,
+        ia.idinventarioactivo as inventarioActivo,   
+        inv.nroalmacen as nroAlmacen, 
+        tm.codigo as tipoMoneda,
+        inv.stockmin as stockMinInvAlm,inv.idCatalogo as idCatalogoIA,inv.stockactual as stockActInvAlm,
+        en.ruc, en.nombre  as nomEntidad,
+        ia.stockActual as stockActInvAct,ia.modelo
+        from ml_catalogo c
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        inner join MO_Codigo tm on c.idtipomoneda = tm.idcodigo 
+        left join ML_InventarioAlmacen inv on inv.idcatalogo = c.idcatalogo
+        left join ML_InventarioActivo ia on ia.idcatalogo = c.idcatalogo
+        left join MO_Entidad en on c.ruc = en.ruc
+        left join MO_Codigo co ON c.idtipocategoria = co.idcodigo 
+        where c.idcatalogo not in(select ma.idcatalogo from ML_inventarioalmacen ma where ma.unineg = #{uniNeg})
+        order by idcatalogo 
+    </select>
+    
+    <!-- MAX CODIGO CATALOGO -->
+    <select id="obtenerUltimoCatalogo" resultType="Integer" parameterType="String" >
+        SELECT max(idCatalogo) from ML_Catalogo 
+    </select>
+    
+    <!-- PRO CARGAR ITEM -->
+    <select id="execProInventarioCarga" resultMap="catalogoResultado" parameterType="pe.marista.sigma.bean.CatalogoBean" >
+        exec PRO_INVENTARIOCARGA
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@objFile = #{objFile,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    <update id="modificarItemBlockDetalleOrdenCompra" parameterType="pe.marista.sigma.bean.CatalogoBean">
+        update ml_catalogoBlock 
+        set  
+        item = #{item}  
+        where idCatalogo = #{idCatalogo}
+    </update> 
+</mapper>

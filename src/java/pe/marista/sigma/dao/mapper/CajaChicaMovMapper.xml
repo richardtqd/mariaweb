@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.marista.sigma.dao.CajaChicaMovDAO">  
+    <sql id="consultaCampos">
+        SELECT 
+        caja.uniNeg,
+        caja.idCajaChicaMov,
+        caja.idCajaChica,
+        chi.fecApertura,
+        chi.fecCierre,
+        caja.motivo,
+        caja.flgMov,
+        caja.anio,     
+        caja.idSolicitudCajaCH,
+        caja.idTipoSolicitud,
+        ts.nombre as nombreTS,
+        caja.fecOrden,
+        caja.fecPago,
+        caja.idPersonal,
+        per.nombre as nomSol,
+        per.apepat as apePatSol,
+        per.apemat as apeMatSol,
+        caja.idCajero,
+        caja.idTipoMoneda,
+        mon.codigo as codigoMoneda,
+        caja.monto,
+        caja.fecLiquida,
+        caja.montoDevuelto, 
+        isnull(caja.flgRendicion,'0') as flgRendicion, 
+        ( case when isnull(caja.flgRendicion,0)=0  then 'false' else 'true' end) as flgRendicionDis,
+        caja.creaPor,
+        caja.creaFecha,
+        caja.modiPor,
+        caja.idDevolucion,
+        sol.idPersonal as idPersonalSol,
+        sol.idTipoSolicitante,
+        (
+        case when sol.idTipoSolicitante ='COL' then concat(UPPER(per.apepat),' ',UPPER(per.apemat),', ',UPPER(per.nombre))
+        when sol.idTipoSolicitante ='PER' then concat(UPPER(pers.apepat),' ',UPPER(pers.apemat),', ',UPPER(pers.nombre))
+        when sol.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end
+        ) as nombreSolicitante,
+        sol.nomRespCheque,
+        sol.obs,
+        sol.idTipoMoneda as idTipoMonedaSol,
+        tipMonSol.codigo as codigoMonedaSol,
+        sol.fechaSol as fechaSol,
+        sol.idSolicitudCajaCH as idSolicitudCajaChSol,
+        caja.idDevolucion,
+        caja.extorno
+        FROM MT_CajaChicaMov caja
+        Left Join MT_SolicitudCajaCH sol On caja.idSolicitudCajaCH = sol.idSolicitudCajaCH and caja.uniNeg = sol.uniNeg
+        LEFT JOIN MO_Codigo         tipMonSol on tipMonSol.idCodigo = sol.idTipoMoneda
+        Left Join MO_Personal per on sol.idPersonal = per.idPersonal and per.uniNeg = sol.uniNeg
+        left Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud
+        Left Join MO_Codigo mon ON mon.idCodigo = caja.idTipoMoneda
+        Inner Join MT_CajaChica chi On caja.idCajaChica=chi.idCajaChica and caja.unineg = chi.unineg 
+        left join MX_Persona pers on sol.idPersonal =pers.idPersona and pers.uniNeg=sol.uniNeg
+        left join MO_Entidad ent on sol.idPersonal =ent.ruc and ent.uniNeg=sol.uniNeg 
+    </sql>
+    <resultMap id="cajaChicaResultado" type="pe.marista.sigma.bean.CajaChicaMovBean">
+        <id property="cajaChicaBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idCajaChicaMov" column="idCajaChicaMov"/>
+        <id property="cajaChicaBean.idCajaChica" column="idCajaChica"/>
+        <result property="cajaChicaBean.fecApertura" column="fecApertura"/>
+        <result property="cajaChicaBean.fecCierre" column="fecCierre"/>
+        <result property="flgMov" column="flgMov"/>
+        <result property="anio" column="anio"/>
+        <result property="motivo" column="motivo"/>
+        <result property="solicitudCajaCHBean.idSolicitudCajaCh" column="idSolicitudCajaCH" />
+        <result property="solicitudCajaCHBean.tipoSolicitudBean.idTipoSolicitud" column="idTipoSolicitud" />
+        <result property="fecOrden" column="fecOrden" />
+        <result property="fecPago" column="fecPago" />
+        <result property="solicitudCajaCHBean.personalBean.idPersonal" column="idPersonal" />
+        <result property="tipoMonedaBean.idCodigo" column="idTipoMoneda" />
+        <result property="tipoMonedaBean.codigo" column="codigoMoneda" />
+        <result property="monto" column="monto" />
+        <result property="fecLiquida" column="fecLiquida" />
+        <result property="montoDevuelto" column="montoDevuelto" />
+        <result property="flgRendicion" column="flgRendicion" />
+        <result property="flgRendicionDis" column="flgRendicionDis" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="idDevolucion" column="idDevolucion" />
+        <result property="nombreSolicitante" column="nombreSolicitante" />
+        <result property="extorno" column="extorno" />
+        <association property="solicitudCajaCHBean" column="idSolicitudCajaCH"
+                     javaType="pe.marista.sigma.bean.SolicitudCajaCHBean"
+                     resultMap="solicitudCCHResultado"/>
+    </resultMap>
+    <resultMap id="solicitudCCHResultado" type="pe.marista.sigma.bean.SolicitudCajaCHBean"> 
+        <id property="personalBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idSolicitudCajaCh" column="idSolicitudCajaChSol"/>
+        <result property="fechaSol" column="fechaSol"/>  
+        <result property="nomRespCheque" column="nomRespCheque"/>  
+        <result property="obs" column="obs"/>  
+        <result property="objeto" column="objeto"/>
+        <result property="idPersonalSol" column="idPersonalSol"/>
+        <association property="tipoSolicitudBean" column="idTipoSolicitud"
+                     javaType="pe.marista.sigma.bean.TipoSolicitudBean"
+                     resultMap="tipoSolicitudResultado"/>
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultadoSol"/>
+    </resultMap>
+    <resultMap id="tipoSolicitudResultado" type="pe.marista.sigma.bean.TipoSolicitudBean">  
+        <id property="idTipoSolicitud" column="idTipoSolicitud"/>
+        <result property="nombre" column="nombreTS"/>  
+    </resultMap>
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="nombre" column="nomSol"/>
+        <result property="apepat" column="apePatSol"/>
+        <result property="apemat" column="apeMatSol"/>         
+    </resultMap> 
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="codigoMoneda"/>
+    </resultMap>
+    
+    <resultMap id="tipoMonedaResultadoSol" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMonedaSol"/>
+        <result property="codigo" column="codigoMonedaSol"/>
+    </resultMap>
+    <select id="obtenerCajaChicaMovPorFiltro" resultMap="cajaChicaResultado" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        <include refid="consultaCampos" />
+        <where>
+            caja.uniNeg = #{cajaChicaBean.unidadNegocioBean.uniNeg} and ts.nombre = #{solicitudCajaCHBean.tipoSolicitudBean.nombre} and flgMov = 0
+            <!--<if test="cajaChicaBean !=null and cajaChicaBean.inicioFecApertura != null">
+                 <![CDATA[
+                and convert(date,chi.fecApertura) >= #{cajaChicaBean.inicioFecApertura}
+                ]]>
+            </if>  
+            <if test="cajaChicaBean !=null and cajaChicaBean.finFecApertura != null">
+                <![CDATA[
+                and convert(date,chi.fecApertura) <= #{cajaChicaBean.finFecApertura}
+                ]]>
+            </if>  -->
+            <if test="cajaChicaBean !=null and cajaChicaBean.inicioFecApertura != null">
+                 <![CDATA[
+                and convert(date,caja.fecPago) >= #{cajaChicaBean.inicioFecApertura}
+                ]]>
+            </if>  
+            <if test="cajaChicaBean !=null and cajaChicaBean.finFecApertura != null">
+                <![CDATA[
+                and convert(date,caja.fecPago) <= #{cajaChicaBean.finFecApertura}
+                ]]>
+            </if>  
+            <if test="cajaChicaBean !=null and cajaChicaBean.inicioFecCierre != null">
+                 <![CDATA[
+                and convert(date,chi.fecCierre) >= #{cajaChicaBean.inicioFecCierre}
+                ]]>
+            </if>  
+            <if test="cajaChicaBean !=null and cajaChicaBean.finFecCierre != null">
+                <![CDATA[
+                and convert(date,chi.fecCierre) <= #{cajaChicaBean.finFecCierre}
+                ]]>
+            </if>  
+            <if test="motivo != null and motivo != '' " >
+                and upper(caja.motivo) like concat('%',#{motivo},'%') 
+            </if>  
+        </where>
+        order by caja.creaFecha asc
+    </select>
+    <select id="obtenerCajaChicaMovPorCCH" resultMap="cajaChicaResultado" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        <include refid="consultaCampos" />
+        Where caja.uniNeg = #{cajaChicaBean.unidadNegocioBean.uniNeg} and caja.idCajaChica = #{cajaChicaBean.idCajaChica}
+        order by caja.creaFecha asc
+    </select>
+    <select id="obtenerCajaChicaMovPorId" resultMap="cajaChicaResultado">
+        <include refid="consultaCampos" />Where caja.uniNeg = #{cajaChicaBean.unidadNegocioBean.uniNeg} and caja.idCajaChicaMov = #{idCajaChicaMov}
+    </select>
+    <insert id="insertarCajaChicaMov" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        Insert Into MT_CajaChicaMov (
+        idCajaChicaMov,
+        uniNeg,
+        idCajaChica,
+        flgMov,
+        anio,
+        motivo,
+        idSolicitudCajaCH,
+        idTipoSolicitud,
+        fecOrden,
+        fecPago,
+        idPersonal,
+        idCajero,
+        idTipoMoneda,
+        monto,
+        fecLiquida,
+        montodevuelto,
+        creaPor,
+        creaFecha)
+        Values (0,
+        #{cajaChicaBean.unidadNegocioBean.uniNeg},
+        #{cajaChicaBean.idCajaChica},
+        #{flgMov},
+        #{anio},
+        #{motivo},
+        #{solicitudCajaCHBean.idSolicitudCajaCh},
+        #{solicitudCajaCHBean.tipoSolicitudBean.idTipoSolicitud},
+        #{fecOrden},
+        #{fecPago},
+        #{solicitudCajaCHBean.personalBean.idPersonal},
+        #{cajaChicaBean.personalCajeroBean.idPersonal},
+        #{tipoMonedaBean.idCodigo},
+        #{monto},
+        #{fecLiquida},
+        #{montoDevuelto},
+        #{creaPor},
+        getDate())
+        <selectKey keyProperty="idCajaChicaMov2" order="AFTER" resultType="Integer">
+            SELECT max(idCajaChicaMov) FROM MT_CajaChicaMov WHERE uniNeg = #{cajaChicaBean.unidadNegocioBean.uniNeg};
+        </selectKey>
+    </insert> 
+    <update id="modificarCajaChicaMov" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        Update MT_CajaChicaMov set
+        idCajaChica = #{cajaChicaBean.idCajaChica},
+        flgMov = #{flgMov},
+        anio = #{anio},
+        idSolicitudCajaCH = #{solicitudCajaCHBean.idSolicitudCajaCh},
+        idTipoSolicitud = #{solicitudCajaCHBean.tipoSolicitudBean.idTipoSolicitud},
+        fecOrden = #{fecOrden},
+        fecPago = #{fecPago},
+        idPersonal = #{solicitudCajaCHBean.personalBean.idPersonal},
+        idCajero = #{cajaChicaBean.personalCajeroBean.idPersonal},
+        idTipoMoneda = #{tipoMonedaBean.idCodigo},
+        monto = #{monto},
+        fecLiquida = #{fecLiquida},
+        montodevuelto = #{montoDevuelto},
+        modiPor = #{modiPor}
+        Where uniNeg = #{cajaChicaBean.unidadNegocioBean.uniNeg} and idCajaChicaMov = #{idCajaChicaMov}   
+    </update>
+    <delete id="eliminarCajaChicaMov" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        Delete from MT_CajaChicaMov Where uniNeg = #{cajaChicaBean.unidadNegocioBean.uniNeg} and idCajaChicaMov = #{idCajaChicaMov} 
+    </delete>
+    <update id="cambiarEstadoSolicitudCCh" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        Update MT_SolicitudCajaCh set 
+        idTipoStatusSolCajaCh = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusSolCajaChBean.tipoCodigoBean.descripcion} and idTipoCodigo=#{tipoStatusSolCajaChBean.codigo})
+        Where idSolicitudCajaCh = #{idSolicitudCajaCh} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoRendicionMov" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        Update MT_CajaChicaMov set
+        flgRendicion = #{flgRendicion} 
+        Where uniNeg = #{cajaChicaBean.unidadNegocioBean.uniNeg} and idCajaChicaMov = #{idCajaChicaMov} 
+    </update>
+    
+    <update id="actualizarIdDevolucion" parameterType="pe.marista.sigma.bean.CajaChicaMovBean">
+        Update MT_CajaChicaMov set
+        idDevolucion = #{idCajaChicaMov2} 
+        Where idCajaChicaMov = #{idDevolucion}
+    </update>
+    <!--Reportes-->
+    <select id="obtenerCajaChicaMovRep" parameterType="pe.marista.sigma.bean.CajaChicaBean" resultType="pe.marista.sigma.bean.reporte.CajaChicaMovRepBean">
+        SELECT
+        caja.uniNeg,
+        uni.nombreUniNeg,
+        uniCo.codigo,
+        chi.fecApertura,
+        chi.fecCierre,
+        chi.aperturasol,
+        chi.devueltoSol,
+        chi.utilizadosol,
+        chi.saldosol,
+        chi.aperturadol,
+        chi.devueltoDol,
+        chi.utilizadodol,
+        chi.saldoDol,
+        caja.motivo,
+        ts.nombre as nombreTS,
+        caja.fecPago,
+        caja.flgMov,
+        concat(per.apepat,' ',per.apemat,' ',per.nombre) as nombreCompleto,
+        concat(perCaj.apepat,' ',perCaj.apemat,' ',perCaj.nombre) as nombreCompletoCajero,
+        mon.codigo as codigoMoneda,
+        mon.idCodigo as idMoneda,
+        caja.monto,
+        (select isnull(sum(monto),0.00) from MT_CajaChicaMov mov1 where mov1.uniNeg = caja.unineg and mov1.flgMov=1and mov1.idTipoMoneda = 14901 and mov1.idcajachica=caja.idcajachica) as montoEntSoles,
+        (select isnull(sum(monto),0.00) from MT_CajaChicaMov mov1 where mov1.uniNeg = caja.unineg and mov1.flgMov=0 and mov1.idTipoMoneda = 14901 and mov1.idcajachica=caja.idcajachica) as montoSalSoles,
+        (select isnull(sum(monto),0.00) from MT_CajaChicaMov mov2 where mov2.uniNeg = caja.unineg and mov2.flgMov=1 and mov2.idTipoMoneda = 14902 and mov2.idcajachica=caja.idcajachica) as montoEntDolares,
+        (select isnull(sum(monto),0.00) from MT_CajaChicaMov mov2 where mov2.uniNeg = caja.unineg and mov2.flgMov=0 and mov2.idTipoMoneda = 14902 and mov2.idcajachica=caja.idcajachica) as montoSalDolares
+        FROM MT_CajaChicaMov caja
+        Inner Join MT_SolicitudCajaCH sol On caja.idSolicitudCajaCH = sol.idSolicitudCajaCH and caja.uniNeg = sol.uniNeg
+        left Join MO_Personal per on sol.idPersonal = per.idPersonal and per.uniNeg = sol.uniNeg <!--CAMBIO-->
+        Inner Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud
+        Inner Join MO_Codigo mon ON mon.idCodigo = caja.idTipoMoneda
+        Inner Join MT_CajaChica chi On caja.idCajaChica=chi.idCajaChica and chi.uniNeg=caja.uniNeg
+        Inner Join MO_UnidadNegocio uni On caja.unineg=uni.unineg
+        Inner Join MO_Codigo uniCo On uni.idtipoUniNeg=uniCo.idCodigo
+        Inner Join MO_Personal perCaj On caja.idcajero=perCaj.idpersonal and perCaj.unineg=caja.unineg
+        Where caja.uniNeg = #{unidadNegocioBean.uniNeg} and caja.idCajaChica = #{idCajaChica}
+        order by caja.creaFecha asc
+    </select>
+    <select id="obtenerCajaChicaMovRepNewFor" parameterType="pe.marista.sigma.bean.CajaChicaBean" resultType="pe.marista.sigma.bean.reporte.CajaChMovRepBean">
+        Declare @uniNeg varchar(6),@idcajachica int,@idtipomonedasol int,@idtipomonedadol int=14902
+        SET @uniNeg=#{unidadNegocioBean.uniNeg}
+        set @idcajachica=#{idCajaChica}
+        set @idtipomonedasol=14901
+        set @idtipomonedadol=14902
+        declare
+        @montoEntSoles money=(select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov1 where mov1.uniNeg = @uniNeg and mov1.flgMov=1and mov1.idTipoMoneda = @idtipomonedasol and mov1.idcajachica=@idcajachica),
+        @montoSalSoles money=(select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov1 where mov1.uniNeg = @uniNeg and mov1.flgMov=0 and mov1.idTipoMoneda = @idtipomonedasol and mov1.idcajachica=@idcajachica),
+        @montoEntDolares money= (select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov2 where mov2.uniNeg = @uniNeg and mov2.flgMov=1 and mov2.idTipoMoneda = @idtipomonedadol and mov2.idcajachica=@idcajachica),
+        @montoSalDolares money= (select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov2 where mov2.uniNeg = @uniNeg and mov2.flgMov=0 and mov2.idTipoMoneda = @idtipomonedadol and mov2.idcajachica=@idcajachica)  ,
+        @montoApeSol money= (select isnull(mov2.aperturasol,0) from MT_CajaChica mov2 where mov2.uniNeg = @uniNeg  and mov2.idcajachica=@idcajachica),
+        @montoApeDol money= (select isnull(mov2.aperturadol,0) from MT_CajaChica mov2 where mov2.uniNeg = @uniNeg  and mov2.idcajachica=@idcajachica)
+        SELECT
+        caja.uniNeg  AS uniNeg,
+        uni.nombreUniNeg as nombreUniNeg,
+        'R.U.C.: '+uni.ruc as rucUniNeg,
+        uniCo.codigo as tipoCaja,
+        concat(perCaj.apepat,' ',perCaj.apemat,', ',perCaj.nombre) as nombreCompletoCajero,
+        (case when chi.fecapertura is not null then convert(varchar,chi.fecApertura,103) else '  /  /  ' end) as fecApertura,
+        (case when chi.fecCierre is not null then convert(varchar,chi.fecCierre,103) else '  /  /  ' end) as fecCierre,
+        convert(varchar,chi.aperturasol,103) as aperturaSol,
+        (CONVERT(varchar, CAST((chi.devueltoSol)AS money), 1)) as devueltoSol,
+        (CONVERT(varchar, CAST((chi.utilizadosol)AS money), 1)) as utilizadoSol,
+        (CONVERT(varchar, CAST((chi.saldosol)AS money), 1)) as saldoSol,
+        (CONVERT(varchar, CAST((chi.aperturadol)AS money), 1)) as aperturaDol,        
+        (CONVERT(varchar, CAST((chi.devueltoDol)AS money), 1)) as devueltoDol,
+        (CONVERT(varchar, CAST((chi.utilizadodol)AS money), 1)) as utilizadoDol,
+        (CONVERT(varchar, CAST((chi.saldoDol)AS money), 1)) as saldoDol,        
+        upper(caja.motivo) as motivo,
+        sol.obs,
+        ts.nombre as nombreTS,
+        convert(varchar,caja.fecPago,103) as fecPago,        
+        (case when caja.flgMov=1 then 'E' when caja.flgMov=0 then 'S' end) as flgMov,
+        (case when ts.nombre='A rendir' then 'A'
+        when ts.nombre='General' then 'G'
+        when ts.nombre='Contra Pago' then 'C.P' end) as tipo, 
+        (case when sol.idrespcheque is not null and sol.idrespcheque!='' then sol.nomrespcheque else concat(per.apepat,' ',per.apemat,', ',per.nombre) end) as nombreCompleto,             
+        (CONVERT(varchar, CAST((isnull(caja.monto,0) )AS money), 1)) as monto,      
+        (case when caja.idTipoMoneda = @idtipomonedasol then (CONVERT(varchar, CAST((isnull(caja.monto,0) )AS money), 1)) else '0.0' end) as montoSoles, 		   
+        (case when caja.idTipoMoneda = @idtipomonedadol then (CONVERT(varchar, CAST((isnull(caja.monto,0) )AS money), 1)) else '0.0' end) as montoDolares,          		   
+        (select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov1 where mov1.uniNeg = caja.unineg and mov1.flgMov=1and mov1.idTipoMoneda = @idtipomonedasol and mov1.idcajachica=caja.idcajachica) as montoEntSoles,
+        (select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov1 where mov1.uniNeg = caja.unineg and mov1.flgMov=0 and mov1.idTipoMoneda = @idtipomonedasol and mov1.idcajachica=caja.idcajachica) as montoSalSoles,
+        (select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov2 where mov2.uniNeg = caja.unineg and mov2.flgMov=1 and mov2.idTipoMoneda = @idtipomonedadol and mov2.idcajachica=caja.idcajachica) as montoEntDolares,
+        (select isnull(sum(isnull(monto,0)),0.00) from MT_CajaChicaMov mov2 where mov2.uniNeg = caja.unineg and mov2.flgMov=0 and mov2.idTipoMoneda = @idtipomonedadol and mov2.idcajachica=caja.idcajachica) as montoSalDolares,
+        (CONVERT(varchar, CAST((@montoSalSoles-@montoEntSoles)AS money), 1)) as sumSoles,
+        (CONVERT(varchar, CAST((@montoSalDolares-@montoEntDolares)AS money), 1)) as sumDolares ,sol.idSolicitudCajaCH
+        FROM MT_CajaChicaMov caja
+        Inner Join MT_SolicitudCajaCH sol On caja.idSolicitudCajaCH = sol.idSolicitudCajaCH and caja.uniNeg = sol.uniNeg
+        left Join MO_Personal per on sol.idPersonal = per.idPersonal and per.uniNeg = sol.uniNeg  
+        Inner Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud and ts.unineg=sol.unineg
+        Inner Join MO_Codigo mon ON mon.idCodigo = caja.idTipoMoneda
+        Inner Join MT_CajaChica chi On caja.idCajaChica=chi.idCajaChica and chi.uniNeg=caja.uniNeg
+        Inner Join MO_UnidadNegocio uni On caja.unineg=uni.unineg
+        Inner Join MO_Codigo uniCo On uni.idtipoUniNeg=uniCo.idCodigo
+        Inner Join MO_Personal perCaj On caja.idcajero=perCaj.idpersonal and perCaj.unineg=caja.unineg
+        Where caja.uniNeg = @uniNeg and caja.idCajaChica =@idcajachica
+        order by caja.creaFecha asc
+    </select>
+    <select id="obtenerCajaChicaDetalle" parameterType="map" resultType="pe.marista.sigma.bean.reporte.CajaChMovRepBean">
+        Declare @uniNeg varchar(6),@idSolicitud int
+        SET @uniNeg=#{uniNeg}
+        set @idSolicitud=#{idSolicitudCajaCh}
+        select concat(convert(varchar(20),c.cuentad),' - '+convert(varchar(20),det.cr)) as cuentaCR  from MT_CajaChicaMov mov
+        inner join MT_SolicitudCajaCh s on s.idsolicitudcajach=mov.idsolicitudcajach
+        inner join MT_DetSolicitudCajaChCR det on det.idsolicitudCajach=s.idsolicitudcajach
+        inner join MT_Concepto c on c.idconcepto=s.idconcepto
+        Where mov.uniNeg = @uniNeg and s.idSolicitudCajaCh =@idSolicitud 
+    </select>
+    <select id="obtenerCajaChicaMovCabecera" resultType="pe.marista.sigma.bean.reporte.CajaChicaMovilidadRepBean" parameterType="map">
+        declare @texto varchar(5000), @uniNeg varchar(6),@titulo varchar(50),@idCajaChica int,@fecha varchar(50),@periodo varchar(100)
+        set @uniNeg=#{uniNeg}
+        set @idCajaChica=#{idCajaChica}
+        set @fecha=convert(varchar(10),getdate() ,103)
+        set @texto='Para sustentar la Asignacion por movilidad entregada al trabajador y sujeta a los alcances del Art. 19° inc. i) del TUO del Dec. Leg. N° 650, Ley de compensación por Tiempo de Servicios, aprobado por D.S. N° 001-97-TR, así como a las normas concurrentes, en especial el Art. 34° de la Ley de Impuestos a la Renta en cuanto corresponde; y la inc. a1)Art. 37° de la Ley del Impuesto a la Renta; y D.S. N° 122-94-EF, Art. 21°, inc. v), modificado por D.S. N° 159-2007-EF. '
+        set @titulo='PLANILLA DE GASTOS POR MOVILIDAD POR TRABAJADOR'
+        set @periodo = (SELECT concat(convert(varchar(10),caj.fecapertura,103 ), ' Al ',isnull(convert(varchar(30),caj.feccierre,103 ),'(No hay cierre de caja)' ) ) FROM MT_CajaChica caj where idcajachica=@idCajaChica)
+        
+        select distinct uni.nombreUniNeg, uni.ruc,@titulo AS titulo,@fecha as fecImpresion,@texto as texto,
+        @periodo as periodo,
+        p.idpersonal 
+        from MT_CajaChicaMov cmov 
+        inner join MO_UnidadNegocio uni on (cmov.unineg=uni.unineg)
+        inner join MT_SolicitudCajaCh sol on (cmov.idsolicitudcajach=sol.idsolicitudcajach and sol.unineg=uni.unineg)
+        inner join MT_Concepto con on (con.idconcepto=sol.idconcepto) 
+        inner join MO_Personal p on p.idpersonal=sol.idpersonal
+        inner join MT_CajaChica caj on (caj.idcajachica=cmov.idcajachica and uni.unineg=caj.unineg)
+        where con.idconcepto=11601  and uni.unineg=@uniNeg 
+        and cmov.idcajachica=@idCajaChica
+    </select>
+    <select id="obtenerCajaChicaMovDetalle" resultType="pe.marista.sigma.bean.reporte.CajaChicaMovilidadSubRepBean" parameterType="map">
+        declare  @uniNeg varchar(6),@idPersonal int,@idCajaChica int
+        set @uniNeg=#{uniNeg}
+        set @idPersonal= #{idPersonal}
+        set @idCajaChica=#{idCajaChica}
+
+        select uni.nombreUniNeg, uni.ruc,concat(p.apepat,' ',p.apemat,', ',p.nombre) as solicitante
+        ,p.nrodoc as dni
+        ,p.idpersonal,sol.idsolicitudcajach,convert(varchar,sol.fechasol,103) as fecha,sol.motivo,sol.obs,sol.montoaprobado from MT_CajaChicaMov cmov inner join MO_UnidadNegocio uni on (cmov.unineg=uni.unineg)
+        inner join MT_SolicitudCajaCh sol on (cmov.idsolicitudcajach=sol.idsolicitudcajach and sol.unineg=uni.unineg)
+        inner join MT_Concepto con on (con.idconcepto=sol.idconcepto) 
+        inner join MO_Personal p on p.idpersonal=sol.idpersonal
+        where con.idconcepto=11601  and uni.unineg=@uniNeg and p.idpersonal=@idPersonal
+        and cmov.idcajachica=@idCajaChica
+    </select>
+    <select id="obtenerCajaChicaMovRepPorIdDev" parameterType="Integer" resultType="pe.marista.sigma.bean.reporte.CajaChicaMovRepBean">
+        SELECT
+        caja.idcajachicamov,
+        mon.codigo as codigoMoneda,
+        caja.monto,
+        concat(per.apepat,' ',per.apemat,' ',per.nombre) as nombreCompleto,
+        caja.creafecha,
+        uni.nombreUniNeg,
+        uniCo.codigo as codigo
+        FROM MT_CajaChicaMov caja
+        Inner Join MT_SolicitudCajaCH sol On caja.idSolicitudCajaCH = sol.idSolicitudCajaCH and caja.uniNeg = sol.uniNeg
+        Inner Join MO_Personal per on sol.idPersonal = per.idPersonal and per.uniNeg = sol.uniNeg
+        Inner Join MO_Codigo mon ON mon.idCodigo = caja.idTipoMoneda
+        Inner Join MO_UnidadNegocio uni On caja.unineg=uni.unineg
+        Inner Join MO_Codigo uniCo On uni.idtipoUniNeg=uniCo.idCodigo
+        where caja.idCajaChicaMov=#{idDevolucion}
+    </select>
+    <update id="modificarCajaChicaMovAnulacion"  parameterType="map">
+        Update MT_CajaChicaMov set
+        monto = 0.00,
+        motivo = <![CDATA['<---ANULADO---> ']]>+#{motivo}, 
+        extorno=1,
+        modiPor = #{modiPor}
+        Where uniNeg = #{uniNeg} and idSolicitudCajaCh = #{idSolicitudCajaCh}  
+    </update>  
+    <select id="obtenerCajaChicaCentros" resultType="pe.marista.sigma.bean.reporte.CajaChicaMovCRRepBean" parameterType="map">
+        Declare @uniNeg varchar(6),@idcajachica int
+        SET @uniNeg=#{uniNeg}
+        set @idcajachica=#{idCajaChica}
+        SELECT   distinct 
+        de.cr,
+        ce.nombre as nombreCr,
+        sum(de.valor) as valor,
+        uni.nombreUniNeg as nombreUniNeg,
+        'R.U.C.: '+uni.ruc as rucColegio,
+        concat(perCaj.apepat,' ',perCaj.apemat,', ',perCaj.nombre) as nombreCompletoCajero,
+        (case when chi.fecapertura is not null then convert(varchar,chi.fecApertura,103) else '  /  /  ' end) as fecApertura,
+        (case when chi.fecCierre is not null then convert(varchar,chi.fecCierre,103) else '  /  /  ' end) as fecCierre,
+        convert(varchar,chi.aperturasol,103) as aperturaSol,
+        (CONVERT(varchar, CAST((chi.devueltoSol)AS money), 1)) as devueltoSol,
+        (CONVERT(varchar, CAST((chi.utilizadosol)AS money), 1)) as utilizadoSol,
+        (CONVERT(varchar, CAST((chi.saldosol)AS money), 1)) as saldoSol,
+        (CONVERT(varchar, CAST((chi.aperturadol)AS money), 1)) as aperturaDol,
+        (CONVERT(varchar, CAST((chi.devueltoDol)AS money), 1)) as devueltoDol,
+        (CONVERT(varchar, CAST((chi.utilizadodol)AS money), 1)) as utilizadoDol,
+        (CONVERT(varchar, CAST((chi.saldoDol)AS money), 1)) as saldoDol  
+        FROM MT_CajaChicaMov caja
+        Inner Join MT_SolicitudCajaCH sol On caja.idSolicitudCajaCH = sol.idSolicitudCajaCH and caja.uniNeg = sol.uniNeg
+        left Join MO_Personal per on sol.idPersonal = per.idPersonal and per.uniNeg = sol.uniNeg
+        Inner Join MM_TipoSolicitud ts on ts.idTipoSolicitud=sol.idTipoSolicitud and ts.unineg=sol.unineg
+        Inner Join MO_Codigo mon ON mon.idCodigo = caja.idTipoMoneda
+        Inner Join MT_CajaChica chi On caja.idCajaChica=chi.idCajaChica and chi.uniNeg=caja.uniNeg
+        Inner Join MO_UnidadNegocio uni On caja.unineg=uni.unineg
+        Inner Join MO_Codigo uniCo On uni.idtipoUniNeg=uniCo.idCodigo
+        Inner Join MO_Personal perCaj On caja.idcajero=perCaj.idpersonal and perCaj.unineg=caja.unineg 
+        inner join MT_DetSolicitudCajaChCR de on de.idsolicitudCajach=sol.idsolicitudcajach
+        inner join MT_CentroResponsabilidad ce on ce.cr=de.cr
+        Where caja.uniNeg = @uniNeg and caja.idCajaChica =@idcajachica
+        group by ce.cr,de.cr,ce.nombre,uni.nombreUniNeg,uni.ruc,perCaj.apepat,perCaj.apemat,perCaj.nombre,chi.fecapertura,chi.fecCierre,
+        chi.aperturasol,chi.devueltoSol,chi.utilizadosol,chi.saldosol,chi.aperturadol,chi.devueltoDol,chi.utilizadodol,chi.saldoDol
+    </select> 
+    <select id="obtenerCajaChicaSoliCentros" resultType="pe.marista.sigma.bean.reporte.CajaChicaMovSoliRepBean" parameterType="map">
+        Declare @uniNeg varchar(6),@idcajachica int
+        SET @uniNeg=#{uniNeg}
+        set @idcajachica=#{idCajaChica}
+        select convert(varchar,fechasol,103) as fechaSol, nomrespcheque as nomRespCheque,m.motivo, montoaprobado as monto,mo.codigo as moneda, s.idsolicitudcajach as idSolicitudCajaCh from MT_CajaChicaMov m
+        inner join MT_SolicitudCajaCh s on s.idsolicitudcajach=m.idsolicitudcajach
+        inner join MO_Codigo mo on mo.idcodigo= s.idtipomoneda
+        where s.idsolicitudcajach in (select idsolicitudcajach from MT_CajaChicaMov
+        where m.idcajachica=@idcajachica) and m.unineg=@uniNeg
+    </select> 
+    <select id="obtenerCajaChicaCRCentros" resultType="pe.marista.sigma.bean.reporte.CajaChicaMovCentroRepBean" parameterType="map">
+        Declare @uniNeg varchar(6),@idSolicitud int
+        SET @uniNeg=#{uniNeg}
+        set @idSolicitud=#{idSolicitudCajaCh}
+        select ce.cr,ce.nombre,s.valor,
+        (case when mo.codigo='soles' then 'S/'
+        when mo.codigo='Dolares' then  '$' end)as moneda   
+        from MT_DetSolicitudCajaChCR s
+        inner join MT_CentroResponsabilidad ce on ce.cr=s.cr
+        inner join MT_SolicitudCajaCh so on so.idsolicitudCajaCh = s.idsolicitudCajach
+        inner join MO_Codigo mo on mo.idcodigo= so.idtipomoneda
+        where so.idsolicitudCajach=@idSolicitud and s.unineg=@uniNeg
+    </select>
+    <select id="obtenerCRDetalladito" resultType="pe.marista.sigma.bean.reporte.CrDetalladitoRepBean" parameterType="map">
+        Declare @uniNeg varchar(6),@idCajachica int
+        SET @uniNeg=#{uniNeg}
+        set @idCajachica=#{idCajaChica}
+        SELECT   distinct 
+        de.cr,
+        ce.nombre as nombreCr,
+        sum(de.valor) as valor 
+        FROM MT_CajaChicaMov caja
+        Inner Join MT_SolicitudCajaCH sol On caja.idSolicitudCajaCH = sol.idSolicitudCajaCH and caja.uniNeg = sol.uniNeg 
+        inner join MT_DetSolicitudCajaChCR de on de.idsolicitudCajach=sol.idsolicitudcajach
+        inner join MT_CentroResponsabilidad ce on ce.cr=de.cr
+        Where caja.uniNeg = @uniNeg and caja.idCajaChica =@idcajachica
+        group by ce.cr,de.cr,ce.nombre 
+    </select>
+</mapper>

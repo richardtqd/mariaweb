@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body  >
+            <h:form id="frmDatosMatricula"> 
+                <br></br>
+                <h:panelGrid  id="pnlTablaFiltroNoMatri" style="width: 400px" styleClass="centrado">
+                    <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaFiltros}"   >
+                        <h:panelGrid columns="1"  >   
+                            <h:panelGrid columns="2">
+                                <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="negrita siseFontGrid5" /> 
+                                <p:selectOneMenu value="#{matriculaMB.matriculaFiltroBean.anio}"    label="#{msgs.etiquetaPeriodo}" style="width: 125px" panelStyle="width: 125px" class="resetSelect">
+                                    <f:selectItems value="#{matriculaMB.listaAnioFiltroMatricula}" var="anioIni" itemLabel="#{anioIni}" itemValue="#{anioIni}"/>
+                                    <p:ajax event="change" listener="#{matriculaMB.actualizarAnioFinFiltroPorProgramacion()}"/>
+                                </p:selectOneMenu>  
+                            </h:panelGrid>
+                            <h:panelGrid id="pnlNivelGradoAca" columns="3" >
+                                <h:panelGrid columns="2" width="150">
+                                    <p:selectBooleanCheckbox  value="#{matriculaMB.flgPorNivelGrado}" class="titulo"  > 
+                                        <p:ajax event="change" update="pnlNivelGradoAca" listener="#{matriculaMB.verificarFiltroNivelGrado()}" />
+                                    </p:selectBooleanCheckbox>
+                                    <h:outputText value="#{msgs.etiquetaPorNivelGrado}"/> 
+                                </h:panelGrid> 
+                                <p:spacer width="45" rendered="#{matriculaMB.flgPorNivelGrado==true}"/>
+                                <p:panel rendered="#{matriculaMB.flgPorNivelGrado==true}">  
+                                    <h:panelGrid columns="2" width="300">
+                                        <h:outputLabel value="#{msgs.etiquetaNivelAcademico}" class="titulo" rendered="#{matriculaMB.flgPorNivelGrado==true}" /> 
+                                        <p:selectOneMenu value="#{matriculaMB.matriculaFiltroBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}" style="width:160px" panelStyle="width:160px" label="#{msgs.etiquetaNivelAcademico}" rendered="#{matriculaMB.flgPorNivelGrado==true}" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{matriculaMB.listaNivelAcademico}" var="nivAca" itemLabel="#{nivAca.nombre}" itemValue="#{nivAca.idNivelAcademico}"/> 
+                                            <p:ajax event="change" listener="#{matriculaMB.obtenerGradoAcaBasicaSeccion()}" update="cmboGradoAcaBas" />
+                                        </p:selectOneMenu>     
+                                        <h:outputLabel value="#{msgs.etiquetaGradoAca}" class="titulo" rendered="#{matriculaMB.flgPorNivelGrado==true}"  /> 
+                                        <p:selectOneMenu id="cmboGradoAcaBas" value="#{matriculaMB.matriculaFiltroBean.gradoAcademicoBean.idGradoAcademico}" style="width:160px" panelStyle="width:160px" class="resetSelect" label="#{msgs.etiquetaGradoAca}" rendered="#{matriculaMB.flgPorNivelGrado==true}">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{matriculaMB.listaGradoAcademicoFiltroBean}" var="GradAcaBas" itemLabel="#{GradAcaBas.nombre}" itemValue="#{GradAcaBas.idGradoAcademico}"/>
+                                        </p:selectOneMenu>  
+                                        <h:outputLabel value="#{msgs.etiquetaSeccion}" class="titulo"/> 
+                                        <p:inputText  value="#{matriculaMB.matriculaFiltroBean.seccion}"   label="#{msgs.etiquetaSeccion}" maxlength="1"  style="width: 50px"/>  
+                                    </h:panelGrid> 
+                                </p:panel>
+                            </h:panelGrid>   
+                        </h:panelGrid> 
+                        <p:separator/>
+                        <h:panelGrid styleClass="centrado" columns="2">
+                            <p:commandButton value="#{msgs.botonBuscar}" action="#{matriculaMB.obtenerFiltroEstudianteMasivoSeccion()}" 
+                                             update="pnlTablaMatricula,btnPromover,msg"  />
+                            <p:commandButton value="#{msgs.botonLimpiar}" action="#{matriculaMB.limpiarEstudianteMatriculaMasivo()}" update="pnlTablaFiltroNoMatri,pnlTablaMatricula,msg"/>
+                        </h:panelGrid> 
+                        <p:messages autoUpdate="false" id="msg"/>
+                    </p:fieldset>
+                </h:panelGrid>  
+                <br></br>
+                <h:panelGrid  id="pnlTablaMatricula" styleClass="centrado" >
+                    <p:dataTable id="tblMatricula" value="#{matriculaMB.listaMatriculaEstudiantesMasivosBean}" widgetVar="tblMatricula"  
+                                 editable="true" editMode="cell"
+                                 paginator="true" selectionMode="single" 
+                                 selection="#{matriculaMB.matriculaBean}" rowIndexVar="n" 
+                                 var="estudiante" rowKey="#{estudiante}"
+                                 rows="#{matriculaMB.numRegistrosTablasPorFiltroMin}" 
+                                 rendered="#{not empty matriculaMB.listaMatriculaEstudiantesMasivosBean}" 
+                                 style="width:700px; font-size: 10px;font-size:14px !important;"> 
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaEstPosNoMatri}" />   
+                        </f:facet>
+                        <p:column  headerText="N" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <center>
+                                <h:outputText value="#{n+1}" />
+                            </center>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                            <h:outputText value="#{estudiante.estudianteBean.codigo}"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="20%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                            <h:outputText value="#{estudiante.estudianteBean.nombreCompleto}"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaGraAct}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.estudianteBean.gradoHabilitado.nombre}" >
+                            <h:outputText value="#{estudiante.gradoAcademicoBean.nombre}"/>
+                        </p:column>   
+                        <p:column   styleClass="centrado"  headerText="#{msgs.etiquetaSeccAbr}" filterMatchMode="contains" width="20"  >
+                            <p:cellEditor>
+                                <f:facet name="output"><center><h:outputText value="#{estudiante.seccion}" styleClass="centrado"/></center></f:facet>
+                                <f:facet name="input"><center><p:inputText   value="#{estudiante.seccion}" style=" font-size: 12px;width:500px" styleClass="centrado"/></center></f:facet>
+                            </p:cellEditor>
+                        </p:column>
+                    </p:dataTable>
+                    <br></br>
+
+                </h:panelGrid> 
+                <h:panelGrid class="centrado" columns="2" id="btnPromover"> 
+                    <p:commandButton    actionListener="#{matriculaMB.modificarEstudiante()}" disabled="#{not empty matriculaMB.listaMatriculaEstudiantesMasivosBean==false}" 
+                                        update=":frmDatosMatricula" 
+                                        oncomplete="if(args.operacionCorrecta){PF('popDone').show();}else{PF('popError').show();}"
+                                        value="#{msgs.botonGrabar}">
+                    </p:commandButton> 
+                </h:panelGrid>
+            </h:form>
+
+        </h:body>
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PersonalIdiomaDAO">
+     
+    <sql id="consultaCampos">
+        SELECT
+        PIDI.idPersonalIdioma
+        ,pidi.unineg as uniNegP
+        ,PIDI.idPersonal
+        ,PIDI.idTipoIdioma
+        ,PIDI.idTipoNivel 
+    
+        ,PIDI.creaPor
+        ,PIDI.creaFecha
+        ,PER.idPersonal as codPersonal
+        ,PER.nombre
+        ,PER.apepat
+        ,PER.apemat
+        ,CodTI.idCodigo as codTI
+        ,CodTI.codigo as nombreTI
+        ,CodTN.idCodigo as codTN
+        ,CodTN.codigo as nombreTN 
+        ,PIDI.centroEstudio
+         
+        FROM MO_PersonalIdioma PIDI
+        INNER JOIN MO_Personal PER      on PIDI.idPersonal=PER.idPersonal and per.unineg=pidi.unineg
+        LEFT JOIN MO_Codigo CodTI      on PIDI.idTipoIdioma = CodTI.idCodigo
+        LEFT JOIN MO_Codigo CodTN      on PIDI.idTipoNivel = CodTN.idCodigo 
+    </sql>
+     
+     
+    <resultMap id="personalIdiomaResultado" type="pe.marista.sigma.bean.PersonalIdiomaBean">
+        <id property="idPersonalIdioma" column="idPersonalIdioma" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="centroEstudio" column="centroEstudio" />
+        <result property="creaPor" column="creaPor" />
+        <result property="modiPor" column="modiPor" />
+        <result property="creaFecha" column="creaFecha" />
+        
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="codPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <!--2 idTipoIdioma-->
+        <association property="tipoIdiomaBean" column="codTI"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoIdiomaResultado"/>
+        
+        <!--3 idTipoNivel -->
+        <association property="tipoNivelBean" column="codTN"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoNivelResultado"/>
+        
+        <association property="unidadNegocioBean" column="uniNegP"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/> 
+        
+    </resultMap>
+    
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegP"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>
+    
+    <!--1 idPersonal-->         
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="codPersonal"/>
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+    </resultMap>
+    <!--2 idTipoIdioma-->
+    <resultMap id="tipoIdiomaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codTI"/>
+        <result property="codigo" column="nombreTI"/>  
+    </resultMap>
+    
+    <!--3 idTipoNivel -->
+    <resultMap id="tipoNivelResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codTN"/>
+        <result property="codigo" column="nombreTN"/>  
+    </resultMap>
+    
+    <select id="obtenerPersonalIdiomaPorPersonal" resultMap="personalIdiomaResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />
+        where PIDI.idPersonal=#{idPersonal} and PIDI.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonalIdiomaPorId" resultMap="personalIdiomaResultado" parameterType="pe.marista.sigma.bean.PersonalIdiomaBean">
+        <include refid="consultaCampos" />
+        where PIDI.idPersonalIdioma=#{idPersonalIdioma} and PIDI.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+     
+    <insert id="insertarPersonalIdioma" parameterType="pe.marista.sigma.bean.PersonalIdiomaBean">
+        INSERT INTO  MO_PersonalIdioma
+        (unineg,idPersonal,idTipoIdioma,idTipoNivel,creaPor,creaFecha,centroestudio)
+        Values (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{tipoIdiomaBean.idCodigo},#{tipoNivelBean.idCodigo},#{creaPor},getDate(),#{centroEstudio})
+    </insert>                                                                                                       
+     
+    <update id="modificarPersonalIdioma" parameterType="pe.marista.sigma.bean.PersonalIdiomaBean">
+        Update MO_PersonalIdioma set
+        idTipoIdioma = #{tipoIdiomaBean.idCodigo}
+        ,idTipoNivel = #{tipoNivelBean.idCodigo}
+        ,centroEstudio=#{centroEstudio}
+        ,modiPor=#{centroEstudio}
+        where idPersonalIdioma=#{idPersonalIdioma} and  unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+     
+    <delete id="eliminarPersonalIdioma" parameterType="pe.marista.sigma.bean.PersonalIdiomaBean">
+        Delete From MO_PersonalIdioma Where idPersonalIdioma = #{idPersonalIdioma} and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+
+    <select  id="obtenerIdiomaPorPersonalRep" parameterType="map" resultType="pe.marista.sigma.bean.reporte.PersonalIdiomaRepBean">
+        SELECT  
+        ISNULL(PId.centroestudio,'') AS institucion,  
+        ISNULL(cod.codigo,'') AS idioma,
+        ISNULL(niv.codigo,'') AS nivel  
+        FROM MO_PersonalIdioma PId
+        LEFT JOIN MO_Codigo cod on cod.idcodigo=pid.idtipoidioma
+        LEFT JOIN MO_Codigo niv on niv.idcodigo=pid.idtiponivel 
+        where PID.idpersonal=#{idPersonal} and PID.unineg=#{uniNeg}
+         order by 3     
+    </select>
+         
+</mapper>

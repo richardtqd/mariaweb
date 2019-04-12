@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RepDetDocIngresoPorCuentaFor_cuentas" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="f7f525c1-174a-466a-99fb-507e4edfeb94">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["C:\\Sigma\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[--2.- LISTA DE CUENTAS
+declare @unineg varchar(6),@cuentaMora int
+		set @cuentaMora=772211
+        set @uniNeg='CHAMPS'
+
+        select distinct
+        (case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end ) as cuenta ,
+        pc.nombre  as nombreCta
+
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta=(case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end )
+        where doc.idcajagen in
+        (1043)
+        and doc.unineg=@uniNeg
+        group by con.idtipoconcepto,pc.nombre,det.cuentad,det.cuentah
+
+        UNION ALL
+        SELECT
+        @cuentaMora as cuenta,
+        (select nombre from MT_PlanContable where cuenta=@cuentaMora) as nombreCta]]>
+	</queryString>
+	<field name="cuenta" class="java.lang.Integer"/>
+	<field name="nombreCta" class="java.lang.String"/>
+	<field name="listaDetalle" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="19" splitType="Stretch">
+			<subreport>
+				<reportElement uuid="fe754587-458e-4c65-9782-2be1fddadbe5" x="0" y="0" width="555" height="19"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaDetalle}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "RepDetDocIngresoPorCuentaFor_subreport1.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+</jasperReport>

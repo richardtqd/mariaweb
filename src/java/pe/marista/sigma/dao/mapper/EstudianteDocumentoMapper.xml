@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteDocumentoDAO">  
+    <sql id="consultaCampos">
+        Select  
+        estDoc.idEstudiante
+        ,stu.unineg 
+        ,estDoc.idEstudianteDocumento
+        ,estDoc.idProceso   
+        ,pro.anio
+        ,estDoc.idChecklist
+        ,checkl.documento
+        ,checkL.flgObligatorio
+        ,checkl.idtipocopia
+        ,codTipCop.codigo 
+        ,estDoc.idTipocopia
+        ,codTipCop.codigo as codTipoCopia
+        ,estDoc.status
+        ,pro.idproceso
+        From MX_EstudianteDocumento estDoc 
+        inner JOIN MX_Estudiante stu on estDoc.idestudiante = stu.idestudiante 
+        inner join MX_CheckList checkl on checkl.idChecklist= estDoc.idCheckList 
+        left Join MX_Proceso pro on pro.idProceso=checkl.idproceso
+        left Join MO_Codigo codTipCop on codTipCop.idCodigo=checkL.idTipoCopia
+    </sql>
+    <resultMap id="estudianteDocumentoResultado" type="pe.marista.sigma.bean.EstudianteDocumentoBean">
+        <id property="estudianteBean.personaBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="estudianteBean.personaBean.idPersona" column="idEstudiante"/>
+        <id property="idEstudianteDocumento" column="idEstudianteDocumento"/> 
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/> 
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="checkListBean" column="idChecList"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="checkListResultado"/>
+    </resultMap>
+    <!--Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean"> 
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+    </resultMap>
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    <resultMap id="checkListResultado" type="pe.marista.sigma.bean.CheckListBean">
+        <id property="procesoBean.idProceso" column="idProceso"/>
+        <id property="procesoBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idCheckList" column="idCheckList"/>
+        <result property="documento" column="documento"/> 
+        <result property="flgObligatorio" column="flgObligatorio"/>
+        <association property="tipoCopiaBean" column="idTipoCopia"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCopiaResultado"/>
+        <association property="procesoBean" column="idProceso"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="procesoResultado"/>
+    </resultMap>
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBean">
+        <id property="idProceso" column="idProceso"/> 
+        <result property="descripcion" column="descripcion"/>
+        <result property="anio" column="anio"/> 
+    </resultMap>
+    <resultMap id="tipoCopiaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCopia"/>
+        <result property="codigo" column="codTipoCopia"/> 
+    </resultMap>
+    <select id="obtenerEstDocumentoPorId" resultMap="estudianteDocumentoResultado" parameterType="pe.marista.sigma.bean.EstudianteDocumentoBean">
+        <include refid="consultaCampos" />
+        Where estDoc.idEstudiante= #{estudianteBean.personaBean.idPersona}         and 
+        estDoc.uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg}       and  
+        estDoc.idCheckList= #{checkList.idCheckList}   
+    </select>  
+    <select id="obtenerEstDocumentoPorEst" resultMap="estudianteDocumentoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where estDoc.idEstudiante=#{idEstudiante} and estDoc.uniNeg=#{uniNeg} and pro.anio=#{anio}
+    </select> 
+    <update id="darCheckDocumentoAdmision" parameterType="pe.marista.sigma.bean.EstudianteDocumentoBean">
+        Update MX_EstudianteDocumento
+        Set    
+        status = #{status},
+        modiPor=#{modiPor}
+        Where 
+        idEstudiante= #{estudianteBean.personaBean.idPersona}         and 
+        uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg}       and  
+        idCheckList= #{checkListBean.idCheckList}  
+    </update>
+    <delete id="eliminarEstDocumento" parameterType="pe.marista.sigma.bean.EstudianteDocumentoBean">
+        Delete From MX_EstudianteDocumento 
+        Where estDoc.idEstudiante= #{estudianteBean.personaBean.idPersona}         and 
+        estDoc.uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg}       and  
+        estDoc.idCheckList= #{checkListBean.idCheckList}  
+    </delete>
+</mapper>

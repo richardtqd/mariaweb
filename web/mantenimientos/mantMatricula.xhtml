@@ -1,0 +1,284 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{matriculaMB.cargarMatriEst()}">
+            <p:layout fullPage="false"  style="width:1300px;height:750px" styleClass="centrado">
+                <p:layoutUnit position="west" size="765" header="#{msgs.etiquetaBuscadorEstPos}" resizable="false" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500">
+                    <h:form id="frmDatosMatricula">
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaNOMatriculados} ">
+                            <h:panelGrid  id="pnlTablaFiltroNoMatri" styleClass="centrado" >
+                                <p:fieldset   style="width: 455px" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaFiltros}">
+                                    <h:panelGrid columns="2" styleClass="centrado">
+                                        <h:panelGrid columns="2" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}">                                          
+                                            <h:outputLabel value="#{msgs.etiquetaCole}" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}"/>
+                                            <h:outputLabel value="" style="color: red" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}"/>
+                                        </h:panelGrid>
+                                        <p:selectOneMenu value="#{matriculaMB.matriculaFiltroBean.unidadNegocioBean.uniNeg}" required="true" style="width: 315px" filter="true" filterMatchMode="contains" panelStyle="width:350px" class="resetSelect" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}" label="#{msgs.etiquetaCole}">
+                                            <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                            <f:selectItems value="#{matriculaMB.listaUnidadNegocioBean}" var="un" itemLabel="#{un.nombreUniNeg}" itemValue="#{un.uniNeg}"/>
+                                        </p:selectOneMenu>
+                                        <h:panelGrid columns="2" >
+                                            <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                            <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                        </h:panelGrid>
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.idPersona}" size="15" maxlength="15"/>
+                                        <h:outputLabel value="#{msgs.etiquetaApePat}" />
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.apepat}" size="28" maxlength="30"/>  
+                                        <h:outputLabel value="#{msgs.etiquetaApeMat}" />
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.apemat}"  size="28" maxlength="30" />
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}" />
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.nombre}"  size="28" maxlength="30" />
+
+                                        <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="negrita" style="font-size: 1em"/> 
+                                        <p:selectOneMenu value="#{matriculaMB.matriculaFiltroBean.anio}"    label="#{msgs.etiquetaPerIng}" filter="true" style="width: 225px" panelStyle="width: 225px" class="resetSelect">
+                                            <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{matriculaMB.listaAnioMatricula}" var="anioFiltro" itemLabel="#{anioFiltro}" itemValue="#{anioFiltro}"/>
+                                         </p:selectOneMenu> 
+                                    </h:panelGrid>
+                                    <h:panelGrid styleClass="centrado" columns="2">
+                                        <p:commandButton value="#{msgs.botonBuscar}" action="#{matriculaMB.obtenerFiltroNoMatriculados()}" update="pnlTablaMatricula,msg"/>
+                                    </h:panelGrid>
+                                    <p:messages autoUpdate="false" id="msg" />
+                                </p:fieldset>
+                            </h:panelGrid>
+                            <h:panelGrid  id="pnlTablaMatricula" styleClass="centrado" >
+                                <p:dataTable id="tblMatricula" value="#{matriculaMB.listaMatriculaFlgFlaseBean}" widgetVar="tblMatricula"
+                                             paginator="true" selectionMode="single" 
+                                             selection="#{matriculaMB.matriculaBean}" rowIndexVar="n" 
+                                             var="matricula" rowKey="#{matricula.idMatricula}"
+                                             rows="#{matriculaMB.numRegistrosTablasPorFiltro}" 
+                                             rendered="#{not empty matriculaMB.listaMatriculaFlgFlaseBean}" 
+                                             style="width:600px; font-size: 10px;font-size:14px !important;">
+                                    <p:ajax event="rowSelect" listener="#{matriculaMB.rowSelectMatri}" update=":frmMantMatricula" />
+                                    <f:facet name="header" >
+                                        <h:outputText value="#{msgs.etiquetaEstPosNoMatri}" />   
+                                    </f:facet>
+                                    <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                        <center>
+                                            <h:outputText value="#{n+1}" />
+                                        </center>
+                                    </p:column>
+                                    <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.idPersona}" >
+                                        <h:outputText value="#{matricula.estudianteBean.personaBean.idPersona}"/>
+                                    </p:column>
+                                    <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{estudiante.personaBean.nombre}">
+                                        <h:outputText value="#{matricula.estudianteBean.personaBean.nombreCompletoDesdeApellidos}"/>
+                                    </p:column> 
+                                    <p:column headerText="#{msgs.etiquetaGradoHab}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 " sortBy="#{estudiante.personaBean.nombre}">
+                                        <h:outputText value="#{matricula.gradoAcademicoBean.nombre}"/>
+                                    </p:column> 
+                                </p:dataTable> 
+                            </h:panelGrid>
+                        </p:panel> 
+                    </h:form>
+                    <h:form id="frmDatosMatriculados">
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaMatriculados}"  collapsed="true" >
+                            <h:panelGrid  id="pnlTablaFiltroMatri" styleClass="centrado" >
+                                <p:fieldset   style="width: 550px" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaFiltros}">
+                                    <h:panelGrid columns="2" styleClass="centrado">
+                                        <h:panelGrid columns="2" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}">                                          
+                                            <h:outputLabel value="#{msgs.etiquetaCole}" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}"/>
+                                            <h:outputLabel value="" style="color: red" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}"/>
+                                        </h:panelGrid>
+                                        <p:selectOneMenu value="#{matriculaMB.matriculaFiltroBean.unidadNegocioBean.uniNeg}" required="true" style="width: 315px" filter="true" filterMatchMode="contains" panelStyle="width:350px" class="resetSelect" rendered="#{matriculaMB.personalBean.flgSuperAdmin==true}" label="#{msgs.etiquetaCole}">
+                                            <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                            <f:selectItems value="#{matriculaMB.listaUnidadNegocioBean}" var="un" itemLabel="#{un.nombreUniNeg}" itemValue="#{un.uniNeg}"/>
+                                        </p:selectOneMenu>
+                                        <h:panelGrid columns="2" >
+                                            <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                            <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                        </h:panelGrid>
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.idPersona}" size="15" maxlength="15"/>
+                                        <h:outputLabel value="#{msgs.etiquetaApePat}" />
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.apepat}" size="28" maxlength="30"/>  
+                                        <h:outputLabel value="#{msgs.etiquetaApeMat}" />
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.apemat}"  size="28" maxlength="30" />
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}" />
+                                        <p:inputText value="#{matriculaMB.matriculaFiltroBean.estudianteBean.personaBean.nombre}"  size="28" maxlength="30" />
+                                        <h:outputLabel value="#{msgs.etiquetaPerIng}" class="negrita" style="font-size: 1em"/> 
+                                        <p:selectOneMenu value="#{matriculaMB.matriculaFiltroBean.anio}"    label="#{msgs.etiquetaPerIng}" filter="true" style="width: 225px" panelStyle="width: 225px" class="resetSelect">
+                                            <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{matriculaMB.listaAnioMatricula}" var="anioFiltro" itemLabel="#{anioFiltro}" itemValue="#{anioFiltro}"/>
+                                        </p:selectOneMenu> 
+                                    </h:panelGrid>
+                                    <h:panelGrid styleClass="centrado" columns="2">
+                                        <p:commandButton value="#{msgs.botonBuscar}" action="#{matriculaMB.obtenerFiltroMatriculados()}" update="pnlTablaMatriculados,msgMat"/>
+                                    </h:panelGrid> 
+                                    <p:messages autoUpdate="false" id="msgMat" />
+                                </p:fieldset>
+                            </h:panelGrid>
+                            <h:panelGrid  id="pnlTablaMatriculados" styleClass="centrado" >
+                                <p:dataTable id="tblMatricula" value="#{matriculaMB.listaMatriculaFlgTrueBean}" widgetVar="tblMatricula"
+                                             paginator="true" selectionMode="single" 
+                                             selection="#{matriculaMB.matriculaBean}" rowIndexVar="n" 
+                                             var="matricula" rowKey="#{matricula.idMatricula}"
+                                             rows="#{matriculaMB.numRegistrosTablasPorFiltro}" 
+                                             rendered="#{not empty matriculaMB.listaMatriculaFlgTrueBean}" 
+                                             style="width:600px; font-size: 10px;font-size:14px !important;">
+                                    <p:ajax event="rowSelect" listener="#{matriculaMB.rowSelectMatri}" update=":frmMantMatricula" />
+                                    <f:facet name="header" >
+                                        <h:outputText value="#{msgs.etiquetaEstPosMatri}" />   
+                                    </f:facet>
+                                    <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                        <center>
+                                            <h:outputText value="#{n+1}" />
+                                        </center>
+                                    </p:column>
+                                    <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.idPersona}" >
+                                        <h:outputText value="#{matricula.estudianteBean.personaBean.idPersona}"/>
+                                    </p:column>
+                                    <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{estudiante.personaBean.nombre}">
+                                        <h:outputText value="#{matricula.estudianteBean.personaBean.nombreCompletoDesdeApellidos}"/>
+                                    </p:column> 
+                                    <p:column headerText="#{msgs.etiquetaGradoHab}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3" sortBy="#{estudiante.personaBean.nombre}">
+                                        <h:outputText value="#{matricula.gradoAcademicoBean.nombre}"/>
+                                    </p:column> 
+                                </p:dataTable> 
+                            </h:panelGrid>
+                        </p:panel> 
+                    </h:form>
+                </p:layoutUnit>
+                <p:layoutUnit position="center" styleClass="centrado">
+                    <h:panelGrid styleClass="centrado" >
+                        <h:form id="frmMantMatricula">
+                            <br></br> <br></br>
+                            <p:panel header="#{msgs.tituloRegMatricula}">
+                                <h:panelGrid columns="2" id="pnlDatosMatricula" class="centrado" style="width: 750px">
+                                    <h:panelGrid columns="3" cellpadding="3" class="siseFontGrid4" cellspacing="6">
+                                        <h:outputLabel value="#{msgs.etiquetaFechaMatri}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:calendar value="#{matriculaMB.matriculaBean.fechaMatricula}" required="true"  label="#{msgs.etiquetaFechaMatri}" mode="popup"
+                                                    pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"/>  
+                                        <h:outputLabel value="#{msgs.etiquetaEstudiante}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:inputText value="#{matriculaMB.matriculaBean.estudianteBean.personaBean.nombreCompleto}" size="50" readonly="true"/>
+                                        <h:outputLabel value="#{msgs.etiquetaStatusGra}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:inputText value="#{matriculaMB.matriculaBean.estudianteBean.tipoStatusEst.codigo}" readonly="true" 
+                                                     style="border:1px solid #{matriculaMB.bloqueoMatricula==true?'red':'#a8a8a8'}"/>
+                                        <h:outputLabel value="#{msgs.etiquetaMotivo}" class="negrita" rendered="#{matriculaMB.bloqueoMatricula}"/>
+                                        <h:outputText value="" class="requerido" rendered="#{matriculaMB.bloqueoMatricula}"/>
+                                        <p:inputText value="#{matriculaMB.matriculaBean.estudianteBean.motivoStatusEst}" readonly="true" rendered="#{matriculaMB.bloqueoMatricula}"
+                                                     style="border:1px solid #{matriculaMB.bloqueoMatricula==true?'red':'#a8a8a8'}"/>
+                                        <h:outputLabel value="#{msgs.etiquetaCodigo}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:inputText value="#{matriculaMB.matriculaBean.estudianteBean.personaBean.idPersona}" size="20" readonly="true">
+                                        </p:inputText>
+                                        <h:outputLabel value="#{msgs.etiquetaGradoAcademico}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:inputText value="#{matriculaMB.matriculaBean.gradoAcademicoBean.nombre}" readonly="true"  
+                                                     style="border:1px solid #{matriculaMB.bloqueoMatricula==true?'red':'#a8a8a8'}"/> 
+                                        <h:outputLabel value="#{msgs.etiquetaTipoMatri}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:selectOneMenu value="#{matriculaMB.matriculaBean.tipoMatriculaBean.idCodigo}" required="true"  label="#{msgs.etiquetaTipoMatri}" style="width: 225px" panelStyle="width: 225px">
+                                            <f:selectItems value="#{matriculaMB.listaCodigoBean}" var="tipoMatricula" itemLabel="#{tipoMatricula.codigo}" itemValue="#{tipoMatricula.idCodigo}"/> 
+                                        </p:selectOneMenu> 
+                                        <h:outputLabel value="#{msgs.etiquetaSeccion}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:inputText value="#{matriculaMB.matriculaBean.seccion}" size="5"  /> 
+                                        <h:outputLabel value="#{msgs.etiquetaResPago}" styleClass="negrita"  />
+                                        <h:outputText value="" styleClass="requerido" />
+                                        <p:selectOneMenu value="#{matriculaMB.matriculaBean.estudianteBean.tipoRespPago.codigo}" required="false"  label="#{msgs.etiquetaResPago}"   style="width: 225px"
+                                                         >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{matriculaMB.listaParentescoFam1}" var="fami" 
+                                                           itemLabel="#{fami.codigo}" itemValue="#{fami.idCodigo}"/>
+                                            <p:ajax event="change" listener="#{matriculaMB.obtenerCodigo()}"  />
+                                        </p:selectOneMenu>
+
+                                        <h:outputLabel value="#{msgs.etiquetaFlgMatricula}" class="negrita"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:selectBooleanCheckbox value="#{matriculaMB.matriculaBean.flgMatricula}" disabled="#{matriculaMB.flgHabiMatricula==true}" />
+
+                                        <h:outputText value="" class="requerido"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:link id="est" outcome="/mantenimientos/mantEstudiante.xhtml" target="_blank" value="#{msgs.etiquetaIrFichaPost}"  disabled="#{matriculaMB.matriculaBean.estudianteBean.personaBean.idPersona == null}" >
+                                            <f:param name="caniari" value="#{matriculaMB.matriculaBean.estudianteBean.personaBean.idPersona}" />
+                                            <f:param name="caniari2" value="#{matriculaMB.matriculaBean.estudianteBean.personaBean.unidadNegocioBean.uniNeg}" />
+                                        </p:link>
+                                        <h:outputText value="(*) Requerido" class="requerido"/>
+                                        <h:inputHidden value="#{matriculaMB.matriculaBean.idMatricula}"/>
+                                    </h:panelGrid>
+                                    <h:panelGrid>
+
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="2">
+                                        <p:graphicImage value="#{matriculaMB.alerta}" id="imagen"/> 
+                                        <h:outputText value="#{matriculaMB.texto}" style="color: red" id="texto"/>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <h:panelGrid class="centrado" columns="2" id="botones">
+                                    <p:commandButton actionListener="#{matriculaMB.guardarMatricula()}" disabled="#{matriculaMB.bloqueoMatricula}" rendered="#{matriculaMB.matriculaBean.flgMatricula!=true}"
+                                                     update=":frmDatosMatricula:pnlTablaFiltroNoMatri,:frmDatosMatricula:pnlTablaMatricula,msgsAddPro,:frmMantMatricula:pnlDatosMatricula,:frmDatosMatriculados
+                                                     ,:frmMantMatricula:botones"
+                                                     oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                     value="#{msgs.botonGrabar}">
+                                    </p:commandButton>
+                                    <p:commandButton actionListener="#{matriculaMB.limpiarMatricula()}" 
+                                                     update=":frmMantMatricula:pnlDatosMatricula,msgsAddPro,:frmDatosMatricula:pnlTablaFiltroNoMatri,:frmDatosMatricula:pnlTablaMatricula,:frmDatosMatriculados
+                                                     ,:frmMantMatricula:botones"                                                                 
+                                                     value="#{msgs.botonLimpiar}" process="@this">
+                                    </p:commandButton>
+                                    <h:commandLink action="#{matriculaMB.imprimirPdfDeclaracionJurada()}" target="_blank" rendered="#{matriculaMB.flgMatriculado==true}">
+                                        <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                    </h:commandLink>
+                                </h:panelGrid>
+                                <p:messages id="msgsAddPro" showDetail="true" showSummary="true"/>
+                            </p:panel>
+                        </h:form>
+
+                    </h:panelGrid>
+                </p:layoutUnit>
+            </p:layout>
+
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <!--h:outputLabel value="#{msgs.etiquetaMatricula}: #{matriculaMB.matriculaBean}"-->
+                            <h:inputHidden value="#{matriculaMB.matriculaBean.idMatricula}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{matriculaMB.eliminarMatricula()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosMatricula:pnlTablaMatricula,msgsConfirma,:frmMantMatricula:pnlDatosMatricula"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update=":frmDatosMatricula:pnlTablaMatricula,msgsConfirma"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsConfirma" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <!--h:outputLabel value="#{msgs.etiquetaNombre}: #{matriculaMB.matriculaBean}"/-->
+                            <h:inputHidden value="#{matriculaMB.matriculaBean.estudianteBean.personaBean.idPersona}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{matriculaMB.eliminarMatricula()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosMatricula:pnlTablaMatricula,msgsDelProc,:frmDatosMatricula:tblMatricula"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

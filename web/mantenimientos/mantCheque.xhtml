@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+
+        <h:body onload="#{chequeMB.cargarListaCheques()}">
+            <h:form id="frmDatosCheque">
+                <h:panelGrid styleClass="centrado" id="pnlDatosImpresora" style="text-align: center !important ; font-weight: bold; font-size: 0.9em ; width: 700px" >
+                    <p:panel header="#{msgs.tituloMantCheque}" style="text-align: center !important">
+                        <h:panelGrid columns="6" id="DatosImpresora" class="siseFontGrid4" cellpadding="3">
+                            <h:outputLabel  value="#{msgs.EtiquetaNombre}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputText   value="#{chequeMB.chequeBean.nombre}" required="true" label="#{msgs.EtiquetaNombre}"/> 
+                            <h:outputLabel value="#{msgs.etiquetaNumCta}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:selectOneMenu  value="#{chequeMB.chequeBean.cuentaBancoBean.numCuenta}" required="true" label="#{msgs.etiquetaNumCta}"  >
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                <f:selectItems value="#{chequeMB.listaCuentaBancoBean}"  var="ctaBco" itemLabel="#{ctaBco.numCuenta} - #{ctaBco.tipoMonedaBean.codigo} - #{ctaBco.entidadBancoBean.nombre}" itemValue="#{ctaBco.numCuenta}"/> 
+                                <p:ajax event="change" listener="#{chequeMB.obtenerCtaBanco()}" />
+                            </p:selectOneMenu>    
+                            <h:outputLabel value="#{msgs.etiquetaIncio}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputText value="#{chequeMB.chequeBean.inicio}" required="true" label="#{msgs.etiquetaIncio}" maxlength="13"/> 
+                            <h:outputLabel value="#{msgs.etiquetaFin}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputText value="#{chequeMB.chequeBean.fin}" required="true" label="#{msgs.etiquetaFin}"  maxlength="30"/> 
+                            <h:outputLabel value="#{msgs.etiquetaActual}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputText value="#{chequeMB.chequeBean.actual}" required="true" label="#{msgs.etiquetaActual}"  maxlength="13"/> 
+                            <h:outputLabel value="#{msgs.etiquetaStatus}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputSwitch id="radioEstado"  required="true" value="#{chequeMB.chequeBean.status}" label="#{msgs.etiquetaEstado}" onLabel="#{msgs.etiquetaActivo}" offLabel="#{msgs.etiquetaInactivo}"/>   
+                            <h:outputText value="#{msgs.etiquetaObs}"/>
+                            <h:outputText value=" " class="requerido"/> 
+                            <p:inputTextarea  value="#{chequeMB.chequeBean.obs}" cols="35" rows="4" maxlength="50"  label="#{msgs.etiquetaObs}"   />
+                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>             
+                            <h:inputHidden value="#{chequeMB.chequeBean.unidadNegocioBean.uniNeg}"/> 
+                            <h:inputHidden value="#{chequeMB.chequeBean.idCheque}"/>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2"  style="font-size: 0.9em" >
+                            <p:commandButton actionListener="#{chequeMB.guardarCheque()}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             update=":frmDatosCheque:pnlDatosImpresora,msgsAddProc,:frmTablaCheque:pnlTblImpresora"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{chequeMB.limpiarCheque()}" 
+                                             update=":frmDatosCheque:pnlDatosImpresora,msgsAddProc,:frmTablaCheque:tblCheque"                                                                 
+                                             value="#{msgs.botonNuevo}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages id="msgsAddProc" autoUpdate="false"/>
+                    </p:panel>
+
+                </h:panelGrid>
+            </h:form>  
+            <h:form id="frmTablaCheque">
+                <h:panelGrid styleClass="centrado" id="pnlTblImpresora" style="text-align: center !important ; font-weight: bold; font-size: 0.9em" >
+                    <p:dataTable id="tblCheque" value="#{chequeMB.listaChequeBean}" widgetVar="tblCheque"
+                                 paginator="true" selectionMode="single" 
+                                 selection="#{chequeMB.chequeBean}"
+                                 var="cheque" rowKey="#{cheque}"
+                                 rows="#{chequeMB.numRegistrosTablas}" 
+                                 rendered="#{not empty chequeMB.listaChequeBean}" 
+                                 style="width: #{chequeMB.anchoTablasBig}; font-size: 0.9em">
+                        <p:ajax event="rowSelect" listener="#{chequeMB.rowSelect}" update=":frmDatosCheque:pnlDatosImpresora"/>
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaCheques}" />  
+                        </f:facet>
+                        <p:column filterBy="#{cheque.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="exact" width="30%" class="nombre1Filtro">
+                            <h:outputText value="#{cheque.nombre}" />
+                        </p:column> 
+                        <p:column filterBy="#{cheque.inicio}" filterMatchMode="contains" headerText="#{msgs.etiquetaIncio}"  width="20%" >
+                            <h:outputText value="#{cheque.inicio}" />
+                        </p:column>
+                        <p:column filterBy="#{cheque.fin}" headerText="#{msgs.etiquetaFin}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{cheque.fin}" />
+                        </p:column>      
+                        <p:column filterBy="#{cheque.actual}" headerText="#{msgs.etiquetaActual}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{cheque.actual}" />
+                        </p:column>  
+                        <p:column filterBy="#{cheque.status}" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{cheque.vistaStatus}" />
+                        </p:column>  
+                        <!--
+                       <p:column style="text-align:center;width: 80px">
+                           <f:facet name="header">
+                               <h:outputText value="#{msgs.etiquetaAcciones}" />
+                           </f:facet>
+                           <p:commandLink id="cmdEliminar" action="#{chequeMB.obtenerChequePorId(cheque)}" update=":frmElimina:pnlDatosElimina"
+                                          oncomplete="PF('popEliminar').show();" process="@this">
+                               <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                           </p:commandLink>
+                           <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelDocIngreso}" />
+                       </p:column>
+                        --> 
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaImpresoras}: #{chequeMB.chequeBean.nombre}"/>
+
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{chequeMB.eliminarCheque()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTablaCheque:pnlTblImpresora,:frmDatosCheque:pnlDatosImpresora"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

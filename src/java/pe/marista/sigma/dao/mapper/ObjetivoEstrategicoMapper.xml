@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.ObjetivoEstrategicoDAO">
+
+    <sql id="consultaCampos">
+        SELECT  
+        o.idobjestrategico
+        ,o.idLinea          as idLineaObjetivo
+        ,o.nombre           as nombreObjetivoEs
+        ,o.descripcion      as DescObjetivoEs
+        ,SUBSTRING(o.nombre,1,30)      as nombreObjetivoEsSub
+        ,SUBSTRING(o.descripcion,1,50) as DescObjetivoEsSub
+        ,o.status           as statusObjetivoEs
+        ,o.creapor
+        ,o.creaFecha
+        ,li.idLinea
+        ,li.nombre                  as nombreLinea
+        ,SUBSTRING(li.nombre ,1,50) as nombreLineaSub 
+        ,li.descripcion     as descripcionLinea
+        ,li.status          as statusLinea
+        ,p.idPlanEstrategico 
+        ,p.nombre           as nombreEstrategico
+        ,p.descripcion      as desEstrategico
+        ,p.status           as statusPlan
+        ,p.unineg    
+        FROM ME_ObjEstrategico o
+        left join ME_Linea li on li.idLinea = o.idLinea and li.unineg=o.unineg
+        left join ME_PlanEstrategico p on li.idPlanEstrategico = p.idPlanEstrategico and li.unineg=p.unineg  
+    </sql>
+    <!--ResultMap Objetivo EStrategico-->
+    <resultMap id="objetivoEsResultado" type="pe.marista.sigma.bean.ObjetivoEstrategicaBean">
+        <id property="idObjEstrategico" column="idObjEstrategico" />
+        <result property="nombre" column="nombreObjetivoEs" />
+        <result property="descripcion" column="DescObjetivoEs" /> 
+        <result property="nombreObjetivoEsSub" column="nombreObjetivoEsSub" />
+        <result property="DescObjetivoEsSub" column="DescObjetivoEsSub" /> 
+        <result property="status" column="statusObjetivoEs" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="c reaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="lineaEstrategicaBean" column="idLinea"
+                     javaType="pe.marista.sigma.bean.LineaEstrategicaBean"
+                     resultMap="lineaResultado"/>
+        <association property="planEstrategicoBean" column="idPlanEstrategico" 
+                     javaType="pe.marista.sigma.bean.PlanEstrategicoBean" 
+                     resultMap="planEstrategicoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <!--ResultMap Linea Estrategica-->
+    <resultMap id="lineaResultado" type="pe.marista.sigma.bean.LineaEstrategicaBean" >
+        <id property="idLinea" column="idLinea" />
+        <result property="nombre" column="nombreLinea" />
+        <result property="nombreLineaSub" column="nombreLineaSub" />
+        <result property="descripcion" column="descripcionLinea" />
+    </resultMap>
+    
+    <!--Plan Estrategico Resultado-->
+    <resultMap id="planEstrategicoResultado" type="pe.marista.sigma.bean.PlanEstrategicoBean">
+        <id property="idPlanEstrategico" column="idPlanEstrategico" />
+        <result property="nombre" column="nombreEstrategico" />
+        <result property="descripcion" column="desEstrategico" />
+    </resultMap>
+    
+    <!--Unidad Negocio Resultado-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <select id="obtenerObjetivoEstrategico" resultMap="objetivoEsResultado" parameterType="String" >
+        <include refid="consultaCampos" /> 
+        WHERE o.uniNeg = #{uniNeg} order by o.idobjestrategico
+    </select>
+    
+    <select id="obtenerPorId" resultMap="objetivoEsResultado" parameterType="Integer" >
+        <include refid="consultaCampos" />
+        WHERE idObjEstrategico = #{idObjEstrategico} order by o.idobjestrategico
+    </select>
+    
+    <select id="obtenerObjetivoPorPlan" resultMap="objetivoEsResultado" parameterType="map" >
+        <include refid="consultaCampos" /> 
+        WHERE o.idPlanEstrategico = #{idPlanEstrategico} 
+                and o.unineg = #{uniNeg}
+        order by o.idobjestrategico
+    </select>
+    
+    <select id="obtenerObjPorLinea" resultMap="objetivoEsResultado" >
+        <include refid="consultaCampos" /> 
+        WHERE o.idLinea = #{lineaEstrategicaBean.idLinea} and p.unineg in(select unineg from MO_UnidadNegocio)
+        order by o.idobjestrategico
+    </select>
+    
+    <insert id="insertarObjetivoEstrategico" parameterType="pe.marista.sigma.bean.ObjetivoEstrategicaBean" >
+        insert into ME_ObjEstrategico
+        (unineg,idplanestrategico,idlinea,nombre,descripcion,status,creapor,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},#{planEstrategicoBean.idPlanEstrategico},#{lineaEstrategicaBean.idLinea},
+        #{nombre},#{descripcion},#{status},#{creaPor},getDate())        
+    </insert>
+    <update id="modificarObjetivoEstrategico" parameterType="pe.marista.sigma.bean.ObjetivoEstrategicaBean">
+        UPDATE ME_ObjEstrategico
+        SET        
+        uniNeg = #{unidadNegocioBean.uniNeg},
+        idPlanEstrategico = #{planEstrategicoBean.idPlanEstrategico},
+        idLinea = #{lineaEstrategicaBean.idLinea},
+        nombre = #{nombre},
+        descripcion = #{descripcion},
+        status = #{status},
+        modiPor = #{modiPor}
+        WHERE idobjestrategico = #{idObjEstrategico}
+    </update>
+    
+    <delete id="eliminarObjetivoEstrategico"  parameterType="Integer">
+        DELETE from ME_ObjEstrategico
+        WHERE idObjEstrategico = #{idObjEstrategico}
+    </delete>
+    
+    <select id="obtenerCodObjetivoEstrategivo" resultType="String" parameterType="pe.marista.sigma.bean.ObjetivoEstrategicaBean">
+        <!--
+        select max(substring(a.codigoObjEstrategico,6,9)) as codigoObjetivo
+        from ME_ObjEstrategico a
+        inner join ME_Linea li on a.idLinea = li.idLinea
+        inner join ME_PlanEstrategico pe on li.idPlanEstrategico = pe.idPlanEstrategico
+        where uniNeg = #{uniNeg}
+        group by pe.unineg     
+        -->
+    </select>
+          
+</mapper>

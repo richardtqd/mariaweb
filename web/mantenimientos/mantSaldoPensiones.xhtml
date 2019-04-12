@@ -1,0 +1,180 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body  onload="#{cuentasPorCobrarMB.cargarDatosSaldoPensiones()}"> 
+            <center>
+                <h:outputText value="#{msgs.etiquetaSaldoPensiones}" class="tituloPantalla" style="margin: auto !important;font-size: 16px"/>
+            </center>
+            <h:form id="frmDatosSoliCCH"> 
+                <h:panelGrid columns="1" style="padding-top: 30px " styleClass="centrado">                   
+
+                    <p:panel id="pnlSol"   toggleable="true" toggleSpeed="500" closeSpeed="500" >
+                        <h:panelGrid columns="3" cellpadding="3"  class="negrita" id="pnlSolCajaCh" >
+                            <h:outputLabel value="#{msgs.etiquetaAnio}:" styleClass="negrita"/>  
+                            <h:outputLabel value=" " class="requerido" />
+                            <p:spinner id="minMax" value="#{cuentasPorCobrarMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="5">
+                            </p:spinner>
+
+                            <h:outputLabel value="#{msgs.etiquetaFecha}:" styleClass="negrita"/>  
+                            <h:outputLabel value=" " class="requerido" />
+                            <p:calendar  value="#{cuentasPorCobrarMB.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                            </p:calendar>
+
+                            <h:outputLabel value="#{msgs.etiquetaMes} a considerar" class="negrita" />
+                            <h:outputLabel value="*" class="requerido" />
+                            <p:selectOneMenu effect="fold" value="#{cuentasPorCobrarMB.mesSelect}"  class="resetSelect" style="width:125px" panelStyle="width:125px" required="true" label="#{msgs.etiquetaMes}">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}"/>
+                                <f:selectItems value="#{cuentasPorCobrarMB.listaMeses}"/>
+                                <p:ajax update=":frmDatosSoliCCH:pnlFiltr0,:frmDatosSoliCCH:pnlFiltr2" listener="#{cuentasPorCobrarMB.flgDisable()}" process="@this"></p:ajax>
+                            </p:selectOneMenu> 
+
+                            <h:outputLabel value="#{msgs.etiquetaNivelAcademico}" class="negrita" /> 
+                            <h:outputLabel value=" " class="requerido" />
+                            <p:selectOneMenu value="#{cuentasPorCobrarMB.matriculaFiltroBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}" style="width:160px" panelStyle="width:160px" label="#{msgs.etiquetaNivelAcademico}" >
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                <f:selectItems value="#{cuentasPorCobrarMB.listaNivelAcademico}" var="nivAca" itemLabel="#{nivAca.nombre}" itemValue="#{nivAca.idNivelAcademico}"/> 
+                                <p:ajax event="change" listener="#{cuentasPorCobrarMB.obtenerGradoAcaBasica()}" update="cmboGradoAcaBas" />
+                            </p:selectOneMenu>     
+
+                            <h:outputLabel value="#{msgs.etiquetaGradoAca}" class="negrita"    /> 
+                            <h:outputLabel value=" " class="requerido" />
+                            <p:selectOneMenu id="cmboGradoAcaBas" value="#{cuentasPorCobrarMB.matriculaFiltroBean.estudianteBean.gradoHabilitado.idGradoAcademico}" style="width:160px" panelStyle="width:160px" class="resetSelect" label="#{msgs.etiquetaGradoAca}">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                <f:selectItems value="#{cuentasPorCobrarMB.listaGradoAcademicoFiltroBean}" var="GradAcaBas" itemLabel="#{GradAcaBas.nombre}" itemValue="#{GradAcaBas.idGradoAcademico}"/>
+
+                                <p:ajax event="change" listener="#{cuentasPorCobrarMB.obtenerIdGradoAca(cuentasPorCobrarMB.matriculaFiltroBean.estudianteBean.gradoHabilitado.idGradoAcademico)}"  />
+                            </p:selectOneMenu>  
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2"> 
+                            <p:commandButton value="#{msgs.botonBuscar}" action="#{cuentasPorCobrarMB.obtenerFiltroSaldoPensiones(cuentasPorCobrarMB.fechaInicio)}"
+                                             update="msg,pnlSolicitudes"/> 
+                        </h:panelGrid>
+                        <p:messages autoUpdate="false" id="msg" />
+                        <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                        <br></br> <center>
+                            <h:panelGrid columns="5">
+                                <center>
+                                <h:panelGrid styleClass="centrado" columns="5" id="pnlFiltr0" >
+                                    <h:outputLabel value="#{msgs.etiquetaNumeroDe}" class="negrita" /> 
+                                    <h:commandLink  action="#{cuentasPorCobrarMB.imprimirSaldoPensionesPivot(cuentasPorCobrarMB.fechaInicio)}" target="_blank" id="imprimir2" 
+                                                    disabled="#{cuentasPorCobrarMB.disabled}"   > 
+                                        <h:graphicImage value="/resources/images/icons/pdf.png" width="80%" />
+                                    </h:commandLink> 
+                                    <p:tooltip id="toolTip2" for="imprimir2" value="#{msgs.etiquetaImprimir}" /> 
+
+                                </h:panelGrid> 
+                                    </center>
+                                    <center>
+                                <h:panelGrid styleClass="centrado" columns="5" id="pnlFiltr2" >
+                                    <h:outputLabel value="#{msgs.etiquetaLetra}" class="negrita" /> 
+                                    <h:commandLink  action="#{cuentasPorCobrarMB.imprimirSaldoPensionesLetra(cuentasPorCobrarMB.fechaInicio)}" target="_blank" id="imprimirLetra" 
+                                                    disabled="#{cuentasPorCobrarMB.disabled}"   > 
+                                        <h:graphicImage value="/resources/images/icons/pdf.png" width="80%" />
+                                    </h:commandLink> 
+                                    <p:tooltip id="toolTipLetra" for="imprimirLetra" value="#{msgs.etiquetaImprimir}" /> 
+
+                                </h:panelGrid> 
+                                        </center>
+                                <p:messages id="msgsAddSol"  autoUpdate="false"/>
+                            </h:panelGrid>
+                        </center>
+                    </p:panel>
+                </h:panelGrid> 
+                <center>
+                    <h:panelGrid id="pnlSolicitudes">
+                        <p:dataTable id="cuenta" value="#{cuentasPorCobrarMB.listaPensionesRepBeanPivot}" paginator="true" 
+                                     widgetVar="cuenta"  selectionMode="single" 
+                                     var="cuenta"   rowIndexVar="n" paginatorPosition="bottom"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                     rows="15"  rowKey="#{cuenta}"
+                                     rendered="#{not empty cuentasPorCobrarMB.listaPensionesRepBeanPivot}" 
+                                     style="width: 2500px; font-size: 3px">
+
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloSolicitudes}" />  
+                            </f:facet>
+                            <f:facet name="{Exporters}">
+                                <h:commandLink> 
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                    <p:dataExporter type="xls" target="cuenta" fileName="saldoPensiones" />
+                                </h:commandLink> 
+                            </f:facet>
+                            <p:column exportable="false"  styleClass="siseFontTable3 centrado-texto" style="width: 1px" headerText="#{msgs.numero}">
+                                <h:outputText value="#{n+1}" /> 
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaGradSecc}" class="nombre11Filtro" filterMatchMode="contains" style="width: 4px">
+                                <h:outputText value="#{cuenta.identificador}" /> 
+                            </p:column>  
+                            <p:column  headerText="#{msgs.etiquetaAlum}" class="nombre11Filtro" filterMatchMode="contains" width="3%">
+                                <h:outputText value="#{cuenta.nombre}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaCodigoAlumno}" class="nombre11Filtro" filterMatchMode="contains" width="1%">
+                                <h:outputText value="#{cuenta.codigoEstudiante}" />
+                            </p:column>   
+                             <p:column  headerText="#{msgs.etiquetaResPago}" class="nombre11Filtro" filterMatchMode="contains" style="width: 6px">
+                                <h:outputText value="#{cuenta.nombreRespago}" />  
+                            </p:column> 
+                            <p:column  headerText="#{msgs.etiquetaCorreo}" class="nombre11Filtro" filterMatchMode="contains" style="width: 6px">
+                                <h:outputText value="#{cuenta.correoResp}" />  
+                            </p:column> 
+                            <p:column  headerText="#{msgs.etiquetaDir}" class="nombre11Filtro" filterMatchMode="contains" style="width: 15px">
+                                <h:outputText value="#{cuenta.direccionResp}" />  
+                            </p:column> 
+                            <p:column  headerText="#{msgs.etiquetaTel}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.telefonoResp}" />  
+                            </p:column> 
+                            <p:column  headerText="#{msgs.etiquetaMatr}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.matricula}" />  
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaMarzo}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.marzo}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaAbril}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.abril}" /> 
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaMayo}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.mayo}" /> 
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaJunio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.junio}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaJulio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.julio}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaAgosto}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.agosto}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaSetiembre}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.septiembre}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaOctubre}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.octubre}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaNoviembre}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.noviembre}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaDiciembre}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.diciembre}" />
+                            </p:column>   
+                            <p:column  headerText="#{msgs.etiquetaDeuda}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                                <h:outputText value="#{cuenta.deuda}" />
+                            </p:column>   
+                        </p:dataTable>
+                    </h:panelGrid> 
+                </center>
+            </h:form>
+            <h:form id="frmTablaArqueo">
+                <h:panelGrid id="pnlTablaArqueo" styleClass="centrado"> 
+
+                </h:panelGrid>   
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

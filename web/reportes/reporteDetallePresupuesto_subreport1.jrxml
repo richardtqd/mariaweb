@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteDetallePresupuesto_subreport1" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="74c22054-ea45-48e7-9c08-61c19c4bf541">
+	<property name="ireport.zoom" value="1.771561000000001"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[declare @anio int, @cuenta int
+	set @anio=2017
+	set @cuenta=63
+	declare @montoXCuentaEje decimal(20,2) = (select(
+	 (select isnull(sum(montoaprobado),0.00) from MT_SolicitudCajaCh s
+	inner join MT_Concepto c on c.idconcepto = s.idconcepto
+	inner join MO_Codigo co on co.idcodigo=s.idtipostatussolcajach
+	where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(s.creafecha)=@anio
+	and co.codigo='PAGADO')
+	+
+	(select isnull(sum(f.montopago),0.00) from ML_CuentaFact c
+	inner join MT_Concepto con on con.idconcepto=c.idconcepto
+	inner join ML_FacturaCompra f on f.idfacturacompra=c.idfacturacompra
+	inner join MO_Codigo cod on cod.idcodigo=f.idtipostatusfactura
+	where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(f.creafecha)=@anio
+	and cod.codigo='PAGADA'
+	)))
+	SELECT convert(varchar,cast((@montoXCuentaEje) as money),1)   AS montoUtilizado]]>
+	</queryString>
+	<field name="montoUtilizado" class="java.lang.String"/>
+	<variable name="montoUtilizado_1" class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[$F{montoUtilizado}]]></variableExpression>
+	</variable>
+	<variable name="montoUtilizado_2" class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[$F{montoUtilizado}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="11">
+			<textField pattern="###0.00;-###0.00">
+				<reportElement uuid="c5652fef-62e7-4536-9b1a-9f3fdfceca02" x="0" y="0" width="54" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoUtilizado}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

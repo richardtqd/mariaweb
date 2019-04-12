@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.MotivoMovimientoDAO">
+
+    <sql id="consultaMotivo">
+        SELECT 
+        mot.idmovimientomotivo,
+        mot.motivo,
+        mot.idtipomovactivo,
+        mot.creapor,
+        mot.creafecha,
+        mot.modipor,
+        mot.modiver,
+        mov.codigo as tipoMovActivo,
+        cod.codigo as tipoDuracion,
+        mot.idtipoduracion as idTipoDuracion
+        FROM ML_MovimientoMotivo mot
+        Left Join MO_Codigo mov ON mov.idCodigo = mot.idTipoMovActivo
+        left join MO_Codigo cod on cod.idcodigo = mot.idtipoduracion
+    </sql>
+   
+    <resultMap id="motivoMovimientoResultado" type="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <id property="idMovimientoMotivo" column="idMovimientoMotivo"/>
+        <result property="motivo" column="motivo"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="modiVer" column="modiVer"/>
+        <association property="tipoMovimientoActivoBean" column="idTipoMovActivo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="MovActivoResultado"/> 
+        <association property="tipoDuracionBean" column="idTipoDuracion"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="duracionResultado"/> 
+    </resultMap>
+    <resultMap id="MovActivoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMovActivo"/>
+        <result property="codigo" column="tipoMovActivo"/>
+    </resultMap>
+    <resultMap id="duracionResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDuracion"/>
+        <result property="codigo" column="tipoDuracion"/>
+    </resultMap>
+    
+    <select id="obtenerMotivoPorId" resultMap="motivoMovimientoResultado" >
+        <include refid="consultaMotivo" />WHERE mot.idMovimientoMotivo = #{idMovimientoMotivo} 
+    </select>
+    <select id="obtenerId" resultMap="motivoMovimientoResultado" >
+        <include refid="consultaMotivo" />WHERE mot.idMovimientoMotivo = #{idMovimientoMotivo} 
+    </select>
+    <select id="obtenerMotivo" resultMap="motivoMovimientoResultado" resultType="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <include refid="consultaMotivo" /> where mot.idMovimientoMotivo = #{idMovimientoMotivo}
+    </select>
+    <select id="obtenerTemporal" parameterType="Integer" resultType="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <include refid="consultaMotivo"/>  Where cod.idCodigo = #{tipoDuracionBean.idCodigo} 
+    </select>    
+    <select id="obtenerPermanente" parameterType="Integer" resultType="pe.marista.sigma.bean.MotivoMovimientoBean">
+        <include refid="consultaMotivo"/>  Where cod.idCodigo = #{tipoDuracionBean.idCodigo} 
+    </select>    
+</mapper>

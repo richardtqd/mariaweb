@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body>
+
+            <h:form id="frmPresupuesto" >
+                <p:panel id="pnlFiltoBanco" style="width: 800px" header="#{msgs.etiquetaFiltro}" class="centrado"  >
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <p:selectOneRadio value="#{presupuestoPlanMB.selFiltro}" label="#{msgs.etiquetaFiltro}" layout="grid" columns="4" >
+                            <f:selectItem itemLabel="#{msgs.etiquetaPresu}" itemValue="1" />
+                            <f:selectItem itemLabel="#{msgs.etiquetaPresupuestoUo}" itemValue="2" /> 
+                            <p:ajax event="change" listener="#{presupuestoPlanMB.obtenerFiltro()}" 
+                                    update=":frmTblPresupuesto" />
+                        </p:selectOneRadio>
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid styleClass="centrado" columns="5" >
+                        <p:outputLabel value="#{msgs.etiquetaAnio}: " />
+                        <p:spinner id="minMax" value="#{presupuestoPlanMB.presupuestoBean.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="5" required="true">
+                        </p:spinner>  
+                        <p:outputLabel value="#{msgs.etiquetaPlanContable}:" />
+                        <p:selectOneMenu id="advanced" value="#{presupuestoPlanMB.presupuestoBean.planContableBean.cuenta}" filter="true"
+                                         effect="fade" label="#{msgs.etiquetaPlanContable}: " style='width: 300px' panelStyle="width:300px">
+                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                            <f:selectItems value="#{presupuestoPlanMB.listaPlanContableBean}" var="plan" itemLabel="#{plan.cuenta}-#{plan.nombre}" itemValue="#{plan.cuenta}" />
+                        </p:selectOneMenu> 
+                        <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{presupuestoPlanMB.buscarPresupuesto()}" 
+                                         update=":frmTblPresupuesto:pnlTblPresupuesto,:frmTblPresupuesto:pnlTblPresupuestoOu,msgPres"/>
+                    </h:panelGrid> 
+                    <p:messages id="msgPres" showDetail="false" autoUpdate="false" />
+                </p:panel>
+            </h:form>
+            <h:form id="frmTblPresupuesto" >
+                <h:panelGrid id="pnlTblPresupuesto" rendered="#{presupuestoPlanMB.flgPres == true}" styleClass="centrado" >
+                    <p:dataTable value="#{presupuestoPlanMB.listaPresupuestoBean}" var="pres" widgetVar="pres" id="tblPresupuesto"
+                                 rendered="#{not empty presupuestoPlanMB.listaPresupuestoBean}" rowKey="#{pres}"
+                                 scrollable="true" scrollHeight="600"
+                                 selectionMode="single" selection="#{presupuestoPlanMB.presupuestoBean}"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}">
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales} #{msgs.etiquetaPresupuesto}" />
+                        </f:facet>
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="25"/>
+                                <p:dataExporter type="xls" target="tblPresupuesto" fileName="Presupuesto" />
+                            </h:commandLink> 
+                        </f:facet>
+                        <p:column headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pres.anio}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNroCue}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pres.planContableBean.cuenta}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPlanContable}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{pres.planContableBean.nombre}" />
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaProgamado}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{pres.presupuestoProg}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaEjecutado}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{pres.presupuestoEjec}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{pres.saldo}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPorcentaje} #{msgs.etiquetaSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{pres.porcentajeSaldo}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+                <h:panelGrid id="pnlTblPresupuestoOu" rendered="#{presupuestoPlanMB.flgPresUo == true}" styleClass="centrado" >
+                    <p:dataTable value="#{presupuestoPlanMB.listaPresupuestoUniOrgBean}" var="presuo" widgetVar="presuo" id="tblPresupuestoOu"
+                                 rendered="#{not empty presupuestoPlanMB.listaPresupuestoUniOrgBean}" rowKey="#{presuo}"
+                                 scrollable="true" scrollHeight="600"
+                                 selectionMode="single" selection="#{presupuestoPlanMB.presupuestoUniOrgBean}"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}">
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales} #{msgs.etiquetaPresupuestoUo}" />
+                        </f:facet>
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="25"/>
+                                <p:dataExporter type="xls" target="tblPresupuestoOu" fileName="PresupuestoUnidadOrganica" />
+                            </h:commandLink> 
+                        </f:facet>
+                        <p:column headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" filterBy="#{presuo.anio}" >
+                            <h:outputText value="#{presuo.anio}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNroCue}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{presuo.planContableBean.cuenta}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPlanContable}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{presuo.planContableBean.nombre}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaUnidOrg}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{presuo.unidadOrganicaBean.nombreUniOrg}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaProgamado}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{presuo.presupuestoProg}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaEjecutado}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{presuo.presupuestoEjec}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{presuo.saldo}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPorcentaje} #{msgs.etiquetaSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto">
+                            <h:outputText value="#{presuo.porcentajeSaldo}" >
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+
+

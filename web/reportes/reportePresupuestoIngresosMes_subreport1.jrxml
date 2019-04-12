@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportePresupuestoIngresosMes_subreport1" language="groovy" pageWidth="1238" pageHeight="555" orientation="Landscape" columnWidth="1238" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c1aa99b3-ed7d-4cc9-b63d-075d66928131">
+	<property name="ireport.zoom" value="2.143588810000002"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[declare @uniNeg varchar(6)='champs'
+declare @anio int=2019
+declare @fechaIni date =(select convert(date,(select '01-01-'+convert(varchar(4),2019))))
+declare @fechaFin date='26-03-2019'
+declare @enero date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-01-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @febrero date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-02-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @marzo date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-03-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @abril date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-04-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @mayo date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-05-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @junio date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-06-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @julio date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-07-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @agosto date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-08-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @setiembre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-09-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @octubre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-10-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @noviembre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-11-'+convert(varchar(4),@anio)))))+1,0))),105))
+declare @diciembre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-12-'+convert(varchar(4),@anio)))))+1,0))),105))
+
+        ;with listaPresupuesto(unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+        valoSoles,presupuestoProgramado,fechapago) as(
+
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(dd.montopagado,0)) as valoSoles,
+        pre.presupuestoprog,d.fechapago
+        from MT_DocIngreso d
+        inner join MO_UnidadNegocio uni on uni.unineg=d.unineg
+        inner join MT_DetDocIngreso dd on dd.iddocingreso=d.iddocingreso
+        inner join MT_Concepto c on c.idconcepto=dd.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=d.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where
+        year(d.fechapago) =@anio
+        and  pl.cuenta in(select cuenta from MT_PlanContable)
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,d.fechapago)   >= @fechaIni and CONVERT(DATE,d.fechapago)  <=  @fechaFin AND PL.cuenta LIKE'7%'
+        and idctasxcobrar is null
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,d.fechapago
+
+
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog ,ct.fechapago
+        from MT_CtasxCobrar ct
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in(select cuenta from MT_PlanContable)
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)  >= @fechaIni and CONVERT(DATE,ct.fechapago) <=  @fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,ct.fechapago
+
+
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre+' (Años Anteriores ' + convert(varchar(10),ct.anio)+')' as nombreCuenta,ct.anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog,ct.fechapago
+        from MT_CtasxCobrar ct
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio  < @anio and  pl.cuenta in(select cuenta from MT_PlanContable)
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago) >=  @fechaIni and CONVERT(DATE,ct.fechapago)<=@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,ct.fechapago,ct.anio
+
+
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,
+        sum(isnull(ct.montopagado,0)-(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))) as valoSoles,
+        pre.presupuestoprog,ct.fechapago
+        from MT_CtasxCobrar ct
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg
+        inner join MT_Concepto c on c.cuentah=772211
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in(select cuenta from MT_PlanContable)
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)>=@fechaIni and CONVERT(DATE,ct.fechapago)<= @fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,ct.fechapago
+		)
+       select distinct l.unineg,l.cuenta,nombreCuenta,l.anio,monedaOrigen,
+        isnull(l.presupuestoProgramado,0) as presupuestoProgramado,
+        (SELECT SUM(valoSoles) FROM listaPresupuesto  l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)  as presupuestoEje,
+        (isnull(l.presupuestoProgramado,0)-(SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)) as saldo,
+        isnull(convert(decimal(12,2),( (((SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)*100)/(l.presupuestoProgramado)))),0) as porcEje,
+        isnull(convert(decimal(12,2),100-( ((SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)*100)/(l.presupuestoProgramado))),0) as porcSaldo
+	 	 ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=1 and l3.fechapago>= @fechaIni and l3.fechapago<=@enero and l3.cuenta=l.cuenta and l3.anio=l.anio) as enero
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=2 and l3.fechapago>= @fechaIni and l3.fechapago<=@febrero and l3.cuenta=l.cuenta and l3.anio=l.anio) as febrero
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=3 and l3.fechapago>= @fechaIni and l3.fechapago<=@marzo and l3.cuenta=l.cuenta and l3.anio=l.anio) as marzo
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=4 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as abril
+
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=5 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as mayo
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=6 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as junio
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=7 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as julio
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=8 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as agosto
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=9 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as setiembre
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=10 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as octubre
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=11 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as noviembre
+		,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=12 and l3.fechapago>= @fechaIni and l3.fechapago<=@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as diciembre
+        FROM listaPresupuesto l
+
+		union all
+        select
+        @unineg as uniNeg,
+        pl.cuenta, pl.nombre as nombreCuenta, @anio as anio,
+        'S' as monedaOrigen
+        ,isnull(p.presupuestoprog,0) as presupuestoProgramado
+        , 0 as presupuestoEje,
+        ( sum(isnull(P.presupuestoprog,0))-0) as saldo,
+        0 as porcEje ,
+        100 as porcSaldo,'0.00' as enero,'0.00' as febrero,'0.00' as marzo,'0.00' as abril,'0.00' as mayo,'0.00' as julio,'0.00' as julio
+		,'0.00' as agosto,'0.00' as setiembre,'0.00' as octubre,'0.00' as noviembre,'0.00' as diciembre
+        from MG_Presupuesto p
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta
+        where  tipocuenta='I'
+        and p.anio=@anio and p.unineg=@uniNeg AND PL.cuenta LIKE'7%'
+        and  pl.cuenta in(select cuenta from MT_PlanContable)
+        and pl.cuenta not in (select cuenta from listaPresupuesto lista where lista.cuenta in(pl.cuenta) )
+        group by pl.cuenta,p.idpresupuesto,pl.nombre,p.creafecha,p.presupuestoprog]]>
+	</queryString>
+	<field name="unineg" class="java.lang.String"/>
+	<field name="cuenta" class="java.lang.Integer"/>
+	<field name="nombreCuenta" class="java.lang.String"/>
+	<field name="anio" class="java.lang.Integer"/>
+	<field name="monedaOrigen" class="java.lang.String"/>
+	<field name="presupuestoProgramado" class="java.math.BigDecimal"/>
+	<field name="presupuestoEje" class="java.math.BigDecimal"/>
+	<field name="saldo" class="java.math.BigDecimal"/>
+	<field name="porcEje" class="java.math.BigDecimal"/>
+	<field name="porcSaldo" class="java.math.BigDecimal"/>
+	<field name="enero" class="java.math.BigDecimal"/>
+	<field name="febrero" class="java.math.BigDecimal"/>
+	<field name="marzo" class="java.math.BigDecimal"/>
+	<field name="abril" class="java.math.BigDecimal"/>
+	<field name="mayo" class="java.math.BigDecimal"/>
+	<field name="junio" class="java.math.BigDecimal"/>
+	<field name="julio" class="java.math.BigDecimal"/>
+	<field name="agosto" class="java.math.BigDecimal"/>
+	<field name="setiembre" class="java.math.BigDecimal"/>
+	<field name="octubre" class="java.math.BigDecimal"/>
+	<field name="noviembre" class="java.math.BigDecimal"/>
+	<field name="diciembre" class="java.math.BigDecimal"/>
+	<variable name="presupuestoProgramado_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{presupuestoProgramado}]]></variableExpression>
+	</variable>
+	<variable name="presupuestoEje_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{presupuestoEje}]]></variableExpression>
+	</variable>
+	<variable name="saldo_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{saldo}]]></variableExpression>
+	</variable>
+	<variable name="porcEje_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{porcEje}]]></variableExpression>
+	</variable>
+	<variable name="porcSaldo_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{porcSaldo}]]></variableExpression>
+	</variable>
+	<variable name="enero_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{enero}]]></variableExpression>
+	</variable>
+	<variable name="febrero_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{febrero}]]></variableExpression>
+	</variable>
+	<variable name="marzo_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{marzo}]]></variableExpression>
+	</variable>
+	<variable name="abril_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{abril}]]></variableExpression>
+	</variable>
+	<variable name="mayo_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{mayo}]]></variableExpression>
+	</variable>
+	<variable name="junio_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{junio}]]></variableExpression>
+	</variable>
+	<variable name="julio_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{julio}]]></variableExpression>
+	</variable>
+	<variable name="agosto_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{agosto}]]></variableExpression>
+	</variable>
+	<variable name="setiembre_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{setiembre}]]></variableExpression>
+	</variable>
+	<variable name="octubre_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{octubre}]]></variableExpression>
+	</variable>
+	<variable name="noviembre_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{noviembre}]]></variableExpression>
+	</variable>
+	<variable name="diciembre_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{diciembre}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<columnHeader>
+		<band height="12" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="270df167-6645-4746-9cd4-bb69113ecf86" x="872" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[JULIO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="fe9b9943-2011-4c11-b7db-a4513fc0aefc" x="1152" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DICIEMBRE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="24fb57b7-e1c2-4f1c-8595-5ee0479adc2d" x="256" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRE. PROG]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="aa1f47b7-1f6d-4aa2-97bd-414325c5c229" x="1096" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NOVIEMBRE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="bb345500-12d8-4cac-8750-b5e659c3bf3f" x="536" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ENERO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="4a836a62-980d-4040-b22b-88b65e50b6f5" x="928" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AGOSTO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="bedbd1ca-f39e-4974-8dd8-1f492059a65e" x="648" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MARZO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9961f006-8630-40a7-8b01-780fed6f71ee" x="1040" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[OCTUBRE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d1023c2a-cdc1-4b6f-86f2-384a08269a09" x="424" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PORC. EJE (%)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a6206112-6f24-4783-99cf-6c4cb99ed6ee" x="760" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MAYO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5f12e672-f0c0-4d73-a832-4a531a983b3f" x="54" y="1" width="202" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DESCRIPCION]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a01cfb0f-4317-45c2-ae08-dac161dc56c4" x="816" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[JUNIO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1f7bb567-662e-44a1-8480-3ada2228cb57" x="984" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SETIEMBRE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f7a82479-939d-46c6-b738-4fd21a0794b8" x="312" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRE. EJE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="97f947df-c4be-4510-a36f-3210f1feb1b0" x="480" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PORC. SALDO(%)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="20f582fc-4f4d-44a4-acdd-e98574901740" x="704" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ABRIL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="eb0fd867-1327-4666-99a9-b0504a9333c3" x="368" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SALDO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3448c37a-7967-4b80-9877-56f04bdd380d" x="592" y="1" width="56" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FEBRERO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1d3a5c02-1e12-461b-8608-d9f48c00fc5e" x="10" y="1" width="44" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CODIGO]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField pattern="#,##0.00">
+				<reportElement uuid="0f618ee8-f7c7-4e1d-b897-befd2f483670" x="480" y="1" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcSaldo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="431220c4-3d60-4fe3-a241-4944ee1803ee" x="928" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{agosto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="8f932070-5128-4f5c-a0b2-7c9c2387550c" x="1040" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{octubre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="574391ed-0998-4f0c-a550-8c50122c7faa" x="592" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{febrero}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="7c8a5434-c292-4d8e-be1d-ce5225f2a377" x="760" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mayo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="d4654b03-61e1-4d52-bfa9-43b04627afad" x="368" y="1" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{saldo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="44a64699-4211-401c-9a96-5ecef16bbfdf" x="54" y="1" width="202" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCuenta}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="e8060277-5e64-42cf-8391-9f5df01401d1" x="1096" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{noviembre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="a10c9d18-cea1-4625-bfad-75afe3b4e1b4" x="536" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{enero}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="8e0251ea-c501-40b1-b48e-ec1b01b55995" x="816" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{junio}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="d45329e5-6aaa-4c6d-8584-f2dc5fc640a4" x="1152" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{diciembre}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="87391b8e-5e90-442c-bb54-d3c6bc1be3a6" x="648" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{marzo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="abbe003d-4fc7-44e6-b160-ed4bce749262" x="984" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{setiembre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ddcff9cc-011b-4260-8c10-097e37032a1d" x="10" y="1" width="44" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cuenta}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="f07d5989-e2c0-4689-9929-8e47c5fb8911" x="424" y="1" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcEje}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="5bff8ede-18ee-4518-8cf3-925382159324" x="704" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{abril}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="053048c2-ba68-421f-af0e-8a2d37fb8e53" x="872" y="1" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{julio}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="8eab973b-b28c-49c3-9452-5754068f0770" x="312" y="1" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{presupuestoEje}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="91470641-7b24-4fa3-88bd-7ee4b064d950" x="256" y="1" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{presupuestoProgramado}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="11" splitType="Stretch">
+			<textField pattern="#,##0.00">
+				<reportElement uuid="8c61e0ea-096c-445b-9bb5-ca0e7e75c049" x="256" y="0" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{presupuestoProgramado_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="c77a55ce-21dd-455b-8e7d-a8b84e8cde19" x="312" y="0" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{presupuestoEje_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="973bd0e7-016c-48ba-aa51-58009470c049" x="368" y="0" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{saldo_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="9ab70711-d25a-476b-9047-9917d30324b0" x="424" y="0" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{porcEje_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="b096c443-7790-4daa-a5fe-bedae46212b0" x="480" y="0" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{porcSaldo_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="8ace35c3-4db7-44ec-b791-ee834dc3965f" x="536" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{enero_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="ebe0781e-ac2e-4b96-b715-fd5e19736d50" x="592" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{febrero_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="ece90a01-f60e-4aa8-a68d-505d2c0d20f1" x="648" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{marzo_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="6fd45845-b5fa-44c6-addd-8ed0d49f25ed" x="704" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{abril_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="9611dbe3-dc44-4fc7-805b-c36c514b26c8" x="760" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{mayo_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="06082273-0310-4d64-826c-0402a061c287" x="816" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{junio_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="60881a41-5860-497b-b26c-50107f636168" x="872" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{julio_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="557bbc4b-d368-4a8c-a796-5538e62bfaa3" x="928" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{agosto_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="81f09c9f-3301-449a-bf4d-fd42d9114768" x="984" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{setiembre_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="79b54bdc-bc39-4159-961f-88577ff031b7" x="1040" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{octubre_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="686d099c-66e8-4e36-b1b7-21f9ec1cd174" x="1096" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{noviembre_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="ecbd3694-6b3e-4561-9b85-21ff1ca56bd2" x="1152" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{diciembre_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

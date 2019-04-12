@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.InventarioAlmacenDAO">
+    <sql id="consultaCampos">
+        
+        select  i.uniNeg,
+        i.idCatalogo,
+        i.idalmacen as idAlmacen,
+        i.nroalmacen as nroAlmacen,
+        i.idtipounimed,
+        co.codigo as tipoUniMed,
+        mo.codigo as tipoMoneda,
+        isnull(i.stockActual,0) as stockActual,
+        isnull(i.stockActual,0) as stockAntiguo,
+        isnull(i.stockActual,0) as stockAyuda,
+        ISNULL(i.stockMin,0) as stockMin,
+        ISNULL(i.stockMax,0) as stockMax,
+        i.precioRef,
+        i.observacion,
+        i.creapor,
+        i.creafecha,
+        co.codigo,
+        mo.idcodigo as idTipoMoneda,
+        ca.idcatalogo as catalogo,
+        ca.item, 
+        ca.precioRef as precioRefCat, 
+        un.nombreUniNeg,
+        e.ruc,
+        e.nombre as nombreEntidad,
+        ent.ruc as rucUnidad ,ent.nombre as nombreUnidad ,
+        dis.iddistrito as idDistrito ,
+        pa.idpais as idPais ,
+        un.nombreUniNeg  ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad,
+        en.ruc,
+        en.nombre,
+        <!-- cambio a prueba -->
+        i.color as color
+        from ML_InventarioAlmacen i		
+        left join ML_Catalogo ca on i.idCatalogo= ca.idCatalogo
+        left join MO_Codigo co on i.idtipounimed = co.idcodigo
+        left join MO_Codigo mo on ca.idtipomoneda = mo.idcodigo
+        left join MO_UnidadNegocio un on i.uniNeg= un.uniNeg
+        left join MO_Entidad e on ca.ruc = e.ruc
+        left join MO_UnidadNegocio unsol on unsol.unineg= i.unineg 
+        left join MO_Entidad ent on ent.ruc=unsol.ruc 
+        left join MO_Pais pa on pa.idpais= ent.idpais 
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito 
+        left join MO_Entidad en on en.ruc= ca.ruc
+    </sql>
+    <resultMap id="inventarioAlmacenResultado" type="pe.marista.sigma.bean.InventarioAlmacenBean">
+        <id property="idAlmacen" column="idAlmacen" />
+        <result property="nroAlmacen" column="nroAlmacen"/>
+        <result property="stockActual" column="stockActual"/>
+        <result property="stockAyuda" column="stockAyuda"/>
+        <result property="stockAntiguo" column="stockAntiguo"/>
+        <result property="stockMin" column="stockMin"/>
+        <result property="stockMax" column="stockMax"/>
+        <result property="precioRef" column="precioRef"/>
+        <result property="observacion" column="observacion"/> 
+        <result property="color" column="color"/> 
+        <association property="tipoUniMedBean" column="idTipoUniMed"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoUniMedResultado"/>
+        <association property="catalogoBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+    </resultMap>
+    
+   
+    <resultMap id="tipoUniMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idtipounimed"/>
+        <result property="codigo" column="tipoUniMed"/>
+    </resultMap> 
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="catalogo"/>
+        <result property="item" column="item"/> 
+        <result property="precioRef" column="precioRefCat"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="cantidad" column="cantidad"/> 
+        <association property="tipoUnidadMedidaBean" column="idTipoUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="uniMedidaResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado"/>
+        <association property="inventarioAlmacenBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.InventarioAlmacenBean"
+                     resultMap="inventarioAlmacenResultado"/><!--AUMENTE-->
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/><!--AUMENTE-->
+        <!-- <association property="tipoCategoriaBean" column="idTipoCategoria"
+        javaType="pe.marista.sigma.bean.CodigoBean"
+        resultMap="categoriaResultado"/>AUMENTE-->
+    </resultMap> 
+    <resultMap id="uniMedidaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUniMed"/>
+        <result property="codigo" column="tipoUnidadMedida"/>
+    </resultMap>
+    <resultMap id="monedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNIResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucUnidad"/>
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultado"/>
+    </resultMap>
+    <resultMap id="distritoUNIDADENTResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distritoUnidad"/>
+    </resultMap>    
+    <resultMap id="paisUNIDADENTResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombreEntidad"/>
+    </resultMap>
+    <!-- <resultMap id="categoriaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/> AUMENTE
+    </resultMap>-->
+    
+    <select id="obtenerPorFiltroIAlmacen" resultMap="inventarioAlmacenResultado" parameterType="pe.marista.sigma.bean.InventarioAlmacenBean">
+        <include refid="consultaCampos" />
+        <where>  
+            i.unineg =#{unidadNegocioBean.uniNeg}  and ca.idtipocategoria=18201
+            <if test="idAlmacen != null and  idAlmacen != 0 ">
+                and i.idAlmacen = #{idAlmacen}
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and ia.fechacompra >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and ia.fechacompra <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by i.idAlmacen desc
+    </select>
+    
+    <!--Lista Todo lo que esta en inventario -->
+    <select id="obtenerTodosInventario" resultMap="inventarioAlmacenResultado">
+        <include refid="consultaCampos"/>
+        order by idAlmacen
+    </select>
+    <select id="obtenerTodos" resultMap="inventarioAlmacenResultado" parameterType="String"> 
+        <include refid="consultaCampos" />where i.uniNeg = #{unidadNegocioBean.uniNeg}  
+    </select> 
+    <select id="obtenerTodosReporte" resultType="pe.marista.sigma.bean.reporte.InventarioAlmacenGeneralRepBean" parameterType="map"> 
+        declare @uniNeg varchar(6) = #{uniNeg}
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        when @unineg = 'SECTOR' THEN 'resources\images\sector.jpg' 
+        end)
+        select 
+        @IMG AS rutaImagen,
+        i.idCatalogo, 
+        isnull(co.codigo,'-') as tipoUniMed,
+        isnull(i.stockActual,0) as stockActual,
+        isnull(i.stockMin,0) as stockMin,
+        isnull(i.precioRef,0) as precioRef,
+        isnull(CONVERT(VARCHAR,i.nroalmacen),'-') as nroAlmacen, 
+        ca.item,
+        un.nombreUniNeg  ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad
+        from ML_InventarioAlmacen i
+        left join ML_Catalogo ca on i.idCatalogo= ca.idCatalogo
+        left join MO_Codigo co on i.idtipounimed = co.idcodigo
+        left join MO_UnidadNegocio un on i.uniNeg= un.uniNeg
+        left join MO_Entidad e on ca.ruc = e.ruc
+        left join MO_UnidadNegocio unsol on unsol.unineg= i.unineg
+        left join MO_Entidad ent on ent.ruc=unsol.ruc
+        left join MO_Pais pa on pa.idpais= ent.idpais
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito
+        where i.uniNeg = #{uniNeg}  
+    </select> 
+    <select id="obtenerTodosReporteMov" resultType="pe.marista.sigma.bean.reporte.MovimientoAlmacenGeneralRepBean" parameterType="map">  
+        declare @uniNeg varchar(6) =#{uniNeg}
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        when @unineg = 'SECTOR' THEN 'resources\images\sector.jpg' 
+        end)
+        select 
+        @IMG AS rutaImagen,
+        i.nromovimiento as nroMovimiento, 
+        convert(date,i.fechamov,108) as fechaMov,
+        i.cantidad as cantidad,
+        inv.stockactual as stockActual,
+        (inv.stockactual+i.cantidad) as stockAnterior,
+        i.recibidopor as recibidoPor,
+        i.entregadoPor as entregadoPor,
+        co.codigo as tipoUniMed,
+        i.idcatalogo as idCatalogo,
+        ca.item as item,
+        isnull(inv.nroAlmacen,'-') as nroAlmacen,
+        un.nombreUniNeg as nombreUniNeg, 
+        ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad
+        from ML_MovimientoAlmacen i
+        left join ML_InventarioAlmacen inv on inv.idcatalogo=i.idcatalogo
+        left join ML_Catalogo ca on i.idCatalogo= ca.idCatalogo
+        left join MO_Codigo co on i.idtipounimed = co.idcodigo
+        left join MO_UnidadNegocio un on i.uniNeg= un.uniNeg
+        left join MO_Entidad e on ca.ruc = e.ruc
+        left join MO_UnidadNegocio unsol on unsol.unineg= i.unineg
+        left join MO_Entidad ent on ent.ruc=unsol.ruc
+        left join MO_Pais pa on pa.idpais= ent.idpais
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito
+        where i.uniNeg = @uniNeg
+    </select> 
+    <!--Lista Obteniendo por ID -->
+    <select id="obtenerPorId" resultMap="inventarioAlmacenResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where i.idAlmacen = #{idAlmacen}
+    </select>
+    <select id="obtenerPorCatalogo" resultMap="inventarioAlmacenResultado" parameterType="pe.marista.sigma.bean.InventarioAlmacenBean">
+        <include refid="consultaCampos" />where i.idCatalogo = #{catalogoBean.idCatalogo}
+    </select>
+    <!--Insertando-->
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.InventarioAlmacenBean"
+            useGeneratedKeys="true" >
+        insert into ML_InventarioAlmacen(idalmacen,uniNeg,idCatalogo,idtipounimed,stockActual,stockMin,stockMax,
+        precioRef,observacion,creaPor,creafecha,nroalmacen,color)
+        values(0,#{unidadNegocioBean.uniNeg}, #{catalogoBean.idCatalogo}, #{tipoUniMedBean.idCodigo},#{stockActual}, #{stockMin}, #{stockMax},
+        #{precioRef}, #{observacion}, #{creaPor},getDate(),#{nroAlmacen},#{color})
+        <selectKey keyProperty="idAlmacen" order="AFTER" resultType="Integer">
+            SELECT max(idAlmacen) from ML_InventarioAlmacen WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey> 
+    </insert> 
+    <!--Actualizando -->
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.InventarioAlmacenBean">
+        update ML_InventarioAlmacen
+        set 
+        idtipounimed = #{tipoUniMedBean.idCodigo},
+        stockActual = #{stockActual},
+        stockMin = #{stockMin}, 
+        stockMax = #{stockMax},
+        precioRef = #{precioRef}, 
+        observacion = #{observacion}, 
+        modiPor = #{modiPor},
+        <!-- CAMBIO A PROBAR -->
+        nroAlmacen = #{nroAlmacen},
+        color = #{color}
+        where uniNeg = #{unidadNegocioBean.uniNeg} 
+        <!--and  idAlmacen = #{idAlmacen} -->
+        and idCatalogo=#{catalogoBean.idCatalogo}
+    </update>
+    <update id="modificarStockActual" parameterType="pe.marista.sigma.bean.InventarioAlmacenBean">
+        update
+        ML_InventarioAlmacen
+        set
+        stockActual = #{stockActual}
+        where uniNeg = #{unidadNegocioBean.uniNeg} and  idCatalogo=#{catalogoBean.idCatalogo}
+    </update>
+    <update id="modificarStockActualMov" parameterType="pe.marista.sigma.bean.InventarioAlmacenBean">
+        update
+        ML_InventarioAlmacen
+        set
+        stockActual = #{stockActual}
+        where uniNeg = #{unidadNegocioBean.uniNeg} and  nroAlmacen = #{nroAlmacen} and idCatalogo=#{catalogoBean.idCatalogo}
+    </update>
+    
+    <sql id="consultaMovimientos">
+        select  
+        moal.idmovimientoalmacen as idMovimientoAlmacen,
+        convert(date,moal.fechamov,108) as fechaMov, 
+        moal.cantidad as cantidad,
+        (inal.stockactual+moal.cantidad) as stockAnterior,
+        moal.entregadopor as entregadoPor,
+        moal.recibidopor as recibidoPor,
+        moal.creapor as creaPor,
+        moal.creafecha as creaFecha,
+        moal.nroMovimiento,
+        moal.modipor as modiPor,
+        uni.unineg as uniNeg,
+        uni.nombreUniNeg as nombreUniNeg,
+        re.idrequerimiento as idRequerimiento,
+        detre.iddetrequerimiento as idDetRequerimiento,
+        unimed.codigo as tipoUniMed,
+        unimed.idcodigo as idTipoUniMed,
+        ca.idcatalogo as idCatalogo,
+        ca.item as item,
+        unimedCAT.codigo as tipoUniMed,
+        inal.idalmacen as idAlmacen,
+        inal.nroalmacen as nroAlmacen,
+        inal.stockactual as stockActual,
+        inal.stockactual as stockAyuda, 
+        uni.nombreUniNeg  ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad
+        from ML_MovimientoAlmacen moal
+        left join MO_UnidadNegocio uni on uni.unineg= moal.unineg
+        left join ML_Requerimiento re on re.idrequerimiento = moal.idrequerimiento and uni.unineg= re.unineg
+        left join ML_DetRequerimiento detre on detre.iddetrequerimiento = moal.iddetrequerimiento and uni.unineg= detre.unineg
+        left join MO_Codigo unimed on unimed.idcodigo= moal.idtipounimed 
+        left join ML_Catalogo ca on ca.idcatalogo= moal.idcatalogo
+        left join ML_InventarioAlmacen inal on inal.idcatalogo=moal.idcatalogo
+        LEFT JOIN ML_Catalogo CAT ON CAT.idcatalogo = INAL.idcatalogo
+        left join MO_Codigo unimedCAT on unimedCAT.idcodigo= moal.idtipounimed 
+        left join MO_UnidadNegocio unsol on unsol.unineg= moal.unineg 
+        left join MO_Entidad ent on ent.ruc=unsol.ruc 
+        left join MO_Pais pa on pa.idpais= ent.idpais 
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito 
+        left join MO_Entidad en on en.ruc= ca.ruc  
+    </sql>
+    
+    <resultMap id="movimientoAlmacenResultado" type="pe.marista.sigma.bean.MovimientoAlmacenBean">
+        <id property="idMovimientoAlmacen" column="idMovimientoAlmacen" /> 
+        <result property="idMovimientoAyuda" column="idMovimientoAyuda"/>
+        <result property="fechaMov" column="fechaMov"/>
+        <result property="cantidad" column="cantidad"/>
+        <result property="entregadoPor" column="entregadoPor"/>
+        <result property="stockAnterior" column="stockAnterior"/>
+        <result property="recibidoPor" column="recibidoPor"/>
+        <result property="creaPor" column="creaPor"/>  
+        <result property="creaFecha" column="creaFecha"/>  
+        <result property="modiPor" column="modiPor"/>  
+        <result property="nroMovimiento" column="nroMovimiento"/>  
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioMovimientoResultado"/>
+        <association property="solicitudLogisticoBean" column="idRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solResultado"/>
+        <association property="solicitudLogDetalleBean" column="idDetRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogDetalleBean"
+                     resultMap="detResultado"/> 
+        <association property="tipoUniMedBean" column="idTipoUniMed"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoUniMedMovResultado"/>
+        <association property="catalogoBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoMovResultado"/> 
+        <association property="inventarioAlmacenBean" column="catalogoBean.idCatalogo"
+                     javaType="pe.marista.sigma.bean.InventarioAlmacenBean"
+                     resultMap="inventarioAlmacenResultado"/> 
+    </resultMap> 
+    <resultMap id="solResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/>
+    </resultMap>
+    <resultMap id="detResultado" type="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        <id property="idDetRequerimiento" column="idDetRequerimiento"/>
+    </resultMap>
+    <resultMap id="tipoUniMedMovResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUniMed"/>
+        <result property="codigo" column="tipoUniMed"/>
+    </resultMap>
+    <resultMap id="catalogoMovResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/> 
+    </resultMap>
+    
+    <resultMap id="unidadNegocioMovimientoResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIMoviResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNIMoviResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucUnidad"/>
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultadoMovi"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultadoMovi"/>
+    </resultMap>
+    <resultMap id="distritoUNIDADENTResultadoMovi" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distritoUnidad"/>
+    </resultMap>    
+    <resultMap id="paisUNIDADENTResultadoMovi" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>
+    
+    <insert id="insertarMovimiento" parameterType="pe.marista.sigma.bean.MovimientoAlmacenBean"
+            useGeneratedKeys="true" >
+        insert into ML_MovimientoAlmacen(uniNeg,idCatalogo,idrequerimiento,iddetrequerimiento,fechaMov,cantidad,idtipounimed,
+        entregadoPor,recibidoPor,creaPor,creafecha,nromovimiento)
+        values(#{unidadNegocioBean.uniNeg}, #{catalogoBean.idCatalogo}, #{solicitudLogisticoBean.idRequerimiento},#{solicitudLogDetalleBean.idDetRequerimiento},#{fechaMov},#{cantidad},
+        #{tipoUniMedBean.idCodigo},#{entregadoPor}, #{recibidoPor}, #{creaPor},getDate(),#{nroMovimiento})
+        <selectKey keyProperty="idMovimientoAlmacen" order="AFTER" resultType="Integer">
+            SELECT max(nroMovimiento) from ML_MovimientoAlmacen WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey> 
+    </insert> 
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.MovimientoAlmacenBean">
+        delete from ML_MovimientoAlmacen
+        where nroMovimiento = #{nroMovimiento} and uniNeg=#{unidadNegocioBean.uniNeg}  
+    </delete>
+    <select id="obtenerUltimoMov" resultType="Integer" parameterType="String" >
+        select right(replicate('0', 10) + rtrim(isnull((max(nromovimiento)),0)+1),10) as idMovimientoAyuda from ML_MovimientoAlmacen 
+        WHERE uniNeg=#{uniNeg} 
+    </select>    
+    <select id="obtenerUltimo" resultType="String" parameterType="String" >
+        select right(replicate('0', 10) + rtrim(isnull((max(nromovimiento)),0)+1),10) as idMovimientoAyuda from ML_MovimientoAlmacen 
+        WHERE uniNeg=#{uniNeg} 
+    </select>    
+    <select id="obtenerUltimoMovPDF" resultMap="movimientoAlmacenResultado" parameterType="map">
+        <include refid="consultaMovimientos" /> 
+        where moal.nroMovimiento = #{nroMovimiento} and moal.uniNeg = #{uniNeg}  
+    </select>
+    <select id="obtenerUltimoMovPDF2" resultType="pe.marista.sigma.bean.reporte.MovimientoAlmacenRepBean" parameterType="map">
+        declare @uniNeg varchar(6) = #{uniNeg}
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        when @unineg = 'SECTOR' THEN 'resources\images\sector.jpg' 
+        else '-'
+        end)
+        select 
+        @IMG AS rutaImagen,
+        moal.nromovimiento as nroMovimiento,
+        convert(date,moal.fechamov,108) as fechaMov,
+        moal.cantidad as cantidad,
+        inal.stockactual as stockActual,
+        (inal.stockactual+moal.cantidad) as stockAnterior,
+        moal.entregadopor as entregadoPor,
+        moal.recibidopor as recibidoPor,
+        unimed.codigo as tipoUniMed,
+        ca.idcatalogo as idCatalogo,
+        ca.item as item,
+        unimedCAT.codigo as tipoUniMed,
+        inal.nroalmacen as nroAlmacen,
+        uni.nombreUniNeg  ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad
+        from ML_MovimientoAlmacen moal
+        left join MO_UnidadNegocio uni on uni.unineg= moal.unineg
+        left join ML_Requerimiento re on re.idrequerimiento = moal.idrequerimiento and uni.unineg= re.unineg
+        left join ML_DetRequerimiento detre on detre.iddetrequerimiento = moal.iddetrequerimiento and uni.unineg= detre.unineg
+        left join MO_Codigo unimed on unimed.idcodigo= moal.idtipounimed
+        left join ML_Catalogo ca on ca.idcatalogo= moal.idcatalogo
+        left join ML_InventarioAlmacen inal on inal.idcatalogo=moal.idcatalogo
+        LEFT JOIN ML_Catalogo CAT ON CAT.idcatalogo = INAL.idcatalogo
+        left join MO_Codigo unimedCAT on unimedCAT.idcodigo= moal.idtipounimed 
+        left join MO_Entidad ent on ent.ruc=uni.ruc
+        left join MO_Pais pa on pa.idpais= ent.idpais
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito
+        left join MO_Entidad en on en.ruc= ca.ruc							
+        where moal.nroMovimiento = #{nroMovimiento} and moal.uniNeg = #{uniNeg}  
+    </select>
+    <select id="obtenerUltimoPDF" resultType="Integer" parameterType="String" >
+        select isnull((max(nromovimiento)),0)+1 as nroMovimiento  from ML_MovimientoAlmacen
+        WHERE uniNeg = #{uniNeg}  
+    </select> 
+    <select id="obtenerTodosMovi" resultMap="movimientoAlmacenResultado" parameterType="String">
+        declare @uniNeg varchar(6) = #{uniNeg}
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        when @unineg = 'SECTOR' THEN 'resources\images\sector.jpg' 
+        else '-'
+        end)
+        select 
+        @IMG AS rutaImagen,
+        moal.nromovimiento as nroMovimiento,
+        convert(date,moal.fechamov,108) as fechaMov,
+        moal.cantidad as cantidad,
+        inal.stockactual as stockActual,
+        (inal.stockactual+moal.cantidad) as stockAnterior,
+        moal.entregadopor as entregadoPor,
+        moal.recibidopor as recibidoPor,
+        unimed.codigo as tipoUniMed,
+        ca.idcatalogo as idCatalogo,
+        ca.item as item,
+        unimedCAT.codigo as tipoUniMed,
+        inal.nroalmacen as nroAlmacen,
+        uni.nombreUniNeg  ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad
+        from ML_MovimientoAlmacen moal
+        left join MO_UnidadNegocio uni on uni.unineg= moal.unineg
+        left join ML_Requerimiento re on re.idrequerimiento = moal.idrequerimiento and uni.unineg= re.unineg
+        left join ML_DetRequerimiento detre on detre.iddetrequerimiento = moal.iddetrequerimiento and uni.unineg= detre.unineg
+        left join MO_Codigo unimed on unimed.idcodigo= moal.idtipounimed
+        left join ML_Catalogo ca on ca.idcatalogo= moal.idcatalogo
+        left join ML_InventarioAlmacen inal on inal.idcatalogo=moal.idcatalogo
+        LEFT JOIN ML_Catalogo CAT ON CAT.idcatalogo = INAL.idcatalogo
+        left join MO_Codigo unimedCAT on unimedCAT.idcodigo= moal.idtipounimed
+        left join MO_Entidad ent on ent.ruc=uni.ruc
+        left join MO_Pais pa on pa.idpais= ent.idpais
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito
+        left join MO_Entidad en on en.ruc= ca.ruc
+        where moal.uniNeg = #{unidadNegocioBean.uniNeg}  
+    </select>
+    
+    <!-- CAMBIO A PROBAR -->
+    <resultMap id="colorAlmacenResultado" type="pe.marista.sigma.bean.InventarioAlmacenBean">
+        <id property="nroAlmacen" column="nroAlmacen"/>
+        <result property="color" column="color"/>
+    </resultMap>
+        
+    <select id="obtenerColorAlmacen" resultMap="colorAlmacenResultado" parameterType="String" >
+        select distinct nroalmacen as nroAlmacen,color as color from ML_InventarioAlmacen where unineg = #{uniNeg} and color is not null
+    </select>
+    
+    <select id="obtenerColorAlmacenPorNro" resultMap="colorAlmacenResultado" parameterType="map" >
+        select distinct nroalmacen as nroAlmacen from ML_InventarioAlmacen where unineg = #{uniNeg}  and nroalmacen = #{nroAlmacen}
+    </select>
+    
+    <select id="obtenerAlmacenPorNro" resultMap="inventarioAlmacenResultado" parameterType="pe.marista.sigma.bean.InventarioAlmacenBean">
+        <include refid="consultaCampos" />
+        <where>  
+            i.unineg =#{unidadNegocioBean.uniNeg} 
+            <if test="nroAlmacen != null" >
+                and i.nroAlmacen = #{nroAlmacen}
+            </if>
+        </where>
+        order by i.idAlmacen desc
+    </select>
+    
+    <delete id="eliminarInvAlmacen" parameterType="Integer" >
+        delete from ML_InventarioAlmacen where idalmacen = #{idAlmacen}
+    </delete>
+    
+    <!-- REPORTE INVENTARIO ALMACEN -->
+    <select id="obtenerReporteMovAlmacen" parameterType="map" resultType="pe.marista.sigma.bean.reporte.MovimientoAlmacenRepBean" >
+        declare @uniNeg varchar(6) = #{uniNeg}
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        when @unineg = 'SECTOR' THEN 'resources\images\sector.jpg' 
+        end)
+        select 
+        @IMG AS rutaImagen,
+        moal.nromovimiento as nroMovimiento,
+        convert(date,moal.fechamov,108) as fechaMov,
+        moal.cantidad as cantidad,
+        inal.stockactual as stockActual,
+        (inal.stockactual+moal.cantidad) as stockAnterior,
+        moal.entregadopor as entregadoPor,
+        moal.recibidopor as recibidoPor,
+        unimed.codigo as tipoUniMed,
+        ca.idcatalogo as idCatalogo,
+        ca.item as item,
+        unimedCAT.codigo as tipoUniMed,
+        inal.nroalmacen as nroAlmacen,
+        uni.nombreUniNeg  ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,
+        dis.nombre as distritoUnidad ,pa.nombre as paisUnidad
+        from ML_MovimientoAlmacen moal
+        left join MO_UnidadNegocio uni on uni.unineg= moal.unineg
+        left join ML_Requerimiento re on re.idrequerimiento = moal.idrequerimiento and uni.unineg= re.unineg
+        left join ML_DetRequerimiento detre on detre.iddetrequerimiento = moal.iddetrequerimiento and uni.unineg= detre.unineg
+        left join MO_Codigo unimed on unimed.idcodigo= moal.idtipounimed
+        left join ML_Catalogo ca on ca.idcatalogo= moal.idcatalogo
+        left join ML_InventarioAlmacen inal on inal.idcatalogo=moal.idcatalogo
+        LEFT JOIN ML_Catalogo CAT ON CAT.idcatalogo = INAL.idcatalogo
+        left join MO_Codigo unimedCAT on unimedCAT.idcodigo= moal.idtipounimed 
+        left join MO_Entidad ent on ent.ruc=uni.ruc
+        left join MO_Pais pa on pa.idpais= ent.idpais
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito
+        left join MO_Entidad en on en.ruc= ca.ruc							
+        where moal.nroMovimiento = #{nroMovimiento} and moal.uniNeg = #{uniNeg}  
+    </select>
+    
+</mapper>

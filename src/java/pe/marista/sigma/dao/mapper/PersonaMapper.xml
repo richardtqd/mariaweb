@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.PersonaDAO">  
+    <sql id="consultaPersona">
+        Select  
+        per.idPersona,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.idTipoDocPer,
+        per.nroDoc,
+        per.fecNac,
+        per.correo,
+        per.idNacionalidad,
+        gr.idGradoAcademico,
+        per.uniNeg,
+        per.flgExAlumno,
+        per.contacto,
+        cod1.codigo as codigo1,
+        cod1.valor as valor1,
+        gra.codigo as codigo2,
+        gra.nombre as nombre2,
+        pai.codigo as codigoPais,
+        pai.nombre as nombrePais,
+        pai.nacionalidad,
+        uni.nombreUniNeg,
+        uni.ruc,
+        concat(per.apepat,' ', per.apemat,',', per.nombre) as nombreCompleto,
+        test.codigo as estadoPersona    
+        From MX_Persona per  
+        Left Join MO_Codigo cod1 ON per.idTipoDocPer=cod1.idCodigo
+        Left Join MX_GradoAcademico gra ON per.idGradoAcademico=gra.idGradoAcademico
+        Left Join MO_Pais pai ON per.idNacionalidad=pai.idPais
+        Left Join MO_UnidadNegocio uni ON per.uniNeg=uni.uniNeg
+        <!-- CONSULTA ESTADO ESTUDIANTE -->
+        left join MX_Estudiante es on per.idpersona = es.idestudiante and per.unineg = es.unineg
+        left join MO_Codigo test on es.idtipostatusest = test.idcodigo
+        
+        left Join MX_Estudiante est on est.idestudiante=per.idpersona and est.unineg=per.unineg
+        left join MX_GradoAcademico gr on gr.idgradoacademico=est.idgradohabilitado
+    </sql>
+    <select id="obtenerPersona" resultMap="personaResultado">
+        <include refid="consultaPersona"/>
+    </select>
+    <select id="obtenerPersonaPorUniNeg" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        <include refid="consultaPersona"/>Where per.uniNeg = #{uniNeg}
+    </select>
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/> 
+        <result property="idPersonaOld" column="idPersona"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nombreFiltro" column="nombreFiltro"/>
+        <result property="nombreCompleto" column="nombreCompleto"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+        <result property="flgExAlumno" column="flgExAlumno"/>
+        <result property="contacto" column="contacto"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/> 
+        <result property="idCodigo" column="idCodigo"/> 
+        <result property="estadoPersona" column="estadoPersona"/> 
+        <result property="estado" column="estado"/> 
+        <result property="direccion" column="direccion"/> 
+        <result property="telefonoCelular" column="telefonoCelular"/> 
+        <result property="flgVive" column="flgVive"/> 
+        <result property="parentesco" column="parentesco"/> 
+        <result property="profesion" column="profesion"/> 
+        <association property="idTipoDocPer" column="idTipoDocPer"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocPerResultado"/>
+        <association property="gradoAcademicoBean" column="idGradoAcademico"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoResultado"/>
+        <association property="paisBean" column="idNacionalidad"
+                     javaType="pe.marista.sigma.bean.PaisBean"
+                     resultMap="paisResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <!--idTipoDocPer-->
+    <resultMap id="tipoDocPerResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDocPer"/>
+        <result property="codigo" column="codigo1"/>
+        <result property="valor" column="valor1"/>
+    </resultMap>
+    <!--idGradoAcademico-->
+    <resultMap id="gradoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademico"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombre2"/>
+    </resultMap>
+    <!--idNacionalidad-->
+    <resultMap id="paisResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idNacionalidad"/>
+        <result property="codigo" column="codigoPais"/>
+        <result property="nombre" column="nombrePais"/>
+        <result property="nacionalidad" column="nacionalidad"/>
+    </resultMap>
+    <!--uniNeg-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+    </resultMap>
+    <select id="obtenerPersPorId" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean">
+        <include refid="consultaPersona" />
+        WHERE per.idPersona = #{idPersona} and per.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersPorIdRapido" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean">
+        Select  
+        per.idPersona,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.idTipoDocPer,
+        per.nroDoc,
+        per.fecNac,
+        per.correo,
+        per.idNacionalidad,
+        per.idGradoAcademico,
+        per.uniNeg,
+        per.flgExAlumno,
+        per.contacto,
+        cod1.codigo as codigo1,
+        cod1.valor as valor1,
+        gra.codigo as codigo2,
+        gra.nombre as nombre2,
+        pai.codigo as codigoPais,
+        pai.nombre as nombrePais,
+        pai.nacionalidad,
+        uni.nombreUniNeg,
+        uni.ruc,
+        concat(per.apepat,' ', per.apemat,',', per.nombre) as nombreCompleto,
+        test.codigo as estadoPersona    ,
+        fa.direccion as direccion,
+        fa.telefonocelular as telefonoCelular,
+        fa.flgvive as flgVive,
+        par.idcodigo as parentesco,
+        fa.profesion
+        From MX_Persona per  
+        Left Join MO_Codigo cod1 ON per.idTipoDocPer=cod1.idCodigo
+        Left Join MX_GradoAcademico gra ON per.idGradoAcademico=gra.idGradoAcademico
+        Left Join MO_Pais pai ON per.idNacionalidad=pai.idPais
+        Left Join MO_UnidadNegocio uni ON per.uniNeg=uni.uniNeg 
+        left join MX_Estudiante es on per.idpersona = es.idestudiante and per.unineg = es.unineg
+        left join MO_Codigo test on es.idtipostatusest = test.idcodigo
+        left join MX_FamiliarEstudiante faes on faes.idfamiliar=per.idpersona
+        left join MX_Familiar fa on fa.idfamiliar=faes.idfamiliar
+        left join MO_Codigo par on par.idcodigo=faes.idtipoparentesco
+        WHERE per.idPersona = #{idPersona} and per.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <insert id="insertarPersona" parameterType="pe.marista.sigma.bean.PersonaBean">
+        INSERT INTO MX_Persona
+        (idPersona,nombre,apepat,apemat,sexo,idTipoDocPer,nroDoc
+        
+        <if test="fecNac != null">
+            ,fecNac
+        </if>
+        ,correo,idNacionalidad,idGradoAcademico,uniNeg,flgExAlumno,contacto,creaPor,creaFecha)
+        Values
+        (#{idPersona},#{nombre},#{apepat},#{apemat},#{sexo},#{idTipoDocPer.idCodigo},#{nroDoc}
+        <if test="fecNac != null">
+            ,#{fecNac}
+        </if>
+        ,#{correo},
+        #{paisBean.idPais},#{gradoAcademicoBean.idGradoAcademico},#{unidadNegocioBean.uniNeg},#{flgExAlumno},#{contacto},#{creaPor},getDate())
+    </insert> 
+    <update id="modificarPersona" parameterType="pe.marista.sigma.bean.PersonaBean">
+        UPDATE MX_Persona
+        SET 
+        idPersona = #{idPersona},
+        nombre = #{nombre},
+        apepat = #{apepat},
+        apemat = #{apemat},
+        sexo = #{sexo},
+        idTipoDocPer = #{idTipoDocPer.idCodigo},
+        nroDoc = #{nroDoc},
+        <if test="fecNac != null">
+            fecNac = #{fecNac},
+        </if> 
+        correo = #{correo},
+        idNacionalidad = #{paisBean.idPais},
+        idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico},
+        flgExAlumno = #{flgExAlumno},
+        contacto = #{contacto},
+        modiPor = #{modiPor}
+        Where idPersona = #{idPersonaOld}
+    </update>
+    <update id="modificarPersonaDatBasicos" parameterType="pe.marista.sigma.bean.PersonaBean">
+        UPDATE MX_Persona
+        SET  
+        nombre = #{nombre},
+        apepat = #{apepat},
+        apemat = #{apemat}, 
+        modiPor = #{modiPor}
+        Where idPersona = #{idPersona}
+    </update>
+    <update id="modificarResponsable" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        UPDATE MX_Estudiante
+        SET 
+        idRespPago = #{respPagoBean.idPersona},
+        idtiporesppago =#{tipoRespPago.idCodigo},
+        modiPor = #{modiPor}
+        Where idEstudiante = #{personaBean.idPersona}
+    </update>
+    <delete id="eliminarPersona" parameterType="String">
+        Delete From MX_Persona Where idPersona = #{idPersona}
+    </delete>
+    <!--Filtro Postulante-->
+    <sql id="consultaPersonaEst">
+        EXCEPT
+        Select  
+        per.idPersona,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.idTipoDocPer,
+        per.nroDoc,
+        per.fecNac,
+        per.correo,
+        per.idNacionalidad,
+        per.idGradoAcademico,
+        per.uniNeg,
+        per.flgExAlumno,
+        per.contacto,
+        cod1.codigo as codigo1,
+        cod1.valor as valor1,
+        gra.codigo as codigo2,
+        gra.nombre as nombre2,
+        pai.codigo as codigoPais,
+        pai.nombre as nombrePais,
+        pai.nacionalidad,
+        uni.nombreUniNeg,
+        uni.ruc
+        From MX_Persona per  
+        Inner Join MX_Estudiante est On per.idPersona=est.idEstudiante
+        Left Join MO_Codigo cod1 ON per.idTipoDocPer=cod1.idCodigo
+        Left Join MX_GradoAcademico gra ON per.idGradoAcademico=gra.idGradoAcademico
+        Left Join MO_Pais pai ON per.idNacionalidad=pai.idPais
+        Left Join MO_UnidadNegocio uni ON per.uniNeg=uni.uniNeg
+    </sql>
+    <select id="obtenerPersonaAdmPorUniNeg" resultMap="personaResultado" parameterType="String">
+        <include refid="consultaPersona"/>
+        <include refid="consultaPersonaEst"/>
+        Where per.uniNeg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerPersonaPorFiltro" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean">
+        <include refid="consultaPersona"/>
+        <where>
+            per.unineg = #{unidadNegocioBean.uniNeg} 
+            <if test="idPersona != null and idPersona != '' " >
+                and per.idPersona = #{idPersona}
+            </if>  
+            <if test="nombre != null and nombre != '' " >
+                and upper(per.nombre) like concat('%',#{nombre},'%') 
+            </if>  
+            <if test="apepat != null and apepat != ''">
+                and upper(per.apepat) like concat('%',#{apepat},'%')
+            </if>
+            <if test="apemat != null and apemat != ''">
+                and upper(per.apemat) like concat('%',#{apemat},'%')
+            </if>
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0">
+                and gra.idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerPersonaProspectoPorFiltro" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean">
+        <include refid="consultaPersona"/> 
+        <where>
+            per.unineg = #{unidadNegocioBean.uniNeg}   and est.idtipostatusest=#{idCodigo}
+            <if test="idPersona != null and idPersona != '' " >
+                and per.idPersona = #{idPersona}
+            </if>  
+            <if test="nombre != null and nombre != '' " >
+                and upper(per.nombre) like concat('%',#{nombre},'%') 
+            </if>  
+            <if test="apepat != null and apepat != ''">
+                and upper(per.apepat) like concat('%',#{apepat},'%')
+            </if>
+            <if test="apemat != null and apemat != ''">
+                and upper(per.apemat) like concat('%',#{apemat},'%')
+            </if>
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0">
+                and gra.idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerPersonaPorFiltroValorados" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean">
+        <include refid="consultaPersona"/>
+        <where>
+            per.unineg = #{unidadNegocioBean.uniNeg} 
+            and per.idpersona not in (select idestudiante from MX_Estudiante where unineg = #{unidadNegocioBean.uniNeg})
+            <!--and per.idpersona not in (select nrodoc from MO_Personal where unineg = #{unidadNegocioBean.uniNeg})-->
+            <if test="idPersona != null and idPersona != '' " >
+                and per.idPersona = #{idPersona}
+            </if>  
+            <if test="nombre != null and nombre != '' " >
+                and upper(per.nombre) like concat('%',#{nombre},'%') 
+            </if>  
+            <if test="apepat != null and apepat != ''">
+                and upper(per.apepat) like concat('%',#{apepat},'%')
+            </if>
+            <if test="apemat != null and apemat != ''">
+                and upper(per.apemat) like concat('%',#{apemat},'%')
+            </if>
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0">
+                and gra.idGradoAcademico = #{gradoAcademicoBean.idGradoAcademico}
+            </if>
+        </where>
+    </select>
+    <select id="obtenerTop10Persona" resultMap="personaResultado" parameterType="String">
+        Select  top 10
+        per.idPersona,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.idTipoDocPer,
+        per.nroDoc,
+        per.fecNac,
+        per.correo,
+        per.idNacionalidad,
+        per.idGradoAcademico,
+        per.uniNeg,
+        per.flgExAlumno,
+        per.contacto,
+        cod1.codigo as codigo1,
+        cod1.valor as valor1,
+        gra.codigo as codigo2,
+        gra.nombre as nombre2,
+        pai.codigo as codigoPais,
+        pai.nombre as nombrePais,
+        pai.nacionalidad,
+        uni.nombreUniNeg,
+        uni.ruc,
+        concat(per.apepat,' ', per.apemat,',', per.nombre) as nombreCompleto,
+        test.codigo as estadoPersona,
+        isnull(cod.codigo,'x') as estado
+        From MX_Persona per  
+        Left Join MO_Codigo cod1 ON per.idTipoDocPer=cod1.idCodigo
+        Left Join MX_GradoAcademico gra ON per.idGradoAcademico=gra.idGradoAcademico
+        Left Join MO_Pais pai ON per.idNacionalidad=pai.idPais
+        Left Join MO_UnidadNegocio uni ON per.uniNeg=uni.uniNeg
+        left join MX_Estudiante es on per.idpersona = es.idestudiante and per.unineg = es.unineg
+        left join MO_Codigo test on es.idtipostatusest = test.idcodigo
+        LEFT JOIN MX_Estudiante E ON E.idestudiante=per.idpersona AND per.unineg=E.unineg
+        LEFT JOIN MO_Codigo COD ON COD.idcodigo=E.idtipostatusest
+        where per.unineg=#{uniNeg} 
+        and per.idpersona in (select idestudiante from mx_estudiante)
+        order by per.creaFecha desc
+    </select> 
+    <select id="obtenerPersonaPorFiltroProspecto" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean" >
+        <include refid="consultaPersona"/>
+        Where per.idpersona = #{idPersona} and per.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonaPorNombre" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean" >
+        Select  top 1
+        per.idPersona,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.idTipoDocPer,
+        per.nroDoc, 
+        per.uniNeg, 
+        pai.nacionalidad,
+        uni.nombreUniNeg, 
+        concat(per.apepat,' ', per.apemat,',', per.nombre) as nombreCompleto,
+        isnull(cod.codigo,'x') as estado
+        From MX_Persona per  
+        Left Join MO_Codigo cod1 ON per.idTipoDocPer=cod1.idCodigo
+        Left Join MX_GradoAcademico gra ON per.idGradoAcademico=gra.idGradoAcademico
+        Left Join MO_Pais pai ON per.idNacionalidad=pai.idPais
+        Left Join MO_UnidadNegocio uni ON per.uniNeg=uni.uniNeg
+        LEFT JOIN MX_Estudiante E ON E.idestudiante=per.idpersona AND per.unineg=E.unineg
+        LEFT JOIN MO_Codigo COD ON COD.idcodigo=E.idtipostatusest
+        Where  per.uniNeg = #{unidadNegocioBean.uniNeg}
+        <if test="idPersona != null and idPersona != '' " >
+            and per.idPersona     = #{idPersona}
+        </if>  
+        <if test="nombre != null and nombre != '' " >
+            and upper(per.nombre) = #{nombre}
+        </if>  
+        <if test="apepat != null and apepat != ''">
+            and upper(per.apepat) = #{apepat}
+        </if>
+        <if test="apemat != null and apemat != ''">
+            and upper(per.apemat) = #{apemat}
+        </if> 
+        order by per.creafecha desc
+    </select>
+    <select id="SP_obtenerPersonaPorFiltro" resultMap="personaResultado" parameterType="pe.marista.sigma.bean.PersonaBean" >
+        exec buscarPersonaPorUniNeg
+        @unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @nombreCompleto = #{nombreFiltro,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @idPersona = #{idPersona,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @flgEst = #{filtro,javaType=int,jdbcType=NUMERIC,mode=IN}
+    </select>
+    <select id="obtenerFoto" parameterType="map" resultType="String" >
+        <!--SELECT (CASE WHEN EST.idestudiante IS NOT NULL 
+        THEN (
+        case
+        when est.unineg in ('CHAMPS') then +'/archivoEstudiante/fotosEstudiante/'+est.codigo+'.bmp' 
+        when est.unineg in ('BARINA','SANLUI') then +'/archivoEstudiante/fotosEstudiante/'+est.codigo+'.jpg'
+        else '/noFoto.jpg' end)
+        ELSE '/noFoto.jpg' END ) 
+        AS foto 
+        FROM MX_Persona PER
+        LEFT JOIN MX_Estudiante EST ON EST.idestudiante=PER.idpersona AND PER.unineg=EST.unineg
+        where per.idpersona=#{idPersona} and per.unineg=#{uniNeg}-->
+        declare @unineg varchar (6),@idest varchar(15)
+        set @unineg=#{uniNeg}        
+        set @idest=#{idPersona}
+        declare @flgest int 
+        set @flgest= (SELECT top 1 count(*) 
+        FROM MX_Persona PER
+        inner JOIN MX_Estudiante EST ON EST.idestudiante=PER.idpersona AND PER.unineg=EST.unineg
+        where per.idpersona=@idest and per.unineg=@unineg)
+        declare @codigo varchar(20) = (select ISNULL(codigo,'') FROM MX_Estudiante WHERE idestudiante=@idest AND unineg=@unineg)
+        SELECT 
+        (
+        case when @flgest=1 then (case 
+        when @unineg in ('CHAMPS') THEN '/archivoEstudiante/fotosEstudiante/'+@codigo+'.bmp' 										 
+        when @unineg in ('BARINA','SANLUI') THEN '/archivoEstudiante/fotosEstudiante/'+@codigo+'.jpg' 
+        ELSE '/resources/images/noFoto.bmp' END)
+        else '/resources/images/noFoto.bmp'
+        end
+        )		
+    </select>
+     
+    <select id="generarCodigoPersona" resultType="String" parameterType="map">
+        <!--
+        declare @anio varchar(4)= convert(varchar(4),year(getdate()))
+        SELECT (case when count(*) = 0 then @anio+'8001'
+        when count(*)  <![CDATA[< ]]>9 then @anio + '800' +convert(varchar(1), count(*)+1)
+        when count(*)  <![CDATA[< ]]>99 then @anio + '80' +convert(varchar(2), count(*)+1)
+        when count(*)  <![CDATA[< ]]>999 then @anio + '8' +convert(varchar(3), count(*)+1)
+        when count(*)  <![CDATA[< ]]>9999 then @anio+'9001' when count(*) < 9 then @anio + '900' +convert(varchar(1), count(*)+1)
+        end) as  idPersona  FROM MX_PERSONA where idpersona like concat(@anio,'%') and unineg=#{uniNeg}
+        -->
+        declare @anio varchar(4) 
+        set @anio=(year(getdate())) 
+        SELECT @anio + convert(varchar,(count(*)+8000)+1) FROM MX_PERSONA where idpersona like concat(@anio,'%') and unineg=#{uniNeg}
+         
+    </select>
+    <select id="verificarCodigoGenerado" resultType="Integer" parameterType="map">
+        <!-- 1 si existe  0 no existe-->
+        select case when count(idpersona) <![CDATA[ >= ]]> 1  then 1 else 0 end 
+        from MX_Persona where idpersona=#{codigo} and  unineg=#{uniNeg}
+    </select>
+    <select id="obtenerPersonaPorCorreo" resultMap="personaResultado" parameterType="map">
+        DECLARE @UNINEG VARCHAR (6)  ,@ID VARCHAR(20),@CORREO VARCHAR(100)
+        SET @UNINEG =#{uniNeg}
+        SET @CORREO=#{correo}
+
+        SELECT 
+        
+        per.idPersona,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.sexo,
+        per.idTipoDocPer,
+        per.nroDoc,
+        per.fecNac,
+        per.correo,
+        per.idNacionalidad,
+        per.idGradoAcademico,
+        per.uniNeg,
+        per.flgExAlumno,
+        per.contacto, 
+        concat(per.apepat,' ', per.apemat,',', per.nombre) as nombreCompleto 
+        ,g.nombre as nombre2
+        FROM   [MX_Persona] per 
+        LEFT join MX_Estudiante est on per.idpersona=est.idestudiante  
+        left join MX_GradoAcademico g on g.idgradoacademico=per.idgradoacademico
+        where correo=@CORREO
+        AND Per.idpersona NOT IN (
+       
+	  
+        SELECT F.idfamiliar
+        FROM   [MX_Persona] p 
+        LEFT join MX_Estudiante est on p.idpersona=est.idestudiante -- and  idtipostatusest=18007
+        LEFT JOIN MX_Familiar F ON F.idfamiliar=P.idpersona
+        LEFT JOIN MX_FamiliarEstudiante FE ON F.idfamiliar=FE.idfamiliar
+        where correo=@CORREO	AND   FE.idtipoparentesco NOT IN (12404,12407)
+
+        UNION ALL
+	   
+        SELECT [idpersona] 
+        FROM   [MX_Persona] p 
+        LEFT join MX_Estudiante est on p.idpersona=est.idestudiante  
+        where correo=@CORREO	 AND idtipostatusest NOT IN (18007)	  
+        )
+    </select>
+</mapper>

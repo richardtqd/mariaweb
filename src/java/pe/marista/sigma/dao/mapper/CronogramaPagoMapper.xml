@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.CronogramaPagoDAO">  
+
+    <sql id="consultarCampos" >
+        select cp.idCronogramaPago,cp.unineg,cp.anio,cp.mes,cp.idtipoconcepto as idtipocod,
+        cp.fechavenc,
+        CONVERT(VARCHAR(10),cp.fechavenc, 103) as fechaVencimiento,
+        cp.tasainteres,cp.creapor,
+        tp.idTipoConcepto as idtipocon,tp.nombre as nomtipoconcepto,
+        case when mes=1 then 'Enero' 
+        when mes=2 then 'Febrero' 
+        when mes=3 then 'Marzo' 
+        when mes=4 then 'Abril' 
+        when mes=5 then 'Mayo' 
+        when mes=6 then 'Junio' 
+        when mes=7 then 'Julio' 
+        when mes=8 then 'Agosto' 
+        when mes=9 then 'Setiembre'
+        when mes=10 then 'Octubre'
+        when mes=11 then 'Noviembre'
+        when mes=12 then 'Diciembre' 
+        end as desMes,
+        (case when mes=2 then 'Matricula' 
+        when mes=3 then 'Marzo' 
+        when mes=4 then 'Abril' 
+        when mes=5 then 'Mayo' 
+        when mes=6 then 'Junio' 
+        when mes=7 then 'Julio' 
+        when mes=8 then 'Agosto' 
+        when mes=9 then 'Setiembre'
+        when mes=10 then 'Octubre'
+        when mes=11 then 'Noviembre'
+        when mes=12 then 'Diciembre' 
+        end) as nomMes
+        from MT_CronogramaPago cp
+        inner join MT_TipoConcepto tp on cp.idtipoconcepto = tp.idTipoConcepto
+        inner join MO_UnidadNegocio uni on cp.unineg = uni.unineg
+    </sql>
+    
+    <resultMap id="cronogramaResultado" type="pe.marista.sigma.bean.CronogramaPagoBean" >
+        <id property="idCronogramaPago" column="idCronogramaPago" />
+        <result property="anio" column="anio" />
+        <result property="mes" column="mes" />
+        <result property="fechaVenc" column="fechaVenc" />
+        <result property="fechaVencimiento" column="fechaVencimiento" />
+        <result property="fechaInicial" column="fechaInicial" />
+        <result property="tasaInteres" column="tasainteres" />
+        <result property="idTipoCodigo" column="idtipocod" />
+        <result property="creaPor" column="creapor" />
+        <result property="desMes" column="desMes" />
+        <result property="nomMes" column="nomMes" />
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     resultMap="tipoConceptoResultado"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     resultMap="unidadResultado"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"/>
+    </resultMap>
+    
+    <resultMap id="tipoConceptoResultado" type="pe.marista.sigma.bean.TipoConceptoBean" >
+        <id property="idTipoConcepto" column="idtipocon" />
+        <result property="nombre" column="nomtipoconcepto" />
+    </resultMap>
+    
+    <resultMap id="unidadResultado" type="pe.marista.sigma.bean.UnidadNegocioBean" >
+        <id property="idUniNeg" column="idUniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <select id="obtenerCronogramaPago" parameterType="map" resultMap="cronogramaResultado">
+        <include refid="consultarCampos" /> WHERE cp.unineg = #{uniNeg} order by cp.idCronogramaPago desc
+        <!--and cp.anio = (select case 
+        when #{anio} is null then YEAR(GETDATE())
+        when #{anio} is not null then #{anio}
+        end) order by cp.mes-->
+    </select>
+    
+    <select id="obtenerCronogramaAnio" parameterType="map" resultMap="cronogramaResultado" >
+        select distinct cp.idCronogramaPago,cp.unineg,cp.anio,cp.mes,cp.idtipoconcepto as idtipocod,
+        cp.fechavenc,
+        (case
+        when DAY(cp.fechavenc) <![CDATA[ > ]]> 15 and MONTH(cp.fechavenc) = 12 
+        then convert(varchar,(DATEADD(dd,-(DAY(cp.fechavenc)-1),cp.fechavenc)),103)
+        else CONVERT(varchar,(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,cp.fechavenc))-1),DATEADD(MONTH,-1,cp.fechavenc))),103)  
+        end) as fechaInicial,
+        CONVERT(VARCHAR(10),cp.fechavenc, 103) as fechaVencimiento,
+        cp.tasainteres,cp.creapor,
+        tp.idTipoConcepto as idtipocon,
+        tp.nombre as nomtipoconcepto
+        from MT_CronogramaPago cp
+        inner join MT_TipoConcepto tp on cp.idtipoconcepto = tp.idTipoConcepto
+        inner join MO_UnidadNegocio uni on cp.unineg = uni.unineg
+        WHERE cp.unineg = #{uniNeg} and cp.anio = #{anio} order by cp.mes
+    </select>
+    <select id="obtenerCronogramaAnioRep" parameterType="map" resultType="pe.marista.sigma.bean.reporte.CronogramaPagoRepBean" >
+        select distinct 
+        cp.mes as mes
+        from MT_CronogramaPago cp 
+        WHERE cp.unineg = #{uniNeg} and cp.anio = #{anio} order by cp.mes
+    </select>
+    
+    <select id="obtenerIdCronograma" parameterType="map" resultMap="cronogramaResultado">
+        <include refid="consultarCampos" /> WHERE cp.unineg = #{uniNeg} and cp.idCronogramaPago = #{idCronogramaPago}
+    </select>
+    
+    <select id="validarCronograma" parameterType="map" resultMap="cronogramaResultado" >
+        <include refid="consultarCampos" /> 
+        WHERE cp.unineg = #{uniNeg} and cp.anio = (select case  
+        when YEAR(#{fecha}) is null then YEAR(GETDATE())
+        when YEAR(#{fecha}) is not null then YEAR(#{fecha})
+        end) and cp.mes = #{mes} and DAY(cp.fechavenc) = DAY(#{fecha})
+    </select>
+    
+    
+    <insert id="insertarCronogramaPago" parameterType="pe.marista.sigma.bean.CronogramaPagoBean" >
+        INSERT INTO MT_CronogramaPago
+        (unineg
+        ,anio
+        ,mes
+        ,idtipoconcepto
+        ,fechavenc
+        ,tasainteres
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{uniNeg},
+        YEAR(#{fecha}),
+        #{mes},
+        #{idTipoCodigo},
+        #{fechaVenc},
+        #{tasaInteres},
+        #{creaPor},
+        getdate())
+    </insert>
+    
+    <update id="actualizarCronogramaPago" parameterType="pe.marista.sigma.bean.CronogramaPagoBean" >
+        UPDATE MT_CronogramaPago
+        SET 
+        anio = #{anio}
+        ,mes = #{mes}
+        ,idtipoconcepto = #{idTipoCodigo}
+        ,fechavenc = #{fechaVenc}
+        ,tasainteres = #{tasaInteres}  
+        ,modipor = #{modiPor}
+        WHERE unineg = #{uniNeg} and anio = #{anio} and 
+        idcronogramapago=#{idCronogramaPago}
+    </update>
+    
+</mapper>

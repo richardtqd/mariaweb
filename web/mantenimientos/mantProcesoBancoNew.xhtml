@@ -1,0 +1,827 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body onload="#{procesoBancoNewMB.cargarDatosProcesos()}" >
+            <p:layout style="width:1800px;height:750px" fullPage="false" styleClass="centrado">
+                <p:layoutUnit id="pnlBuscadorPost" position="west" size="765" header="#{msgs.etiquetaBuscadorBanco}" resizable="false" closable="false" collapsible="true" effect="drop" effectSpeed="500" >
+                    <h:form id="frmProceso" > 
+                        <p:panel header="#{msgs.etiquetaFiltro}" >
+                            <h:panelGrid id="pnlProceso" columns="1" styleClass="centrado" >
+                                <h:panelGrid columns="1" styleClass="centrado" >
+                                    <h:panelGrid columns="4" styleClass="centrado" >
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaProceso}: " />
+                                        <p:outputLabel value="" /> 
+                                        <p:selectOneRadio id="txtProcesoSel" value="#{procesoBancoNewMB.procesoBancoFiltroBean.flgProceso}"  layout="grid" columns="3">
+                                            <f:selectItem value="#{null}" itemLabel="#{msgs.etiquetaAmbos}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoBancoNewMB.listaProcesos}"/>
+                                        </p:selectOneRadio> 
+                                        <p:message for="txtProcesoSel" />
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="4" styleClass="centrado" >
+                                        <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" class="negrita siseFontGrid5"/>  
+                                        <p:calendar  value="#{procesoBancoNewMB.procesoBancoFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                                     pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                        </p:calendar>
+                                        <h:outputLabel value="#{msgs.etiquetaFechaFin}:" class="negrita siseFontGrid5"/>  
+                                        <p:calendar  value="#{procesoBancoNewMB.procesoBancoFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                                     pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                        </p:calendar>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <h:panelGrid columns="3" style="margin: 0 auto;padding: 5px;" >
+                                    <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{procesoBancoNewMB.obtenerFiltroProceso()}"
+                                                     update=":frmTblproceso:pnlTblproceso,:frmProceso,:frmNuevoProceso,:frmProceso:msgProc" />
+                                    <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{procesoBancoNewMB.limpiarFiltroBanco()}"
+                                                     update=":frmProceso:pnlProceso,:frmTblproceso:pnlTblproceso,:frmPopBanco:pnlPopBanco,:frmNuevoProceso" />
+                                    <p:commandButton value="#{msgs.botonNuevo} #{msgs.etiquetaProceso}" oncomplete="PF('popNvoProcesoPru').show();" action="#{procesoBancoNewMB.cargarDatosProcesos()}" 
+                                                     update=":frmRecuperacionPru:accRecPru:pnlRecuperacionPru,:frmRecuperacion:accRec:pnlRecuperacion"/>
+                                </h:panelGrid> 
+                            </h:panelGrid>
+                            <h:panelGrid style="margin: 0 auto;" >
+                                <p:messages autoUpdate="false" id="msgProc" closable="true" style="width: 350px;" />
+                            </h:panelGrid>
+                        </p:panel>
+                    </h:form>
+                    <h:form id="frmTblproceso" >
+                        <h:panelGrid id="pnlTblproceso" style="margin: 0 auto" > 
+                            <p:panel header="#{msgs.etiquetaResumen}" footer="#{msgs.etiquetaFooResumen}" style="margin-bottom:20px;background-color: #dddddd;color: #000000;width: 700px;font-size: 150px;margin: 0 auto;" rendered="#{empty procesoBancoNewMB.listaProcesoBancoFiltroBean}">
+                                <p:outputLabel value="#{msgs.etiquetaResumenBusqueda}" rendered="#{empty procesoBancoNewMB.listaProcesoBancoFiltroBean}" />
+                            </p:panel> 
+                            <p:dataTable value="#{procesoBancoNewMB.listaProcesoBancoFiltroBean}" var="proceso"
+                                         paginator="true" selection="#{procesoBancoNewMB.procesoBancoBean.idProcesoBanco}"
+                                         rendered="#{not empty procesoBancoNewMB.listaProcesoBancoFiltroBean}" paginatorPosition="bottom"
+                                         rows="#{procesoBancoNewMB.numRegistrosTablas}" id="tblProceso" rowKey="#{proceso}"  
+                                         style="width: 750px;font-size:14px !important">
+                                <f:facet name="header" >
+                                    <!--p:outputLabel value="#{msgs.etiquetaArchivosProc}" /-->
+                                    <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                </f:facet>
+                                <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                    <f:facet name="header">
+                                        <p:outputLabel value="#{msgs.etiquetaProceso}"  />
+                                    </f:facet>
+                                    <h:outputText value="#{proceso.nombre}" />
+                                </p:column>
+                                <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                    <f:facet name="header">
+                                        <p:outputLabel value="#{msgs.etiquetaAnio}" />
+                                    </f:facet>
+                                    <h:outputText value="#{proceso.anio}" />
+                                </p:column>
+                                <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                    <f:facet name="header">
+                                        <p:outputLabel value="#{msgs.etiquetaMes}" />
+                                    </f:facet>
+                                    <h:outputText value="#{proceso.idMes}" />
+                                </p:column> 
+                                <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                    <f:facet name="header">
+                                        <p:outputLabel value="#{msgs.etiquetaBanco}" />
+                                    </f:facet>
+                                    <h:outputText value="#{proceso.entidadBean.nombre}" />
+                                </p:column> 
+                                <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto">
+                                    <f:facet name="header">
+                                        <p:outputLabel value="#{msgs.etiquetaMonto}" />
+                                    </f:facet>
+                                    <h:outputText value="#{proceso.montoRecup}" rendered="#{proceso.flgProceso == 0}" />
+                                    <h:outputText value="#{proceso.montoEnv}" rendered="#{proceso.flgProceso == 1}" />
+                                </p:column>     
+                                <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                    <f:facet name="header">
+                                        <p:outputLabel value="#{msgs.etiquetaFecha}" />
+                                    </f:facet>
+                                    <h:outputText value="#{proceso.fecha}" >
+                                        <f:convertDateTime type="date" pattern="dd-MM-yyyy"/>
+                                    </h:outputText>
+                                </p:column>
+                                <p:column colspan="3" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" > 
+                                    <f:facet name="header" >
+                                        <p:outputLabel value="#{msgs.etiquetaAcciones}" />
+                                    </f:facet> 
+                                    <p:commandButton action="#{procesoBancoNewMB.obtenerProcesoEnvioPorId2(proceso)}"  title="Ver"  icon="ui-icon-search" process="@this"
+                                                     update=":frmPopBanco:pnlPopBanco,:frmPopBanco" > 
+                                    </p:commandButton>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdEliminarCod" actionListener="#{procesoBancoNewMB.obtenerProcesoEnvioPorId(proceso)}" 
+                                                   update=":frmPopBanco:pnlPopBanco,:frmPopBanco,:frmElimina,:frmProceso:pnlProceso"
+                                                   oncomplete="PF('popEliminar').show();" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink> 
+                                    <p:tooltip  for="cmdEliminarCod" value="#{msgs.mensajeDelPro}" />
+                                </p:column>
+                            </p:dataTable>  
+                        </h:panelGrid>
+                    </h:form>
+                </p:layoutUnit>
+                <p:layoutUnit position="center">
+                    <h:form id="frmPopBanco"> 
+                        <h:panelGrid id="pnlPopBanco" style="margin:0 auto;" >
+                            <p:outputPanel id="fileDetail" style="text-align:center;">
+                                <p:panel style="width: 720px;margin: 0 auto" >
+                                    <f:facet name="header">
+                                        <h:outputLabel value="#{msgs.etiquetaDetalleProceso}" /> 
+                                    </f:facet> 
+                                    <p:panelGrid  columns="2" rendered="#{not empty procesoBancoNewMB.procesoBanco}" columnClasses="label,value" style="margin: 0 auto;" >
+                                        <h:panelGrid columns="2">
+                                            <p:outputLabel value="#{msgs.etiquetaAnio}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.anio}" readonly="true" style="text-align:center;" />
+                                            <p:outputLabel value="#{msgs.etiquetaProceso}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.nombre}" readonly="true" style="text-align:center;" />
+                                            <p:outputLabel value="#{msgs.etiquetaBanco}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.entidadBean.nombre}" readonly="true" style="text-align:center;" />
+                                            <p:outputLabel value="#{msgs.etiquetaCuentaContable}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.cuentaBancoBean.numCuenta}" readonly="true" style="text-align:center;" />
+                                            <p:outputLabel value="#{msgs.etiquetaMoneda}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.idMoneda}" readonly="true" style="text-align:center;" />
+                                        </h:panelGrid>
+                                        <h:panelGrid columns="2" >
+                                            <p:outputLabel value="#{msgs.etiquetaFecha}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.fecha}" readonly="true" style="text-align:center;" >
+                                                <f:convertDateTime type="date" pattern="dd-MM-yyyy"/>
+                                            </p:inputText>
+                                            <p:outputLabel value="#{msgs.etiquetaRegProc}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.regEnv}" readonly="true" style="text-align:center;" />
+                                            <p:outputLabel value="#{msgs.etiquetaRegError}:" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.regError}" readonly="true" style="text-align:center;" >
+                                            </p:inputText>
+                                            <p:outputLabel value="#{msgs.etiquetaMontoEnv}:" rendered="false" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.montoEnv}" rendered="false" readonly="true" style="text-align:center;"  >
+                                                <f:convertNumber pattern="#0.00" />
+                                            </p:inputText>
+                                            <p:outputLabel value="#{msgs.etiquetaMontoRec}:" rendered="false" />
+                                            <p:inputText value="#{procesoBancoNewMB.procesoBancoBean.montoRecup}" rendered="false" readonly="true" style="text-align:center;" >
+                                                <f:convertNumber pattern="#0.00" />
+                                            </p:inputText>
+                                        </h:panelGrid>
+                                    </p:panelGrid>
+                                </p:panel> 
+                                <h:panelGrid columns="1" styleClass="centrado">
+                                    <h:panelGrid columns="1" styleClass="centrado">
+                                        <p:dataTable value="#{procesoBancoNewMB.listaProEnvios}" var="fila"
+                                                     rendered="#{not empty procesoBancoNewMB.listaProEnvios}"
+                                                     paginator="true" paginatorPosition="bottom" rows="10" id="tblTableRecursiveFiltro"
+                                                     style="width: 1500px; overflow-x: auto;font-size:14px !important;">
+                                            <f:facet name="header" >
+                                                <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                            </f:facet>
+                                            <c:forEach var="i" begin="0" end="#{procesoBancoNewMB.filas - 1}" >
+                                                <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable2 centrado-texto">
+                                                    <f:facet name="header">
+                                                        <h:outputText value="Data #{i+1}"/>
+                                                    </f:facet>
+                                                    <h:outputText value="#{fila.listaContenedor.get(i).getValor()}"/>
+                                                </p:column>
+                                            </c:forEach>
+                                        </p:dataTable>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="5" styleClass="centrado-izq" rendered="#{not empty procesoBancoNewMB.listaProEnvios and procesoBancoNewMB.procesoBancoBean.flgProceso == 1}" >
+                                        <p:outputLabel value="#{msgs.botonDescargar}: " />
+                                        <h:commandLink id="excelXlsx" style="float: left;" >
+                                            <h:graphicImage value="/resources/images/icons/exportarexcel.png" />
+                                            <p:dataExporter type="xls" target=":frmPopBanco:tblTableRecursiveFiltro" fileName="Envio" postProcessor="#{procesoBancoNewMB.crearXls}" />
+                                        </h:commandLink>
+                                        <p:tooltip for="excelXlsx" value="#{msgs.etiquetaExportar} Excel" />
+                                        <h:commandLink id="excelFile" style="float: left;" onclick="PrimeFaces.monitorDownload(start, stop);"
+                                                       actionListener="#{procesoBancoNewMB.mostrarFilesEnvio()}">
+                                            <h:graphicImage value="/resources/images/icons/exportartexto.png" />
+                                            <p:fileDownload value="#{procesoBancoNewMB.content}" />
+                                        </h:commandLink>
+                                        <p:tooltip for="excelFile" value="#{msgs.etiquetaExportar} Texto" />
+                                    </h:panelGrid>
+                                </h:panelGrid>  
+                            </p:outputPanel>
+                        </h:panelGrid>
+                    </h:form>  
+                </p:layoutUnit>
+            </p:layout>
+
+            <!-- MODALES DE PROCESO BANCO -->
+
+            <!-- POP_PRUEBA_NUEVO_PROCESO -->
+            <p:dialog id="popNvoProcesoPru" header="#{msgs.appSiglas}" widgetVar="popNvoProcesoPru" modal="true" showEffect="explode" closeOnEscape="true" >
+                <h:form id="frmNuevoProcesoPru" >
+                    <h:panelGrid columns="1" styleClass="centrado" >
+                        <h:panelGrid columns="2" styleClass="centrado" style="padding: 5px;" >
+                            <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                            <h:outputText value="#{msgs.etiquetaSelProceso}"/> 
+                        </h:panelGrid>
+                        <h:panelGrid styleClass="centrado" style="padding: 10px" columns="2" >
+                            <p:commandButton value="#{msgs.etiquetaNvoEnvio}" style="width: 210px;" oncomplete="PF('popRecuperacion').show();PF('popNvoProcesoPru').hide();"  action="#{procesoBancoNewMB.cargarDatosProceso(1)}"
+                                             update=":frmRecuperacion:accRec:pnlRecuperacion" />
+                            <p:commandButton value="#{msgs.etiquetaNvoRecep}" style="width: 210px;" oncomplete="PF('popRecuperacionFile').show();PF('popNvoProcesoPru').hide();" action="#{procesoBancoNewMB.cargarDatosProceso(0)}" 
+                                             update=":frmRecuperacionPru:accRecPru:pnlRecuperacionPru"/>
+                        </h:panelGrid>
+                    </h:panelGrid> 
+                </h:form>
+            </p:dialog>
+
+            <!-- POP_NUEVO_PROCESO -->
+            <p:dialog id="popNvoProceso" header="#{msgs.appSiglas}" widgetVar="popNvoProceso" modal="true" showEffect="explode" closeOnEscape="true" >
+                <h:form id="frmNuevoProceso" >
+                    <h:panelGrid columns="1" styleClass="centrado" >
+                        <h:panelGrid columns="2" styleClass="centrado" style="padding: 5px;" >
+                            <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                            <h:outputText value="#{msgs.etiquetaSelProceso}"/> 
+                        </h:panelGrid>
+                        <h:panelGrid styleClass="centrado" style="padding: 10px" columns="2" >
+                            <p:commandButton value="#{msgs.etiquetaNvoEnvio}" style="width: 210px;" oncomplete="PF('popRecuperacion').show();PF('popNvoProceso').hide();" actionListener="#{procesoBancoNewMB.mostraBoton2()}" 
+                                             update=":frmRecuperacion:accRec:pnlRecuperacion,:frmRecuperacion:accRec:pnlValidatePro2,:frmRecuperacion,:frmRecuperacion:accRec:txtFechaBanco"
+                                             process="@this,:frmRecuperacion:accRec:txtFechaBanco"/>
+                            <p:commandButton value="#{msgs.etiquetaNvoRecep}" style="width: 210px;" oncomplete="PF('popRecuperacion').show();PF('popNvoProceso').hide();" action="#{procesoBancoNewMB.mostrarBoton3()}"  
+                                             update=":frmRecuperacion:accRec:pnlRecuperacion,:frmRecuperacion:accRec:pnlValidatePro2,:frmRecuperacion,:frmRecuperacion:accRec:txtFechaBanco"/>
+                        </h:panelGrid>
+                    </h:panelGrid> 
+                </h:form>
+            </p:dialog>
+
+
+            <!-- POP_ELIMINA_PRO_BANCO -->
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{procesoBancoNewMB.procesoBancoBean.nombre}"/>
+                            <h:outputLabel value="Total de Registros: #{procesoBancoNewMB.procesoBancoBean.regEnv}"/>
+                            <h:outputLabel value="Monto Total: #{procesoBancoNewMB.procesoBancoBean.montoEnv}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoBancoNewMB.eliminarMasivo()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmPopBanco:pnlPopBanco,msgsDelProc,:frmTblproceso:pnlTblproceso,:frmPopBanco"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+            <!-- POP_CODUNINEG -->
+            <p:dialog id="popCodUniNeg" header="#{msgs.etiquetaDetalle} #{msgs.etiquetaCtaBco}" widgetVar="popCodUniNeg" modal="true" showEffect="explode" closeOnEscape="true" >
+                <h:form id="frmPopCodUniNeg" >
+                    <h:panelGrid columns="1" style="margin: 0 auto;" >
+                        <p:dataTable value="#{procesoBancoNewMB.listaCuentaBanco}" var="ctaBanco" 
+                                     paginator="true" paginatorPosition="bottom"  rows="5" rowKey="#{ctaBanco}" 
+                                     rendered="#{not empty procesoBancoNewMB.listaCuentaBanco}"
+                                     style="width: 600px;overflow-x: auto;font-size:14px !important;">
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaNombre} #{msgs.etiquetaRecpcion}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.entidadBancoBean.nombre}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaRucBco}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.entidadBancoBean.ruc}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaNumCta}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.numCuenta}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaCodigo} #{msgs.etiquetaUniNegocio}" />
+                                </f:facet>
+                                <h:outputText value="#{ctaBanco.codUniNeg}" />
+                            </p:column>
+                            <p:column filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaAcci}" />
+                                </f:facet>
+                                <center>
+                                    <p:commandLink id="cmdMostrarActiv" update=":frmRecuperacion:accRec:pnlDatosCtaBanco,:frmRecuperacionPru:accRecPru:pnlDatosCtaBancoPru" 
+                                                   oncomplete="PF('popCodUniNeg').hide();" actionListener="#{procesoBancoNewMB.obtenerCuentaBanco(ctaBanco)}" 
+                                                   process="@this">
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink> 
+                                </center>
+                                <p:tooltip for="cmdMostrarActiv" value="#{msgs.mensajeSelect}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog> 
+
+            <!-- POP_ERROR -->
+            <h:form id="frmError">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popError" width="370" height="120" showEffect="fade" hideEffect="explode" modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.etiquetaErrorReporte}"/>
+                    <br/><br/> 
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popError').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+
+            <!-- POP_ERROR DATOS PAGO-->
+            <h:form id="frmErrorDatos">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popErrorDatos" width="370" height="120" showEffect="fade" hideEffect="explode" modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.etiquetaErrorDoblePago}"/>
+                    <br/><br/> 
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popErrorDatos').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form> 
+
+            <!-- POP_PRUEBA -->
+            <p:dialog id="popPrueba" widgetVar="popPrueba" modal="true" width="600px" showEffect="explode" >
+                <h:form id="frmPopPrueba" >
+                    <h:panelGrid id="pnlPopPrueba" >
+                        <p:inputText value="#{procesoBancoNewMB.procesoBanco.fecha}" />
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+
+            <!-- PRUEBA -->
+            <p:dialog id="popRecuperacionFile" header="#{msgs.etiquetaConfigurar} #{msgs.etiquetaProceso}"  widgetVar="popRecuperacionFile" modal="true" width="600px" showEffect="explode" >
+                <h:form id="frmRecuperacionPru" enctype="multipart/form-data" >                    
+                    <p:accordionPanel id="accRecPru" >
+                        <p:tab title="#{msgs.etiquetaNuevoProceso}">
+                            <h:panelGrid id="pnlRecuperacionPru" columns="1" > 
+                                <p:fieldset legend="#{msgs.etiquetaConfigurar} #{msgs.etiquetaProceso}" >
+                                    <h:panelGrid columns="2" style="padding: 5px;" > 
+                                        <p:outputLabel value="#{msgs.EtiquetaNombre} #{msgs.etiquetaProceso}: " rendered="false" />
+                                        <p:inputText id="txtNomBancoPru" value="#{procesoBancoNewMB.procesoBanco.nombre}" readonly="true" rendered="false" >
+                                        </p:inputText> 
+                                        <p:outputLabel value="#{msgs.etiquetaFecha} #{msgs.etiquetaOperacion}: " />
+                                        <p:calendar id="txtFechaBancoPru" value="#{procesoBancoNewMB.procesoBanco.fecha}" mode="popup" showOn="button" readonlyInput="true" 
+                                                    pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" >
+                                            <p:ajax event="dateSelect" listener="#{procesoBancoNewMB.cargarDatosProceso(0)}" update="txtNomBancoPru" />
+                                        </p:calendar>
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaBanco}: "  />
+                                        <p:selectOneMenu id="txtRucBancoPru" value="#{procesoBancoNewMB.procesoBanco.ruc}" required="true" label="#{msgs.etiquetaBanco}" style="width: 200px;" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                            <f:selectItems value="#{procesoBancoNewMB.listaEntidad}" var="banco" itemLabel="#{banco.nombre}" itemValue="#{banco.ruc}"/>
+                                            <p:ajax event="change" listener="#{procesoBancoNewMB.cargarRuc()}" process="@this" update=":frmPopCodUniNeg"
+                                                    oncomplete="if(args.openModalCodUniNeg){PF('popCodUniNeg').show()}" />
+                                        </p:selectOneMenu> 
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaMoneda}: "/>
+                                        <p:selectOneRadio id="monedaPru" value="#{procesoBancoNewMB.procesoBanco.moneda}" required="true" label="#{msgs.etiquetaMoneda}" >
+                                            <f:selectItem itemLabel="#{msgs.etiquetaDolares}" itemValue= "1" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaSoles}" itemValue= "0" />
+                                        </p:selectOneRadio> 
+                                    </h:panelGrid>
+                                    <h:panelGrid id="pnlDatosCtaBancoPru" columns="2" style="padding: 5px;" >
+                                        <h:panelGrid columns="2" style="margin: 0 auto;" >
+                                            <p:outputLabel value="#{msgs.EtiquetaCodigo}: " />
+                                            <p:inputText id="txtCodUniNeg" value="#{procesoBancoNewMB.procesoBanco.codUniNeg}" style="width: 60px;" readonly="true" />
+                                        </h:panelGrid>
+                                        <h:panelGrid columns="2" style="margin: 0 auto;" >
+                                            <p:outputLabel value="#{msgs.etiquetaNroCue}: " />
+                                            <p:inputText id="txtNumCuenta" value="#{procesoBancoNewMB.procesoBanco.numCuenta}" style="width: 90px;" readonly="true" />
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="2" rendered="#{procesoBancoNewMB.flgUniNeg} " >
+                                        <p:outputLabel value="#{msgs.etiquetaCuota}: " rendered="#{procesoBancoNewMB.proView}"/>
+                                        <p:inputText value="#{procesoBancoNewMB.procesoBanco.cuota}" >
+                                            <p:ajax listener="#{procesoBancoNewMB.modificarCuota}" />
+                                        </p:inputText>
+                                    </h:panelGrid> 
+                                    <h:panelGrid id="pnlValidatePro2Pru" style="margin: 0 auto;padding: 5px;" rendered="#{procesoBancoNewMB.proView}" >
+                                    </h:panelGrid>
+                                </p:fieldset>
+                            </h:panelGrid>
+                            <br/>
+                            <p:fileUpload fileUploadListener="#{procesoBancoNewMB.obtenerFileRecuperacion}" oncomplete="if(args.operacionCorrecta){PF('popRecuperacionFile').hide();PF('popDone').show();}else if(args.error){PF('popError').show();}else if(args.errorDatos){PF('popErrorDatos').show();}" 
+                                          update=":frmTblproceso:pnlTblproceso,:frmRecuperacion:msgsss,:frmRecuperacion:accRec:pnlRecuperacion,:frmRecuperacionPru:accRecPru:pnlRecuperacionPru"
+                                          allowTypes="/(\.|\/)(txt|TXT)$/" sizeLimit="100000" value="#{msgs.etiquetaSelArchivo}" />
+                        </p:tab>
+                    </p:accordionPanel>
+                    <p:growl id="msgsss" autoUpdate="false" />
+                </h:form>
+            </p:dialog>
+
+            <!-- POP_NUEVO_PROCESO -->
+            <p:dialog id="popRecuperacion" header="#{msgs.etiquetaConfigurar} #{msgs.etiquetaProceso}"  widgetVar="popRecuperacion" modal="true" width="600px" showEffect="explode" >
+                <h:form id="frmRecuperacion" enctype="multipart/form-data" >                    
+                    <p:accordionPanel id="accRec" >
+                        <p:tab title="#{msgs.etiquetaNuevoProceso}">
+                            <h:panelGrid id="pnlRecuperacion" columns="1" > 
+                                <p:fieldset legend="#{msgs.etiquetaConfigurar} #{msgs.etiquetaProceso}" >
+                                    <h:panelGrid columns="2" style="padding: 5px;" > 
+                                        <p:outputLabel value="#{msgs.EtiquetaNombre} #{msgs.etiquetaProceso}: " />
+                                        <p:inputText id="txtNomBanco" value="#{procesoBancoNewMB.procesoBanco.nombre}" readonly="true" >
+                                        </p:inputText> 
+                                        <p:outputLabel value="#{msgs.etiquetaFecha} #{msgs.etiquetaOperacion}: " />
+                                        <p:calendar id="txtFechaBanco" value="#{procesoBancoNewMB.procesoBanco.fecha}" mode="popup" showOn="button" readonlyInput="true" 
+                                                    pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" >
+                                            <p:ajax event="dateSelect" listener="#{procesoBancoNewMB.cargarDatosProceso(1)}" update="txtNomBanco" />
+                                        </p:calendar>
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaBanco}: "  />
+                                        <p:selectOneMenu id="txtRucBanco" value="#{procesoBancoNewMB.procesoBanco.ruc}" required="true" label="#{msgs.etiquetaBanco}" style="width: 200px;" >
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                            <f:selectItems value="#{procesoBancoNewMB.listaEntidad}" var="banco" itemLabel="#{banco.nombre}" itemValue="#{banco.ruc}"/>
+                                            <p:ajax event="change" listener="#{procesoBancoNewMB.cargarRuc()}" process="@this" update=":frmPopCodUniNeg"
+                                                    oncomplete="if(args.openModalCodUniNeg){PF('popCodUniNeg').show()}" />
+                                        </p:selectOneMenu> 
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaMoneda}: "/>
+                                        <p:selectOneRadio id="moneda" value="#{procesoBancoNewMB.procesoBanco.moneda}" required="true" label="#{msgs.etiquetaMoneda}" >
+                                            <f:selectItem itemLabel="#{msgs.etiquetaDolares}" itemValue= "1" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaSoles}" itemValue= "0" />
+                                        </p:selectOneRadio> 
+                                    </h:panelGrid>
+                                    <h:panelGrid id="pnlDatosCtaBanco" columns="2" style="padding: 5px;" >
+                                        <h:panelGrid columns="2" style="margin: 0 auto;" >
+                                            <p:outputLabel value="#{msgs.EtiquetaCodigo} UniNeg: " />
+                                            <p:inputText id="txtCodUniNeg" value="#{procesoBancoNewMB.procesoBanco.codUniNeg}" style="width: 60px;" readonly="true" />
+                                        </h:panelGrid>
+                                        <h:panelGrid columns="2" style="margin: 0 auto;" >
+                                            <p:outputLabel value="#{msgs.etiquetaNroCue}: " />
+                                            <p:inputText id="txtNumCuenta" value="#{procesoBancoNewMB.procesoBanco.numCuenta}" style="width: 90px;" readonly="true" />
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="2" rendered="#{procesoBancoNewMB.flgUniNeg}" >
+                                        <p:outputLabel value="#{msgs.etiquetaCuota}: " />
+                                        <p:inputText value="#{procesoBancoNewMB.procesoBanco.cuota}" >
+                                            <p:ajax listener="#{procesoBancoNewMB.modificarCuota}" />
+                                        </p:inputText>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="2" style="padding: 5px;"  >
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaTipoEnvio}: "/>
+                                        <p:selectOneRadio id="tipoenvi" value="#{procesoBancoNewMB.procesoBanco.tipoEnvio}" required="true" label="#{msgs.etiquetaTipoEnvio}" >
+                                            <f:selectItem itemLabel="#{msgs.etiquetaCuentas}" itemValue= "1" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaOperaciones}" itemValue= "0" />
+                                        </p:selectOneRadio>
+                                    </h:panelGrid> 
+                                    <h:panelGrid columns="2" style="padding: 5px;" >
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaTipoRegistro}: "/>
+                                        <p:selectOneRadio id="tipoenviReg" value="#{procesoBancoNewMB.tipoRegistro}" required="true" label="#{msgs.etiquetaTipoEnvio}" >
+                                            <f:selectItem itemLabel="#{msgs.etiquetaAgregar}" itemValue= "A" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaModificar}" itemValue= "M" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaEliminar}" itemValue= "E" />
+                                        </p:selectOneRadio>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="2" style="padding: 5px;" >
+                                        <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaEnvio}: "/>
+                                        <p:selectOneRadio id="tipoenviSel" value="#{procesoBancoNewMB.selEnvio}" required="true" label="#{msgs.etiquetaTipoEnvio}" >
+                                            <f:selectItem itemLabel="#{msgs.etiquetaEnvioBanco}" itemValue= "1" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaEnvioColeg}" itemValue= "0" /> 
+                                        </p:selectOneRadio>
+                                    </h:panelGrid>
+                                    <h:panelGrid id="pnlValidatePro2" style="margin: 0 auto;padding: 5px;" >
+                                        <h:panelGrid columns="3" style="margin: 0 auto;" >
+                                            <p:commandButton id="btnGuardarFile" value="#{msgs.botonGrabar}" actionListener="#{procesoBancoNewMB.insertarProcesoBancoEnvio()}" disabled="#{procesoBancoNewMB.disableBotonGuardar}"
+                                                             update="btnDescargarFile,btnGuardarFile,:frmRecuperacion:accRec" oncomplete="if(args.operacioncorrecta){PF('popDone').show();}"/>
+                                            <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{procesoBancoNewMB.limpiarProcesoBancoReg()}" 
+                                                             update=":frmRecuperacion:accRec"/>
+                                            <p:commandButton id="btnDescargarFile" value="#{msgs.etiquetaSiguiente}" actionListener="#{procesoBancoNewMB.obtenerVistaPrevia()}" 
+                                                             oncomplete="if(args.cuenta){PF('popEnvioDeta').show();}else{PF('popEnvioDetaCurso').show();} " 
+                                                             disabled="#{procesoBancoNewMB.disableBotonDescarga}" process="@this"
+                                                             />
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                </p:fieldset>
+                            </h:panelGrid>
+                        </p:tab>
+                    </p:accordionPanel>
+                    <p:growl id="msgsss" autoUpdate="false" />
+                </h:form>
+            </p:dialog>
+
+            <!-- POP_ENVIO_DETA_CUR -->
+            <p:dialog id="popEnvioDetaCurso" widgetVar="popEnvioDetaCurso" header="#{msgs.etiquetaConfigurar} #{msgs.etiquetaEnvio} #{msgs.etiquetaCurTal}" modal="true" showEffect="explode" >
+                <h:form id="frmPopEnvioDetaCur" >
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <p:panel id="basic" header="#{msgs.etiquetaFiltro}" style="margin-bottom:20px">
+                            <h:panelGrid id="pnlPopEnvioDetaCur" columns="1" styleClass="centrado" >
+                                <h:panelGrid columns="6" >
+                                    <p:outputLabel value="#{msgs.etiquetaCodigoCol}: " />
+                                    <p:inputText id="txtcodigoCur" value="#{procesoBancoNewMB.cuentaFiltroBean.estudianteBean.codigo}" label="#{msgs.etiquetaCodigo}" >
+                                    </p:inputText>
+                                    <p:outputLabel value="" />
+                                    <p:outputLabel value="" />
+                                    <p:outputLabel value="#{msgs.etiquetaDniCe}: " />
+                                    <p:inputText id="txtIdEstudianteCur" value="#{procesoBancoNewMB.cuentaFiltroBean.estudianteBean.idEstudiante}" label="#{msgs.etiquetaCodigo}" >
+                                    </p:inputText>
+                                </h:panelGrid>
+                                <h:panelGrid styleClass="centrado" columns="1" >
+                                    <h:panelGrid columns="4" styleClass="centrado-izq">
+                                        <p:outputLabel value="#{msgs.etiquetaTipoConcepto}: "  />
+                                        <p:selectOneMenu id="txtTipoConceptoCur" value="#{procesoBancoNewMB.cuentaFiltroBean.conceptoBean.tipoConceptoBean.idTipoConcepto}" label="#{msgs.etiquetaNac}" filter="true" style="width: 200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoBancoNewMB.listaTipoConceptoBean}" var="tipCon" itemLabel="#{tipCon.nombre}" itemValue="#{tipCon.idTipoConcepto}"/>
+                                            <p:ajax event="change" listener="#{procesoBancoNewMB.obtenerPorTipo}" process="@this,txtTipoConceptoCur" update="cmbConceptoCur" />
+                                        </p:selectOneMenu>
+                                        <p:outputLabel value="#{msgs.etiquetaConcepto}: "  />
+                                        <p:selectOneMenu id="cmbConceptoCur" value="#{procesoBancoNewMB.cuentaFiltroBean.conceptoBean.idConcepto}" label="#{msgs.etiquetaNac}" filter="true" style="width: 200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoBancoNewMB.listaconceptoBean}" var="con" itemLabel="#{con.nombre}" itemValue="#{con.idConcepto}"/>                                    
+                                        </p:selectOneMenu>
+
+                                        <p:outputLabel value="#{msgs.etiquetaFecha}: " />
+                                        <p:calendar id="txtFechaIniCur" value="#{procesoBancoNewMB.cuentaFiltroBean.fechaInicio}" showOn="button" 
+                                                    pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" readonlyInput="true" yearRange="c-90:c+30">
+                                        </p:calendar>
+                                        <p:outputLabel value="#{msgs.etiquetaFecha}: " />
+                                        <p:calendar id="txtFechaFinCur" value="#{procesoBancoNewMB.cuentaFiltroBean.fechaFin}" showOn="button" 
+                                                    pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" readonlyInput="true" yearRange="c-90:c+30">
+                                        </p:calendar>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" styleClass="centrado" >
+                                        <p:inputTextarea id="txtNombreFullCur" value="#{procesoBancoNewMB.cuentaFiltroBean.estudianteBean.personaBean.nombreCompleto}" rows="3" cols="70" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaNombreCompleto}" >
+                                        </p:inputTextarea>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+
+                                <h:panelGrid columns="4" styleClass="centrado">
+                                    <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{procesoBancoNewMB.buscarEstudianteCuentas(1)}" 
+                                                     process="@this,:frmPopEnvioDetaCur:txtcodigoCur,:frmPopEnvioDetaCur:txtIdEstudianteCur,:frmPopEnvioDetaCur:txtFechaFinCur,:frmPopEnvioDetaCur:txtFechaIniCur"
+                                                     update=":frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur:pnlTableRecursiveCabCur,
+                                                     :frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur:pnlTableRecursiveIntCur,
+                                                     :frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur:pnlTableRecursiveCur, 
+                                                     :frmPopEnvioDetaCur:pnlMsgFilCur,:frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur,
+                                                     :frmPopEnvioDetaCur:pnlPopEnvioDetaCur"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{procesoBancoNewMB.limpiarBusquedaEnvio()}"
+                                                     update=":frmPopEnvioDetaCur:pnlPopEnvioDetaCur,
+                                                     :frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur" />
+                                    <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popConfirm').show();" />
+                                    <h:panelGrid columns="5" styleClass="centrado-izq" rendered="#{procesoBancoNewMB.disabledExporter}" >
+                                        <p:outputLabel value="#{msgs.botonDescargar}: " />
+                                        <h:commandLink id="excelXlsxPro" style="float: left;">
+                                            <h:graphicImage value="/resources/images/icons/exportarexcel.png" />
+                                            <p:dataExporter type="xls" target=":frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:tblTableRecursive" fileName="Envio" />
+                                        </h:commandLink>
+                                        <p:tooltip for="excelXlsxPro" value="#{msgs.etiquetaExportar} Excel" />
+                                        <h:commandLink id="excelFilePro" style="float: left;" onclick="PrimeFaces.monitorDownload(start, stop);"
+                                                       actionListener="#{procesoBancoNewMB.mostrarFilesEnvio()}">
+                                            <h:graphicImage value="/resources/images/icons/exportartexto.png" />
+                                            <p:fileDownload value="#{procesoBancoNewMB.content}" />
+                                        </h:commandLink>
+                                        <p:tooltip for="excelFilePro" value="#{msgs.etiquetaExportar} Texto" />
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlMsgFilCur" styleClass="centrado" >
+                                    <p:messages showDetail="true" id="msgFilCuenta" closable="true" />
+                                </h:panelGrid>
+                            </h:panelGrid>
+                        </p:panel>
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmPopEnvioDetaDetaCur" >
+                    <p:tabView id="tabPopEnvioDetaDetaCur">
+                        <p:tab title="#{msgs.etiquetaCabeceraEnvio}" rendered="#{not empty procesoBancoNewMB.listaContenedorEnvioCabecera}">
+                            <h:outputText value="Cabecera" />
+                            <h:panelGrid id="pnlTableRecursiveCabCur" styleClass="centrado" >
+                                <p:dataTable value="#{procesoBancoNewMB.listaContenedorEnvioCabecera}" var="filaCab"
+                                             rendered="#{not empty procesoBancoNewMB.listaContenedorEnvioCabecera}"
+                                             paginator="true" paginatorPosition="bottom" rows="8" id="tblTableRecursiveCabCur"
+                                             style="width: 1200px; overflow-x: auto;font-size:14px !important;"
+                                             scrollable="true" scrollWidth="1000">
+                                    <f:facet name="header" >  
+                                        <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                    </f:facet>
+                                    <c:forEach var="i" begin="0" end="#{procesoBancoNewMB.filasCab - 1}" >
+                                        <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable2 centrado-texto">
+                                            <f:facet name="header">
+                                                <h:outputText value="Data #{i+1}"/>
+                                            </f:facet>
+                                            <h:outputText value="#{filaCab.listaContenedor.get(i).getValor()}"/>
+                                        </p:column>
+                                    </c:forEach>  
+                                </p:dataTable>
+                            </h:panelGrid>
+                        </p:tab>
+                        <p:tab title="#{msgs.etiquetaIntermEnvio}" rendered="#{not empty procesoBancoNewMB.listaContenedorEnvioIntermedio}">
+                            <h:panelGrid id="pnlTableRecursiveIntCur" styleClass="centrado" >
+                                <h:outputText value="Intermedio" />
+                            </h:panelGrid>
+                        </p:tab>
+                        <p:tab title="#{msgs.etiquetaDetalleEnvio}" rendered="#{not empty procesoBancoNewMB.listaContenedorEnvio}">
+                            <h:panelGrid id="pnlTableRecursiveCur" styleClass="centrado" >
+                                <p:dataTable value="#{procesoBancoNewMB.listaContenedorEnvio}" var="fila"
+                                             rendered="#{not empty procesoBancoNewMB.listaContenedorEnvio}"
+                                             paginator="true" paginatorPosition="bottom" rows="8" id="tblTableRecursiveCur"
+                                             style="width: 1200px; overflow-x: auto;font-size:14px !important;"
+                                             scrollable="true" scrollWidth="1000">
+                                    <f:facet name="header" >  
+                                        <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                    </f:facet>
+                                    <c:forEach var="i" begin="0" end="#{procesoBancoNewMB.filas - 1}" >
+                                        <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable2 centrado-texto">
+                                            <f:facet name="header">
+                                                <h:outputText value="Data #{i+1}"/>
+                                            </f:facet>
+                                            <h:outputText value="#{fila.listaContenedor.get(i).getValor()}"/>
+                                        </p:column>
+                                    </c:forEach>  
+                                </p:dataTable>
+                            </h:panelGrid>
+                        </p:tab>
+                    </p:tabView> 
+                </h:form>
+            </p:dialog>
+
+            <!-- POP_ENVIO_DETA -->
+            <p:dialog widgetVar="popEnvioDeta" header="#{msgs.etiquetaConfigurar} #{msgs.etiquetaEnvio} #{msgs.etiquetaBanco}" modal="true"  showEffect="explode" >
+                <h:form id="frmPopEnvioDeta" >
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <p:panel id="basic" header="#{msgs.etiquetaFiltro}" style="margin-bottom:20px">
+                            <h:panelGrid id="pnlPopEnvioDeta" columns="1" styleClass="centrado" >
+                                <h:panelGrid columns="2" styleClass="centrado-izq" >
+                                    <p:outputLabel value="#{msgs.etiquetaEstado}: " />
+                                    <p:selectOneRadio id="console" value="#{procesoBancoNewMB.flgEstado}">
+                                        <f:selectItem itemLabel="#{msgs.etiquetaNoPagado}" itemValue="1" />
+                                        <f:selectItem itemLabel="#{msgs.etiquetaPagado}" itemValue="0" />
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                                <h:panelGrid columns="6" styleClass="centrado-izq">
+                                    <p:outputLabel value="#{msgs.etiquetaCodigoCol}: " />
+                                    <p:inputText id="txtcodigo" value="#{procesoBancoNewMB.cuentaFiltroBean.estudianteBean.codigo}" label="#{msgs.etiquetaCodigo}" />
+                                    <p:outputLabel value="" />
+                                    <p:outputLabel value="" />
+                                    <p:outputLabel value="#{msgs.etiquetaDniCe}: " />
+                                    <p:inputText id="txtIdEstudiante" value="#{procesoBancoNewMB.cuentaFiltroBean.estudianteBean.idEstudiante}" label="#{msgs.etiquetaCodigo}" >
+                                    </p:inputText>
+                                </h:panelGrid> 
+                                <h:panelGrid styleClass="centrado-izq" columns="1" > 
+                                    <h:panelGrid columns="4" styleClass="centrado">
+                                        <p:outputLabel value="#{msgs.etiquetaTipoConcepto}: "  />
+                                        <p:selectOneMenu id="txtTipoConcepto" value="#{procesoBancoNewMB.cuentaFiltroBean.conceptoBean.tipoConceptoBean.idTipoConcepto}" label="#{msgs.etiquetaNac}" filter="true" style="width: 200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoBancoNewMB.listaTipoConceptoBean}" var="tipCon" itemLabel="#{tipCon.nombre}" itemValue="#{tipCon.idTipoConcepto}"/>
+                                            <p:ajax event="change" listener="#{procesoBancoNewMB.obtenerPorTipo}" process="@this,txtTipoConcepto" update="cmbConcepto" />
+                                        </p:selectOneMenu>
+                                        <p:outputLabel value="#{msgs.etiquetaConcepto}: "  />
+                                        <p:selectOneMenu id="cmbConcepto" value="#{procesoBancoNewMB.cuentaFiltroBean.conceptoBean.idConcepto}" label="#{msgs.etiquetaNac}" filter="true" style="width: 200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{procesoBancoNewMB.listaconceptoBean}" var="con" itemLabel="#{con.nombre}" itemValue="#{con.idConcepto}"/>                                    
+                                        </p:selectOneMenu> 
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" styleClass="centrado" >
+                                        <p:inputTextarea id="txtNombreFull" value="#{procesoBancoNewMB.cuentaFiltroBean.estudianteBean.personaBean.nombreCompleto}" rows="3" cols="70" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaNombreCompleto}" >
+                                        </p:inputTextarea>
+                                    </h:panelGrid> 
+                                </h:panelGrid>
+                                <h:panelGrid columns="4" styleClass="centrado">
+                                    <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{procesoBancoNewMB.buscarEstudianteCuentas(2)}" 
+                                                     process="@this,:frmPopEnvioDeta:txtcodigo,:frmPopEnvioDeta:txtIdEstudiante,:frmPopEnvioDeta:cmbConcepto,:frmPopEnvioDeta:console,:frmPopEnvioDeta:cboMesCuenta"
+                                                     update=":frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:pnlTableRecursive,:frmPopEnvioDeta:msgFilCuenta,
+                                                     :frmPopEnvioDeta:pnlPopEnvioDeta,:frmPopEnvioDetaDeta:tabPopEnvioDetaDeta,
+                                                     :frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:pnlTableRecursiveCab"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{procesoBancoNewMB.limpiarBusquedaEnvio()}"
+                                                     update=":frmPopEnvioDeta:pnlPopEnvioDeta,
+                                                     :frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:pnlTableRecursiveCab,
+                                                     :frmPopEnvioDetaDeta:tabPopEnvioDetaDeta,
+                                                     :frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:pnlTableRecursive" />
+                                    <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popConfirm').show();" />
+                                    <h:panelGrid columns="5" styleClass="centrado-izq" rendered="#{procesoBancoNewMB.disabledExporter}" >
+                                        <p:outputLabel value="#{msgs.botonDescargar}: " />
+                                        <h:commandLink id="excelXlsxPro" style="float: left;">
+                                            <h:graphicImage value="/resources/images/icons/exportarexcel.png" />
+                                            <p:dataExporter type="xls" target=":frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:tblTableRecursive" fileName="Envio"/>
+                                        </h:commandLink>
+                                        <p:tooltip for="excelXlsxPro" value="#{msgs.etiquetaExportar} Excel" />
+                                        <h:commandLink id="excelFilePro" style="float: left;" onclick="PrimeFaces.monitorDownload(start, stop);"
+                                                       actionListener="#{procesoBancoNewMB.mostrarFilesEnvio()}" >
+                                            <h:graphicImage value="/resources/images/icons/exportartexto.png" />
+                                            <p:fileDownload value="#{procesoBancoNewMB.content}" />
+                                        </h:commandLink>
+                                        <p:tooltip for="excelFilePro" value="#{msgs.etiquetaExportar} Texto" />
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlMsgFil" styleClass="centrado" >
+                                    <p:messages showDetail="true" id="msgFilCuenta" closable="true" />
+                                </h:panelGrid>
+                            </h:panelGrid> 
+                        </p:panel>
+                        <h:panelGrid id="pnlCronoFiltro" columns="1" styleClass="centrado" >
+                            <p:fieldset legend="#{msgs.etiquetaSelMeses} y #{msgs.etiquetaAnio}" styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false">
+                                <h:panelGrid columns="2" >
+                                    <p:spinner id="txtAnioCrono" value="#{procesoBancoNewMB.cronogramaPagoBean.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="1"/>
+                                    <p:outputLabel value="#{msgs.etiquetaPeriodo}" />
+                                    <br/>
+                                </h:panelGrid>
+                                <p:selectOneRadio id="cboMesCuenta" value="#{procesoBancoNewMB.cuentaFiltroBean.mes}"  layout="grid" columns="4">
+                                    <f:selectItem itemLabel="#{msgs.etiquetaTodos}" itemValue="0" />
+                                    <f:selectItems value="#{procesoBancoNewMB.listaMesAll}" var="mes" itemLabel="#{mes.descripcion}" itemValue="#{mes.valor}" />
+                                </p:selectOneRadio>
+                                <p:outputLabel value=" " />
+                            </p:fieldset>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmPopEnvioDetaDeta" >
+                    <p:tabView id="tabPopEnvioDetaDeta">
+                        <p:tab title="#{msgs.etiquetaCabeceraEnvio}" rendered="#{not empty procesoBancoNewMB.listaContenedorEnvioCabecera}">
+                            <h:outputText value="Cabecera" />
+                            <h:panelGrid id="pnlTableRecursiveCab" styleClass="centrado" >
+                                <p:dataTable value="#{procesoBancoNewMB.listaContenedorEnvioCabecera}" var="filaCab"
+                                             rendered="#{not empty procesoBancoNewMB.listaContenedorEnvioCabecera}"
+                                             paginator="true" paginatorPosition="bottom" rows="8" id="tblTableRecursiveCab"
+                                             style="width: 1200px; overflow-x: auto;font-size:14px !important;"
+                                             scrollable="true" scrollWidth="1000">
+                                    <f:facet name="header" >  
+                                        <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                    </f:facet>
+                                    <c:forEach var="i" begin="0" end="#{procesoBancoNewMB.filasCab - 1}" >
+                                        <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable2 centrado-texto">
+                                            <f:facet name="header">
+                                                <h:outputText value="Data #{i+1}"/>
+                                            </f:facet>
+                                            <h:outputText value="#{filaCab.listaContenedor.get(i).getValor()}"/>
+                                        </p:column>
+                                    </c:forEach>  
+                                </p:dataTable>
+                            </h:panelGrid>
+                        </p:tab>
+                        <p:tab title="#{msgs.etiquetaIntermEnvio}" rendered="#{not empty procesoBancoNewMB.listaContenedorEnvioIntermedio}">
+                            <h:panelGrid id="pnlTableRecursiveInt" styleClass="centrado" >
+                                <h:outputText value="Intermedio" />
+                            </h:panelGrid>
+                        </p:tab>
+                        <p:tab title="#{msgs.etiquetaDetalleEnvio}" rendered="#{not empty procesoBancoNewMB.listaContenedorEnvio}">
+                            <h:panelGrid id="pnlTableRecursive" styleClass="centrado" >
+                                <p:dataTable value="#{procesoBancoNewMB.listaContenedorEnvio}" var="fila"
+                                             rendered="#{not empty procesoBancoNewMB.listaContenedorEnvio}"
+                                             paginator="true" paginatorPosition="bottom" rows="8" id="tblTableRecursive"
+                                             style="width: 1200px; overflow-x: auto;font-size:14px !important;"
+                                             scrollable="true" scrollWidth="1000">
+                                    <f:facet name="header" >  
+                                        <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                    </f:facet>
+                                    <c:forEach var="i" begin="0" end="#{procesoBancoNewMB.filas - 1}" >
+                                        <p:column filterMatchMode="contains" width="10%" styleClass="siseFontTable2 centrado-texto">
+                                            <f:facet name="header">
+                                                <h:outputText value="Data #{i+1}"/>
+                                            </f:facet>
+                                            <h:outputText value="#{fila.listaContenedor.get(i).getValor()}"/>
+                                        </p:column>
+                                    </c:forEach>  
+                                </p:dataTable>
+                            </h:panelGrid>
+                        </p:tab>
+                    </p:tabView> 
+                </h:form> 
+            </p:dialog>
+
+            <!-- POP_CONFIRM -->
+            <h:form id="frmEliminaEnvio">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirm" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelCerrarEnvio}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoBancoNewMB.cerrarFiltroEnvio()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check"
+                                         process="@this,:frmEliminaEnvio"
+                                         update=":frmTblproceso:pnlTblproceso,
+                                         :frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur:pnlTableRecursiveCabCur,
+                                         :frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur:pnlTableRecursiveIntCur,
+                                         :frmPopEnvioDetaDetaCur:tabPopEnvioDetaDetaCur:pnlTableRecursiveCur,
+                                         :frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:pnlTableRecursiveCab,
+                                         :frmPopEnvioDetaDeta:tabPopEnvioDetaDeta,
+                                         :frmPopEnvioDetaDeta:tabPopEnvioDetaDeta:pnlTableRecursive"
+                                         oncomplete="if(args.operacioncorrecta){PF('popConfirm').hide();PF('popEnvioDeta').hide();PF('popRecuperacion').hide();}else{PF('popConfirm').hide();PF('popEnvioDetaCurso').hide();PF('popRecuperacion').hide();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popConfirm').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+
+            <script type="text/javascript">
+                function start() {
+                    PF('statusDialog').show();
+                }
+
+                function stop() {
+                    PF('statusDialog').hide();
+                }
+            </script>
+
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+
+
+
+
+

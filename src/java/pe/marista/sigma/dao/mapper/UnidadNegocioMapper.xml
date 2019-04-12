@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.UnidadNegocioDAO">  
+    <sql id="consultaCampos">
+        SELECT 
+        uni.uniNeg,
+        uni.nombreUniNeg,
+        uni.ruc,
+        uni.fecfundacion,
+        uni.idTipoUniNeg,
+        cod.codigo,
+        cod.valor,
+        e.nombre
+        FROM MO_UnidadNegocio uni  
+        LEFT JOIN MO_Codigo cod ON uni.idTipoUniNeg=cod.idCodigo
+        left join MO_Entidad e on uni.ruc = e.ruc and uni.unineg=e.unineg
+    </sql>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/> 
+        <association property="codigoBean" column="idTipoUniNeg"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+    </resultMap>
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUniNeg"/>
+        <result property="codigo" column="codigo"/>
+       
+    </resultMap>
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombre"/>
+       
+    </resultMap>
+    <select id="obtenerTodos" resultMap="unidadNegocioResultado">
+        <include refid="consultaCampos" />
+        order by uni.flgdefault desc
+    </select>
+    <select id="obtenerTodosDef" resultMap="unidadNegocioResultado">
+        <include refid="consultaCampos" />
+        where isnull(uni.flgdefault,0)=1
+    </select>
+    <select id="obtenerPorFiltro" resultMap="unidadNegocioResultado" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        <include refid="consultaCampos" />
+        <where>
+            <if test="uniNeg != null and uniNeg != ''">
+                uni.uniNeg =#{uniNeg}
+            </if>
+            <if test="nombreUniNeg != null and nombreUniNeg != 0">
+                upper(nombreUniNeg) like concat('%',#{nombreUniNeg},'%')
+            </if>
+            <if test="ruc != null and ruc != ''">
+                and upper(ruc) like concat('%',#{ruc},'%')
+            </if> 
+        </where>
+    </select>
+    <select id="obtenerPorId" resultMap="unidadNegocioResultado" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        <include refid="consultaCampos" />WHERE uni.unineg= #{uniNeg}
+    </select>
+   <!-- <insert id="insertar" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        INSERT INTO MT_UnidadNegocio (codigo,idUniNeg,hostIp,hostName,status,creaFecha,creaPor)
+        Values (#{codigo},#{idUniNeg},#{hostIp},#{hostName},#{status},#{creaFecha},#{creaPor})
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        UPDATE MT_UnidadNegocio
+        SET 
+        codigo = #{codigo},
+        idUniNeg = #{idUniNeg},
+        hostIp = #{hostIp},
+        hostName = #{hostName},
+        status = #{status}
+        Where idUnidadNegocio = #{idUnidadNegocio}
+    </update>
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        Delete From MT_UnidadNegocio Where idUnidadNegocio = #{idUnidadNegocio}
+    </delete>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        UPDATE MT_UnidadNegocio
+        SET 
+        status = #{status}
+        Where idUnidadNegocio = #{idUnidadNegocio}
+    </update-->
+</mapper>

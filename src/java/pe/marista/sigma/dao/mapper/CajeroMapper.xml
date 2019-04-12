@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.CajeroDAO">  
+    <!--Cajero Caja-->
+    <sql id="consultaCajeroCaja">
+        Select 
+        uni.uniNeg                  as uniNeg,
+        uni.nombreUniNeg            as nombreUniNeg,
+        caj.idCaja                  as idCaja,
+        a.nombre                    as nombreCaja,
+        a.hostip                    as hostIp,
+        a.hostname                  as hostName,
+        a.mac                       as mac,
+        a.uniNeg                    as uniNegCaja,
+        caj.usuario                 as usuario,
+        per.idPersonal              as idPersonal,
+        per.apepat                  as apePat,
+        per.apemat                  as apeMat,
+        per.nombre                  as nombrePersonal,
+        caj.fecIni                  as fecIni,
+        caj.fecFin                  as fecFin,
+        caj.status                  as status,
+        caj.creaFecha               as creaFecha,
+        caj.creaPor                 as creaPor,
+        caj.modiPor                 as modiPor
+        From MT_CajeroCaja  caj
+        Inner Join MO_UnidadNegocio uni on uni.unineg = caj.unineg
+        Inner Join MT_Caja a on a.idcaja = caj.idcaja 
+        Inner Join MM_Usuario usu on usu.usuario = caj.usuario and caj.unineg=usu.unineg
+        INNER Join MO_Personal per on per.idpersonal = usu.idpersonal  and usu.unineg=per.unineg  
+    </sql>
+    
+    <resultMap id="cajeroCajaResultado" type="pe.marista.sigma.bean.CajeroCajaBean">
+        <id property="cajaBean.idCaja" column="idCaja"/>
+        <id property="usuarioBean.usuario" column="usuario"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="status" column="status"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="cajaBean" column="idCaja" 
+                     javaType="pe.marista.sigma.bean.CajaBean" 
+                     resultMap="cajaResultado"/>
+        <association property="usuarioBean" column="usuario" 
+                     javaType="pe.marista.sigma.bean.UsuarioBean" 
+                     resultMap="usuarioResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <!--Caja-->
+    <resultMap id="cajaResultado" type="pe.marista.sigma.bean.CajaBean">
+        <id property="idCaja" column="idCaja"/>
+        <result property="nombre" column="nombreCaja"/>
+        <result property="hostIp" column="hostIp"/>
+        <result property="hostName" column="hostName"/>
+        <result property="mac" column="mac"/>
+        <association property="unidadNegocioBean" column="uniNegCaja"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoCaja"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultadoCaja" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCaja"/> 
+    </resultMap>
+    <!--Usuario-->
+    <resultMap id="usuarioResultado" type="pe.marista.sigma.bean.UsuarioBean">
+        <id property="usuario" column="usuario" />
+        <association property="personalBean" column="idPersonal" 
+                     javaType="pe.marista.sigma.bean.PersonalBean" 
+                     resultMap="personalResultado"/>
+    </resultMap>
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal" />
+        <result property="nombre" column="nombrePersonal" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+    </resultMap>    
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/> 
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    
+    <select id="obtenerCajasPorCajero" resultMap="cajaResultado" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        <include refid="consultaCajeroCaja" />
+        where caj.usuario= #{usuarioBean.usuario} and uni.uniNeg = #{unidadNegocioBean.uniNeg} 
+    </select>    
+    <insert id="insertarCajeroCaja" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        Insert Into MT_CajeroCaja (uniNeg,idCaja,usuario,fecIni,fecFin,status,creaPor,creaFecha)
+        Values(#{unidadNegocioBean.uniNeg},#{cajaBean.idCaja},#{usuarioBean.usuario},#{fecIni},#{fecFin},#{status},#{creaPor},#{creaFecha})
+    </insert>
+    <update id="modificarCajeroCaja" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        UPDATE MT_CajeroCaja SET
+        fecIni = #{fecIni},
+        fecFin = #{fecFin},
+        status = #{status},
+        modiPor = #{modiPor}
+        where usuario= #{usuarioBean.usuario} and uniNeg = #{unidadNegocioBean.uniNeg} 
+    </update>
+    <delete id="eliminarCajaAll" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        Delete From MT_CajeroCaja where usuario= #{usuarioBean.usuario} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </delete>
+    
+    <!--Personal Perfil Cajero-->
+    <sql id="consultaPersonalPerfil">
+        select 
+        per.idpersonal      as idpersonal,
+        per.nombre          as nombre,
+        per.apepat          as apepat,
+        per.apemat          as apemat
+        from MM_VISTA vis
+        inner join MM_USUARIO usu on vis.usuario = usu.usuario
+        inner join MO_PERSONAL per on usu.idpersonal = per.idpersonal    and usu.unineg=per.unineg
+        inner join MM_PERFIL erf on erf.idperfil = vis.idperfil         
+    </sql>    
+    
+    <resultMap id="personalResultado2" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apepat"/> 
+        <result property="apemat" column="apemat"/>
+    </resultMap>
+    
+    <select id="obtenerUsarioPerfil" resultMap="personalResultado2" >
+        <include refid="consultaPersonalPerfil"/>Where erf.idperfil = 16 group by per.idpersonal,per.nombre,per.apepat,per.apemat
+    </select>
+    
+    <sql id="consultaUsuariosCaja">
+        Select 
+        usu.usuario         usuario,
+        caj.uniNeg          uniNeg,
+        per.apepat          apePat,
+        per.apemat          apeMat,
+        per.nombre          nombrePersonal,
+        caj.status          status,
+        caj.fecIni          fecIni,
+        caj.fecFin          fecFin
+        From MT_CajeroCaja caj
+        INNER JOIN MM_Usuario usu ON caj.usuario = usu.usuario  and caj.unineg=usu.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal= usu.idpersonal and per.unineg=usu.unineg
+    </sql>
+    <select id="obtenerUsuarioConCaja" resultMap="cajeroCajaResultado" parameterType="String">
+        <include refid="consultaUsuariosCaja" /> where caj.unineg = #{uniNeg} group by usu.usuario,caj.uniNeg,per.apepat,per.apemat,per.nombre,caj.status,caj.fecIni,caj.fecFin 
+    </select> 
+    <select id="obtenerUsuarioConCajaPorId" resultMap="cajeroCajaResultado" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        <include refid="consultaUsuariosCaja" /> where caj.unineg = #{unidadNegocioBean.uniNeg}  and usu.usuario=#{usuarioBean.usuario}  group by usu.usuario,caj.uniNeg,per.apepat,per.apemat,per.nombre,caj.status,caj.fecIni,caj.fecFin 
+    </select> 
+        
+    <sql id="consultaCajaSinUsuario">
+        Select
+        caj.idCaja,
+        caj.nombre,
+        caj.uniNeg            
+        From MT_Caja  caj
+        EXCEPT
+        SELECT
+        cjr.idcaja,
+        cj.nombre,
+        cj.uniNeg
+        From MT_CajeroCaja cjr
+        Inner Join MT_Caja cj on cj.idcaja = cjr.idcaja	 and cjr.unineg=cj.unineg 
+    </sql>
+    <select id="obtenerCajaSinCajero" resultMap="cajaResultado" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        <include refid="consultaCajaSinUsuario" /> where cjr.usuario=#{usuarioBean.usuario} and cjr.unineg=#{unidadNegocioBean.uniNeg}
+    </select>   
+    <select id="autenticarUsuarioConCaja" resultMap="cajeroCajaResultado" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        <include refid="consultaCajeroCaja" />
+        where caj.usuario = #{usuarioBean.usuario} and  a.hostip=#{cajaBean.hostIp} and a.status=1  <!--  and  a.hostname =#{cajaBean.hostName}  and   a.mac =#{cajaBean.mac} -->
+    </select> 
+    <select id="obtenerCajeroPorUnineg" >
+        
+    </select>
+</mapper>

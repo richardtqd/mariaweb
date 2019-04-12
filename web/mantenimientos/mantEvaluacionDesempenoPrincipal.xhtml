@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core"> 
+    <ui:define name="content">
+        <h:body  >
+            <div style="text-align: center;height: 750px">    
+                <h:outputLabel value="#{msgs.etiquetaEvaluacionDesempeno} #{evaluacionDesempenoMB.anio}" class="c" style="font-size: 3.0em"/> 
+                <center>  <h:panelGrid>    <h:outputLabel value="#{msgs.etiquetaModuloPrincipal}" class="negrita" style="font-size: 2.5em" /> 
+                    </h:panelGrid></center> 
+                <h:panelGrid styleClass="centrado" style="display: inline-block;" columns="1">  
+                    <p:panel style="width: 460px" class="center">
+                        <p:fieldset  class="centrado">
+                            <h:form id="frmDatosEvaluacionDesempeno"> 
+                                <h:panelGrid columns="4">
+                                    
+                                    <p:commandButton id="printButton1" disabled="true" type="button" value="#{msgs.etiquetaRegistroEvaluadoresEvaluados}"  icon="ui-icon-print" onclick="imprimir()" />
+                                </h:panelGrid> 
+                                <br></br> 
+                                <h:panelGrid columns="1"> 
+                                    <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="titulo"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:spinner id="minMax" value="#{evaluacionDesempenoMB.anio}"  label="#{msgs.etiquetaPeriodo}" size="5" required="true">
+                                    </p:spinner> 
+                                    <h:panelGrid columns="3">
+                                        <h:outputLabel value="#{msgs.etiquetaEscogerUnineg}" class="titulo"  rendered="#{evaluacionDesempenoMB.usuarioLoginBean.personalBean.unidadNegocioBean.uniNeg=='SECTOR'}"/>
+                                        <h:outputLabel value=" " class="requerido" rendered="#{evaluacionDesempenoMB.usuarioLoginBean.personalBean.unidadNegocioBean.uniNeg=='SECTOR'}"/>
+                                        <p:selectOneMenu  id="uniNeg" effect="fold" value="#{evaluacionDesempenoMB.unidadNegocioBean.uniNeg}"  class="resetSelect" style="width:160px" panelStyle="width:305px" required="false" label="#{msgs.etiquetaEscogerReporte}"
+                                                          rendered="#{evaluacionDesempenoMB.usuarioLoginBean.personalBean.unidadNegocioBean.uniNeg=='SECTOR'}">
+                                             <f:selectItems value="#{evaluacionDesempenoMB.listaUniNeg}" var="uni" itemLabel="#{uni.nombreUniNeg}" itemValue="#{uni.uniNeg}"/> 
+                                            <p:ajax event="change" listener="#{evaluacionDesempenoMB.obtenerObra()}" /> 
+                                        </p:selectOneMenu>  
+                                        <h:outputLabel value="#{msgs.etiquetaReporteAlertas}" class="titulo" rendered="#{evaluacionDesempenoMB.usuarioLoginBean.personalBean.unidadNegocioBean.uniNeg=='SECTOR'}"/>
+                                        <h:outputText value="" class="requerido" rendered="#{evaluacionDesempenoMB.usuarioLoginBean.personalBean.unidadNegocioBean.uniNeg=='SECTOR'}"/>
+                                        <h:commandLink id="btnPrintAlertas" action="#{evaluacionDesempenoMB.imprimirPDFAlertaEvaluacionDesempeno()}" target="_blank" 
+                                                       rendered="#{evaluacionDesempenoMB.usuarioLoginBean.personalBean.unidadNegocioBean.uniNeg=='SECTOR'}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                        <h:outputLabel value="#{msgs.etiquetaSinEvaluacionDesempeno}" class="titulo"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <h:commandLink id="btnPrintSinEvaluacion" action="#{evaluacionDesempenoMB.imprimirPDFSinEvaluacionDesempeno()}" target="_blank" > 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <h:panelGrid columns="4" id="pdf" > 
+                                    <h:outputLabel value="#{msgs.etiquetaEscogerReporte}" class="titulo"  />
+                                    <h:outputLabel value=" " class="requerido" />
+                                    <p:selectOneMenu  id="pdf2sdf" effect="fold" value="#{evaluacionDesempenoMB.orden}"  class="resetSelect" style="width:160px" panelStyle="width:305px" required="false" label="#{msgs.etiquetaEscogerReporte}">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}"/>
+                                        <f:selectItems value="#{evaluacionDesempenoMB.listaReporte}"/> 
+                                        <p:ajax event="change" listener="#{evaluacionDesempenoMB.obtenerReporte()}" update ="pnlReporte,:frmDatosEvaluacionDesempeno" /> 
+                                    </p:selectOneMenu> 
+                                    <h:panelGrid id="pnlReporte"> 
+                                        <h:commandLink id="btnPrintActivo" action="#{evaluacionDesempenoMB.imprimirPDFEvaluadoresEvaluados()}" target="_blank" rendered="#{evaluacionDesempenoMB.flgALL==true}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                        <h:commandLink id="btnPrintExcelNivelpdf" action="#{evaluacionDesempenoMB.imprimirPDFEvaluadoresEvaluados()}" target="_blank" rendered="#{evaluacionDesempenoMB.flgNiveles==true}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                        <h:commandLink id="btnPrintProgresopdf" action="#{evaluacionDesempenoMB.imprimirPDFProgresoEvaluaciones()}" target="_blank" rendered="#{evaluacionDesempenoMB.flgProgreso==true}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                            </h:form> 
+                            <br></br>
+                            <h:form id="frmDatosEvaluacionDesempenoEXCEL">
+                                <h:panelGrid  columns="4">
+                                    <h:outputLabel value="#{msgs.etiquetaExportarExcel}" class="titulo"  />
+                                    <h:outputLabel value=" " class="requerido" />
+                                    <p:selectOneMenu  id="excel" effect="fold" value="#{evaluacionDesempenoMB.orden}"  class="resetSelect" style="width:170px" panelStyle="width:305px" required="false" label="#{msgs.etiquetaEscogerReporte}">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}"/>
+                                        <f:selectItems value="#{evaluacionDesempenoMB.listaReporte}"/> 
+                                        <p:ajax event="change" listener="#{evaluacionDesempenoMB.obtenerReporte()}" update ="pnlExcel,:frmDatosEvaluacionDesempenoEXCEL" /> 
+                                    </p:selectOneMenu> 
+                                    <h:panelGrid id="pnlExcel"> 
+                                        <h:commandLink id="btnPrintExcel" action="#{evaluacionDesempenoMB.exportXlsAll()}" target="_blank" rendered="#{evaluacionDesempenoMB.flgALL==true}"> 
+                                            <h:graphicImage value="/resources/images/excel_1.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                        <h:commandLink id="btnPrintExcelNivel" action="#{evaluacionDesempenoMB.exportXlsAll()}" target="_blank" rendered="#{evaluacionDesempenoMB.flgNiveles==true}"> 
+                                            <h:graphicImage value="/resources/images/excel_1.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                        <h:commandLink id="btnPrintExcelProceso" action="#{evaluacionDesempenoMB.exportXlsProgresoEvaluaciones()}" target="_blank" rendered="#{evaluacionDesempenoMB.flgProgreso==true}"> 
+                                            <h:graphicImage value="/resources/images/excel_1.png" style="width:30px" /> 
+                                        </h:commandLink> 
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                            </h:form> 
+                        </p:fieldset>
+                    </p:panel> 
+                </h:panelGrid>
+                <script type="text/javascript">
+                    function imprimir() {
+                        window.open("mantEvaluacionDesempeno.xhtml");
+                    }
+                </script>
+            </div>   
+        </h:body> 
+    </ui:define>
+</ui:composition>

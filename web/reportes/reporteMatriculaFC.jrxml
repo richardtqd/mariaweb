@@ -1,0 +1,769 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteMatriculaFC" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="ca306e13-d29e-4804-a816-85e40ac68aeb">
+	<property name="ireport.zoom" value="1.7715610000000022"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[declare @unineg varchar(6),@idestudiante varchar(15),@anio integer
+set @unineg='barina'
+set @idestudiante='72792700'
+set @anio=2018
+select
+uni.nombreUniNeg as nombreColegio,
+concat('Ficha de Estudiante - Matricula ',' '+convert(varchar,m.anio)) as titulo,
+isnull(concat(pest.apepat,' '+pest.apemat,', '+pest.nombre),'-') as nombreCompleto,
+isnull(( case when pest.sexo=1 then 'Masculino' when pest.sexo=0 then 'Femenino' end),'-') as sexo,
+isnull(docEst.codigo,'-') as tipoDocEst,
+isnull(pest.nrodoc,pest.idpersona) as nroDoc,
+isnull(e.codigo,'-') as codigoColegio,
+isnull(g.nombre,'-') as grado,
+isnull(convert(varchar,pest.fecnac,105),'-') as fecNac,
+isnull(dest.nombre,'-') as deparNaci,
+isnull(proest.nombre,'-') as provinciaNaci,
+isnull(disest.nombre,'-') as distritoNaci,
+
+isnull(via.codigo,'-') as tipoViaDomi,
+isnull(e.viadomi,'-') as direccion,
+isnull(e.telefono1domi,'-') as telfDomi,
+isnull(disdomi.nombre,'-') as distritoDomi,
+isnull(e.refedomi,'-') as refDomi,
+isnull(e.telefono2domi,'-') as telfRef,
+isnull(vivecon.codigo,'-') as viveCon,
+isnull(perpa.nrodoc,'-') as nroDocPapa,
+isnull(concat(perpa.apepat,' '+perpa.apemat,', '+perpa.nombre),'-') as nombrePapa,
+isnull(docpa.codigo,'-') as tipoDocPapa,
+isnull(perpa.nrodoc,'-') as nroDocPapa,
+isnull(convert(varchar,perpa.fecnac,105),'-') as fecNaciPapa,
+isnull(perpa.correo,'-') as correoPapa,
+isnull(fampa.direccion,'-') as direccionPapa,
+isnull(fampa.telefonocelular,'-') as celPapa,
+isnull((case when fampa.flgvive=1 then 'Sí' when fampa.flgvive=0 then 'No' end),'-') as vivePapa,
+
+isnull(perma.nrodoc,'-') as nroDocMama,
+isnull(concat(perma.apepat,' '+perma.apemat,', '+perma.nombre),'-') as nombreMama,
+isnull(docma.codigo,'-') as tipoDocMama,
+isnull(perma.nrodoc,'-') as nroDocMama,
+isnull(convert(varchar,perma.fecnac,105),'-') as fecNaciMama,
+isnull(perma.correo,'-') as correoMama,
+isnull(famma.direccion,'-') as direccionMama,
+isnull(famma.telefonocelular,'-') as celMama,
+isnull((case when famma.flgvive=1 then 'Sí' when famma.flgvive=0 then 'No' end),'-') as viveMama,
+ isnull(perapo.idpersona,'-') as nroDocApo,
+isnull(concat(perapo.apepat,' '+perapo.apemat,', '+perapo.nombre),'-') as nombreApo,
+isnull(docapo.codigo,'-') as tipoDocApo,
+isnull(perapo.nrodoc,'-') as nroDocApo,
+isnull(convert(varchar,perapo.fecnac,105),'-') as fecNaciApo,
+isnull(perapo.correo,'-') as correoApo,
+isnull(famapo.direccion,'-') as direccionApo,
+isnull(famapo.telefonocelular,'-') as celApo,
+isnull((case when famapo.flgvive=1 then 'Sí' when famapo.flgvive=0 then 'No' end),'-') as viveApo
+ from MX_Matricula m
+
+ inner join MO_UnidadNegocio uni on uni.unineg=m.unineg
+ inner join MX_Estudiante e on e.idestudiante=m.idestudiante
+ inner join MX_Persona pest on pest.idpersona=e.idestudiante
+ left join MO_Codigo docEst on docEst.idcodigo=pest.idtipodocper
+ inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+ left join MO_Distrito disest on disest.iddistrito=e.iddistritonaci
+ left join MO_Provincia proest on proest.idprovincia=disest.idprovincia
+ left join MO_Departamento dest on dest.iddepartamento=proest.iddepartamento
+
+ left join MO_Codigo via on via.idcodigo=e.idtipoviadomi
+ left join MO_Distrito disdomi on disdomi.iddistrito=e.iddistritodomi
+ inner join MX_EstudianteInfo einfo on einfo.idestudiante=e.idestudiante
+ left join MO_Codigo vivecon on vivecon.idcodigo=einfo.idtipovivecon
+
+ left join MX_FamiliarEstudiante faestPa on faestPa.idestudiante=e.idestudiante and faestPa.idtipoparentesco=12402
+ left join MX_Familiar fampa  on fampa.idfamiliar=faestPa.idfamiliar
+ left join MX_Persona perpa on perpa.idpersona=fampa.idfamiliar
+ left join MO_Codigo docpa on docpa.idcodigo=perpa.idtipodocper
+
+ left join MX_FamiliarEstudiante faestMa on faestMa.idestudiante=e.idestudiante and faestma.idtipoparentesco=12403
+ left join MX_Familiar famma  on famma.idfamiliar=faestMa.idfamiliar
+ left join MX_Persona perma on perma.idpersona=famma.idfamiliar
+ left join MO_Codigo docma on docma.idcodigo=perma.idtipodocper
+
+ left join MX_FamiliarEstudiante faestapo on faestapo.idestudiante=e.idestudiante and faestapo.idtipoparentesco=12401
+ left join MX_Familiar famapo  on famapo.idfamiliar=faestapo.idfamiliar
+ left join MX_Persona perapo on perapo.idpersona=famapo.idfamiliar
+ left join MO_Codigo docapo on docapo.idcodigo=perapo.idtipodocper
+ where m.anio=@anio and m.idestudiante=@idestudiante and uni.unineg=@unineg]]>
+	</queryString>
+	<field name="nombreColegio" class="java.lang.String"/>
+	<field name="titulo" class="java.lang.String"/>
+	<field name="nombreCompleto" class="java.lang.String"/>
+	<field name="sexo" class="java.lang.String"/>
+	<field name="tipoDocEst" class="java.lang.String"/>
+	<field name="nroDoc" class="java.lang.String"/>
+	<field name="codigoColegio" class="java.lang.String"/>
+	<field name="grado" class="java.lang.String"/>
+	<field name="fecNac" class="java.lang.String"/>
+	<field name="deparNaci" class="java.lang.String"/>
+	<field name="provinciaNaci" class="java.lang.String"/>
+	<field name="distritoNaci" class="java.lang.String"/>
+	<field name="tipoViaDomi" class="java.lang.String"/>
+	<field name="direccion" class="java.lang.String"/>
+	<field name="telfDomi" class="java.lang.String"/>
+	<field name="distritoDomi" class="java.lang.String"/>
+	<field name="refDomi" class="java.lang.String"/>
+	<field name="telfRef" class="java.lang.String"/>
+	<field name="viveCon" class="java.lang.String"/>
+	<field name="nroDocPapa" class="java.lang.String"/>
+	<field name="nombrePapa" class="java.lang.String"/>
+	<field name="tipoDocPapa" class="java.lang.String"/>
+	<field name="fecNaciPapa" class="java.lang.String"/>
+	<field name="correoPapa" class="java.lang.String"/>
+	<field name="direccionPapa" class="java.lang.String"/>
+	<field name="celPapa" class="java.lang.String"/>
+	<field name="vivePapa" class="java.lang.String"/>
+	<field name="nroDocMama" class="java.lang.String"/>
+	<field name="nombreMama" class="java.lang.String"/>
+	<field name="tipoDocMama" class="java.lang.String"/>
+	<field name="fecNaciMama" class="java.lang.String"/>
+	<field name="correoMama" class="java.lang.String"/>
+	<field name="direccionMama" class="java.lang.String"/>
+	<field name="celMama" class="java.lang.String"/>
+	<field name="viveMama" class="java.lang.String"/>
+	<field name="nroDocApo" class="java.lang.String"/>
+	<field name="nombreApo" class="java.lang.String"/>
+	<field name="tipoDocApo" class="java.lang.String"/>
+	<field name="fecNaciApo" class="java.lang.String"/>
+	<field name="correoApo" class="java.lang.String"/>
+	<field name="direccionApo" class="java.lang.String"/>
+	<field name="celApo" class="java.lang.String"/>
+	<field name="viveApo" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="102" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="36a9e475-f5c3-45db-9c92-069039628056" x="17" y="0" width="201" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreColegio}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="68cd620b-e5d5-4186-af41-62757845226b" x="0" y="21" width="555" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="13" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{titulo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="1769e2ca-3df1-44aa-81f6-e692cdd287da" x="17" y="63" width="39" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Alumno:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="6c945762-64e2-4909-8ce1-0f7185ea812d" x="57" y="63" width="161" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCompleto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="7560d9a6-59d5-462f-8a86-3be68d07ac16" x="434" y="63" width="24" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sexo:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="087ede31-c53a-4e11-b7ac-f918a55818ba" x="459" y="63" width="65" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sexo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="816833e0-9bf3-4a6c-9262-5d95f3d2f0af" x="17" y="41" width="139" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[DATOS PERSONALES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="19604006-a76b-47e3-96de-b0c599f9ea45" x="319" y="63" width="39" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nro Doc.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="d864cd0d-1d97-42c6-8316-350717adef3e" x="358" y="63" width="68" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroDoc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="24113c0d-c645-4675-8d27-7904d0fd5264" x="221" y="63" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipo Doc.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="023534ee-5661-4850-a37b-a72079a77809" x="261" y="63" width="52" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoDocEst}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="70b6c1b8-b8c4-45f1-9eb1-d63e436900da" x="17" y="75" width="39" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Grado   :]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="e09f7834-2d8d-4d8e-b667-54231efad933" x="57" y="75" width="80" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{grado}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5f3bba13-f856-4f82-b0db-a80afc7834af" x="146" y="75" width="72" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Codigo Colegio:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="3ab9e10b-a439-491e-a14e-0760b10ff600" x="221" y="75" width="40" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{codigoColegio}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="a931a84c-850d-41fb-8cf9-3e8864b34dc3" x="269" y="75" width="47" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fec. Nac.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="32b398a2-176c-4ea4-a602-bb2416eb1359" x="318" y="75" width="65" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecNac}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="19a6113d-1af1-4de6-a774-d554e50eef8d" x="17" y="87" width="85" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Departamento Naci.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="1de496ba-2972-4cfc-9947-7f3f4a56bd74" x="104" y="87" width="79" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{deparNaci}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="a96c81a1-4b0a-4587-9e5d-50aa2d19ab89" x="191" y="87" width="62" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Provincia Naci.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="36db03bf-6684-49c4-9b56-2fd61de34e2d" x="254" y="87" width="83" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{provinciaNaci}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="05ecf5e7-d486-4133-9143-38a534601b95" x="338" y="87" width="54" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Distrito Naci.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="43f26ee1-1540-4b23-adea-a55777f19375" x="393" y="87" width="66" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{distritoNaci}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="84adf370-ecb4-4ec4-9681-942f84efd9b2" x="386" y="75" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vive Con:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="8f5a2207-33d8-4efe-9170-bb65b61d0d6c" x="426" y="75" width="100" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{viveCon}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="288" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="194defb0-c13d-42d0-8ee4-9be7cae8c190" x="17" y="3" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[DATOS BASICOS:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="15571ecf-d9da-42d1-9510-d2e657b1b3cf" x="18" y="23" width="57" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipo via Domi:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="7cfbd824-1848-4c5c-b9f9-72a4eaaaeedf" x="77" y="23" width="106" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoViaDomi}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="36d1caf3-22c2-48da-8f26-a799765d711c" x="191" y="23" width="45" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Direccion:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="0723d7a2-70eb-409d-acc5-c411ae96a339" x="237" y="23" width="253" height="21"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{direccion}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2d4be268-4a9e-443f-95bb-d91486ec7964" x="18" y="35" width="39" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Distrito:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="adce2030-8766-4994-91e0-e185dfbd0b4f" x="58" y="35" width="163" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{distritoDomi}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="78b6a395-6e47-4edf-9f50-e285c76438cd" x="191" y="48" width="45" height="21"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ref. Domicilio:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="e6979cb6-64c2-45ca-ac0d-df8be9006ab1" x="237" y="48" width="253" height="21"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{refDomi}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2e45a61f-2460-4235-b61f-63b30cba21b3" x="18" y="47" width="42" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Telf. Domi:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="eb6e9bcd-a94d-441f-918a-faf720673d1f" x="61" y="47" width="57" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{telfDomi}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="cbbf50a1-a8fd-468e-8c9b-449f4f0acc76" x="60" y="60" width="100" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{telfRef}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="4e119ddc-c459-4664-8646-5759d19be040" x="18" y="60" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Telf. Ref.:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c95a3497-cead-478a-8ebf-92275833c56a" x="18" y="74" width="119" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[DATOS DEL PADRE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="ea701ae7-b85a-4721-b631-25ddabdbb290" x="18" y="94" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nombre Papá:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="d17e8ca4-739d-4191-8891-7d020b4938c7" x="88" y="94" width="133" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombrePapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="6e092465-5155-4b38-8791-14013b1f0df0" x="323" y="94" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nro. Doc:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="5ee8316c-2202-4b29-a884-91659934c8a2" x="364" y="94" width="51" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroDocPapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="cc8df416-592f-4415-9eac-5d0889c6c082" x="224" y="94" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipo Doc:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="57c7c932-f59a-4268-8501-b6345aa231de" x="266" y="94" width="53" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoDocPapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="c5b85b65-d62c-42f2-88b4-7e82a42c6422" x="417" y="94" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fec. Nac.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="dbfb8ff7-a177-4a46-abc0-600c90169080" x="459" y="94" width="46" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecNaciPapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="6cf74b3c-d942-40c2-adc3-db982b953c33" x="18" y="106" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Correo Personal:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="d57aee06-77bc-4ab6-b2d4-3db89dca3947" x="89" y="106" width="132" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{correoPapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="e1dfefe2-c373-4287-bec9-759d32eb1a09" x="224" y="106" width="57" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Celular Papá:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="28603a70-a6ce-4eed-a862-a832a9869370" x="283" y="106" width="69" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{celPapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="b845bdad-bf8b-4647-b559-2d9efd922387" x="355" y="106" width="43" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vive Papá:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="21009787-d1b4-4cd2-b496-3ea70b8591c3" x="401" y="106" width="69" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{vivePapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="dcd81ad2-89c2-453c-b52e-3b4aa7a5dca4" x="18" y="118" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dirección Papá:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="054d8627-aabc-49e7-b16a-cb9958868e67" x="89" y="118" width="401" height="22"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{direccionPapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="b15d1ae4-fbc7-4fed-9719-35d937825e3d" x="18" y="141" width="119" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[DATOS DE LA MADRE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e0815421-e0fd-4083-ad08-cc9cff4d7d44" x="352" y="174" width="46" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vive Mamá:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="1586cbf6-e9c1-4cca-a483-f11d9c122dbb" x="266" y="162" width="53" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoDocMama}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="f631bc4a-d698-4567-8e14-e49640dc1734" x="224" y="162" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipo Doc:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="82001331-61bb-47d4-80f9-344efba34e2a" x="88" y="162" width="133" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreMama}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="2b1cf210-ab50-4f0a-b730-c93dabce722e" x="401" y="174" width="69" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{viveMama}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="47afd2de-03c4-4c56-a323-56f2cacd11eb" x="18" y="162" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nombre Mamá:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="0088eea2-9403-4091-879b-8e561a23921b" x="89" y="186" width="401" height="22"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{direccionMama}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="db7d41dd-ec93-4696-9c47-2be280c9e6aa" x="18" y="174" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Correo Personal:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="05ea27b3-9c76-45e8-8946-24445a1fa22d" x="283" y="174" width="69" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{celMama}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5e118fec-cdfa-4524-a0af-9d09c33d64e9" x="324" y="161" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nro. Doc:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="f0441fcf-65fc-491b-b4c6-14befccd4cd3" x="89" y="174" width="132" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{correoPapa}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="818e9c30-ac47-458a-a1e6-03414aa86d36" x="224" y="174" width="57" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Celular Papá:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9909b4e9-1853-4bdb-b9e6-086e3856a87e" x="18" y="185" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dirección Papá:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="87040e4e-16c0-42d4-bbed-1065da89f875" x="459" y="161" width="46" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecNaciMama}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="c9b2daed-b48a-4c2c-a4dc-0e59f405b148" x="419" y="161" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fec. Nac.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="e5799a84-fec9-4926-9e14-f0fa830af850" x="366" y="161" width="51" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroDocMama}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="29894ab7-3c9d-4a5a-bc95-6d48e9cd8186" x="18" y="210" width="138" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[DATOS DEL APODERADO:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c97d25d7-92b9-4e54-8b77-c13e7ab2fddb" x="324" y="232" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nro. Doc:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="749b256e-29d6-4326-8361-59e5b1605161" x="366" y="232" width="51" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroDocApo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="7ab9b09a-79e9-43ee-b8ad-0964bfe3ce4f" x="266" y="233" width="53" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoDocApo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="6955793d-192c-4ba0-b6da-c2cfcb732855" x="18" y="256" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dirección Papá:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="e7da456f-f852-4540-8a60-2b952529b641" x="89" y="257" width="401" height="22"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{direccionApo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="c206d83f-e14f-4268-9a9a-4ffda02051a9" x="224" y="245" width="57" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Celular Papá:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e2544e6c-b046-4a28-b282-8caee2505c40" x="224" y="233" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipo Doc:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0220974b-6ea7-4027-b553-e9d8307ce736" x="352" y="245" width="46" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vive Mamá:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="ccf56656-875b-48f8-b0c0-04505add343d" x="18" y="245" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Correo Personal:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="5231d0a2-9f92-43af-8f89-8e79ff04284d" x="459" y="232" width="46" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecNaciApo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="9666fefe-bc2d-4d07-b0f4-60f5da87bfdd" x="401" y="245" width="69" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{viveApo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="d9e3e2bb-d2f9-4977-8639-1bf5ea87f570" x="89" y="245" width="132" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{correoApo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="404b19a6-432e-4e00-8a32-bc049dac1894" x="18" y="233" width="69" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nombre Mamá:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="ef1a8dd9-9e76-451b-ba20-a8806b610807" x="419" y="232" width="40" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fec. Nac.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="a3c25240-aeb5-4828-aba7-e8e0d8120188" x="283" y="245" width="69" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{celApo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ba49854e-97cc-4a9e-b50b-b1e58b672ecd" x="88" y="233" width="133" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreApo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+</jasperReport>

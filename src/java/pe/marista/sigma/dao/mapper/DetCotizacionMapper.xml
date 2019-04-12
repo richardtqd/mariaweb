@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">   
+   
+<mapper namespace="pe.marista.sigma.dao.DetCotizacionDAO">  
+    
+    <sql id="consultaCampos">
+        select 
+        detC.uniNeg as uniNeg,
+        detC.idcotizacion as idCotizacion,
+        detC.iddetcotizacion as idDetCotizacion,
+        detC.iddetrequerimiento as idDetRequerimiento,
+        detC.idrequerimiento as idRequerimiento,
+        detC.cantidad as cantidad,
+        coti.idcotizacion as idCotizacion, 
+        c.idcatalogo as idCatalogo,
+        c.item,c.cuenta,detC.importe AS importe,um.idcodigo as idUnidadMedida,um.codigo as unidadMedida,
+        tm.idcodigo as idTipoMoneda,tm.codigo tipoMoneda,req.idrequerimiento as idRequerimiento, dr.iddetrequerimiento as idDetRequerimiento,
+        (select sum(d.importe*d.cantidad) from ML_DetCotizacion d
+        where d.idcotizacion = (select max(idcotizacion)from ML_Cotizacion)) as sumaImporte,
+        un.nombreUniNeg,
+        coti.unineg as uniNegOC, 
+        tor.codigo as categoria,
+        toror.codigo as categoriaOrden,
+        form.codigo as formaPagoOrden,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,en.direccion as direccionOrden,
+        ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.iddistrito as distritoUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as nombreDistrito,   
+        pais.nombre as paisUnidad,    
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Material' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Servicio' then sum(detC.importe)
+        end
+        from ML_DetCotizacion detC
+        where detC.idcotizacion = coti.idcotizacion) as montoRef,
+        (detC.importe *detC.cantidad)   as montoCadaUnoMate,
+        (detC.importe)  as montoCadaUnoSer
+        ,dr.iddetrequerimiento
+        ,dr.cuentad as cuentaDebeSoli
+        ,dr.cuentah as cuentaHaberSoli
+        ,dr.idconcepto as idConceptoReq,
+        coti.flgaceptado as flgAceptado,
+        entidad.ruc as rucCatalogo,
+        (select case 
+        when coti.flgaceptado = 1 then 'Aprobado'
+        when coti.flgaceptado = 0 then 'Desaprobado'
+        end)as estado,
+        dr.destinoservicio as destinoServicio ,
+        dr.fechasalida as fechaSalida ,
+        dr.horasalida as horaSalida ,
+        dr.horaregreso as horaRegreso,
+        coti.nrocotizacion as nroCotizacion
+        from ML_DetCotizacion detC
+        left join MO_UnidadNegocio un on un.uniNeg = detC.uniNeg
+        inner join ML_Cotizacion coti on coti.idcotizacion = detC.idcotizacion and coti.unineg = un.unineg
+        left join MO_Codigo form on coti.idtipopago = form.idcodigo
+        left join MO_Codigo toror on coti.idtipocategoria = toror.idcodigo
+        left join MO_Entidad en on coti.ruc = en.ruc 
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        inner join ML_DetRequerimiento dr on detC.iddetrequerimiento = dr.iddetrequerimiento and dr.unineg = un.unineg
+        inner join ML_Requerimiento req on detC.idrequerimiento = req.idrequerimiento and req.unineg = un.unineg
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo
+        inner join ML_Catalogo c on detC.idcatalogo = c.idcatalogo
+        left join MO_Entidad entidad on entidad.ruc = c.ruc
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on detC.idtipomoneda = tm.idcodigo
+    </sql>
+    <sql id="concultaCampitos">
+        select 
+        det.uniNeg,
+        det.cantidad as cantidad,
+        coti.idcotizacion, 
+        c.idcatalogo,
+        c.item,
+        det.importe AS importe,
+        um.idcodigo as idUnidadMedida,
+        um.codigo as unidadMedida,
+        tm.idcodigo as idTipoMoneda,
+        tm.codigo tipoMoneda,
+        req.idrequerimiento, 
+        dr.iddetrequerimiento,
+        (select sum(d.importe*d.cantidad) from ML_DetCotizacion d
+        where d.idcotizacion = (select max(idcotizacion)from ML_Cotizacion)) as sumaImporte,
+        un.nombreUniNeg,
+        coti.unineg as uniNegOC,  
+        tor.codigo as categoria,
+        toror.codigo as categoriaOrden,
+        form.codigo as formaPagoOrden,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,
+        en.direccion as direccionOrden,
+        ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.iddistrito as distritoUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as nombreDistrito,   
+        coti.nrocotizacion as nroCotizacion,
+        pais.nombre as paisUnidad,    
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Material' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Servicio' then sum(det.importe)
+        end
+        from ML_DetCotizacion det
+        where det.idcotizacion = coti.idcotizacion) as montoRef,
+        dr.destinoservicio as destinoServicio ,
+        dr.fechasalida as fechaSalida ,
+        dr.horasalida as horaSalida ,
+        dr.horaregreso as horaRegreso
+        from ML_DetCotizacion det
+        left join MO_UnidadNegocio un on un.uniNeg = det.uniNeg
+        left join ML_Cotizacion coti on coti.idcotizacion = det.idcotizacion and coti.unineg = un.unineg
+        left join MO_Codigo form on coti.idtipopago = form.idcodigo
+        left join MO_Codigo toror on coti.idtipocategoria = toror.idcodigo
+        left join MO_Entidad en on coti.ruc = en.ruc
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        left join ML_DetRequerimiento dr on det.iddetrequerimiento = dr.iddetrequerimiento and dr.unineg = un.unineg
+        left join ML_Requerimiento req on det.idrequerimiento = req.idrequerimiento and req.unineg = un.unineg
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo
+        left join ML_Catalogo c on det.idcatalogo = c.idcatalogo
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on det.idtipomoneda = tm.idcodigo
+    </sql>
+    <sql id="camposRequeri">
+        select  top 1
+        coti.fechacotizacion,
+        coti.idcotizacion as idCotizacion,
+        coti.obs as obs,
+        coti.nrocotizacion as nroCotizacion,
+        req.titulo as titulo,
+        toror.codigo as tipoCategoria,
+        detC.uniNeg,
+        detC.idcotizacion,
+        detC.iddetcotizacion,
+        detC.iddetrequerimiento,
+        detC.idrequerimiento,
+        detC.cantidad as cantidad,
+        coti.idcotizacion, 
+        c.idcatalogo,
+        c.item,c.cuenta,detC.importe AS importe,um.idcodigo as idUnidadMedida,um.codigo as unidadMedida,
+        tm.idcodigo as idTipoMoneda,tm.codigo tipoMoneda,req.idrequerimiento, dr.iddetrequerimiento,
+        (select sum(d.importe*d.cantidad) from ML_DetCotizacion d
+        where d.idcotizacion =  detC.idcotizacion) as sumaImporte,
+        un.nombreUniNeg,
+        coti.unineg as uniNegOC, 
+        tor.codigo as categoria,
+        toror.codigo as categoriaOrden,
+        form.codigo as formaPagoOrden,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,en.direccion as direccionOrden,
+        ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.iddistrito as distritoUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as nombreDistrito,   
+        pais.nombre as paisUnidad,    
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Material' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Servicio' then sum(detC.importe)
+        end
+        from ML_DetCotizacion detC
+        where detC.idcotizacion = coti.idcotizacion) as montoRef,
+        (detC.importe *detC.cantidad)   as montoCadaUnoMate,
+        (detC.importe)  as montoCadaUnoSer
+        ,dr.iddetrequerimiento
+        ,dr.cuentad as cuentaDebeSoli
+        ,dr.cuentah as cuentaHaberSoli
+        ,dr.idconcepto as idConceptoReq,
+        coti.flgaceptado as flgAceptado,
+        entidad.ruc as rucCatalogo,
+        (select case 
+        when coti.flgaceptado = 1 then 'Aprobado'
+        when coti.flgaceptado = 0 then 'Desaprobado'
+        end)as estado,
+        dr.destinoservicio as destinoServicio ,
+        dr.fechasalida as fechaSalida ,
+        dr.horasalida as horaSalida ,
+        req.nrosolicitud as nroSolicitud,
+        dr.horaregreso as horaRegreso
+        from ML_DetCotizacion detC
+        left join MO_UnidadNegocio un on un.uniNeg = detC.uniNeg
+        inner join ML_Cotizacion coti on coti.idcotizacion = detC.idcotizacion and coti.unineg = un.unineg
+        left join MO_Codigo form on coti.idtipopago = form.idcodigo
+        left join MO_Codigo toror on coti.idtipocategoria = toror.idcodigo
+        left join MO_Entidad en on coti.ruc = en.ruc 
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        inner join ML_DetRequerimiento dr on detC.iddetrequerimiento = dr.iddetrequerimiento and dr.unineg = un.unineg
+        inner join ML_Requerimiento req on detC.idrequerimiento = req.idrequerimiento and req.unineg = un.unineg
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo
+        inner join ML_Catalogo c on detC.idcatalogo = c.idcatalogo
+        left join MO_Entidad entidad on entidad.ruc = c.ruc
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on detC.idtipomoneda = tm.idcodigo
+    </sql>
+    <sql id="ayuda">
+        select   DISTINCT
+        detC.cantidad as cantidad, 
+        c.idcatalogo,
+        c.item, detC.importe AS importe 
+        from ML_DetCotizacion detC
+        left join MO_UnidadNegocio un on un.uniNeg = detC.uniNeg 
+        inner join ML_Catalogo c on detC.idcatalogo = c.idcatalogo
+         
+    </sql>
+    <resultMap id="detResultado" type="pe.marista.sigma.bean.DetCotizacionBean">
+        <id property="idDetCotizacion" column="idDetCotizacion"/>
+        <result property="cantidad" column="cantidad"/> 
+        <result property="importe" column="importe"/>  
+        <result property="importeAnterior" column="importe"/>
+        <result property="sumaImporte" column="sumaImporte"/>
+        <result property="idCotizacion" column="idCotizacion"/>
+        <result property="idRequerimiento" column="idRequerimiento"/> 
+        <result property="idDetRequerimiento" column="idDetRequerimiento"/>  
+        <association property="cotizacionBean" column="idCotizacion"
+                     javaType="pe.marista.sigma.bean.CotizacionBean"
+                     resultMap="cotizacionResultado"/>
+        <association property="catalogoBean" column="idcatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="solicitudLogDetalleBean" column="idDetRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogDetalleBean"
+                     resultMap="solDetalleResultado"/>
+        <association property="solicitudLogisticoBean" column="idRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaDETResultado"/>  
+    </resultMap> 
+    <resultMap id="cotizacionResultado" type="pe.marista.sigma.bean.CotizacionBean">
+        <id property="idCotizacion" column="idCotizacion"/> 
+        <result property="montoRef" column="montoRef"/> 
+        <result property="montoCadaUnoMate" column="montoCadaUnoMate"/> 
+        <result property="flgAceptado" column="flgAceptado"/> 
+        <result property="fechaCotizacion" column="fechaCotizacion"/> 
+        <result property="obs" column="obs"/> 
+        <result property="estado" column="estado"/> 
+        <result property="nroCotizacion" column="nroCotizacion"/> 
+        <association property="unidadNegocioBean" column="uniNegOC"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioOCResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadOCResultado"/>
+        <association property="tipoPagoBean" column="idTipoFormaPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoFormaPagoOCResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaOCResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioOCResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegOC"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombre"/>
+        <result property="direccion" column="direccion"/>
+        <result property="telefono" column="telefono"/>
+        <result property="correo" column="correo"/>
+        <result property="url" column="url"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoENResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisENResultado"/>
+    </resultMap>
+    <resultMap id="distritoENResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distrito"/>
+    </resultMap>    
+    <resultMap id="paisENResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="nomPais"/>
+    </resultMap>
+    <resultMap id="entidadOCResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucOrden"/>
+        <result property="nombre" column="nombreOrden"/>
+        <result property="direccion" column="direccionOrden"/>
+    </resultMap>
+    <resultMap id="tipoFormaPagoOCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoFormaPago"/>
+        <result property="codigo" column="formaPagoOrden"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaOCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="categoriaOrden"/>
+    </resultMap>
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="precioRef" column="importe"/>
+        <association property="tipoUnidadMedidaBean" column="idUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="unidadMedResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+    </resultMap>
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucCatalogo"/> 
+    </resultMap>
+    <resultMap id="unidadMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idUnidadMedida"/>
+        <result property="codigo" column="unidadMedida"/>
+    </resultMap>
+    <resultMap id="monedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIDADResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNIDADResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultado"/>
+    </resultMap> 
+    <resultMap id="distritoUNIDADENTResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="nombreDistrito"/>
+    </resultMap>       
+    <resultMap id="paisUNIDADENTResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>
+    <resultMap id="solDetalleResultado" type="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        <id property="idDetRequerimiento" column="idDetRequerimiento"/>
+        <result property="fechaSalida" column="fechaSalida"/>
+        <result property="destinoServicio" column="destinoServicio"/>
+        <result property="horaSalida" column="horaSalida"/>
+        <result property="horaRegreso" column="horaRegreso"/>
+        <association property="solicitudLogisticoBean" column="idrequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solDetResultado"/> 
+        <association property="catalogoBean" column="idcatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultadoSolDeta"/>
+    </resultMap>
+    <resultMap id="catalogoResultadoSolDeta" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="precioRef" column="importe"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultadSoli"/>
+    </resultMap>
+    <resultMap id="monedaResultadSoli" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="solDetResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/>
+        <result property="nroSolicitud" column="nroSolicitud"/>
+    </resultMap>   
+     
+    <resultMap id="solResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/>
+        <result property="titulo" column="titulo"/>
+        <result property="nroSolicitud" column="nroSolicitud"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaSOLResultado"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaSOLResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>
+    <resultMap id="monedaDETResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>  
+    <select id="obtenerPorOrden" resultMap="detResultado" parameterType="map">
+        <include refid="ayuda" />where detC.idrequerimiento = #{idRequerimiento} and detC.uniNeg = #{uniNeg}
+    </select>  
+    <select id="obtenerPorOrdenSoli" resultMap="detResultado" parameterType="map">
+        <include refid="consultaCampos" />where detC.idcotizacion = #{idCotizacion} and detC.uniNeg = #{uniNeg}
+    </select>  
+    <select id="obtenerPorOrdenPrimero" resultType="pe.marista.sigma.bean.reporte.DetCotizacionRepBean" parameterType="map">
+        declare @uniNeg varchar(6) = #{uniNeg}
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        end)
+        select 
+        @IMG AS rutaImagen,
+        detC.uniNeg,
+        detC.idcotizacion as idCotizacion,
+        detC.cantidad as cantidad,
+        c.item,
+        detC.idrequerimiento ,
+        detC.importe AS importe,
+        tm.codigo tipoMoneda,
+        un.nombreUniNeg,
+        tor.codigo as categoria,
+        form.codigo as formaPagoOrden,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,
+        en.direccion as direccionOrden,
+        ent.nombre as nombreUnidad,
+        coti.nrocotizacion as nroCotizacion,
+        ent.iddistrito as distritoUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as nombreDistrito,
+        pais.nombre as paisUnidad,
+        (select sum(d.importe*d.cantidad) from ML_DetCotizacion d
+        where d.idcotizacion = (select max(idcotizacion)from ML_Cotizacion)) as sumaImporte,
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Material' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Servicio' then sum(detC.importe)
+        end
+        from ML_DetCotizacion detC
+        where detC.idcotizacion = coti.idcotizacion) as montoRef,
+        (detC.importe *detC.cantidad)   as montoCadaUnoMate,
+        isnull(comed.codigo,'-') as tipoUniMed
+        from ML_DetCotizacion detC
+        inner join ML_Cotizacion coti on coti.idcotizacion = detC.idcotizacion
+        left join MO_Codigo form on coti.idtipopago = form.idcodigo
+        left join MO_Codigo toror on coti.idtipocategoria = toror.idcodigo
+        left join MO_Entidad en on coti.ruc = en.ruc
+        left join MO_UnidadNegocio un on un.uniNeg = detC.uniNeg
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        inner join ML_DetRequerimiento dr on detC.iddetrequerimiento = dr.iddetrequerimiento
+        inner join ML_Requerimiento req on detC.idrequerimiento = req.idrequerimiento
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo
+        inner join ML_Catalogo c on detC.idcatalogo = c.idcatalogo
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on detC.idtipomoneda = tm.idcodigo
+        left join MO_Codigo comed on comed.idcodigo = detC.idtipounimed
+        where detC.idcotizacion = #{idCotizacion} and detC.uniNeg = #{uniNeg}
+    </select>  
+    <select id="obtenerUltimoCoti" resultMap="cotizacionResultado" parameterType="map" >
+        select * from ML_Cotizacion
+        WHERE uniNeg =#{uniNeg} and  idcotizacion=#{idCotizacion}
+    </select>
+    <select id="obtenerListaPorId" resultMap="detResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where detC.iddetcotizacion = #{iddetcotizacion}  
+    </select>
+    <select id="obtenerListaPorIdSolicitud"  resultMap="detResultado"  parameterType="map">
+        <include refid="consultaCampos" />
+        where detC.idrequerimiento = #{idRequerimiento} and detC.unineg = #{uniNeg}
+    </select>
+    <select id="obtenerListaPorIdSolicitud2"  resultMap="detResultado"  parameterType="pe.marista.sigma.bean.DetCotizacionBean">
+        <include refid="consultaCampos" />
+        where detC.idcatalogo = #{catalogoBean.idCatalogo} and 
+        detC.idrequerimiento = #{solicitudLogisticoBean.idRequerimiento}
+    </select>
+    <select id="obtenerTodos" resultMap="detResultado" parameterType="String">
+        <include refid="consultaCampos" />where detC.uniNeg = #{unidadNegocioBean.uniNeg}  
+    </select> 
+    <select id="obtenerUltimo" resultMap="detResultado" parameterType="map" >
+        select isnull((max(idCotizacion)),0) from ML_DetCotizacion
+        WHERE idCotizacion = #{idCotizacion} and uniNeg = #{uniNeg} 
+    </select> 
+    <select id="obtenerPorId" parameterType="pe.marista.sigma.bean.DetCotizacionBean">
+        <include refid="concultaCampitos" /> where det.uniNeg = #{unidadNegocioBean.uniNeg} and det.idCotizacion = #{cotizacionBean.idCotizacion}
+    </select> 
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.DetCotizacionBean"
+            useGeneratedKeys="true" keyProperty="idDetCotizacion" keyColumn="idDetCotizacion">
+        insert into ML_DetCotizacion 
+        (iddetcotizacion,uniNeg,idcotizacion,idRequerimiento,idDetRequerimiento,importe,cantidad,idcatalogo,idtipomoneda,creaPor,creaFecha) 
+        values
+        (0,#{unidadNegocioBean.uniNeg},#{idCotizacion},#{solicitudLogisticoBean.idRequerimiento},#{solicitudLogDetalleBean.idDetRequerimiento},
+        #{importe},#{cantidad},#{catalogoBean.idCatalogo}
+        ,#{solicitudLogDetalleBean.catalogoBean.tipoMonedaBean.idCodigo}
+        ,#{creaPor},getDate()) 
+    </insert>  
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        delete from ML_DetCotizacion 
+        where idCotizacion = #{idCotizacion} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </delete> 
+    <select id="obtenerTodosGeneral" resultMap="detResultado" parameterType="pe.marista.sigma.bean.DetCotizacionBean">
+        select  distinct
+        coti.idcotizacion as idCotizacion,
+        coti.uniNeg as uniNeg, 
+        req.titulo as titulo,
+        coti.obs as obs,
+        toror.codigo as tipoCategoria, 
+        detC.idrequerimiento  ,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,
+        en.direccion as direccionOrden
+        from ML_DetCotizacion detC
+        left join MO_UnidadNegocio un on un.uniNeg = detC.uniNeg
+        inner join ML_Cotizacion coti on coti.idcotizacion = detC.idcotizacion and coti.unineg = un.unineg  
+        left join MO_Codigo toror on coti.idtipocategoria = toror.idcodigo
+        left join MO_Entidad en on coti.ruc = en.ruc 
+        left join MO_Entidad ent on un.ruc = ent.ruc 
+        inner join ML_DetRequerimiento dr on detC.iddetrequerimiento = dr.iddetrequerimiento and dr.unineg = un.unineg
+        inner join ML_Requerimiento req on detC.idrequerimiento = req.idrequerimiento and req.unineg = un.unineg
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo  
+        <where>         
+            detC.unineg =#{unidadNegocioBean.uniNeg} and toror.idcodigo in ( 18202,18201)
+            <if test="solicitudLogisticoBean.idRequerimiento != null" >
+                and detC.idrequerimiento =#{solicitudLogisticoBean.idRequerimiento} 
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and coti.fechacotizacion >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and coti.fechacotizacion <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by detC.idrequerimiento desc
+    </select>
+    <select id="obtenerTodosM" resultMap="detResultado" parameterType="pe.marista.sigma.bean.DetCotizacionBean">
+        <include refid="camposRequeri" />
+        <where>         
+            detC.unineg =#{unidadNegocioBean.uniNeg} and toror.idcodigo in ( 18202,18201,18203)
+            <if test="solicitudLogisticoBean.nroSolicitud != null" >
+                and req.nroSolicitud =#{solicitudLogisticoBean.nroSolicitud} 
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and coti.fechacotizacion >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and coti.fechacotizacion <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by detC.idrequerimiento desc
+    </select>
+    <select id="obtenerRequerimiento" resultMap="detResultado" parameterType="map">
+        select top 1
+        detC.uniNeg,
+        detC.idcotizacion,
+        detC.iddetcotizacion,
+        detC.iddetrequerimiento,
+        detC.idrequerimiento,
+        detC.cantidad as cantidad,
+        coti.idcotizacion, 
+        c.idcatalogo,
+        c.item,c.cuenta,detC.importe AS importe,um.idcodigo as idUnidadMedida,um.codigo as unidadMedida,
+        tm.idcodigo as idTipoMoneda,tm.codigo tipoMoneda,req.idrequerimiento, dr.iddetrequerimiento,
+        (select sum(d.importe*d.cantidad) from ML_DetCotizacion d
+        where d.idcotizacion = (select max(idcotizacion)from ML_Cotizacion)) as sumaImporte,
+        un.nombreUniNeg,
+        coti.unineg as uniNegOC, 
+        tor.codigo as categoria,
+        toror.codigo as categoriaOrden,
+        form.codigo as formaPagoOrden,
+        en.ruc as rucOrden,
+        en.nombre as nombreOrden,en.direccion as direccionOrden,
+        ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.iddistrito as distritoUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as nombreDistrito,   
+        pais.nombre as paisUnidad,    
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Material' then sum(detC.importe*detC.cantidad)
+        when tor.codigo = 'Servicio' then sum(detC.importe)
+        end
+        from ML_DetCotizacion detC
+        where detC.idcotizacion = coti.idcotizacion) as montoRef,
+        (detC.importe *detC.cantidad)   as montoCadaUnoMate,
+        (detC.importe)  as montoCadaUnoSer
+        ,dr.iddetrequerimiento
+        ,dr.cuentad as cuentaDebeSoli
+        ,dr.cuentah as cuentaHaberSoli
+        ,dr.idconcepto as idConceptoReq,
+        coti.flgaceptado as flgAceptado,
+        entidad.ruc as rucCatalogo,
+        (select case 
+        when coti.flgaceptado = 1 then 'Aprobado'
+        when coti.flgaceptado = 0 then 'Desaprobado'
+        end)as estado
+        from ML_DetCotizacion detC
+        left join MO_UnidadNegocio un on un.uniNeg = detC.uniNeg
+        inner join ML_Cotizacion coti on coti.idcotizacion = detC.idcotizacion and coti.unineg = un.unineg
+        left join MO_Codigo form on coti.idtipopago = form.idcodigo
+        left join MO_Codigo toror on coti.idtipocategoria = toror.idcodigo
+        left join MO_Entidad en on coti.ruc = en.ruc 
+        left join MO_Entidad ent on un.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        inner join ML_DetRequerimiento dr on detC.iddetrequerimiento = dr.iddetrequerimiento and dr.unineg = un.unineg
+        inner join ML_Requerimiento req on detC.idrequerimiento = req.idrequerimiento and req.unineg = un.unineg
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo
+        inner join ML_Catalogo c on detC.idcatalogo = c.idcatalogo
+        left join MO_Entidad entidad on entidad.ruc = c.ruc
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo
+        left join MO_Codigo tm on detC.idtipomoneda = tm.idcodigo
+        where detC.unineg =#{uniNeg} and detC.idrequerimiento =#{idRequerimiento}
+    </select>  
+</mapper>

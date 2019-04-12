@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.GradoAcademicoDAO">  
+    
+    <sql id="consultaCampos">
+        select
+        ga.idgradoacademico,
+        ga.codigo,
+        ga.nombre,
+        na.idnivelacademico,
+        na.nombre as nomNA,
+        tf.idtipoformacion,
+        tf.nombre as nomTF
+        from mx_gradoacademico ga
+        left join mx_nivelacademico na on ga.idnivelacademico = na.idnivelacademico
+        left join mx_tipoformacion tf on na.idtipoformacion = tf.idtipoformacion
+    </sql>
+    
+    <resultMap id="gradoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademico"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombre"/> 
+        <association property="nivelAcademicoBean" column="idNivelAcademico"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultado"/>
+    </resultMap>
+    
+    <resultMap id="nivelResultado" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNivelAcademico"/>
+        <result property="nombre" column="nomNA"/>
+        <association property="tipoFormacionBean" column="idTipoFormacion"
+                     javaType="pe.marista.sigma.bean.TipoFormacionBean"
+                     resultMap="tipoResultado"/>
+    </resultMap>
+    
+    <resultMap id="tipoResultado" type="pe.marista.sigma.bean.TipoFormacionBean">
+        <id property="idTipoFormacion" column="idTipoFormacion"/>
+        <result property="nombre" column="nomTF"/>
+    </resultMap>
+    
+    <select id="obtenerTodos" resultMap="gradoResultado">
+        <include refid="consultaCampos" />
+        order by na.idnivelacademico, ga.nombre 
+    </select>
+   
+    <select id="obtenerPorId" resultMap="gradoResultado" parameterType="pe.marista.sigma.bean.GradoAcademicoBean">
+        <include refid="consultaCampos" />where ga.idGradoAcademico = #{idGradoAcademico}
+    </select>
+    
+    <select id="obtenerPorIdNombre" resultMap="gradoResultado" parameterType="String">
+        <include refid="consultaCampos" />where ga.nombre = #{nombre}
+    </select>
+    
+    <select id="obtenerPorIdNombreLista" resultMap="gradoResultado" parameterType="String">
+        <include refid="consultaCampos" />where ga.nombre = #{nombre}
+    </select>
+    
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.GradoAcademicoBean">
+        insert into mx_gradoacademico (codigo,nombre,idnivelacademico)
+        values(#{codigo},#{nombre},#{nivelAcademicoBean.idNivelAcademico})
+    </insert> 
+    
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.GradoAcademicoBean">
+        update mx_gradoacademico 
+        set 
+        codigo = #{codigo},
+        nombre = #{nombre},
+        idNivelAcademico = #{nivelAcademicoBean.idNivelAcademico}
+        where idGradoAcademico = #{idGradoAcademico}
+    </update>
+    
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.GradoAcademicoBean">
+        delete from mx_gradoacademico
+        where idGradoAcademico = #{idGradoAcademico}
+    </delete>
+    <!--Filtro Matricula-->
+    <select id="obtenerTodosMatri" resultMap="gradoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where na.nombre in (#{parms.nivAcaIni},#{parms.nivAcaPri},#{parms.nivAcaSec})
+        order by ga.idNivelAcademico desc,ga.idgradoacademico,ga.nombre desc
+    </select> 
+    <select id="obtenerTodosMatriSinBachiller" resultMap="gradoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where na.nombre in (#{parms.nivAcaIni},#{parms.nivAcaPri},#{parms.nivAcaSec})
+        and ga.nombre not in (#{parms.cuartoBach},#{parms.quintoBach})
+        order by ga.idNivelAcademico desc,ga.idgradoacademico,ga.nombre desc
+    </select>
+    <select id="obtenerTodosIniPriSec" resultMap="gradoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where na.nombre in (#{parms.nivAcaIni},#{parms.nivAcaPri},#{parms.nivAcaSec},#{parms.IniPriSec})
+        order by ga.idNivelAcademico desc,ga.idgradoacademico,ga.nombre desc 
+    </select> 
+    <select id="obtenerCuartoBachillerTercero" resultMap="gradoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where ga.nombre in (#{parms.tercero},#{parms.cuarto},#{parms.cuartoBach})
+        order by ga.nombre
+    </select> 
+    <select id="obtenerQuintoCuartoBachiller" resultMap="gradoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        Where ga.nombre in (#{parms.cuarto},#{parms.cuartoBach},#{parms.quinto},#{parms.quintoBach})
+        order by ga.nombre
+    </select> 
+    <!--Filtro Nivel Academico-->
+    <select id="obtenerGradoAcaPorNivelAca" resultMap="gradoResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        where ga.idNivelAcademico = #{idNivelAcademico}
+    </select> 
+</mapper>

@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.marista.sigma.dao.CuotaIngresoDAO">
+    <sql id="consultaCampos">
+        select uni.unineg  as uniNeg,uni.nombreUniNeg as nombreUniNeg,uni.ruc as ruc,
+        cc.idcajacuotaingreso  as idCajaCuotaIngreso,
+        usuario  as usuario,
+        cc.anio  as anio,
+        idsuperviza  as idSuperviza,
+        p.idpersonal as idPersonal,
+        p.apepat,
+        p.apemat,
+        p.nombre as nombre,
+        fecapertura as fechaApertura,
+        feccierre as fechaCierre,
+        (CASE WHEN fecapertura IS NOT NULL THEN  CONVERT(VARCHAR(10), fecapertura, 103) + ' '  + convert(VARCHAR(8), fecapertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        , (CASE WHEN feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), feccierre, 103) + ' '  + convert(VARCHAR(8), feccierre, 14) ELSE ' /  /' END) as  fechaCierreView,
+        cc.creapor as creaPor,
+        cc.creafecha as creaFecha, 
+        cc.modipor  as modiPor, 
+        ingresocongreefectivosol as ingresoEfectivoSol,
+        cb.numcuenta as numCuentaCongreSol, 
+        cb.rucbanco as rucBancoCongre
+        from MT_CajaCuotaIngreso cc
+        inner join MO_UnidadNegocio uni on uni.unineg=cc.unineg
+        left join MT_CuotaIngreso cuo on cuo.idcajacuotaingreso=cc.idcajacuotaingreso
+        left join MT_CuentaBanco cb on cb.numcuenta=cc.numcuentacongresol
+        left join MO_Entidad en on en.ruc=cc.rucbancocongre 
+        inner join MO_Personal p on p.idpersonal=cc.idsuperviza
+    </sql> 
+    <resultMap id="cajaCuotaIngresoResultado" type="pe.marista.sigma.bean.CajaCuotaIngresoBean">
+        <id property="idCajaCuotaIngreso" column="idCajaCuotaIngreso"/> 
+        <result property="anio" column="anio"/>
+        <result property="usuario" column="usuario"/>
+        <result property="fechaApertura" column="fechaApertura"/> 
+        <result property="fechaCierre" column="fechaCierre"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="fechaAperturaView" column="fechaAperturaView"/>
+        <result property="fechaCierreView" column="fechaCierreView"/>
+        <result property="ingresoEfectivoSol" column="ingresoEfectivoSol"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>  
+        <association property="supervizaBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultadoSup"/> 
+        <association property="numeroCuentaBean" column="numcuenta"
+                     javaType="pe.marista.sigma.bean.CuentaBancoBean"
+                     resultMap="cuentaBancoResultado"/>  
+    </resultMap>
+     
+    <resultMap id="cuentaBancoResultado" type="pe.marista.sigma.bean.CuentaBancoBean"> 
+        <result property="numCuenta" column="numCuentaCongreSol"/> 
+        <association property="entidadBancoBean" column="rucBanco"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/> 
+    </resultMap>  
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucBancoCongre"/> 
+    </resultMap>  
+    <resultMap id="personalResultadoSup" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/> 
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="nombre" column="nombre"/>
+    </resultMap>  
+      
+    <!--unidadNegocioResultado-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+    </resultMap>
+    
+    
+    <select id="obtenerListaCuotaIngreso" resultMap="cajaCuotaIngresoResultado" parameterType="pe.marista.sigma.bean.CajaCuotaIngresoBean">
+        <include refid="consultaCampos" />
+        WHERE uni.uniNeg=#{unidadNegocioBean.uniNeg}  order by idcajacuotaingreso desc
+    </select> 
+    <select id="obtenerMaxCaja" resultType="Integer" parameterType="String"> 
+        select
+        max(idcajacuotaingreso)
+        from MT_CajaCuotaIngreso where unineg=#{unidadNegocioBean.uniNeg} 
+        and feccierre is null        
+        group by feccierre
+        having count(idcajacuotaingreso) =1
+    </select> 
+    <select id="obtenerCajaAbierta" resultMap="cajaCuotaIngresoResultado" parameterType="pe.marista.sigma.bean.CajaCuotaIngresoBean">
+        <include refid="consultaCampos" />
+        where cc.idcajacuotaingreso=#{idCajaCuotaIngreso} and uni.unineg=#{unidadNegocioBean.uniNeg}
+    </select> 
+    <select id="obtenerCuotaReporte" resultType="pe.marista.sigma.bean.reporte.CuotaIngresoRepBean" parameterType="map">
+        select
+        'CUOTA INGRESO' as titulo
+        ,nombreUniNeg,
+        uni.RUC as ruc,
+        (CASE WHEN fecapertura IS NOT NULL THEN  CONVERT(VARCHAR(10), fecapertura, 103) + ' '  + convert(VARCHAR(8), fecapertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        , (CASE WHEN feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), feccierre, 103) + ' '  + convert(VARCHAR(8), feccierre, 14) ELSE ' /  /' END) as  fechaCierreView,
+        caja.numcuentacongresol as numCuentaCongreSol, 
+        cuota.serie as serie,
+        cuota.nrodoc as nroDoc,
+        discente as discente,
+        montoefectivosol as montoEfectivoSol, 
+        cuota.referencia as referencia
+        from MT_CajaCuotaIngreso caja
+        inner join MT_CuotaIngreso cuota on cuota.idcajacuotaingreso =caja.idcajacuotaingreso
+        inner join MO_UnidadNegocio uni on uni.unineg=caja.unineg 
+        where caja.idcajacuotaingreso=#{idCajaCuotaIngreso} and uni.unineg=#{uniNeg}
+    </select>
+    <insert id="insertarCajaCuotaIngreso" parameterType="pe.marista.sigma.bean.CajaCuotaIngresoBean">
+        Insert Into MT_CajaCuotaIngreso (unineg,usuario,anio,idsuperviza,fecapertura,feccierre,creapor,creafecha,ingresocongreefectivosol,numcuentacongresol,rucBancoCongre)
+        Values (#{unidadNegocioBean.uniNeg},#{usuario},#{anio},#{supervizaBean.idPersonal},#{fechaApertura},#{fechaCierre},#{creaPor},getDate()
+        ,#{ingresoEfectivoSol},#{numeroCuentaBean.numCuenta},#{rucBancoCongregacionBean.ruc})
+        <selectKey keyProperty="idCajaCuotaIngreso" order="AFTER" resultType="Integer">
+            SELECT max(idCajaCuotaIngreso) FROM MT_CajaCuotaIngreso  
+        </selectKey>
+    </insert> 
+    <update id="modificarCierre" parameterType="pe.marista.sigma.bean.CajaCuotaIngresoBean">
+        Update MT_CajaCuotaIngreso
+        set
+        fecCierre = #{fechaCierre}
+        ,modiPor=#{modiPor}
+        WHERE idCajaCuotaIngreso=#{idCajaCuotaIngreso} and unineg= #{unidadNegocioBean.uniNeg}   
+    </update>  
+    <update id="modificarMontoPorCaja" parameterType="pe.marista.sigma.bean.CajaCuotaIngresoBean">
+        Update MT_CajaCuotaIngreso
+        set
+        ingresocongreefectivosol = #{ingresoEfectivoSol}
+        ,modiPor=#{modiPor}
+        WHERE idCajaCuotaIngreso=#{idCajaCuotaIngreso} and unineg= #{unidadNegocioBean.uniNeg}   
+    </update>  
+    <sql id="consultaCamposCuotaIngreso">
+        select
+        uni.unineg as uniNeg
+        ,c.idcuotaingreso as idCuotaIngreso 
+        ,cj.idcajacuotaingreso as idCajaCuotaIngreso
+        ,c.impresora as impresora 
+        ,doc.codigo as tipoDoc 
+        ,doc.idcodigo as idTipoDoc 
+        ,c.serie as serie 
+        ,c.nrodoc as nroDoc 
+        ,p.idpersona as idPersona
+        ,c.discente as discente
+        ,c.anio
+        ,lugarPago.codigo as tipoLugarPago
+        ,lugarPago.idcodigo as idTipoLugarPago
+        ,modo.codigo as tipoModoPago
+        ,modo.idcodigo as idTipoModoPago
+        ,c.fechapago as fechaPago
+        ,convert(varchar,c.fechapago,103) as fechaPagoView
+        ,moneda.codigo as tipoMoneda
+        ,moneda.idcodigo as idTipoMoneda
+        ,status.codigo as tipoStatusDocIng
+        ,status.idcodigo as idTipoStatusDocIng
+        ,c.status as status
+        ,c.creapor as creaPor
+        ,c.creafecha as creaFecha
+        ,c.modipor as modiPor
+        ,c.montoefectivosol as montoEfectivoSol
+        ,c.flganulado as flgAnulado
+        ,co.idconcepto as idConcepto
+        ,co.nombre as nombreConcepto
+        ,pld.cuenta as cuentaD
+        ,pld.nombre nombreD
+        ,plh.cuenta as cuentaH
+        ,plh.nombre as nombreH
+        ,c.referencia as referencia,
+        ce.cr as cr ,
+        ce.nombre as nombreCR
+        from MT_CuotaIngreso c
+        inner join MO_UnidadNegocio uni on uni.unineg=c.unineg
+        left join MT_CajaCuotaIngreso cj on cj.idcajacuotaingreso=c.idcajacuotaingreso
+        left join MO_Codigo doc on doc.idcodigo=c.idtipodoc
+        left join MX_Persona p on p.idpersona=c.iddiscente
+        left join MO_Codigo lugarPago on lugarPago.idcodigo=c.idtipolugarpago
+        left join MO_Codigo modo on modo.idcodigo=c.idtipomodopago
+        left join MO_Codigo moneda on moneda.idcodigo=c.idtipomoneda
+        left join MO_Codigo status on status.idcodigo=c.idtipostatusdocing
+        left join MT_Concepto co on co.idconcepto=c.idconcepto  
+        left join MT_CentroResponsabilidad ce on ce.cr=c.cr
+        left join MT_PlanContable pld on pld.cuenta=co.cuentad
+        left join MT_PlanContable plh on plh.cuenta=co.cuentah
+    </sql>
+    
+    <resultMap id="cuotaIngresoResultado" type="pe.marista.sigma.bean.CuotaIngresoBean">
+        <id property="idCuotaIngreso" column="idCuotaIngreso"/> 
+        <result property="impresora" column="impresora"/>
+        <result property="serie" column="serie"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="anio" column="anio"/>
+        <result property="discente" column="discente"/>
+        <result property="fechaPago" column="fechaPago"/> 
+        <result property="fechaPagoView" column="fechaPagoView"/> 
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="montoEfectivoSol" column="montoEfectivoSol"/>
+        <result property="flgAnulado" column="flgAnulado"/> 
+        <result property="referencia" column="referencia"/> 
+        <result property="serienrodoc" column="serienrodoc"/> 
+        <result property="fechaInicio" column="fechaInicio"/> 
+        <result property="fechaFin" column="fechaFin"/> 
+        <result property="fechaVista" column="fechaVista"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>  
+        <association property="cajaCuotaIngresoBean" column="idCajaCuotaIngreso"
+                     javaType="pe.marista.sigma.bean.CajaCuotaIngresoBean"
+                     resultMap="cajaCuotaIngresoResultado"/> 
+        <association property="tipoDocBean" column="idcodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="docResultado"/> 
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+        <association property="tipoLugarPagoBean" column="idcodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="lugarResultado"/> 
+        <association property="tipoModoPago" column="idcodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="modoResultado"/> 
+        <association property="tipoMonedaBean" column="idcodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado"/> 
+        <association property="tipoStatusDocIngBean" column="idcodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="statusResultado"/> 
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/> 
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="crResultado"/>  
+    </resultMap>
+       
+    <resultMap id="docResultado" type="pe.marista.sigma.bean.CodigoBean"> 
+        <id property="idCodigo" column="idTipoDoc"/>
+        <result property="codigo" column="tipoDoc"/>  
+    </resultMap> 
+    <resultMap id="lugarResultado" type="pe.marista.sigma.bean.CodigoBean"> 
+        <id property="idCodigo" column="idTipoLugarPago"/> 
+        <result property="codigo" column="tipoLugarPago"/>  
+    </resultMap> 
+    <resultMap id="modoResultado" type="pe.marista.sigma.bean.CodigoBean">  
+        <id property="idCodigo" column="idTipoModoPago"/>
+        <result property="codigo" column="tipoModoPago"/>  
+    </resultMap> 
+    <resultMap id="monedaResultado" type="pe.marista.sigma.bean.CodigoBean">  
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>  
+    </resultMap> 
+    <resultMap id="statusResultado" type="pe.marista.sigma.bean.CodigoBean">  
+        <id property="idCodigo" column="idTipoStatusDocIng"/>
+        <result property="codigo" column="tipoStatusDocIng"/>  
+    </resultMap> 
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean"> 
+        <id property="idPersona" column="idPersona"/>  
+    </resultMap> 
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean"> 
+        <id property="idConcepto" column="idConcepto"/>  
+        <result property="nombre" column="nombreConcepto"/>   
+        <association property="planContableCuentaDBean" column="cuenta"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planDResultado"/> 
+        <association property="planContableCuentaHBean" column="cuenta"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planHResultado"/> 
+    </resultMap> 
+    <resultMap id="planDResultado" type="pe.marista.sigma.bean.PlanContableBean"> 
+        <id property="cuenta" column="cuentaD"/>
+        <result property="nombre" column="nombreD"/>  
+    </resultMap> 
+    <resultMap id="planHResultado" type="pe.marista.sigma.bean.PlanContableBean"> 
+        <id property="cuenta" column="cuentaH"/>
+        <result property="nombre" column="nombreH"/>  
+    </resultMap> 
+    <resultMap id="crResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean"> 
+        <id property="cr" column="cr"/>  
+        <result property="nombre" column="nombreCR"/>   
+    </resultMap>    
+    <select id="obtenerIngresosEnCaja" resultMap="cuotaIngresoResultado" parameterType="pe.marista.sigma.bean.CuotaIngresoBean">
+        <include refid="consultaCamposCuotaIngreso" />  
+        where cj.idcajacuotaingreso=#{cajaCuotaIngresoBean.idCajaCuotaIngreso} and uni.uniNeg =#{unidadNegocioBean.uniNeg}
+    </select> 
+    <select id="obtenerIdCuotaIngreso" resultMap="cuotaIngresoResultado" parameterType="pe.marista.sigma.bean.CuotaIngresoBean">
+        <include refid="consultaCamposCuotaIngreso" />
+        where c.nroDoc=#{nroDoc} and uni.uniNeg =#{unidadNegocioBean.uniNeg}
+    </select> 
+    <insert id="insertarCuotaIngreso" parameterType="pe.marista.sigma.bean.CuotaIngresoBean">
+        Insert Into MT_CuotaIngreso (unineg,idcajacuotaingreso,impresora,idtipodoc,serie,nrodoc,iddiscente,discente,anio,idtipolugarpago,idtipomodopago,fechapago,idtipomoneda,status,creapor,creafecha,montoefectivosol
+        ,idconcepto,cuentad,cuentah,cr,referencia,idtipostatusdocing)
+        Values (#{unidadNegocioBean.uniNeg},#{cajaCuotaIngresoBean.idCajaCuotaIngreso},#{impresora},#{tipoDocBean.idCodigo},#{serie},#{nroDoc},#{personaBean.idPersona},#{discente}
+        ,#{anio},#{tipoLugarPagoBean.idCodigo},#{tipoModoPago.idCodigo},getDate(),#{tipoMonedaBean.idCodigo},1,#{creaPor},getDate(),#{montoEfectivoSol},#{conceptoBean.idConcepto},#{conceptoBean.planContableCuentaDBean.cuenta}
+        ,#{conceptoBean.planContableCuentaHBean.cuenta},#{centroResponsabilidadBean.cr},#{referencia},#{tipoStatusDocIngBean.idCodigo})
+        <selectKey keyProperty="idCajaCuotaIngreso" order="AFTER" resultType="Integer">
+            SELECT max(idCajaCuotaIngreso) FROM MT_CajaCuotaIngreso  
+        </selectKey>
+    </insert>
+    <select id="obtenerCuotaIngreso" resultType="pe.marista.sigma.bean.reporte.DocIngresoRepBean" parameterType="pe.marista.sigma.bean.CuotaIngresoBean">
+        select 
+        distinct 
+        upper(isnull(ent.nombrecomercial,(select upper(isnull(nombreUniNeg,'')) from MO_UnidadNegocio where unineg=#{unidadNegocioBean.uniNeg})))    as nombre
+        ,ent.ruc                                                                                            as ruc
+        ,ent.direccion                                                                                      as direccion
+        ,isnull(dis.nombre,'')                                                                              as nomDistrito
+        ,(case when ent.telefono is not null and ent.telefono!=' ' then 'Telfs.: '+ent.telefono else ' ' end) as telefono
+        ,(case when ent.correo is not null and ent.correo!=' '  then 'E-mail: '+ent.correo else ' ' end) as correo
+        ,doc.idcuotaingreso                                                                                   as idDocIngreso   
+        ,upper(cod.codigo)                                                                                  as codigo 
+        ,doc.serie                                                                                          as serie
+        ,(doc.serie+' - '+right(replicate('0', 7) + rtrim(doc.nrodoc), 7))                                  as serieNroDoc
+        ,right(replicate('0', 7) + rtrim(doc.nrodoc), 7)                                                    as nroDoc
+        ,doc.iddiscente                                                                                     as idDiscente 
+        ,doc.discente +(case when est.codigo is not null and est.codigo !=''  and est.unineg='SANJOC'
+        then ' - '+est.codigo+'' else ' '  end)                                                    as discente         
+        ,isnull(est.idEstudiante,'')                                                                        as codEstudiante                       
+        ,isnull(est.seccion,'')                                                                             as seccion
+        ,gra.idgradoacademico                                                                               as idGradoAcademico             
+        ,isnull(PARSENAME(LTRIM(REPLACE(PARSENAME(REPLACE(gra.nombre,niv.nombre,''),1),'Pre-','')),1) ,'')  as nombreGrado
+        ,isnull(niv.nombre,'')                                                                              as nombreNivel          
+        ,doc.anio                                                                                           as anio        
+        ,(CASE WHEN doc.fechapago IS NOT NULL THEN  CONVERT(VARCHAR(10), doc.fechapago, 103) + ' '  + convert(VARCHAR(8), doc.fechapago, 14) ELSE ' /  /' END) as  fechaPago
+        ,lug.codigo                                                                                         as lugarPago
+        ,mop.codigo                                                                                         as modoPago  
+        ,(case when doc.idtipomoneda=14901 
+        then 
+        (Select dbo.CantidadConLetra( (select sum(montoefectivosol)
+        from MT_CuotaIngreso Where idcuotaingreso =#{idCuotaIngreso} and uniNeg=#{unidadNegocioBean.uniNeg} ))
+        ) + ' '+'SOLES' 
+        else (dbo.CantidadConLetra(CONVERT(float,(ROUND(((select sum(montoefectivosol)from MT_CuotaIngreso
+        Where idcuotaingreso =#{idCuotaIngreso} and uniNeg=#{unidadNegocioBean.uniNeg})), 2))))) 
+        +' ' +'DÓLARES AMERICANOS' end) as textoMonto 
+        FROM MT_CuotaIngreso doc                                                                          
+        LEFT JOIN MO_Codigo cod ON cod.idcodigo = doc.idtipodoc
+        LEFT JOIN MT_Impresora imp ON imp.impresora = doc.impresora and imp.unineg=doc.unineg
+        LEFT JOIN MX_Estudiante est ON est.idestudiante = doc.iddiscente and est.unineg=doc.unineg
+        LEFT JOIN MX_GradoAcademico gra ON gra.idgradoacademico = est.idgradohabilitado
+        LEFT JOIN MX_NivelAcademico niv ON niv.idnivelacademico = gra.idnivelacademico
+        LEFT JOIN MO_UnidadNegocio uni ON uni.unineg = doc.unineg
+        LEFT JOIN MO_Entidad ent ON ent.ruc = uni.RUC and uni.unineg=ent.unineg
+        LEFT JOIN MO_Distrito dis ON dis.iddistrito = ent.iddistrito 
+        LEFT JOIN MO_Codigo lug ON lug.idcodigo = doc.idtipolugarpago
+        LEFT JOIN MO_Codigo mop ON mop.idcodigo = doc.idtipomodopago  
+        where doc.idcuotaingreso = #{idCuotaIngreso} and doc.unineg =#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerFormatoDetalleCuotaIngreso" resultType="pe.marista.sigma.bean.reporte.DetDocIngresoRepBean" parameterType="map">
+        DECLARE @cuenta int,@idDocIng int ,@uniNeg varchar(6)
+        set @cuenta=741111
+        set @idDocIng=#{idCuotaIngreso}
+        set @uniNeg=#{uniNeg}
+        DECLARE  	 
+        @montoPagado decimal(8,2)=(select sum(montoefectivosol)from MT_CuotaIngreso where idcuotaingreso=@idDocIng and unineg=@uniNeg)
+        SELECT d.idcuotaingreso             as idDocIngreso,
+        upper(tc.nombre)			    as tipo,       
+        d.referencia                          as nombre, 
+        d.cuentad                         as cuentaD,       
+        right(replicate('0', 2) + rtrim(count(*)), 2) AS cantidad,          
+        (case 
+        when d.idtipomoneda=14901 then CONVERT(varchar, CAST(isnull(d.montoefectivosol,0) AS money), 1)
+        else(CONVERT(varchar, CAST(isnull((CONVERT(float,(ROUND(d.montoefectivosol, 2)))),0) AS money), 1))
+        end
+        ) as strMontoPagado,
+		 
+
+        (case 
+        when d.idtipomoneda=14901 then CONVERT(varchar, CAST((count(*)*d.montoefectivosol) AS money), 1)
+        else CONVERT(varchar, CAST(isnull( count(*)* ((CONVERT(float,(ROUND(d.montoefectivosol, 2))))),0) AS money), 1)
+        end
+        ) as strImporte, 
+        (case 
+        when d.idtipomoneda=14901 
+        then (select sum(montoefectivosol)from MT_CuotaIngreso Where idcuotaingreso =@idDocIng and uniNeg=@uniNeg)
+        else ( (CONVERT(float,(ROUND((@montoPagado), 2))))) 
+        end
+        ) as montoTot  ,
+        (case when cod.idcodigo=14901 then 'TOTAL S/. ' 
+        else 'TOTAL $ ' END) as moneda 
+        from MT_CuotaIngreso d
+        left  join mo_codigo cod on cod.idcodigo=d.idtipomoneda
+        INNER JOIN MT_Concepto con ON con.idconcepto = d.idconcepto 
+        INNER JOIN MT_TipoConcepto tc on tc.idTipoConcepto=con.idtipoconcepto 
+        where d.idcuotaingreso = @idDocIng  and d.uniNeg=@uniNeg
+        GROUP BY d.idcuotaingreso,tc.nombre,idtipomoneda, d.referencia, d.cuentad ,d.montoefectivosol ,cod.idcodigo  
+    </select> 
+    <update id="cambioAnulado" parameterType="pe.marista.sigma.bean.CuotaIngresoBean">
+        Update MT_CuotaIngreso
+        set
+        flganulado = #{flgAnulado},
+        idtipostatusdocing=#{tipoStatusDocIngBean.idCodigo},
+        montoEfectivoSol=0
+        ,modiPor=#{modiPor}
+        WHERE idCuotaIngreso=#{idCuotaIngreso} and unineg= #{unidadNegocioBean.uniNeg}   
+    </update>  
+    <select id="obtenerFiltroDetalleMovimientosCuoIng" resultMap="cuotaIngresoResultado" parameterType="pe.marista.sigma.bean.CuotaIngresoBean">
+        select 
+        co.codigo as tipoDoc,
+        concat(serie,' - '+ convert(varchar(20),right(replicate('0', 7) + rtrim(nrodoc), 7))) as serienrodoc, 
+        discente as discente,
+        (CASE WHEN FLGANULADO=1  THEN '---ANULADO---'+REFERENCIA
+        WHEN flganulado=0 OR flganulado IS NULL THEN referencia END) AS referencia,
+        convert(varchar(20),fechapago,103) AS fechaVista,
+        status.codigo  as tipoStatusDocIng ,
+        modo.codigo as tipoModoPago,
+        montoefectivosol as montoEfectivoSol
+        from MT_CuotaIngreso c
+        inner join MO_Codigo co on co.idcodigo=c.idtipodoc
+        inner join MO_Codigo status on status.idcodigo=c.idtipostatusdocing
+        inner join MO_Codigo modo on modo.idcodigo=c.idtipomodopago
+        where fechapago <![CDATA[ >= ]]> #{fechaInicio} and fechapago <![CDATA[ <= ]]> #{fechaFin}
+        and c.unineg=#{unidadNegocioBean.uniNeg}
+        <if test="discente != null and discente != ''">
+            and upper(c.discente) like concat('%',#{discente},'%') 
+        </if>
+        <if test="serie != null and serie != ''">
+            and c.serie = #{serie}
+        </if>
+        <if test="nroDoc != null and nroDoc != ''">
+            and c.nroDoc = #{nroDoc} 
+        </if>
+        order by serienrodoc asc
+    </select>
+</mapper>

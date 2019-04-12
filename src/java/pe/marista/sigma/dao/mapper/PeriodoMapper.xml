@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PeriodoDAO">
+    
+    <sql id="consultaCampos">
+        Select
+        pe.idPeriodo
+        ,pe.unineg
+        ,pe.idplanestrategico
+        ,pe.idlinea
+        ,pe.idobjestrategico
+        ,pe.idobjestrategicodet
+        ,pe.anio
+        ,pe.idIndicador
+        ,pe.idtipovalor
+        ,pe.meta
+        ,pe.creapor
+        ,pe.creafecha
+        ,pe.modipor
+        ,pe.modiver
+        ,pe.anio
+        ,concat
+        (pe.unineg,'.'
+        ,pe.idplanestrategico,'.'
+        ,pe.idlinea,'.'
+        ,pe.idobjestrategico,'.'
+        ,pe.idobjestrategicodet,'.'
+        ,pe.anio,'.'
+        ,pe.idIndicador,'.'
+        ,pe.idtipovalor) as idIndicador
+        ,uni.unineg
+        ,uni.nombreUniNeg
+        ,pl.idplanestrategico
+        ,pl.nombre as nombrePlan
+        ,lin.idlinea 
+        ,lin.nombre as nombreLinea
+        ,obj.idobjestrategico
+        ,obj.nombre as nombreOBJ
+        ,objd.idobjestrategicodet 
+        ,objd.responsable 
+        ,objd.meta as metaobjd
+        ,ind.idindicador 
+        ,ind.nombre as nombreIndicador
+        ,cod.idcodigo
+        ,cod.codigo
+        ,inds.idindicador as indObjDet
+        ,io.idcodigo as idTipoIndicador 
+        ,io.codigo as tipoIndicador
+        ,ios.idcodigo as idTipoUsoIndicador
+        ,ios.codigo as tipoUsoIndicador
+        FROM ME_Periodo pe
+        left join MO_UnidadNegocio uni on pe.unineg = uni.unineg
+        left join ME_PlanEstrategico pl on pe.idplanestrategico = pl.idplanestrategico and pe.unineg = pl.unineg
+        left join ME_Linea lin on pe.idlinea = lin.idlinea and pe.unineg = lin.unineg 
+        left join ME_ObjEstrategico obj on pe.idobjestrategico = obj.idobjestrategico and pe.unineg = obj.unineg
+        left join ME_ObjEstrategicoDet objd on pe.idobjestrategicodet = objd.idobjestrategicodet and pe.unineg = objd.unineg
+        left join ME_Indicador inds on objd.idindicador = inds.idindicador
+        left join MO_Codigo io on inds.idtipoindicador = io.idcodigo
+        left join MO_Codigo ios on inds.idtipoUsoindicador = ios.idcodigo
+        left join ME_Indicador ind on pe.idIndicador = ind.idindicador
+        left join MO_Codigo cod on pe.idtipovalor = cod.idcodigo
+    </sql>
+    
+    <resultMap id="periodoResultado" type="pe.marista.sigma.bean.PeriodoBean" >
+        <result property="idPeriodo" column="idPeriodo" />
+        <result property="meta" column="meta" /> 
+        <result property="idIndicador" column="idIndicador" /> 
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="anio" column="anio" />
+        <result property="modiVer" column="modiVer" />
+        <association property="uniNeg" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="uniNegResultado" />
+        <association property="planEstrategicoBean" column="idPlanEstrategico" 
+                     javaType="pe.marista.sigma.bean.PlanEstrategicoBean"
+                     resultMap="planResultado" />
+        <association property="lineaEstrategicaBean" column="idLinea" 
+                     javaType="pe.marista.sigma.bean.LineaEstrategicaBean"
+                     resultMap="lineaResultado" />
+        <association property="objetivoEstrategicaBean" column="idObjetivoEstrategica" 
+                     javaType="pe.marista.sigma.bean.ObjetivoEstrategicaBean"
+                     resultMap="objResultado" />
+        <association property="objetivoEstrategicoDetBean" column="idObjetivoEstrategicoDet" 
+                     javaType="pe.marista.sigma.bean.ObjetivoEstrategicoDetBean"
+                     resultMap="objDetResultado" />
+        <association property="indicadorBean" column="idIndicador" 
+                     javaType="pe.marista.sigma.bean.IndicadorBean"
+                     resultMap="indicadorResultado" />
+        <association property="codigoValor" column="idTipoValor" 
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="valorResultado" />        
+    </resultMap>
+    
+    <!--ResultMap Linea Estrategica-->
+    <resultMap id="lineaResultado" type="pe.marista.sigma.bean.LineaEstrategicaBean" >
+        <id property="idLinea" column="idLinea" />
+        <result property="nombre" column="nombreLinea" />
+    </resultMap>
+    
+    <!--Plan Estrategico Resultado-->
+    <resultMap id="planResultado" type="pe.marista.sigma.bean.PlanEstrategicoBean">
+        <id property="idPlanEstrategico" column="idPlanEstrategico" />
+        <result property="nombre" column="nombrePlan" />
+    </resultMap>
+    
+    <!--Unidad Negocio Resultado-->
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <!--Indicador Resultado-->
+    <resultMap id="indicadorResultado" type="pe.marista.sigma.bean.IndicadorBean" >
+        <id property="idIndicador" column="idIndicador" />
+        <result property="nombre" column="nombreIndicador" />
+    </resultMap>
+    
+    <!--Tipo Valor Resultado-->
+    <resultMap id="valorResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idCodigo" />
+        <result property="codigo" column="codigo" />
+    </resultMap>
+    
+    <!--Obj Estrategico Resultado-->
+    <resultMap id="objResultado" type="pe.marista.sigma.bean.ObjetivoEstrategicaBean" >
+        <id property="idObjEstrategico" column="idObjEstrategico" />
+        <result property="nombre" column="nombreOBJ" />
+    </resultMap>
+    
+    <!--Obj Estrategico Resultado-->
+    <resultMap id="objDetResultado" type="pe.marista.sigma.bean.ObjetivoEstrategicoDetBean" >
+        <id property="idObjEstrategicoDet" column="idObjEstrategicoDet" />
+        <result property="responsable" column="responsable" />
+        <result property="meta" column="metaobjd" />
+        <association property="indicadorBean" column="indObjDet"
+                     javaType="pe.marista.sigma.bean.IndicadorBean"
+                     resultMap="indicadorResultado2"/>
+    </resultMap>
+    
+    <!--Indicador Resultado-->
+    <resultMap id="indicadorResultado2" type="pe.marista.sigma.bean.IndicadorBean" >
+        <id property="idIndicador" column="idIndicador" />
+        <result property="nombre" column="nombreIndicador" />
+        <result property="codigo" column="codigoIndicador" />
+        <association property="codigoTiPoIndicador" column="idtipoIndicador" 
+                     javaType="pe.marista.sigma.bean.CodigoBean" 
+                     resultMap="codigoResultado"/>
+        <association property="codigoTiPoUso" column="idtipoUsoIndicador" 
+                     javaType="pe.marista.sigma.bean.CodigoBean" 
+                     resultMap="codigoResultado1"/>
+    </resultMap>
+    
+    <!--Codigo Tipo Indicador-->
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoIndicador" />
+        <result property="codigo" column="tipoIndicador" />
+    </resultMap>
+    
+    <!--Codigo Tipo Uso-->
+    <resultMap id="codigoResultado1" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUsoIndicador" />
+        <result property="codigo" column="tipoUsoIndicador" />
+    </resultMap>
+    
+    <!--===============================Metodos=====================================-->
+    
+    
+    <select id="obtenerPeriodo" resultMap="periodoResultado" >
+        <include refid="consultaCampos" />
+    </select>
+    
+    <select id="obtenerPorPlan" resultMap="periodoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE pe.idPlanEstrategico = #{planEstrategicoBean.idPlanEstrategico}
+    </select>
+    
+    <select id="obtenerPeriodoPorId" resultMap="periodoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE pe.idPeriodo = #{idPeriodo}
+    </select>
+    
+    <select id="obtenerPorId" resultMap="periodoResultado" parameterType="pe.marista.sigma.bean.PeriodoBean" >
+        <include refid="consultaCampos" />
+        WHERE
+        pe.idIndicador = #{idIndicador}
+        <!--pe.uniNeg = #{uniNeg.uniNeg}
+        and pe.idPlanEstrategico = #{planEstrategicoBean.idPlanEstrategico}
+        and pe.idLinea = #{lineaEstrategicaBean.idLinea}
+        and pe.idObjEstrategico = #{objetivoEstrategicaBean.idObjEstrategico}
+        and pe.idObjEstrategicoDet = #{objetivoEstrategicoDetBean.idObjEstrategicoDet}
+        and pe.anio = #{anioBean.anio}
+        and pe.idIndicador = #{indicadorBean.idIndicador}
+        and pe.idTipoValor = #{codigoValor.idCodigo}-->
+    </select>
+    
+    <select id="obtenerPerPorId" resultMap="periodoResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE
+        pe.unineg = #{uniNeg}
+        pe.idplanestrategico = #{idPlaneEstrategico}
+        pe.idlinea = #{idLinea}
+        pe.idobjestrategico = #{idObjEstrategico}
+        pe.idobjestrategicodet = #{idObjEstrategicoDet}
+        pe.anio = #{anio}
+    </select>
+    
+    <select id="obtenerPorDet" resultMap="periodoResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE
+        pe.unineg = #{uniNeg} and
+        pe.idobjestrategicodet = #{idObjEstrategicoDet} 
+    </select>
+    
+    <select id="obtenerPorDetalles" resultMap="periodoResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE
+        pe.unineg = #{uniNeg} and
+        pe.idobjestrategicodet = #{idObjEstrategicoDet} 
+    </select>
+    
+    <insert id="insertarPeriodo" parameterType="pe.marista.sigma.bean.PeriodoBean" >
+        INSERT INTO ME_Periodo
+        (uniNeg
+        ,idPlanEstrategico
+        ,idLinea
+        ,idObjEstrategico
+        ,idObjEstrategicoDet
+        ,anio
+        ,idIndicador
+        ,idTipoValor
+        ,meta
+        ,creaPor
+        ,creaFecha)
+        VALUES
+        (#{uniNeg.uniNeg}
+        ,#{planEstrategicoBean.idPlanEstrategico}
+        ,#{lineaEstrategicaBean.idLinea}
+        ,#{objetivoEstrategicaBean.idObjEstrategico}
+        ,#{objetivoEstrategicoDetBean.idObjEstrategicoDet}
+        ,#{anio}
+        ,#{indicadorBean.idIndicador}
+        ,#{codigoValor.idCodigo}
+        ,#{meta}
+        ,#{creaPor}
+        ,getDate())
+        <!--#{anioBean.anio}-->
+    </insert>
+    
+    <update id="modificarPeriodo" parameterType="pe.marista.sigma.bean.PeriodoBean" >
+        UPDATE ME_Periodo
+        SET
+        uniNeg = #{uniNeg.uniNeg}
+        ,idPlanEstrategico = #{planEstrategicoBean.idPlanEstrategico}
+        ,idLinea = #{lineaEstrategicaBean.idLinea}
+        ,idObjEstrategico = #{objetivoEstrategicaBean.idObjEstrategico}
+        ,idObjEstrategicoDet = #{objetivoEstrategicoDetBean.idObjEstrategicoDet}
+        ,anio = #{anio}
+        ,idIndicador = #{objetivoEstrategicoDetBean.indicadorBean.idIndicador}
+        ,idTipoValor = #{codigoValor.idCodigo}
+        ,meta = #{meta}
+        ,modiPor = #{modiPor}
+        WHERE idPeriodo = #{idPeriodo}
+        <!--
+        uniNeg = #{uniNeg.uniNeg}
+        and idPlanEstrategico = #{planEstrategicoBean.idPlanEstrategico}
+        and idLinea = #{lineaEstrategicaBean.idLinea}
+        and idObjEstrategico = #{objetivoEstrategicaBean.idObjEstrategico}
+        and idObjEstrategicoDet = #{objetivoEstrategicoDetBean.idObjEstrategicoDet}
+        and idTipoValor = #{codigoValor.idCodigo}
+        and idIndicador = #{objetivoEstrategicoDetBean.indicadorBean.idIndicador}
+        and anio = #{anioBean.anio} 
+        -->
+    </update>  
+    
+    <update id="modificarPer" parameterType="pe.marista.sigma.bean.PeriodoBean" >
+        UPDATE ME_Periodo
+        SET 
+        anio = #{an},
+        idIndicador = #{objetivoEstrategicoDetBean.indicadorBean.idIndicador},
+        idTipoValor = #{codigoValor.idCodigo},
+        meta = #{meta},
+        modiPor = #{modiPor}
+        WHERE uniNeg = #{uniNeg.uniNeg}
+        and idPlanEstrategico = #{planEstrategicoBean.idPlanEstrategico}
+        and idLinea = #{lineaEstrategicaBean.idLinea}
+        and idObjEstrategico = #{objetivoEstrategicaBean.idObjEstrategico}
+        and idObjEstrategicoDet = #{objetivoEstrategicoDetBean.idObjEstrategicoDet}
+        and anio = #{anio} 
+    </update>
+    
+    <delete id="eliminarPeriodo" parameterType="pe.marista.sigma.bean.PeriodoBean" >
+        DELETE from ME_Periodo 
+        WHERE 
+        uniNeg = #{uniNeg.uniNeg}
+        and idPlanEstrategico = #{planEstrategicoBean.idPlanEstrategico}
+        and idLinea = #{lineaEstrategicaBean.idLinea}
+        and idObjEstrategico = #{objetivoEstrategicaBean.idObjEstrategico}
+        and idObjEstrategicoDet = #{objetivoEstrategicoDetBean.idObjEstrategicoDet}
+        and anio = #{anio}
+    </delete> 
+            
+</mapper>
+

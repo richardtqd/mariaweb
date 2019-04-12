@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.ProcesoFileDAO">  
+    
+    <sql id="consultaCampos" >
+        SELECT 
+        pf.idbanco
+        ,pf.flgproceso
+        ,pf.tiporeg
+        ,pf.numlinea
+        ,pf.posicion
+        ,pf.campo
+        ,pf.longitud
+        ,pf.idtipodato
+        ,pf.valor
+        ,pf.descripcion
+        ,pf.creapor
+        ,pf.creafecha
+        ,pf.modipor
+        ,pf.modiver
+        ,en.ruc 
+        ,en.nombre as nombreEntidad
+        FROM MT_ProcesoFile pf
+        inner join MO_Entidad en on pf.idBanco = en.ruc
+    </sql>
+    
+    <resultMap id="fileResultado" type="pe.marista.sigma.bean.ProcesoFileBean" >
+        <result property="flgProceso" column="flgProceso" />
+        <result property="tipoReg" column="tipoReg" />
+        <result property="numLinea" column="numLinea" />
+        <result property="posicion" column="posicion" />
+        <result property="campo" column="campo" />
+        <result property="longitud" column="longitud" />
+        <result property="idTipoDato" column="idTipoDato" />
+        <result property="valor" column="valor" />
+        <result property="descripcion" column="descripcion" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="entidadBean" column="idBanco"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+    </resultMap>
+    
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc" />
+        <result property="nombre" column="nombreEntidad" />
+    </resultMap>
+    
+    <select id="obtenerProcesoFile" resultMap="fileResultado"  >
+        <include refid="consultaCampos" />
+    </select>
+    
+    <select id="obtenerPorFiltro" resultMap="fileResultado" parameterType="pe.marista.sigma.bean.ProcesoFileBean">
+        <include refid="consultaCampos"/>
+        <where>
+            <if test="entidadBean.nombre != null and entidadBean.nombre != '' " >
+                and upper(en.nombre) like concat('%',#{entidadBean.nombre},'%')
+            </if> 
+        </where>
+    </select>
+    
+    <select id="obtenerPorBanco" parameterType="String" resultMap="fileResultado" >
+        <include refid="consultaCampos"/>WHERE pf.idBanco = #{entidadBean.ruc}
+    </select>
+    
+    <insert id="insertarProcesoFile" parameterType="pe.marista.sigma.bean.ProcesoFileBean" >
+        INSERT INTO MT_ProcesoFile
+        (idbanco
+        ,flgproceso
+        ,tiporeg
+        ,numlinea
+        ,posicion
+        ,campo
+        ,longitud
+        ,idtipodato
+        ,valor
+        ,descripcion
+        ,creapor
+        ,creafecha)
+        VALUES 
+        (#{entidadBean.ruc}
+        ,#{flgProceso}
+        ,#{tipoReg}
+        ,#{numLinea}
+        ,#{posicion}
+        ,#{campo}
+        ,#{longitud}
+        ,#{idTipoDato}
+        ,#{valor}
+        ,#{descripcion}
+        ,#{creaPor}
+        ,getDate())
+    </insert>
+    
+    <update id="modificarProcesoFile" parameterType="pe.marista.sigma.bean.ProcesoFileBean" >
+        UPDATE MT_ProcesoFile
+        SET
+        idbanco = #{entidadBean.ruc}
+        ,flgProceso = #{flgProceso}
+        ,tipoReg = #{tipoReg}
+        ,numLinea = #{numLinea}
+        ,posicion = #{posicion}
+        ,campo = #{campo}
+        ,longitud = #{longitud}
+        ,idTipoDato = #{idTipoDato}
+        ,valor = #{valor}
+        ,descripcion = #{descripcion}
+        ,modiPor = #{modiPor}
+        WHERE idbanco = #{entidadBean.ruc}
+    </update>
+ 
+    
+</mapper>
+    
+    
+

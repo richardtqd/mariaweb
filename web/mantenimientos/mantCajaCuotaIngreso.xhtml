@@ -1,0 +1,387 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cuotaIngresoMB.obtenerAutorizador()}">
+            <h:panelGrid columns="2" styleClass="centrado">
+                <h:form id="frmDatosCaja">
+                    <h:panelGrid  id="pnlCaja"  class="centrado"> 
+                        <p:panel styleClass="centrado" id="pCaja"  style="width: 559px"  header="#{msgs.tituloAperturaCaja}" >
+                            <h:panelGrid columns="3"   id="pnlCajaDet" class="centrado">
+                                <h:outputLabel value="#{msgs.etiquetaFechaApe}"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:calendar  disabled="false" value="#{cuotaIngresoMB.cajaCuotaIngresoBean.fechaApertura}"  label="#{msgs.etiquetaFechaApe}" mode="popup" size="13"
+                                             pattern="dd/MM/yyyy HH:mm" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="false" yearRange="c-90:c+30"/>
+                                <h:outputLabel value="#{msgs.etiquetaSuperviza}"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <h:panelGrid columns="3" class="siseFontGrid5" id="pnlDatosSuperviza" >
+                                    <p:inputText value="#{cuotaIngresoMB.cajaCuotaIngresoBean.supervizaBean.nombreCompleto}" label="#{msgs.etiquetaSuperviza}" size="35" readonly="true" required="true"/> 
+                                    <p:commandLink id="btnBuscarAutoPer1" actionListener="#{legajoMB.limpiarPersonalFiltro()}" oncomplete="PF('popAutoPer1').show();" process="@this" update=":frmBuscarAutoPer1:pnlFiltro,:frmBuscarAutoPer1:pnlTablaAutoPer1">
+                                        <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                    </p:commandLink> 
+                                    <h:inputHidden value="#{cuotaIngresoMB.cajaCuotaIngresoBean.supervizaBean.idPersonal}"/>
+                                </h:panelGrid> 
+                                <h:outputLabel value="#{msgs.etiquetaNumCta}" styleClass="negrita siseFontGrid5"/> 
+                                <h:outputText value="*" class="requerido"/>
+                                <p:selectOneMenu  value="#{cuotaIngresoMB.cajaCuotaIngresoBean.numeroCuentaBean.numCuenta}" label="#{msgs.etiquetaNumCta}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                    <f:selectItems value="#{cuotaIngresoMB.listaCuentaBancoFiltroBean}" var="ctaBFil" itemLabel="#{ctaBFil.numCuenta} - #{ctaBFil.tipoMonedaBean.codigo} - #{ctaBFil.entidadBancoBean.nombre}" itemValue="#{ctaBFil.numCuenta}"/> 
+                                </p:selectOneMenu>
+                            </h:panelGrid> 
+                            <h:panelGrid class="centrado" columns="1" >
+                                <p:commandButton actionListener="#{cuotaIngresoMB.insertarCajaApertura()}" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" 
+                                                 update=":frmTablaApertura:pnlTablaApertura,:frmDatosCaja:pCaja"
+                                                 value="#{msgs.etiquetaAperturar}" rendered="#{cuotaIngresoMB.flgAbierto!=true}" >
+                                </p:commandButton> 
+                            </h:panelGrid> 
+                            <h:panelGrid class="centrado" columns="1" >
+                                <p:commandButton actionListener="#{cuotaIngresoMB.cierreCaja()}" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" 
+                                                 update=":frmTablaApertura:pnlTablaApertura,:frmDatosCaja:pCaja"
+                                                 value="#{msgs.etiquetaCerrar}" rendered="#{cuotaIngresoMB.flgAbierto!=false}" >
+                                </p:commandButton>
+                            </h:panelGrid> 
+                            <h:panelGrid class="derecha" columns="5" >
+                                <p:link id="entSeg" outcome="/mantenimientos/mantCuotaIngreso.xhtml" target="_blank" rendered="#{cuotaIngresoMB.flgAbierto!=false}"> 
+                                    <h:outputLabel value="#{msgs.etiquetaCuotaIngreso}" styleClass="negrita siseFontGrid5"/> 
+                                </p:link>  <p:spacer width="60" height="2"></p:spacer>
+                                <h:outputLabel value="#{'Movimientos de cuota de ingreso'}" styleClass="negrita siseFontGrid5"/>  
+                                <p:commandLink id="btnCta" actionListener="#{cuotaIngresoMB.obtenerListaXCaja(apertura.idCajaCuotaIngreso)}" 
+                                               oncomplete="if(args.operacionOK){PF('popDetalle').show();}"
+                                               process="@this" update=":frmDetalle:panelDetalle" >
+                                    <h:graphicImage value="/resources/images/icons/ver_detalle.png"   style="border:0; cursor:pointer;"/>
+                                </p:commandLink>   
+                            </h:panelGrid> 
+                            <p:messages id="msgsNoCaj"  autoUpdate="false"/>
+                        </p:panel>
+
+                    </h:panelGrid> 
+                </h:form> 
+            </h:panelGrid> 
+            <h:form id="frmTablaApertura"> 
+                <h:panelGrid id="pnlTablaApertura" styleClass="centrado"> 
+                    <p:dataTable id="tblApertura" value="#{cuotaIngresoMB.listaCajaCuotaIngreso}" widgetVar="tblApertura" 
+                                 paginator="true" rowsPerPageTemplate="10,20"  
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}" 
+                                 paginatorPosition="bottom" rowIndexVar="n"  
+                                 var="apertura" rowKey="#{apertura}"  rows="#{cuotaIngresoMB.numRegistrosTablasPorFiltroMin}" 
+                                 rendered="#{not empty cuotaIngresoMB.listaCajaCuotaIngreso}" 
+                                 style="width: 1000px;font-size:14px !important;margin-bottom:0"> 
+                        <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" style="width: 20px !important" styleClass="centrado-texto">
+                            <center>
+                                <h:outputText value="#{n+1}" />
+                            </center>
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaFechaApe}" sortBy="#{apertura.fechaApertura}"  styleClass="siseFontTable3 centrado-texto" width="25%">
+                            <h:outputText value="#{apertura.fechaAperturaView}" > 
+                            </h:outputText> 
+                        </p:column>  
+                        <p:column headerText="#{msgs.etiquetaSuperviza}" styleClass="siseFontTable3 centrado-texto" width="30%">
+                            <h:outputText value="#{apertura.supervizaBean.nombreCompleto}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaCierre}" sortBy="#{apertura.fechaCierre}" styleClass="siseFontTable3 centrado-texto" width="15%">
+                            <h:outputText value="#{apertura.fechaCierreView}"> 
+                            </h:outputText>
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaNumCta}" sortBy="#{apertura.numeroCuentaBean.numCuenta}" styleClass="siseFontTable3 centrado-texto" width="15%">
+                            <h:outputText value="#{apertura.numeroCuentaBean.numCuenta}"> 
+                            </h:outputText>
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaMontoCobrado}" sortBy="#{apertura.ingresoEfectivoSol}" styleClass="siseFontTable3 centrado-texto" width="15%">
+                            <h:outputText value="#{apertura.ingresoEfectivoSol}"> 
+                            </h:outputText>
+                        </p:column> 
+                        <p:column   headerText="#{msgs.etiquetaVerDeta}" width="12%" styleClass="nombreFiltro centrado-texto siseFont1">
+                            <p:commandLink id="btnCta" actionListener="#{cuotaIngresoMB.obtenerListaXCaja(apertura.idCajaCuotaIngreso)}" 
+                                           oncomplete="if(args.operacionOK){PF('popPantalla').show();}"
+                                           process="@this" update=":frmPanta:panelPan" >
+                                <h:graphicImage value="/resources/images/icons/ver_detalle.png"   style="border:0; cursor:pointer;"/>
+                            </p:commandLink>   
+                        </p:column>  
+                        <p:column   headerText="#{msgs.etiquetaReporte}" width="12%" styleClass="nombreFiltro centrado-texto siseFont1">
+                            <h:commandLink actionListener="#{cuotaIngresoMB.imprimirFormatoPdfCaja(apertura.idCajaCuotaIngreso)}"   target="_blank" rendered="#{not empty apertura.fechaCierre}">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" width="20%"/>
+                            </h:commandLink>
+                        </p:column>  
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form> 
+            <h:form id="frmBuscarAutoPer1">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popAutoPer1" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid columns="2" styleClass="centrado" id="pnlFiltroAutoPer1">
+                                <h:outputLabel value="#{msgs.etiquetaCodigo} " /> 
+                                <p:inputText value="#{legajoMB.personalFiltroBean.codPer}" size="15" maxlength="15"/>
+
+                                <h:outputLabel value="#{msgs.etiquetaApePat}"/> 
+                                <p:inputText value="#{legajoMB.personalFiltroBean.apepat}" size="28" maxlength="30"/>  
+
+                                <h:outputLabel value="#{msgs.etiquetaApeMat}"/> 
+                                <p:inputText  value="#{legajoMB.personalFiltroBean.apemat}" size="28" maxlength="30"/>
+
+                                <h:outputLabel value="#{msgs.etiquetaNombre}"/> 
+                                <p:inputText value="#{legajoMB.personalFiltroBean.nombre}" size="28" maxlength="30"/>  
+
+                                <h:outputLabel value="#{msgs.etiquetaUniOrg}"/>  
+                                <p:selectOneMenu value="#{legajoMB.personalFiltroBean.unidadOrganicaBean.idUniOrg}"   label="#{msgs.etiquetaUnidOrg}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{legajoMB.listaUniNegUniOrgBean}" var="uo" itemLabel="#{uo.unidadOrganicaBean.nombreUniOrg}" itemValue="#{uo.unidadOrganicaBean.idUniOrg}"/> 
+                                </p:selectOneMenu>
+                            </h:panelGrid> 
+                            <h:panelGrid styleClass="centrado" columns="2">
+                                <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{legajoMB.obtenerFiltroPersonal()}" update="pnlFiltro,pnlTablaAutoPer1,msg" />
+                                <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{legajoMB.limpiarPersonalFiltro()}" update="pnlFiltroAutoPer1,pnlTablaAutoPer1,msg"/>
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  id="pnlTablaAutoPer1" styleClass="centrado"> 
+                        <p:dataTable id="tblPersona" value="#{legajoMB.listaPersonalBean}" widgetVar="tblPersona"
+                                     selectionMode="single" 
+                                     paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     selection="#{legajoMB.personalBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="personal" rowKey="#{personal.idPersonal}"  rows="10" 
+                                     rendered="#{not empty legajoMB.listaPersonalBean}" 
+                                     style="width: 725px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaPersonal}" />  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{personal.idPersona}" >
+                                <h:outputText value="#{personal.codPer}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaAbApePaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apepat}" >
+                                <h:outputText value="#{personal.apepat}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAAbApeMaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apemat}">
+                                <h:outputText value="#{personal.apemat}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.nombre}">
+                                <h:outputText value="#{personal.nombre}"/>
+                            </p:column>
+                            <p:column style="text-align:center;width:60px" width="6%" >
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                </f:facet>
+                                <p:commandLink id="cmdSelA1" actionListener="#{legajoMB.ponerPersonalDinamico(personal,'cuotaIngreso')}"
+                                               update=":frmDatosCaja:pnlDatosSuperviza,:frmDepCta:pnlDatosSuperviza"
+                                               oncomplete="PF('popAutoPer1').hide();">
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd1" for="cmdSelA1" value="#{msgs.toolTipSeleccionar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <p:dialog header="#{msgs.appSiglas}" widgetVar="popDepCta"  styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode" modal="true">
+                <h:form id="frmDepCta"> 
+                    <h:panelGrid styleClass="centrado"  columns="2" id="pnlGen">
+                        <p:panel header="#{msgs.tituloInserModAperCaja}">
+                            <h:panelGrid styleClass="centrado" columns="1" id="pnlDepCta"> 
+
+                                <h:panelGrid styleClass="centrado" columns="3" id="pnlDepCtaSol">
+                                    <h:outputLabel value="#{msgs.etiquetaFechaApe}"/>
+                                    <h:outputText value=" " class="requerido"/>
+                                    <h:outputLabel  value="#{cajaGenMB.cajaGenBeanDeposito.fecApertura}" >
+                                        <f:convertDateTime pattern="dd/MM/YYYY HH:mm" locale="es"/>
+                                    </h:outputLabel>
+
+                                    <h:outputLabel value="#{msgs.etiquetaAperCajaSol}"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.aperturaSol}" disabled="false"/>  
+                                    <h:outputLabel value="#{msgs.etiquetaAperCajaDol}"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.aperturaDol}" disabled="false"/>  
+
+                                    <h:outputLabel value="#{msgs.etiquetaSuperviza}"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <h:panelGrid columns="3" class="siseFontGrid5" id="pnlDatosSuperviza" >
+                                        <p:inputText value="#{cajaGenMB.cajaGenBeanDeposito.idSupervisa.nombreCompleto}" label="#{msgs.etiquetaSuperviza}" size="35" readonly="true" required="true"/> 
+                                        <p:commandLink id="btnBuscarAutoPer1" actionListener="#{legajoMB.limpiarPersonalFiltro()}" oncomplete="PF('popAutoPer1').show();" process="@this" update=":frmBuscarAutoPer1:pnlFiltro,:frmBuscarAutoPer1:pnlTablaAutoPer1">
+                                            <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                        </p:commandLink> 
+                                        <h:inputHidden value="#{cajaGenMB.cajaGenBeanDeposito.idSupervisa.idPersonal}"/>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+
+                                <h:inputHidden value="#{cajaGenMB.cajaGenBean.idCajaGen}"/>
+                                <h:panelGrid columns="2" class="centrado" id="pnlBtnMod">
+                                    <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{cajaGenMB.modificarApertura()}" 
+                                                     update=":frmTablaApertura:pnlTablaApertura,msgsConf" disabled="#{cajaGenMB.disabled}"
+                                                     oncomplete="if(args.operacionCorrecta){PF('popDepCta').hide();PF('popDone').show();}"/>
+                                </h:panelGrid>  
+                                <p:messages autoUpdate="false" id="msgsConf" />
+                            </h:panelGrid> 
+                        </p:panel>  
+                    </h:panelGrid>
+                    <br/> 
+                    <br/>   
+                    <p:messages id="msgsCajDep"  autoUpdate="false"/>
+                </h:form> 
+            </p:dialog> 
+            <h:form id="frmPanta">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popPantalla"   showEffect="fade" hideEffect="explode"
+                          styleClass="autoWidthDialog" position="top" resizable="false" > 
+                    <h:panelGrid id="panelPan">   
+                        <p:dataTable id="tblApertura" value="#{cuotaIngresoMB.listaCuotaIngresoBean}" widgetVar="tblApertura" 
+                                     paginator="true" rowsPerPageTemplate="10,20"  editMode="cell" editable="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}" 
+                                     paginatorPosition="bottom" rowIndexVar="n"  
+                                     var="cuota" rowKey="#{cuota}"  rows="#{cuotaIngresoMB.numRegistrosTablasPorFiltroMin}" 
+                                     rendered="#{not empty cuotaIngresoMB.listaCuotaIngresoBean}" 
+                                     style="width: 1000px;font-size:14px !important;margin-bottom:0"> 
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" style="width: 20px !important" styleClass="centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaFechaEmision}" sortBy="#{cuota.fechaPagoView}"  styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{cuota.fechaPagoView}" > 
+                                </h:outputText> 
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaSerie}" sortBy="#{cuota.serie}"  styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{cuota.serie}" > 
+                                </h:outputText> 
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaNDoc}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{cuota.nroDoc}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaNomApe}" sortBy="#{cuota.discente}" styleClass="siseFontTable3 centrado-texto" width="35%">
+                                <h:outputText value="#{cuota.discente}"> 
+                                </h:outputText>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaMontoPagado}" sortBy="#{cuota.montoEfectivoSol}" styleClass="siseFontTable3 centrado-texto" width="15%">
+                                <h:outputText value="#{cuota.montoEfectivoSol}"> 
+                                </h:outputText>
+                            </p:column>  
+                            <p:column id="listaStatus" headerText="#{msgs.etiquetaStatus}" filterMatchMode="contains" width="10%" styleClass="nombre2Filtro siseFontTable3 centrado-texto resetSelect" >
+                                <p:cellEditor>
+                                    <f:facet name="output">
+                                        <h:outputText value="#{cuota.tipoStatusDocIngBean.codigo}"  />
+                                    </f:facet>
+                                    <f:facet name="input" >
+                                        <p:selectOneMenu id="listapro" value="#{cuota.tipoStatusDocIngBean.idCodigo}"  filter="true" label="#{msgs.etiquetaStatus}" style="width: 250px" rendered="#{cuota.tipoStatusDocIngBean.idCodigo==20601}">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{cuotaIngresoMB.listaTipoEstadpDocIng}" var="prove" itemValue="#{prove.idCodigo}" itemLabel="#{prove.codigo}"/>
+                                            <p:ajax event="change" listener="#{cuotaIngresoMB.cambioAnulado(cuota.idCuotaIngreso,cuota.cajaCuotaIngresoBean.idCajaCuotaIngreso,cuota.montoEfectivoSol)}" update=":frmPanta,:frmTablaApertura:pnlTablaApertura" />
+                                        </p:selectOneMenu>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaStatus}" filterMatchMode="contains" width="10%" styleClass="nombre2Filtro siseFontTable3 centrado-texto resetSelect" >
+                                <h:commandLink action="#{cuotaIngresoMB.obtenerParaReImprimir(cuota.nroDoc,cuota.serie,cuota.idCuotaIngreso)}" target="_blank" id="imprimir2" >
+                                    <h:graphicImage value="/resources/images/impresora.png" />
+                                </h:commandLink>
+                            </p:column>  
+                        </p:dataTable>       
+                    </h:panelGrid>
+                </p:dialog>                    
+            </h:form> 
+            <h:form id="frmDetalle">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDetalle"   showEffect="fade" hideEffect="explode"
+                          styleClass="autoWidthDialog" position="top" resizable="false" > 
+                    <h:panelGrid id="panelDetalle">   
+                        <h:panelGrid columns="1" class="centrado">
+                            <h:panelGrid columns="2" >
+                                <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" styleClass="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{cuotaIngresoMB.cuotaIngresoFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar>
+                                <h:outputLabel value="#{msgs.etiquetaFechaFin}:" styleClass="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{cuotaIngresoMB.cuotaIngresoFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar>
+                            </h:panelGrid>
+                            <h:panelGrid columns="2">
+                                <h:outputLabel value="#{msgs.etiquetaReciboNro}"/>
+                                <h:panelGrid columns="3"> 
+                                    <p:inputText value="#{cuotaIngresoMB.cuotaIngresoFiltroBean.serie}" label="#{msgs.etiquetaDocRef}" size="3" maxlength="3"/>
+                                    <h:outputLabel value="-"></h:outputLabel>
+                                    <p:inputText value="#{cuotaIngresoMB.cuotaIngresoFiltroBean.nroDoc}" label="#{msgs.etiquetaDocRef}" size="9" maxlength="8"/>
+                                </h:panelGrid>
+
+                                <h:outputLabel value="#{msgs.etiquetaDisce}"/> 
+                                <p:inputTextarea value="#{cuotaIngresoMB.cuotaIngresoFiltroBean.discente}" label="#{msgs.etiquetaDisce}" cols="20" rows="2" maxlength="90"/>
+                            </h:panelGrid> 
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2"> 
+                            <p:commandButton value="#{msgs.botonBuscar}" action="#{cuotaIngresoMB.obtenerFiltroCuotaIngreso()}"
+                                             update=":frmDetalle:panelDetalle"/>
+                            <p:commandButton actionListener="#{cuotaIngresoMB.limpiarDocFiltroCuotaIng()}" 
+                                             update="msg,:frmDetalle:panelDetalle"  
+                                             value="#{msgs.botonLimpiar}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages autoUpdate="false" id="msg" />
+
+                        <p:dataTable id="tblDetalle" value="#{cuotaIngresoMB.listaDetalleFiltroCuotaIngreso}" widgetVar="tblDetalle" 
+                                     paginator="true" rowsPerPageTemplate="10,20"  editMode="cell" editable="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}
+                                     {Exporters}" 
+                                     paginatorPosition="bottom" rowIndexVar="n"  
+                                     var="detalle" rowKey="#{detalle}"  rows="#{cuotaIngresoMB.numRegistrosTablasPorFiltroMin}" 
+                                     rendered="#{not empty cuotaIngresoMB.listaDetalleFiltroCuotaIngreso}" 
+                                     style="width: 1060px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="{Exporters}">
+                                <h:commandLink>
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                    <p:dataExporter type="xls" target="tblDetalle" fileName="Cuota-Ingreso" />
+                                </h:commandLink>
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" style="width: 20px !important" styleClass="centrado-texto">
+                                <h:outputText value="#{n+1}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaTipoDoc}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{detalle.tipoDocBean.codigo}" > 
+                                </h:outputText> 
+                            </p:column>   
+                            <p:column headerText="#{msgs.etiquetaReciboNro}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{detalle.serienrodoc}" > 
+                                </h:outputText> 
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaNomApe}" styleClass="siseFontTable3 centrado-texto" width="35%">
+                                <h:outputText value="#{detalle.discente}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaRef}" styleClass="siseFontTable3 centrado-texto" width="35%">
+                                <h:outputText value="#{detalle.referencia}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaFechaPago}"  styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{detalle.fechaVista}" > 
+                                </h:outputText> 
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaTipoEstado}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{detalle.tipoStatusDocIngBean.codigo}"> 
+                                </h:outputText>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaModali}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{detalle.tipoModoPago.codigo}"> 
+                                </h:outputText>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaMontoPagado}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                                <h:outputText value="#{detalle.montoEfectivoSol}"> 
+                                </h:outputText>
+                            </p:column>   
+                            <p:columnGroup type="footer" >
+                                <p:column colspan="7" style="font-size: 1em; text-align: right;" footerText="#{msgs.etiquetaTotal}:" styleClass="siseFontTable3" />
+                                <p:column colspan="8" style="font-size: 1em; text-align: right;"  styleClass="siseFontTable3" 
+                                          footerText="#{cuotaIngresoMB.totSoles}"/>
+                                
+                            </p:columnGroup>
+                        </p:dataTable>       
+                    </h:panelGrid>
+                </p:dialog>                    
+            </h:form> 
+        </h:body>
+    </ui:define>
+</ui:composition>

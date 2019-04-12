@@ -1,0 +1,148 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+
+    <ui:define name="content">
+        <h:form id="frmDatosPerfil">
+            <h:outputText value="#{msgs.tituloMantPerfilUsuario}" class="tituloPantalla"/>
+            <br/>
+            <p:panel>
+                <f:facet name="header">
+                    <h:outputText value="#{msgs.tituloBusFiltro}"/>
+                </f:facet>
+                <h:panelGrid columns="10">
+                    <p:inputText value="#{perfilUnidadNegocioMB.perfilUnidadNegocioFiltroBean.perfilBean.nombre}"/>
+                    <p:commandButton value="#{msgs.botonBuscar}" action="#{perfilUnidadNegocioMB.obtenerPorFiltro()}" update=":frmDatosPerfil:pnlTablaPerfil"/>
+                    <p:commandButton value="#{msgs.botonNuevo}" action="#{perfilUnidadNegocioMB.limpiarBean()}" update=":frmMantoPerfil:pnlDatosPerfilIngreso" 
+                                     oncomplete="PF('popMantoPerfil').show();"/>
+                </h:panelGrid>
+            </p:panel>
+            <br/>
+            <h:panelGrid styleClass="centrado" id="pnlTablaPerfil" >
+                <p:dataTable value="#{perfilUnidadNegocioMB.listaPerfilBean}" paginator="true" 
+                             var="perfil" id="tblPerfil"
+                             rows="#{perfilUsuarioMB.numRegistrosTablas}" 
+                             rendered="#{not empty perfilUnidadNegocioMB.listaPerfilBean}" 
+                             style="width: 600px;font-size: 12px">
+                    <f:facet name="header" >
+                        <h:outputText value="#{msgs.campoPerfilesUsuario}" />  
+                    </f:facet>
+                    <p:column>
+                        <f:facet name="header">
+                            <h:outputText value="#{msgs.campoNomPerfil}" />
+                        </f:facet>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <h:outputText value="#{perfil.nombre}" id="nombre" />
+                    </p:column>
+                    <p:column style="text-align:center;width: 100px">
+                        <f:facet name="hader">
+                            <h:outputText value="#{msgs.etiquetaAcciones}" />
+                        </f:facet>
+                        <p:commandLink actionListener="#{perfilUnidadNegocioMB.obtenerPorId(perfil)}" 
+                                       update=":frmMantoPerfil:codPerfil,:frmMantoPerfil:txtPerfil,:frmMantoPerfil:pickList"
+                                       oncomplete="PF('popMantoPerfil').show();">
+                            <h:graphicImage value="/resources/images/icons/edit.gif" 
+                                            style="border:0; cursor:pointer;"/>
+                        </p:commandLink>
+                        &nbsp;&nbsp;&nbsp;
+                        <p:commandLink action="#{perfilUnidadNegocioMB.obtenerPorId(perfil)}" 
+                                       update=":frmEliPerfil:nombreEliminacion,:frmEliPerfil:codPerfilHiddenEli,:frmEliPerfil:codUniNegHiddenEli"
+                                       oncomplete="PF('popEliPerfil').show();">
+                            <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0" />
+                        </p:commandLink>
+                    </p:column>
+                </p:dataTable>
+                <p:growl id="growlFiltro" showDetail="true" life="5000" />
+            </h:panelGrid>
+        </h:form>
+        <!-- Modals -->
+        <h:form id="frmMantoPerfil">
+            <p:dialog  header="#{msgs.tituloMantPerfilUsuario}" widgetVar="popMantoPerfil"  minHeight="40" modal="true" width="500">
+                <h:panelGrid id="pnlDatosPerfilIngreso" columns="1">
+                    <h:panelGrid columns="2">  
+                        <h:inputHidden value="#{perfilUnidadNegocioMB.perfilBean.idPerfil}" id="codPerfil" /> 
+                        <h:inputHidden/>
+                        <h:outputLabel value="#{msgs.campoNomPerfil} :" for="txtPerfil" class="requerido"/>
+                        <h:inputText id="txtPerfil"
+                                     value="#{perfilUnidadNegocioMB.perfilBean.nombre}" 
+                                     label="#{msgs.campoNomPerfil}" maxlength="50" size="30" required="true"/>
+                    </h:panelGrid>
+                    <h:panelGrid columns="1">           
+                        <p:pickList id="pickList" value="#{perfilUnidadNegocioMB.dualListModelUnidadNegocio}" var="unidadNegocio" itemLabel="#{unidadNegocio}" itemValue="#{unidadNegocio}" />
+                    </h:panelGrid>
+                </h:panelGrid>
+                <br/><hr/>
+                <p:commandButton actionListener="#{perfilUnidadNegocioMB.guardarPerfil()}" id="cmdModifica" 
+                                 value="#{msgs.botonGrabar}" 
+                                 update=":frmDatosPerfil:pnlTablaPerfil,growlManto"
+                                 oncomplete="if(args.operacionCorrecta){PF('popMantoPerfil').hide();PF('popDone').show();}" />
+                <p:growl id="growlManto" showDetail="true" life="5000"/>
+            </p:dialog>
+        </h:form>
+        <h:form id="frmEliPerfil" >
+            <p:dialog  header="#{msgs.appTitulo}" widgetVar="popEliPerfil"  minHeight="40" modal="true" width="400" >
+                <h:inputHidden value="#{perfilUnidadNegocioMB.perfilUnidadNegocioBean.perfilBean.idPerfil}" id="codPerfilHiddenEli" /> 
+                <h:inputHidden value="#{perfilUnidadNegocioMB.perfilUnidadNegocioBean.unidadNegocioBean.uniNeg}" id="codUniNegHiddenEli" /> 
+                <table style="border-collapse: collapse;width: 380px;">
+                    <tr>
+                        <td>
+                            <table>
+                                <tr>
+                                    <td valign="top">
+                                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                                    </td>
+                                    <td style="padding: 5px;">
+                                        <h:outputText value="#{msgs.panelEliminacion}"/> <br/>
+                                        <h:outputText id="nombreEliminacion" 
+                                                      value="#{msgs.campoPerfil}: #{perfilUnidadNegocioMB.perfilUnidadNegocioBean.perfilBean.nombre}" />  
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="lineaMsg">
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <table style="border-collapse: collapse">
+                                <tr>
+                                    <td>  
+                                        <p:commandButton actionListener="#{perfilUnidadNegocioMB.eliminarPerfil()}"                                               
+                                                         value="&nbsp;&nbsp;#{msgs.botonAceptar}&nbsp;&nbsp;" style="cursor:pointer;"
+                                                         oncomplete="if(args.operacionCorrecta){PF('popEliPerfil').hide();PF('popDone').show();}"
+                                                         update=":frmDatosPerfil:tblPerfil" /> 
+                                        &nbsp;&nbsp;&nbsp;
+                                        <p:commandButton oncomplete="PF('popEliPerfil').hide();"
+                                                         value="&nbsp;&nbsp;#{msgs.botonCancelar}&nbsp;&nbsp;" style="cursor:pointer;"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <p:growl id="growlManto" showDetail="true" life="5000"/>
+            </p:dialog>
+        </h:form>
+        <script type="text/javascript">
+            function handleDialogSubmit(xhr, status, args) {
+                if (args.validationFailed) {
+                    alert('if');
+                    dialog.show();
+                } else {
+                    alert('else');
+                    dialog.hide();
+                }
+            }
+        </script>
+    </ui:define>
+
+</ui:composition>

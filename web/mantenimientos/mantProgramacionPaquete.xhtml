@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml">
+    <ui:define name="content"> 
+        <h:body  onload="#{programacionMB.cargarProgramacionPaquete()}">
+            <h:form id="frmPaq"> 
+                <h:panelGrid columns="1" styleClass="centrado"  id="aaa">
+                    <p:fieldset legend="#{msgs.etiquetaPaqueteTallerDes}">   
+                        <h:outputLabel value="#{msgs.etiquetaProgramaciones}"   />  
+                        <p:spacer width="120" height="2"></p:spacer>
+                        <h:outputLabel value="#{msgs.etiquetaPaquetes}"/> 
+                        <p:pickList id="pickCentroResponsabilidad" value="#{programacionMB.dualProgramacionBean}" var="cr" itemLabel="#{cr.idProgramacion} - #{cr.descripProgramacion}" itemValue="#{cr}" 
+                                    showSourceFilter="true" showTargetFilter="true" filterMatchMode="contains" converter="programacionConvert"> 
+                        </p:pickList> 
+                        <br></br>
+                        <h:panelGrid columns="1" id="panel">
+                            <h:panelGrid>
+                                <p:outputLabel value="#{msgs.etiquetaDesc}:" />  
+                                <p:inputTextarea id="txtAreaTitulo" value="#{programacionMB.programacionDsctoBean.descripcion}" 
+                                                 rows="1" cols="56"  maxlength="50" autoResize="false" label="#{msgs.etiquetaDesc}" />
+                            </h:panelGrid>
+                            <h:panelGrid columns="1">
+                                <h:panelGrid columns="7" id="mey">
+                                    <p:outputLabel value="#{msgs.etiquetaTipo}:" /> 
+                                    <p:spacer width="22" height="3"></p:spacer>
+                                    <p:selectOneMenu  value="#{programacionMB.programacionDsctoBean.tipoValorBean.idCodigo}" style="width:100px" panelStyle="width:225px">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                        <f:selectItems value="#{programacionMB.listaTipoValor}" var="codigo" itemLabel="#{codigo.codigo}" itemValue="#{codigo.idCodigo}"/>
+                                        <p:ajax event="change" listener="#{programacionMB.obtenerTipoValor()}" update=":frmPaq:mey"/>
+                                    </p:selectOneMenu>  
+                                    <p:spacer width="30" height="3"></p:spacer>
+                                    <p:outputLabel  value="#{msgs.etiquetaMonto}:" rendered="#{programacionMB.flgComboOrdinal==true}"/> 
+                                    <p:outputLabel value="#{msgs.etiquetaPorcentajeDscto}:" rendered="#{programacionMB.flgComboPorcentual==true}"/> 
+                                    <p:spacer width="43" height="3"></p:spacer>
+                                    <p:inputText value="#{programacionMB.programacionDsctoBean.valorUnitario}"  size="8" maxlength="11"
+                                                 required="false" rendered="#{programacionMB.flgComboOrdinal==true || programacionMB.flgComboPorcentual==true}"/>   
+                                </h:panelGrid>
+                                <h:panelGrid columns="4">
+                                    <p:outputLabel value="#{msgs.etiquetaPeriodo}:" /> 
+                                    <p:spinner id="txtAnio" value="#{programacionMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="6"/>
+
+                                    <h:outputLabel value="#{msgs.etiquetaEstud}:" /> 
+                                    <p:inputSwitch value="#{programacionMB.programacionDsctoBean.flgEstudiante}" onLabel="#{msgs.etiquetaSi}" offLabel="#{msgs.etiquetaNo}" >
+                                    </p:inputSwitch> 
+                                    <h:outputLabel value="#{msgs.etiquetaStatus}:"  /> 
+                                    <p:inputSwitch value="#{programacionMB.programacionDsctoBean.status}" onLabel="#{msgs.etiquetaActi}" offLabel="#{msgs.etiquetaDesactivo}" >
+                                    </p:inputSwitch> 
+                                    <h:outputLabel value="#{msgs.etiqueteCantProgramaciones}:"/> 
+                                    <p:inputText value="#{programacionMB.programacionDsctoBean.cantProgramaciones}"  size="8" maxlength="11"
+                                                 required="false"   />
+                                </h:panelGrid>
+                            </h:panelGrid>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="6">
+                            <p:commandButton actionListener="#{programacionMB.guardarPaquetes()}" update="msgsAddSol,:frmPaq:pnlDetalle"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{programacionMB.limpiar()}" update=":frmPaq:aaa"
+                                             value="#{msgs.botonNuevo}">
+                            </p:commandButton>
+                            <p:messages id="msgsAddSol"  autoUpdate="false"/>
+                        </h:panelGrid>
+                    </p:fieldset> 
+                </h:panelGrid>
+
+                <h:panelGrid id="pnlDetalle" columns="1" styleClass="centrado" >
+                    <p:dataTable value="#{programacionMB.listaDetProDscto}" paginator="true"
+                                 var="detalle" id="tblDetalle" rows="6" editable="true" editMode="cell"
+                                 rendered="#{not empty programacionMB.listaDetProDscto}" 
+                                 style="width:1000px; font-size: 10px;margin-bottom:20px" > 
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaDetallePaquete}" />  
+                        </f:facet>    
+                        <p:column  class="nombre2Filtro"  headerText="#{msgs.etiquetaDesc}" filterMatchMode="contains" width="50">
+                            <h:outputText value="#{detalle.programacionDsctoBean.descripcion}"  style=" font-size: 12px"/>
+                        </p:column> 
+                        <p:column  class="nombre2Filtro"  headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="3">
+                            <h:outputText value="#{detalle.programacionDsctoBean.anio}"  style=" font-size: 12px"/>
+                        </p:column>
+                        <p:column  class="nombre2Filtro"  headerText="#{msgs.etiquetaTipoValor}" filterMatchMode="contains" width="3">
+                            <h:outputText value="#{detalle.tipoValorBean.codigo}"  style=" font-size: 12px"/>
+                        </p:column>
+                        <p:column  class="nombre2Filtro"  headerText="#{msgs.etiquetaValor}" filterMatchMode="contains" width="3">
+                            <h:outputText value="#{detalle.programacionDsctoBean.valorUnitario}"  style=" font-size: 12px"/>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaAcciones}" filterMatchMode="contains" width="1.5%" styleClass="siseFontTable3 centrado-texto">
+                            <p:commandLink id="cmdSelecSol" actionListener="#{programacionMB.obtenerPorId(detalle)}"  
+                                           update=":frmPaq "
+                                           process="@this">
+                                <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                            <p:tooltip id="toolTip" for="cmdSelecSol" value="#{msgs.toolTipSeleccionar}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition> 

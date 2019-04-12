@@ -1,0 +1,1782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+<mapper namespace="pe.marista.sigma.dao.PresupuestoNewDAO">
+    <sql id="consultaCampos" >
+        select
+        pre.idpresupuesto as idPresupuesto,
+        pre.anio,
+        pre.presupuestoprog as presupuestoProg,
+        pre.tipocuenta as tipoCuenta,
+        pre.flgtieneCr as flgTieneCr,
+        pre.obs,
+        pre.creapor as creaPor,
+        pre.creaFecha as creaFecha, 
+        pre.modiPor as modiPor,
+        un.unineg as uniNeg,
+        un.nombreUniNeg as nombreUniNeg,
+        pl.cuenta as cuenta,
+        pl.nombre as nombreCuenta,
+        cr.cr as cr,
+        concat(cr.cr,' - '+cr.nombre) as nombreCr,
+        mon.codigo as tipoMoneda,
+        mon.idcodigo as idTipoMoneda
+        from MG_Presupuesto pre
+        inner join MO_UnidadNegocio un on un.unineg=pre.unineg
+        inner join MT_PlanContable pl on pl.cuenta=pre.cuenta
+        left join MT_CentroResponsabilidad cr on cr.cr=pre.cr
+        inner join MO_Codigo mon on mon.idcodigo=pre.idtipomoneda
+    </sql>
+    
+    <resultMap id="presupuestoResultado" type="pe.marista.sigma.bean.PresupuestoNewBean" >
+        <id property="idPresupuesto" column="idPresupuesto" /> 
+        <result property="anio" column="anio" /> 
+        <result property="presupuestoProg" column="presupuestoProg" /> 
+        <result property="tipoCuenta" column="tipoCuenta" />
+        <result property="flgTieneCr" column="flgTieneCr" />
+        <result property="obs" column="obs" />
+        <result property="creaPor" column="creapor" />
+        <result property="creaFecha" column="creafecha" />
+        <result property="modiPor" column="modipor" />
+        <result property="presupuestoEje" column="presupuestoEje" /> 
+        <result property="porcEje" column="porcEje" /> 
+        <result property="saldo" column="saldo" /> 
+        <result property="porcSaldo" column="porcSaldo" />  
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="planContableBean" column="cuenta" 
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planResultado"/>
+        <association property="centroResponsabilidadBean" column="cr" 
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResponsabilidadResultado"/>
+        <association property="tipoMonedaBean" column="idtipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/> 
+    </resultMap>
+    <resultMap id="detPresupuestoResultado" type="pe.marista.sigma.bean.DetPresupuestoNewBean" >
+        <id property="id" column="id" /> 
+        <id property="uniNeg" column="uniNeg" /> 
+        <result property="crCuenta" column="crCuenta" /> 
+        <result property="cr" column="cr" /> 
+        <result property="nombreCr" column="nombreCr" /> 
+        <result property="cuenta" column="cuenta" /> 
+        <result property="nombreCuenta" column="nombreCuenta" /> 
+        <result property="anio" column="anio" /> 
+        <result property="ambito" column="ambito" /> 
+        <result property="fecha" column="fecha" /> 
+        <result property="proveedor" column="proveedor" /> 
+        <result property="motivo" column="motivo" /> 
+        <result property="nroDoc" column="nroDoc" /> 
+        <result property="monedaOrigen" column="monedaOrigen" /> 
+        <result property="valorSoles" column="valorSoles" /> 
+        <result property="codigo" column="codigo" />  
+        <result property="crCuenta" column="crCuenta" />  
+    </resultMap>
+    
+    <!--Unidad Negocio Resultado-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>  
+    <!--Plan Contable Resultado-->
+    <resultMap id="planResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <result property="cuenta" column="cuenta"/>
+        <result property="nombre" column="nombreCuenta"/> 
+    </resultMap> 
+    <!--Centro Responsabilidad Resultado-->
+    <resultMap id="centroResponsabilidadResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombreCr"/> 
+    </resultMap> 
+    <!--Tipo Moneda-->
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>  
+        <result property="codigo" column="tipoMoneda"/>  
+    </resultMap>
+      
+    <!--Metodos--> 
+    <select id="obtenerListaPresupuestoTodos" resultMap="presupuestoResultado" parameterType="pe.marista.sigma.bean.PresupuestoNewBean" >
+        <include refid="consultaCampos" />  
+        where pre.unineg=#{unidadNegocioBean.uniNeg} and pre.cuenta=#{planContableBean.cuenta} and pre.cr=#{centroResponsabilidadBean.cr}
+    </select>
+    <select id="obtenerListaPresupuesto" resultMap="presupuestoResultado" parameterType="pe.marista.sigma.bean.PresupuestoNewBean" >
+        <include refid="consultaCampos" /> 
+        WHERE pre.anio=#{anio} and pre.unineg=#{unidadNegocioBean.uniNeg} and pre.cuenta=#{planContableBean.cuenta} 
+        <if test="centroResponsabilidadBean.cr != null" >
+            and pre.cr=#{centroResponsabilidadBean.cr}
+        </if>
+    </select> 
+    <select id="obtenerListaPresupuestoVista" resultMap="presupuestoResultado" parameterType="pe.marista.sigma.bean.PresupuestoNewBean" >
+        <include refid="consultaCampos" /> 
+        WHERE pre.anio=#{anio} and pre.unineg=#{unidadNegocioBean.uniNeg} and pre.tipocuenta=#{tipoCuenta}
+        order by idpresupuesto desc
+    </select>
+    <select id="obtenerPresupuesto" resultMap="presupuestoResultado" parameterType="pe.marista.sigma.bean.PresupuestoNewBean" >
+        <include refid="consultaCampos" /> 
+        WHERE pre.anio=#{anio} and pre.unineg=#{unidadNegocioBean.uniNeg} and pre.cuenta=#{planContableBean.cuenta} and pre.cr=#{centroResponsabilidadBean.cr}
+    </select>
+    <!-- presupuesto Nuevo -->
+    <insert id="insertarPresupuestoCrCuentas" parameterType="pe.marista.sigma.bean.PresupuestoNewBean">
+        INSERT INTO MG_Presupuesto
+        (unineg , anio , presupuestoprog ,cuenta , tipocuenta , flgtienecr , cr , idtipomoneda , obs , creapor , creafecha )
+        VALUES
+        (#{unidadNegocioBean.uniNeg},#{anio},#{presupuestoProg},#{planContableBean.cuenta},
+        #{tipoCuenta},#{flgTieneCr},
+        #{centroResponsabilidadBean.cr},
+        #{tipoMonedaBean.idCodigo},
+        #{obs},
+        #{creaPor}, 
+        getDate())
+    </insert>
+    <update id="modificarPresupuestoCrCuentas" parameterType="pe.marista.sigma.bean.PresupuestoNewBean" >
+        UPDATE MG_Presupuesto
+        SET   
+        presupuestoprog=#{presupuestoProg} ,
+        modipor = #{modiPor}
+        WHERE idPresupuesto = #{idPresupuesto}
+    </update>
+    <delete id="eliminarPresupuestoCrCuentas" parameterType="pe.marista.sigma.bean.PresupuestoNewBean" >
+        DELETE FROM MG_Presupuesto
+        WHERE 
+        idPresupuesto = #{idPresupuesto} and
+        uniNeg = #{unidadNegocioBean.uniNeg} and 
+        anio = #{anio}  
+    </delete>  
+    <!--Reporte Presupuesto Por Cuenta  Ingresos-->
+    <select id="obtenerCabeceraIngresos" resultType="pe.marista.sigma.bean.reporte.PrespuestoCabeceraRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1) 
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta} 
+        select uni.nombreUniNeg,uni.RUC,
+        'PRESUPUESTO DE INGRESOS - AÑO '+CONVERT(VARCHAR(20),P.ANIO) as titulo,
+        PLA.nombre AS nombrePlanContable,pla.cuenta as cuenta,p.presupuestoprog
+        from MG_Presupuesto p
+        INNER JOIN MT_PlanContable PLA ON P.cuenta=PLA.cuenta
+        inner join MO_UnidadNegocio uni on uni.unineg=p.unineg
+        where p.anio=@anio and p.tipocuenta=@tipoCuenta and uni.unineg=@uniNeg
+    </select>
+    <!--Reporte Presupuesto Por Cuenta -->
+    <select id="obtenerCabecera" resultType="pe.marista.sigma.bean.reporte.PrespuestoCabeceraRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1),@IMG varchar(100) = ''
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta} 
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        else  'resources\images\sector.jpg'  end)
+        SELECT DISTINCT ('PRESUPUESTO DE EGRESOS - AÑO '+CONVERT(VARCHAR,P.ANIO)) AS titulo ,UPPER(UN.nombreUniNeg) AS nombreUniNeg, un.ruc as rucColegio ,
+        @IMG AS rutaImagen,(select sum(P.presupuestoprog)FROM MG_Presupuesto P 
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        where p.anio=@anio and p.unineg=@uniNeg AND p.tipoCuenta=@tipoCuenta) as presupuestoProg 
+        FROM MG_Presupuesto P 
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        where p.anio=@anio and un.unineg=@uniNeg AND p.tipoCuenta=@tipoCuenta
+    </select>
+    <select id="obtenerInicioCuentas" resultType="pe.marista.sigma.bean.reporte.PresupuestoNewInicioRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1)
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta}
+        select distinct  
+        SUBSTRING(CONVERT(VARCHAR,P.cuenta),1,2) as inicio  from MG_Presupuesto p
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        inner join MT_PlanContable PL ON PL.cuenta=P.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        where un.unineg=@uniNeg and p.anio=@anio 
+    </select>
+    <select id="obtenerCuentas" resultType="pe.marista.sigma.bean.reporte.PresupuestoCuentaRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1),@inicio int
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta}
+        set @inicio=#{inicio}
+        SELECT distinct pl.cuenta as nroCuenta,PL.nombre AS nombreCuenta, 
+        (select sum(p.presupuestoprog) from MG_Presupuesto p  
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        INNER JOIN MT_PlanContable PL ON PL.cuenta=P.cuenta
+        where un.unineg=@uniNeg and p.anio=@anio AND p.tipoCuenta=@tipoCuenta and pl.cuenta like concat(@inicio,'%'))as presupuestoProg
+        from MG_Presupuesto p
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        INNER JOIN MT_PlanContable PL ON PL.cuenta=P.cuenta
+        where un.unineg=@uniNeg and p.anio=@anio AND p.tipoCuenta=@tipoCuenta and pl.cuenta like concat(@inicio,'%') 
+        order by pl.cuenta asc
+    </select>
+    <select id="obtenerCentroResp" resultType="pe.marista.sigma.bean.reporte.PresupuestoCentroRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1) ,@cuenta int
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta}
+        set @cuenta=#{cuenta}
+        select cr.cr as cr, cr.nombre as nombreCR,p.presupuestoprog as presupuestoProg from MG_Presupuesto p
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        inner join MT_PlanContable PL ON PL.cuenta=P.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        where pl.cuenta=@cuenta AND un.unineg=@uniNeg and p.anio=@anio AND p.tipoCuenta=@tipoCuenta
+        order by cr.cr asc
+    </select>
+    <!--Reporte Por Centro de Responsabilidad-->
+    <select id="obtenerInicioCentroRespResp" resultType="pe.marista.sigma.bean.reporte.PresupuestoNewInicioRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1) 
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta} 
+        select distinct  
+        SUBSTRING(CONVERT(VARCHAR,P.CR),1,1) as inicio  from MG_Presupuesto p
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        inner join MT_PlanContable PL ON PL.cuenta=P.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        where un.unineg=@uniNeg and p.anio=@anio 
+    </select> 
+    <select id="obtenerCentroRespResp" resultType="pe.marista.sigma.bean.reporte.PresupuestoCentroRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1),@inicio int
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta} 
+        set @inicio=#{inicio}
+        select distinct cr.cr as cr, cr.nombre as nombreCR,
+        (select sum(p.presupuestoprog) from MG_Presupuesto p  
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        inner join MT_PlanContable PL ON PL.cuenta=P.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        where un.unineg=@uniNeg and p.anio=@anio  and cr.cr like concat(@inicio,'%')) as presupuestoProg
+        from MG_Presupuesto p
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        inner join MT_PlanContable PL ON PL.cuenta=P.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        where un.unineg=@uniNeg and p.anio=@anio  and cr.cr like concat(@inicio,'%')
+        order by cr.cr asc
+    </select>
+    <select id="obtenerCuentasResp" resultType="pe.marista.sigma.bean.reporte.PresupuestoCuentaRepBean" parameterType="map">
+        declare @uniNeg varchar(6),@anio int,@tipoCuenta varchar(1) ,@cr int
+        set @uniNeg=#{uniNeg}
+        set @anio=#{anio}
+        set @tipoCuenta=#{tipoCuenta}
+        set @cr =#{cr}
+        SELECT pl.cuenta as nroCuenta,PL.nombre AS nombreCuenta,p.presupuestoprog as presupuestoProg FROM MG_Presupuesto P
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        INNER JOIN MO_UnidadNegocio un on un.unineg=p.unineg
+        INNER JOIN MT_PlanContable PL ON PL.cuenta=P.cuenta
+        where un.unineg=@uniNeg and p.anio=@anio AND p.tipoCuenta=@tipoCuenta and cr.cr=@cr
+        order by pl.cuenta asc
+    </select> 
+    <select id="SP_obtenerPresupuestoPorCRAnio" resultMap="presupuestoResultado" parameterType="map" >                  
+        declare @unineg varchar(6) ,@anio int,@idtipomoneda int,@tipoCuenta varchar(1) 
+        set @unineg=#{uniNeg}
+        set @anio=#{anio}  
+        set @tipoCuenta='E'
+        set @idtipomoneda=14901
+        declare @fechaini date
+        declare @fechafin date 
+
+        declare @idtiposolarendir int
+        declare @idtiposolcontrapago int 
+        declare @idtiposolgeneral int
+        set @idtiposolarendir=(select idtiposolicitud from MM_TipoSolicitud where nombre='A rendir' and unineg=@unineg)
+        set @idtiposolgeneral=(select idtiposolicitud from MM_TipoSolicitud where nombre='General' and unineg=@unineg)
+        set @idtiposolcontrapago=(select idtiposolicitud from MM_TipoSolicitud where nombre='Contra Pago' and unineg=@unineg) 
+
+        set @fechaini = <if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),#{anio}))))</if>
+        set @fechafin = <if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if>
+
+        <!--;WITH PRESU (uniNeg,cr,nombreCr,tipocuenta,anio,idipomoneda,cuenta,nombreCuenta,presupuestoEje)
+        AS
+        (-->
+        declare @listaPresupuesto as table(unineg char(6),cr varchar(10),nombreCr varchar(200),tipoCuenta varchar(1),anio integer,idTipoMoneda integer,
+        cuenta integer,nombreCuenta varchar(200),presupuestoEje money)
+
+        insert into @listaPresupuesto(unineg,cr,nombreCr,tipoCuenta,anio,idTipoMoneda,cuenta,nombreCuenta,presupuestoEje)
+        select     
+        @unineg as uniNeg, 
+        cr.cr,
+        cr.nombre as nombreCr,
+        @tipoCuenta as tipocuenta,
+        @anio AS anio ,
+        @idtipomoneda as idtipomoneda,
+        pc.cuenta,
+        pc.nombre as nombreCuenta ,
+        SUM(ROUND(convert(money,(
+        (	
+        (case	 
+        when (
+        case
+        when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach	is not null then  isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra		is not null then isnull(docLog.idtipomoneda,14901)	 
+        else 0
+        end) = 14901 
+        then 
+        (case 
+        when ch.idsolicitudcajach     is not null then isnull(asi.monto,0)+isnull(doc.valorDetraccion,0)
+        when cajach.idsolicitudcajach is not null then isnull(solcrCP.valor,0) +isnull(doc.valorDetraccion,0)
+        when doc.idsolicitudcajach	is not null then isnull(solcrdoc.valor,0) +isnull(doc.valorDetraccion,0)
+        when docLog.idcompra		is not null then isnull(fact.valor,0)	  +isnull(doc.valorDetraccion,0)
+        else 0
+        end)   
+        when (case  when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach  is not null then isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra	  is not null then isnull(docLog.idtipomoneda,14901)	 
+        else 0
+        end)= 14902 then 
+        (case 
+        when ch.idsolicitudcajach is not null then ((isnull(asi.monto,0) * isnull(doc.tc,3))+isnull(doc.valorDetraccion,0))
+        when cajach.idsolicitudcajach is not null then (isnull(solcrCP.valor,0) *  ISNULL(asiMov.TC,3)) +isnull(doc.valorDetraccion,0)
+        when doc.idsolicitudcajach is not null then ((isnull(solcrdoc.valor,0)   * isnull(doc.tc,3))+isnull(doc.valorDetraccion,0))
+        when docLog.idcompra		is not null then (isnull(fact.valor,0) * isnull(docLog.tc,3)) +isnull(doc.valorDetraccion,0)	
+        else 0
+        end) 
+        else 0 
+        end
+        )))),2)) AS presupuestoEje
+        from MT_SolicitudCajaCh     sol 
+         
+        LEFT join MT_DocEgreso doc on doc.idsolicitudcajach=sol.idsolicitudcajach and doc.unineg=sol.unineg  and doc.flganulado is  null AND SOL.idtiposolicitud=@idtiposolgeneral 
+        left join MT_DetSolicitudCajaChCR solcrdoc on doc.idsolicitudCajach=solcrdoc.idsolicitudcajach  and sol.idtiposolicitud=@idtiposolgeneral
+        
+        left join MT_cajachicaliquidacion ch on ch.idsolicitudcajach=sol.idsolicitudcajach and ch.unineg=sol.unineg
+        left join MT_Asiento asi on  asi.objeto='MT_CajaChicaLiquidacion' and asi.idobjeto=ch.idcajachicaliquidacion and isnull(asi.status,1)!=0 
+         
+        left join MT_CajaChicaMov cajach on cajach.idsolicitudcajach=sol.idsolicitudcajach and sol.unineg=cajach.unineg  
+        left join MT_DetSolicitudCajaChCR solcrCP on solcrCP.idsolicitudCajach=cajach.idsolicitudcajach  and cajach.idtiposolicitud IN (@idtiposolarendir,@idtiposolcontrapago)
+        left join MT_Asiento asiMov on  asiMov.objeto='MT_CajaChicaMov' and asiMov.idobjeto=cajach.idcajachicamov and isnull(asiMov.status,1)!=0 and solcrCP.cr=asiMov.cr
+
+         
+        left join ML_FacturaCompra f on f.idfacturacompra=doc.idcompra
+        LEFT join MT_DocEgreso docLog on docLog.idcompra =f.idfacturacompra and docLog.unineg=@unineg
+        LEFT join ML_CuentaFact fact on fact.idfacturacompra=docLog.idcompra and fact.unineg=docLog.unineg
+        
+        inner join MT_CentroResponsabilidad cr  on (case when ch.idsolicitudcajach is not null then asi.cr		  /*ASIENTO*/ when cajach.idsolicitudcajach is not null then solcrCP.cr     /*MOV*/ when doc.idsolicitudcajach is not null then solcrdoc.cr	   /*GENERAL*/ when docLog.idcompra is not null then fact.cr         /*LOG*/	else 0  end) =cr.cr
+        inner join MT_Concepto              con on (case when ch.idsolicitudcajach is not null then ch.idconcepto /*ASIENTO*/ when cajach.idsolicitudcajach is not null then sol.idconcepto /*MOV*/ when doc.idsolicitudcajach is not null then sol.idconcepto /*GENERAL*/ when docLog.idcompra is not null then fact.idconcepto /*LOG*/	else 0  end) =con.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta=con.cuentad 
+
+        left join MO_Codigo cod on cod.idcodigo= (case 
+        when doc.idsolicitudcajach	is not null then doc.idtipomoneda
+        when ch.idsolicitudcajach is not null then asi.idtipomoneda
+        when cajach.idsolicitudcajach is not null then cajach.idtipomoneda
+        when docLog.idcompra		is not null then f.idtipomoneda
+        else 'X'
+        end)
+        left join MO_Codigo tip on tip.idcodigo= (case 
+        when doc.idsolicitudcajach	is not null then doc.idtipodoc
+        when ch.idsolicitudcajach is not null then ch.idtipodoc
+        when cajach.idsolicitudcajach is not null then null
+        when docLog.idcompra		is not null then (select r.idtipodoc from ML_RegistroCompra r where r.idregistrocompra=f.idregistrocompra and r.unineg=@unineg)
+        else 'X'
+        end)
+        where (case when sol.idsolicitudcajach is not null then ISNULL(sol.montoaprobado,0) when docLog.idcompra is not null then f.montopago end) <![CDATA[  > ]]> 0   and  (case when ch.idsolicitudcajach is not null then ch.idsolicitudcajach /*ASIENTO*/ when cajach.idsolicitudcajach is not null then cajach.idsolicitudcajach     /*MOV*/ when doc.idsolicitudcajach is not null then doc.idsolicitudcajach /*GENERAL*/ when docLog.idcompra is not null then docLog.idcompra /*LOG*/ else null end) is not null
+        and (case 
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha)   
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago) 
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)  
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha)  
+        else null end) <![CDATA[  >= ]]> @fechaini 
+        and (case 
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha) 
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago) 
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)  
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha)  
+        else null end) <![CDATA[  <= ]]> @fechafin
+        and (case 
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))   
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha)) 
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha)) 
+        when docLog.idcompra is not null then (YEAR(docLog.creafecha))	 
+        else 0
+        end)=@anio
+        <if test="listCr != null" >
+            <if test="flg == 1" >
+                and cr.cr in  
+            </if>
+            <if test="flg == 2" >
+                and cr.cr not in  
+            </if>
+            <foreach item="item" index="index" collection="listCr" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and cuenta in (Select  pla.cuenta From MT_PlanContable pla    where  (pla.cuenta like '6%' AND cuenta not like  '61%') or pla.cuenta like '33%')
+        <if test="listCc != null" >
+            <if test="flg2 == 1" >
+                and pc.cuenta in 
+            </if>
+            <if test="flg2 == 2" >
+                and pc.cuenta not in 
+            </if>
+            <foreach item="item" index="index" collection="listCc" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if> 
+        GROUP BY cr.cr,cr.nombrE,pc.cuenta,pc.nombre,
+        (case 
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))   
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha)) 
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha)) 
+        when docLog.idcompra is not null then (YEAR(docLog.creafecha))	 
+        else 0
+        end)
+        
+        union all
+        select distinct @unineg as uniNeg,
+        c.cr as cr,
+        c.nombre as nombreCr,@tipoCuenta as tipocuenta, @anio AS anio , @idtipomoneda as idtipomoneda ,
+        p.cuenta, p.nombre as nombreCuenta, sum(a.monto)
+        from MT_Asiento a
+        inner join mt_centroresponsabilidad c on c.cr=a.cr
+        left join MT_PlanContable p on p.cuenta=a.cuentad
+        where objeto in('mo_planilla','mo_planillacts') and a.fechaope <![CDATA[  >= ]]> @fechaini and fechaope <![CDATA[  <= ]]>  @fechafin and a.anio=@anio 
+        and a.unineg=@unineg
+        <if test="listCr != null" >
+            <if test="flg == 1" >
+                and a.cr in
+            </if>
+            <if test="flg == 2" >
+                and a.cr not in
+            </if>
+            <foreach item="item" index="index" collection="listCr" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        
+        <if test="listCc != null" >
+            <if test="flg2 == 1" >
+                and a.cuentad in 
+            </if>
+            <if test="flg2 == 2" >
+                and a.cuentad not in 
+            </if>
+            <foreach item="item" index="index" collection="listCc" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>  and a.cr is not null and p.cuenta is not null
+        group by c.cr,c.nombre,p.cuenta,p.nombre
+        
+        <!--)-->
+        SELECT distinct l.unineg,l.cr,l.nombreCr,l.tipoCuenta,l.anio,l.idTipoMoneda,l.cuenta,l.nombreCuenta,
+        (select sum(l1.presupuestoEje) from @listaPresupuesto l1 where l1.cuenta=l.cuenta and l1.cr=l.cr) as presupuestoEje,
+        convert(decimal(12,2),ISNULL(P.presupuestoprog,0)) AS presupuestoProg,
+        (CASE WHEN ISNULL(P.presupuestoProg,0)<![CDATA[  > ]]>0 THEN convert(decimal(12,2),( ((
+        (select sum(l1.presupuestoEje) from @listaPresupuesto l1 where l1.cuenta=l.cuenta and l1.cr=l.cr)*100)/ISNULL(P.presupuestoProg,0)))) ELSE 0 END) as porcEje,
+        convert(decimal(12,2),(ISNULL(P.presupuestoProg,0) - 
+        (select sum(l1.presupuestoEje) from @listaPresupuesto l1 where l1.cuenta=l.cuenta and l1.cr=l.cr))) as saldo,
+        (CASE WHEN ISNULL(P.presupuestoProg,0)<![CDATA[  > ]]>0 THEN convert(decimal(12,2),100-( (
+        (select sum(l1.presupuestoEje) from @listaPresupuesto l1 where l1.cuenta=l.cuenta and l1.cr=l.cr)*100)/ISNULL(P.presupuestoProg,0))) ELSE 0 END)  as porcSaldo
+        FROM @listaPresupuesto l 
+        LEFT JOIN MG_Presupuesto P ON P.cuenta=l.cuenta AND P.cr=l.cr AND P.unineg=l.uniNeg AND P.anio=l.anio
+        <if test="flg3 == 3" >
+            where isnull(p.presupuestoprog,0)=0
+        </if>  
+        
+        union all 
+        SELECT 
+        @unineg as uniNeg, cr.cr as cr,cr.nombre as nombreCr,@tipoCuenta as tipocuenta,@anio as anio,
+        @idtipomoneda as idipomoneda,pl.cuenta as cuenta ,pl.nombre as nombreCuenta,0 as presupuestoEje,
+        convert(decimal(12,2),ISNULL(P.presupuestoprog,0)) AS presupuestoProg,
+        0 as porcEje,
+        convert(decimal(12,2),(ISNULL(P.presupuestoProg,0))) as saldo,
+        100 as porcSaldo 
+        FROM MG_Presupuesto p 
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta
+        where anio=@anio 
+        <!--and pl.cuenta not in (select cuenta from @listaPresupuesto)  -->
+        and pl.cuenta not in (select cuenta from @listaPresupuesto lista where lista.cr in(cr.cr) and lista.cuenta in(pl.cuenta) )
+	 
+        <if test="listCr != null" >
+            <if test="flg == 1" >
+                and cr.cr in
+            </if>
+            <if test="flg == 2" >
+                and cr.cr not in
+            </if>
+            <foreach item="item" index="index" collection="listCr" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        
+        <if test="listCc != null" >
+            <if test="flg2 == 1" >
+                and pl.cuenta in 
+            </if>
+            <if test="flg2 == 2" >
+                and pl.cuenta not in 
+            </if>
+            <foreach item="item" index="index" collection="listCc" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if> and pl.cuenta is not null and cr.cr is not null
+         
+        <if test="verpor == 1" >
+            ORDER BY 2,7
+        </if>
+        <if test="verpor == 2" >
+            ORDER BY 7,2
+        </if> 
+    </select>
+    <select id="SP_obtenerPresupuestoPorId" resultMap="presupuestoResultado" parameterType="map" >                  
+        declare @unineg varchar(6) ,@anio int,@idtipomoneda int,@tipoCuenta varchar(1) 
+        set @unineg=#{presupuesto.unidadNegocioBean.uniNeg}
+        set @anio=#{presupuesto.anio}
+        set @tipoCuenta='E'
+        set @idtipomoneda=14901
+        declare @fechaini date
+        declare @fechafin date
+        set @fechaini = <if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),#{anio}))))</if>
+        set @fechafin = <if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if>
+
+        ;WITH PRESU (uniNeg,cr,nombreCr,tipocuenta,anio,idipomoneda,cuenta,nombreCuenta,presupuestoProg,presupuestoEje)
+        AS
+        (
+        SELECT    
+        @unineg as uniNeg,
+        P.cr,
+        C.nombre,
+        P.tipocuenta,
+        P.anio,
+        p.idtipomoneda,
+        p.cuenta,
+        pc.nombre as nombreCuenta,
+        SUM(isnull(presupuestoprog,0)) AS presupuestoProg,
+        (dbo.totalEjecutadoPorCrCuentaAnio(@unineg,@anio,P.cr,@fechaini,@fechafin,p.cuenta))
+        FROM MG_Presupuesto P 
+        LEFT JOIN MT_CentroResponsabilidad C ON P.cr=C.cr
+        LEFT join MT_PlanContable pc on pc.cuenta=p.cuenta 
+        WHERE P.anio=@anio and p.unineg=@unineg and p.idtipomoneda=@idtipomoneda and p.tipocuenta=@tipoCuenta
+        and p.cr=#{presupuesto.centroResponsabilidadBean.cr} and p.cuenta=#{presupuesto.planContableBean.cuenta}
+        GROUP BY p.unineg,P.cr,C.nombre,P.tipocuenta,P.anio,p.idtipomoneda,p.tipocuenta,p.cuenta,pc.nombre 
+        )
+        SELECT *,
+        convert(decimal(12,2),( ((presu.presupuestoEje*100)/presu.presupuestoProg))) as porcEje,
+        (presu.presupuestoProg - presu.presupuestoEje) as saldo,
+        convert(decimal(12,2),100-( (presu.presupuestoEje*100)/presu.presupuestoProg)) as porcSaldo
+        FROM PRESU   
+    </select>
+    <select id="SP_obtenerDetalleGastosCrCuenta" resultMap="detPresupuestoResultado" parameterType="map" >    
+        exec OBTENER_MOVIMIENTOS_POR_CR_CUENTA
+        @unineg = #{presupuesto.unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},    
+        @anio = #{presupuesto.anio,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @cr=#{presupuesto.centroResponsabilidadBean.cr,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @cuenta=#{presupuesto.planContableBean.cuenta,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @fechaini=#{fechaIni,javaType=Date,jdbcType=VARCHAR,mode=IN},
+        @fechafin=#{fechaFin,javaType=Date,jdbcType=VARCHAR,mode=IN}    
+    </select>
+    
+    <select id="SP_obtenerIngresosPresupuestoMesaMes" resultMap="detPresupuestoResultado" parameterType="map" >      
+        declare @uniNeg varchar(6)=#{presupuesto.unidadNegocioBean.uniNeg}
+        declare @anio int=#{presupuesto.anio} 
+        declare @fechaIni date =<if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),@anio))))</if>
+        declare @fechaFin date=<if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if> 
+        declare @enero date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-01-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @febrero date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-02-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @marzo date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-03-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @abril date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-04-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @mayo date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-05-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @junio date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-06-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @julio date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-07-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @agosto date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-08-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @setiembre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-09-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @octubre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-10-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @noviembre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-11-'+convert(varchar(4),@anio)))))+1,0))),105))
+        declare @diciembre date=(select convert(varchar(20),(SELECT DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,(select convert(date,(select '01-12-'+convert(varchar(4),@anio)))))+1,0))),105))
+
+        ;with listaPresupuesto(unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+        valoSoles,presupuestoProgramado,fechapago) as(
+
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(dd.montopagado,0)) as valoSoles,
+        pre.presupuestoprog,d.fechapago
+        from MT_DocIngreso d 
+        inner join MO_UnidadNegocio uni on uni.unineg=d.unineg
+        inner join MT_DetDocIngreso dd on dd.iddocingreso=d.iddocingreso
+        inner join MT_Concepto c on c.idconcepto=dd.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=d.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  
+        year(d.fechapago) =@anio
+        and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,d.fechapago)   <![CDATA[  >= ]]> @fechaIni and CONVERT(DATE,d.fechapago)  <![CDATA[  <= ]]>  @fechaFin AND PL.cuenta LIKE'7%'
+        and idctasxcobrar is null
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,d.fechapago
+
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog ,ct.fechapago
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+         open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)  <![CDATA[  >= ]]> @fechaIni and CONVERT(DATE,ct.fechapago) <![CDATA[  <= ]]>  @fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,ct.fechapago
+
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre+' (Años Anteriores ' + convert(varchar(10),ct.anio)+')' as nombreCuenta,ct.anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog,ct.fechapago
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio <![CDATA[  < ]]>@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+         open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago) <![CDATA[  >= ]]>  @fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,ct.fechapago,ct.anio
+
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  
+        sum(isnull(ct.montopagado,0)-(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))) as valoSoles,
+        pre.presupuestoprog,ct.fechapago
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.cuentah=772211
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]> @fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog,ct.fechapago
+        )
+        select distinct l.unineg,l.cuenta,nombreCuenta,l.anio,monedaOrigen,
+        isnull(l.presupuestoProgramado,0) as presupuestoProgramado,
+        (SELECT SUM(valoSoles) FROM listaPresupuesto  l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)  as presupuestoEje,
+        (isnull(l.presupuestoProgramado,0)-(SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)) as saldo,
+        isnull(convert(decimal(12,2),( (((SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)*100)/(l.presupuestoProgramado)))),0) as porcEje,
+        isnull(convert(decimal(12,2),100-( ((SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.anio=l.anio)*100)/(l.presupuestoProgramado))),0) as porcSaldo    
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=1 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@enero and l3.cuenta=l.cuenta and l3.anio=l.anio) as enero 
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=2 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@febrero and l3.cuenta=l.cuenta and l3.anio=l.anio) as febrero
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=3 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@marzo and l3.cuenta=l.cuenta and l3.anio=l.anio) as marzo
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=4 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as abril
+
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=5 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as mayo
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=6 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as junio
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=7 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as julio
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=8 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as agosto
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=9 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as setiembre
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=10 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as octubre
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=11 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as noviembre
+        ,(select isnull(sum(l3.valoSoles),0) from listaPresupuesto l3 where month(l3.fechapago)=12 and l3.fechapago<![CDATA[  >= ]]> @fechaIni and l3.fechapago<![CDATA[  <= ]]>@abril and l3.cuenta=l.cuenta and l3.anio=l.anio) as diciembre
+        FROM listaPresupuesto l  
+        
+        union all
+        select  
+        @unineg as uniNeg, 
+        pl.cuenta, pl.nombre as nombreCuenta, @anio as anio, 
+        'S' as monedaOrigen  
+        ,isnull(p.presupuestoprog,0) as presupuestoProgramado
+        , 0 as presupuestoEje,
+        ( sum(isnull(P.presupuestoprog,0))-0) as saldo,
+        0 as porcEje ,
+        100 as porcSaldo,'0.00' as enero,'0.00' as febrero,'0.00' as marzo,'0.00' as abril,'0.00' as mayo,'0.00' as julio,'0.00' as julio
+        ,'0.00' as agosto,'0.00' as setiembre,'0.00' as octubre,'0.00' as noviembre,'0.00' as diciembre
+        from MG_Presupuesto p 
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta 
+        where  tipocuenta='I'  
+        and p.anio=@anio and p.unineg=@uniNeg AND PL.cuenta LIKE'7%'
+        and  pl.cuenta in(select cuenta from MT_PlanContable)
+        and pl.cuenta not in (select cuenta from listaPresupuesto lista where lista.cuenta in(pl.cuenta) )
+        group by pl.cuenta,p.idpresupuesto,pl.nombre,p.creafecha,p.presupuestoprog
+        order by l.cuenta asc 
+    </select>
+    
+    <select id="SP_obtenerIngresosPresupuestoCabecera" resultMap="detPresupuestoResultado" parameterType="map" >      
+        declare @uniNeg varchar(6)=#{presupuesto.unidadNegocioBean.uniNeg}
+        declare @anio int=#{presupuesto.anio} 
+        declare @fechaIni date =<if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),@anio))))</if>
+        declare @fechaFin date=<if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if> 
+        SELECT nombreUniNeg, ruc as ruc,'EJECUCIÓN DE PRESUPUESTO DE INGRESOS' as titulo,
+        'Del mes de '+convert(varchar(12),datename(month,(@fechaIni)))+' a '+convert(varchar(12),datename(month,(@fechaFin))) +' del '+convert(varchar(10),@anio) AS subTitulo FROM MO_UnidadNegocio
+        WHERE unineg=@uniNeg
+    </select>
+    
+    <select id="SP_obtenerIngresosPresupuesto" resultMap="detPresupuestoResultado" parameterType="map" >      
+        declare @uniNeg varchar(6)=#{presupuesto.unidadNegocioBean.uniNeg}
+        declare @anio int=#{presupuesto.anio} 
+        declare @fechaIni date =<if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),@anio))))</if>
+        declare @fechaFin date=<if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if> 
+        declare @listaPresupuesto as table(unineg char(6),cuenta integer,nombreCuenta varchar(1000),
+        anio integer,monedaOrigen varchar(1),
+        valoSoles money,presupuestoProgramado money) 
+        insert into @listaPresupuesto(unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+        valoSoles,presupuestoProgramado)
+
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(dd.montopagado,0)) as valoSoles,
+        pre.presupuestoprog
+        from MT_DocIngreso d 
+        inner join MO_UnidadNegocio uni on uni.unineg=d.unineg
+        inner join MT_DetDocIngreso dd on dd.iddocingreso=d.iddocingreso
+        inner join MT_Concepto c on c.idconcepto=dd.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=d.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  
+        year(d.fechapago) =@anio
+        and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,d.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,d.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        and idctasxcobrar is null
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        <!--PENSIONES Y MATRICULA AÑO ACTUAL-->
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        <!--PENSIONES AÑOS ANTERIORES-->
+
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre+' (Años Anteriores)' as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio <![CDATA[ <]]>@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>       
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        <!--moras--> 
+        union all
+        select uni.unineg,
+        pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  
+        sum(isnull(ct.montopagado,0)-(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))) as valoSoles,
+        pre.presupuestoprog
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.cuentah=772211
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        select unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+        valoSoles   as valorSoles,isnull(l.presupuestoProgramado,0) as presupuestoProgramado,
+        (SELECT SUM(valoSoles) FROM @listaPresupuesto  l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles)  as presupuestoEje,
+        (isnull(l.presupuestoProgramado,0)-(SELECT SUM(valoSoles) FROM @listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles)) as saldo,
+        isnull(convert(decimal(12,2),( (((SELECT SUM(valoSoles) FROM @listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles)*100)/l.presupuestoProgramado))),0) as porcEje,
+        isnull(convert(decimal(12,2),100-( ((SELECT SUM(valoSoles) FROM @listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles)*100)/l.presupuestoProgramado)),0) as porcSaldo   
+        FROM @listaPresupuesto l 
+        
+        union all
+        select  
+        @unineg as uniNeg, 
+        pl.cuenta, pl.nombre as nombreCuenta, @anio as anio, 
+        'S' as monedaOrigen 
+        , 0 as valorsoles 
+        ,isnull(p.presupuestoprog,0) as presupuestoProgramado
+        , 0 as presupuestoEje,
+        ( sum(isnull(P.presupuestoprog,0))-0) as saldo,
+        0 as porcEje ,
+        100 as porcSaldo
+        from MG_Presupuesto p
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta 
+        where  tipocuenta='I'  
+        and p.anio=@anio and p.unineg=@uniNeg AND PL.cuenta LIKE'7%'
+        and  pl.cuenta in(select cuenta from MT_PlanContable)
+        and pl.cuenta not in (select cuenta from @listaPresupuesto lista where lista.cuenta in(pl.cuenta) )
+        group by pl.cuenta,p.idpresupuesto,pl.nombre,p.creafecha,p.presupuestoprog
+
+        order by l.cuenta asc
+    </select>      
+    
+    <select id="SP_obtenerIngresosPresupuestoDetallado" resultMap="detPresupuestoResultado" parameterType="map" >      
+        declare @uniNeg varchar(6)=#{presupuesto.unidadNegocioBean.uniNeg}
+        declare @anio int=#{presupuesto.anio} 
+        declare @fechaIni date =<if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),@anio))))</if>
+        declare @fechaFin date=<if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if> 
+        declare @listaPresupuesto as table(unineg char(6),cuenta integer,nombreCuenta varchar(1000),
+        anio integer,monedaOrigen varchar(1),
+        valoSoles money,presupuestoProgramado money) 
+        insert into @listaPresupuesto(unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+        valoSoles,presupuestoProgramado)
+
+        select uni.unineg,
+        substring(convert(varchar,pl.cuenta),1,2), 
+        (case when substring(convert(varchar,pl.cuenta),1,2)=70 then'VENTAS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=74 THEN 'DESCUENTOS, REBAJAS Y BONIFICACIONES CONCEDIDOS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=75 THEN 'OTROS INGRESOS DE GESTION'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=77 THEN 'INGRESOS FINANCIEROS' END) as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(dd.montopagado,0)) as valoSoles,
+        pre.presupuestoprog
+        from MT_DocIngreso d 
+        inner join MO_UnidadNegocio uni on uni.unineg=d.unineg
+        inner join MT_DetDocIngreso dd on dd.iddocingreso=d.iddocingreso
+        inner join MT_Concepto c on c.idconcepto=dd.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=d.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  
+        year(d.fechapago) =@anio
+        and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,d.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,d.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        and idctasxcobrar is null
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        <!--PENSIONES Y MATRICULA AÑO ACTUAL-->
+        union all
+        select uni.unineg,
+        substring(convert(varchar,pl.cuenta),1,2), 
+        (case when substring(convert(varchar,pl.cuenta),1,2)=70 then'VENTAS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=74 THEN 'DESCUENTOS, REBAJAS Y BONIFICACIONES CONCEDIDOS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=75 THEN 'OTROS INGRESOS DE GESTION'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=77 THEN 'INGRESOS FINANCIEROS' END) as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        <!--PENSIONES AÑOS ANTERIORES-->
+
+        union all
+        select uni.unineg,
+        substring(convert(varchar,pl.cuenta),1,2), 
+        (case when substring(convert(varchar,pl.cuenta),1,2)=70 then'VENTAS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=74 THEN 'DESCUENTOS, REBAJAS Y BONIFICACIONES CONCEDIDOS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=75 THEN 'OTROS INGRESOS DE GESTION'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=77 THEN 'INGRESOS FINANCIEROS' END) as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  
+        sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+        pre.presupuestoprog
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio <![CDATA[ <]]>@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>       
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        <!--moras--> 
+        union all
+        select uni.unineg,
+        substring(convert(varchar,pl.cuenta),1,2), 
+        (case when substring(convert(varchar,pl.cuenta),1,2)=70 then'VENTAS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=74 THEN 'DESCUENTOS, REBAJAS Y BONIFICACIONES CONCEDIDOS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=75 THEN 'OTROS INGRESOS DE GESTION'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=77 THEN 'INGRESOS FINANCIEROS' END) as nombreCuenta,@anio as anio,
+        (case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  
+        sum(isnull(ct.montopagado,0)-(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))) as valoSoles,
+        pre.presupuestoprog
+        from MT_CtasxCobrar ct 
+        inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg 
+        inner join MT_Concepto c on c.cuentah=772211
+        inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+        inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+        left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+        where  ct.anio=@anio and  pl.cuenta in
+        <foreach item="item" index="index" collection="listCc" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and uni.unineg=@uniNeg
+        and CONVERT(DATE,ct.fechapago)<![CDATA[  >= ]]>@fechaIni and CONVERT(DATE,ct.fechapago)<![CDATA[  <= ]]>@fechaFin AND PL.cuenta LIKE'7%'
+        group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+        select DISTINCT unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+        (SELECT SUM( isnull(l2.presupuestoProgramado,0)) FROM @listaPresupuesto  l2  where 
+        substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2))  as presupuestoProgramado,
+        (SELECT SUM(valoSoles) FROM @listaPresupuesto  l2  where 
+        substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2))  as presupuestoEje,	
+        ((SELECT SUM( isnull(l2.presupuestoProgramado,0)) FROM @listaPresupuesto  l2  where 
+        substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2))-(SELECT SUM(valoSoles) FROM @listaPresupuesto l2  
+        where substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2))) as saldo,
+        isnull(convert(decimal(12,2),( (((SELECT SUM(valoSoles) FROM @listaPresupuesto l2 
+        where substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2))*100)/
+        (SELECT SUM( l2.presupuestoProgramado) FROM @listaPresupuesto  l2  where 
+        substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2))))),0) as porcEje ,
+        isnull(convert(decimal(12,2),100-( ((SELECT SUM(valoSoles) FROM @listaPresupuesto l2  where 
+        substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2))*100)/
+        (SELECT SUM( l2.presupuestoProgramado) FROM @listaPresupuesto  l2  where 
+        substring(convert(varchar,l2.cuenta),1,2)=substring(convert(varchar,l.cuenta),1,2)))),0) as porcSaldo   
+        FROM @listaPresupuesto l 
+        
+        union all
+        select  
+        @unineg as uniNeg, 
+        substring(convert(varchar,pl.cuenta),1,2), 
+        (case when substring(convert(varchar,pl.cuenta),1,2)=70 then'VENTAS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=74 THEN 'DESCUENTOS, REBAJAS Y BONIFICACIONES CONCEDIDOS'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=75 THEN 'OTROS INGRESOS DE GESTION'
+        WHEN substring(convert(varchar,pl.cuenta),1,2)=77 THEN 'INGRESOS FINANCIEROS' END) as nombreCuenta, @anio as anio, 
+        'S' as monedaOrigen  
+        ,isnull(p.presupuestoprog,0) as presupuestoProgramado
+        , 0 as presupuestoEje,
+        ( sum(isnull(P.presupuestoprog,0))-0) as saldo,
+        0 as porcEje ,
+        100 as porcSaldo
+        from MG_Presupuesto p
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta 
+        where  tipocuenta='I'  
+        and p.anio=@anio and p.unineg=@uniNeg AND PL.cuenta LIKE'7%'
+        and  substring(convert(varchar,pl.cuenta),1,2) in(select substring(convert(varchar,pl.cuenta),1,2) from MT_PlanContable)
+        and substring(convert(varchar,pl.cuenta),1,2) not in (select substring(convert(varchar,pl.cuenta),1,2) from @listaPresupuesto lista 
+        where substring(convert(varchar,lista.cuenta),1,2) in(substring(convert(varchar,pl.cuenta),1,2)) )
+        group by substring(convert(varchar,pl.cuenta),1,2),p.idpresupuesto,pl.nombre,p.creafecha,p.presupuestoprog
+
+        order by l.cuenta asc
+    </select>      
+    
+    <select id="SP_obtenerDetalleGastosCrCuentaList" resultMap="detPresupuestoResultado" parameterType="map" >            
+        declare @unineg varchar(6) ,@anio int
+        set @anio=#{presupuesto.anio}
+        set @unineg=#{presupuesto.unidadNegocioBean.uniNeg}
+        declare @idtiposolarendir int
+        declare @idtiposolcontrapago int 
+        declare @idtiposolgeneral int
+        declare @fechaini date
+        declare @fechafin date
+        set @idtiposolarendir=(select idtiposolicitud from MM_TipoSolicitud where nombre='A rendir')
+        set @idtiposolgeneral=(select idtiposolicitud from MM_TipoSolicitud where nombre='General')
+        set @idtiposolcontrapago=(select idtiposolicitud from MM_TipoSolicitud where nombre='Contra Pago') 
+        set @fechaini = <if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),#{anio}))))</if>
+        set @fechafin = <if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if>
+ 
+ 
+        declare @listaPresupuesto as table(id integer,unineg char(6),cr Integer,nombreCr varchar(100),cuenta integer,nombreCuenta varchar(100),
+        anio integer,ambito varchar(500),fecha datetime,proveedor varchar(100),motivo varchar(500),nroDoc varchar(50),monedaOrigen varchar(1),
+        valoSoles money,codigo integer,crCuenta varchar(25),presupuestoProgramado money) 
+        insert into @listaPresupuesto(id,unineg,cr,nombreCr,cuenta,nombreCuenta,anio,ambito,fecha,proveedor,motivo,nroDoc,monedaOrigen,
+        valoSoles,codigo,crCuenta,presupuestoProgramado)
+
+        select   row_number() over (PARTITION BY  cr.cr,pc.cuenta order by cr.cr,pc.cuenta,
+        (case 
+        when doc.idsolicitudcajach	is not null then  DOC.creafecha 
+        when ch.idsolicitudcajach is not null	 then  CH.creafecha 
+        when cajach.idsolicitudcajach is not null then  cajach.fecpago 
+        when docLog.idcompra		is not null then  docLog.creafecha 
+        end) ) as id,@unineg as uniNeg, cr.cr ,cr.nombre as nombreCr,pc.cuenta ,pc.nombre as nombreCuenta,
+        (case 
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))   
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha))   
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha))  
+        when docLog.idcompra			is not null then (YEAR(docLog.creafecha))	 
+        else 0
+        end) AS anio,
+        (case 
+        when doc.idsolicitudcajach	is not null then 'GENERAL'
+        when ch.idsolicitudcajach is not null then 'A RENDIR'
+        when cajach.idsolicitudcajach is not null then 'SOL. CAJA CHICA'
+        when docLog.idcompra		is not null then 'LOGISTICA'
+        else 'X'
+        end)  AS ambito,
+        (case 
+        when doc.idsolicitudcajach	is not null then CONVERT(VARCHAR,DOC.creafecha,103)
+        when ch.idsolicitudcajach is not null	 then CONVERT(VARCHAR,CH.creafecha,103)
+        when cajach.idsolicitudcajach is not null then CONVERT(VARCHAR,cajach.fecpago,103)
+        when docLog.idcompra		is not null then CONVERT(VARCHAR,docLog.creafecha,103)
+        else 'X'
+        end) AS fecha,
+        (case 
+        when doc.idsolicitudcajach	is not null then SOL.nomrespcheque
+        when ch.idsolicitudcajach is not null	 then CH.proveedor
+        when cajach.idsolicitudcajach is not null then SOL.nomrespcheque
+        when docLog.idcompra		is not null then (SELECT TOP 1 isnull(nombre,'') FROM MO_ENTIDAD WHERE RUC=docLog.ruc AND unineg=@unineg)
+        else 'X'
+        end) AS proveedor,
+        (case 
+        when doc.idsolicitudcajach	is not null then  doc.glosa
+        when ch.idsolicitudcajach is not null	 then sol.motivo
+        when cajach.idsolicitudcajach is not null then  cajach.motivo
+        when docLog.idcompra		is not null then f.glosa
+        else ''
+        end) as motivo,
+        substring(isnull(tip.codigo,''),1,1)+'/'+
+        (case 
+        when doc.idsolicitudcajach	is not null then isnull(convert(varchar,doc.serie),'')+'-'+isnull(convert(varchar,doc.nrodocref),'')
+        when ch.idsolicitudcajach is not null	 then isnull(convert(varchar,doc.nrodocegreso),'')
+        when cajach.idsolicitudcajach is not null then isnull(convert(varchar,sol.obs),'')
+        when docLog.idcompra		is not null then isnull(convert(varchar,f.seriedoc),'')+'-'+isnull(convert(varchar,f.nrodoc),'')
+        else ''
+        end) AS nroDoc,
+        substring(cod.codigo,1,1) as monedaOrigen, 
+        ROUND(
+        convert(money,((	
+        (
+        case	 
+        when (case when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach	is not null then  isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra		is not null then isnull(docLog.idtipomoneda,14901)	 
+        else 0
+        end)  =14901 then 
+        (case 
+        when ch.idsolicitudcajach     is not null then isnull(asi.monto,0)+isnull(doc.valorDetraccion,0)
+        when cajach.idsolicitudcajach is not null then isnull(solcrCP.valor,0) +isnull(doc.valorDetraccion,0)
+        when doc.idsolicitudcajach	is not null then isnull(solcrdoc.valor,0) +isnull(doc.valorDetraccion,0)
+        when docLog.idcompra		is not null then isnull(fact.valor,0)	  +isnull(doc.valorDetraccion,0)
+        else 0
+        end)   
+        when (case  when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach  is not null then isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra	  is not null then isnull(docLog.idtipomoneda,14901)	 
+        else 0
+        end)=14902 then 
+        (case 
+        when ch.idsolicitudcajach is not null then ((isnull(asi.monto,0) * isnull(doc.tc,3))+isnull(doc.valorDetraccion,0))
+        when cajach.idsolicitudcajach is not null then (isnull(solcrCP.valor,0) *  ISNULL(asiMov.TC,3)) +isnull(doc.valorDetraccion,0)
+        when doc.idsolicitudcajach is not null then ((isnull(solcrdoc.valor,0)   * isnull(doc.tc,3))+isnull(doc.valorDetraccion,0))
+        when docLog.idcompra		is not null then (isnull(fact.valor,0) * isnull(docLog.tc,3)) +isnull(doc.valorDetraccion,0)
+        else 0
+        end)
+         
+        else 0 
+        end
+        )
+        )		
+        )		
+        ), 2
+        ) as valorSoles,
+        (case 
+        when doc.idsolicitudcajach	is not null then  doc.idsolicitudcajach
+        when ch.idsolicitudcajach is not null	 then ch.idsolicitudcajach
+        when cajach.idsolicitudcajach is not null then  cajach.idsolicitudcajach
+        when docLog.idcompra		is not null then f.idfacturacompra
+        else ''
+        end) as codigo,
+        convert(varchar,concat(cr.cr,'-',pc.cuenta,'-',(case 
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))   
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha))   
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha))  
+        when docLog.idcompra			is not null then (YEAR(docLog.creafecha))	 
+        else 0
+        end) )) as crCuenta
+        , pre.presupuestoprog
+        from MT_SolicitudCajaCh     sol 
+        
+        LEFT join MT_DocEgreso doc on doc.idsolicitudcajach=sol.idsolicitudcajach and doc.unineg=sol.unineg  and doc.flganulado is  null AND SOL.idtiposolicitud=@idtiposolgeneral 
+        left join MT_DetSolicitudCajaChCR solcrdoc on doc.idsolicitudCajach=solcrdoc.idsolicitudcajach  and sol.idtiposolicitud=@idtiposolgeneral
+       
+        left join MT_cajachicaliquidacion ch on ch.idsolicitudcajach=sol.idsolicitudcajach and ch.unineg=sol.unineg
+        left join MT_Asiento asi on  asi.objeto='MT_CajaChicaLiquidacion' and asi.idobjeto=ch.idcajachicaliquidacion and isnull(asi.status,1)!=0 
+       
+        left join MT_CajaChicaMov cajach on cajach.idsolicitudcajach=sol.idsolicitudcajach and sol.unineg=cajach.unineg  
+        left join MT_DetSolicitudCajaChCR solcrCP on solcrCP.idsolicitudCajach=cajach.idsolicitudcajach  and cajach.idtiposolicitud IN (@idtiposolarendir,@idtiposolcontrapago) 
+        left join MT_Asiento asiMov on  asiMov.objeto='MT_CajaChicaMov' and asiMov.idobjeto=cajach.idcajachicamov and isnull(asiMov.status,1)!=0  and solcrCP.cr=asiMov.cr 
+       
+        left join ML_FacturaCompra f on f.idfacturacompra=doc.idcompra
+        LEFT join MT_DocEgreso docLog on docLog.idcompra =f.idfacturacompra and docLog.unineg=@unineg
+        LEFT join ML_CuentaFact fact on fact.idfacturacompra=docLog.idcompra and fact.unineg=docLog.unineg
+        
+        inner join MT_CentroResponsabilidad cr  on (case when ch.idsolicitudcajach is not null then asi.cr		    when cajach.idsolicitudcajach is not null then solcrCP.cr        when doc.idsolicitudcajach is not null then solcrdoc.cr	     when docLog.idcompra is not null then fact.cr          	else 0  end) =cr.cr
+        inner join MT_Concepto              con on (case when ch.idsolicitudcajach is not null then ch.idconcepto   when cajach.idsolicitudcajach is not null then sol.idconcepto    when doc.idsolicitudcajach is not null then sol.idconcepto   when docLog.idcompra is not null then fact.idconcepto  	else 0  end) =con.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta=con.cuentad 
+        left join MG_Presupuesto pre on pre.cr=cr.cr and pre.unineg=@unineg and pre.anio=@anio and pre.cuenta=pc.cuenta
+        
+        left join MO_Codigo cod on cod.idcodigo= (case 
+        when doc.idsolicitudcajach	is not null then doc.idtipomoneda
+        when ch.idsolicitudcajach is not null then asi.idtipomoneda
+        when cajach.idsolicitudcajach is not null then cajach.idtipomoneda
+        when docLog.idcompra		is not null then f.idtipomoneda
+        else 'X'
+        end)
+        left join MO_Codigo tip on tip.idcodigo= (case 
+        when doc.idsolicitudcajach	is not null then doc.idtipodoc
+        when ch.idsolicitudcajach is not null then ch.idtipodoc
+        when cajach.idsolicitudcajach is not null then null
+        when docLog.idcompra		is not null then (select r.idtipodoc from ML_RegistroCompra r where r.idregistrocompra=f.idregistrocompra and r.unineg=@unineg)
+        else 'X'
+        end)
+        where (case when sol.idsolicitudcajach is not null then ISNULL(sol.montoaprobado,0) when docLog.idcompra is not null then f.montopago end)<![CDATA[  > ]]>0   and  (case when ch.idsolicitudcajach is not null then ch.idsolicitudcajach   when cajach.idsolicitudcajach is not null then cajach.idsolicitudcajach      when doc.idsolicitudcajach is not null then doc.idsolicitudcajach   when docLog.idcompra is not null then docLog.idcompra else null end) is not null
+        and (case 
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha)  
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago) 
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)  
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha) 
+        else null end)<![CDATA[  >= ]]>@fechaini
+        and (case 
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha)  
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago) 
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)  
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha)  
+        else null end)<![CDATA[  <= ]]>@fechafin
+        and (case 
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))   
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha)) 
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha)) 
+        when docLog.idcompra is not null then (YEAR(docLog.creafecha))	 
+        else 0
+        end)=@anio
+        <if test="listCr != null" >
+            <if test="flg == 1" >
+                and cr.cr in 
+            </if>
+            <if test="flg == 2" >
+                and cr.cr not in 
+            </if>            
+            <foreach item="item" index="index" collection="listCr" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach> 
+        </if>
+        <if test="listCc != null" >
+            <if test="flg2 == 1" >
+                and pc.cuenta in 
+            </if>
+            <if test="flg2 == 2" >
+                and pc.cuenta not in 
+            </if>
+            <foreach item="item" index="index" collection="listCc" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and pc.cuenta in (Select  pla.cuenta From MT_PlanContable pla    where  (pla.cuenta like '6%' AND cuenta not like  '61%') or pla.cuenta like '33%') 
+        <if test="flg3 == 3" >
+            and isnull(pre.presupuestoprog,0)=0
+        </if>
+        
+        <!-- NEW PLANILLA-->
+        union all 
+        select  row_number() over (PARTITION BY  c.cr,p.cuenta order by c.cr,p.cuenta,pla.idplanilla) as id,
+        @unineg as uniNeg,
+        c.cr as cr,
+        c.nombre as nombreCr, p.cuenta, p.nombre as nombreCuenta, @anio as anio,
+        (case when objeto='mo_planilla' then 'PLANILLA' 
+        when  objeto='mo_planillacts' then 'CTS' 
+        end)as ambito, convert(varchar(20),fechaope,103) as fecha,
+        CONCAT(PER.APEPAT,' '+PER.APEMAT,', '+PER.NOMBRE) as proveedor, 
+        (case when objeto='mo_planilla' then
+        CONCAT('PAGO DEL MES DE',' '+(CASE WHEN A.MES=1 THEN 'ENERO' 
+        WHEN A.MES=2 THEN 'FEBRERO'
+        WHEN A.MES=3 THEN 'MARZO'
+        WHEN A.MES=4 THEN 'ABRIL'
+        WHEN A.MES=5 THEN 'MAYO'
+        WHEN A.MES=6 THEN 'JUNIO'
+        WHEN A.MES=7 THEN 'JULIO'
+        WHEN A.MES=8 THEN 'AGOSTO'
+        WHEN A.MES=9 THEN 'SETIEMBRE'
+        WHEN A.MES=10 THEN 'OCTUBRE'
+        WHEN A.MES=11 THEN 'NOVIEMBRE'
+        WHEN A.MES=12 THEN 'DICIEMBRE' 
+        WHEN A.MES=13 THEN 'GRATI JULIO'
+        WHEN A.MES=14 THEN 'GRATI DICIEMBRE' END))
+        when  objeto='mo_planillacts' then		
+        CONCAT('PAGO CTS DE',' '+(CASE WHEN A.MES=5 THEN 'MAYO' 
+        WHEN A.MES=11 THEN 'NOVIEMBRE' END)
+        )END)AS motivo,'-' AS nroDoc,'S' as monedaOrigen
+        , sum(a.monto) as valorsoles,pla.idplanilla as codigo, 
+        concat(convert(varchar(20),c.cr),'-'+convert(varchar(20),p.cuenta),'-'+convert(varchar(20),@anio)) as crCuenta
+        ,pre.presupuestoprog
+        from MT_Asiento a
+        inner join mt_centroresponsabilidad c on c.cr=a.cr
+        left join MT_PlanContable p on p.cuenta=a.cuentad
+        inner join MO_Planilla pla on pla.idplanilla=a.idobjeto
+        INNER JOIN MO_Personal PER ON PER.CODPER=PLA.CODIGO
+        left join MG_Presupuesto pre on pre.cr=c.cr and pre.unineg=@unineg and pre.anio=@anio and pre.cuenta=p.cuenta
+        WHERE OBJETO in('mo_planilla','mo_planillacts')
+        <if test="listCr != null" >
+            <if test="flg == 1" > 
+                AND A.CR IN
+            </if>
+            <if test="flg == 2" > 
+                AND A.CR NOT IN
+            </if>            
+            <foreach item="item" index="index" collection="listCr" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach> 
+        </if>
+        <if test="listCc != null" >
+            <if test="flg2 == 1" > 
+                AND A.CUENTAD IN
+            </if>
+            <if test="flg2 == 2" > 
+                AND A.CUENTAD NOT IN
+            </if>
+            <foreach item="item" index="index" collection="listCc" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+  
+        and a.fechaope<![CDATA[  >= ]]>@fechaini and fechaope<![CDATA[  <= ]]>@fechafin and a.anio=@anio  and a.unineg=@unineg
+        group by c.cr,c.nombre, p.cuenta, p.nombre,a.mes,fechaope,pla.idplanilla,a.monto ,PER.APEMAT,PER.APEPAT,PER.NOMBRE
+        ,pre.presupuestoprog,A.objeto
+       
+        <!-- modificar order by 
+        ,(case 
+        when doc.idsolicitudcajach	is not null then  DOC.creafecha 
+        when ch.idsolicitudcajach is not null	 then  CH.creafecha 
+        when cajach.idsolicitudcajach is not null then  cajach.fecpago 
+        when docLog.idcompra		is not null then  docLog.creafecha  
+        end) -->
+        
+        select id,unineg,cr,nombreCr,cuenta,nombreCuenta,anio,ambito,fecha,proveedor,motivo,nroDoc,monedaOrigen,
+        valoSoles as valorSoles,codigo,crCuenta ,isnull(l.presupuestoProgramado,0) as presupuestoProgramado
+        ,(SELECT SUM(valoSoles) FROM @listaPresupuesto  l2  where l2.cr=l.cr and l2.cuenta=l.cuenta)  as presupuestoEje,
+        (isnull(l.presupuestoProgramado,0)-(SELECT SUM(valoSoles) FROM @listaPresupuesto l2  where l2.cr=l.cr and l2.cuenta=l.cuenta)) as saldo,
+        convert(decimal(12,2),( (((SELECT SUM(valoSoles) FROM @listaPresupuesto l2  where l2.cr=l.cr and l2.cuenta=l.cuenta )*100)/l.presupuestoProgramado))) as porcEje ,
+        convert(decimal(12,2),100-( ((SELECT SUM(valoSoles) FROM @listaPresupuesto l2  where l2.cr=l.cr and l2.cuenta=l.cuenta)*100)/l.presupuestoProgramado)) as porcSaldo   
+        FROM @listaPresupuesto l 
+        
+        <!--PRESUPUESTO NO EJECUTADO PERO SI PROGRAMADO-->
+        union all
+        select  row_number() over (PARTITION BY  cr.cr,pl.cuenta order by cr.cr,pl.cuenta,p.idpresupuesto) as id,
+        @unineg as uniNeg,
+        cr.cr as cr,
+        cr.nombre as nombreCr, pl.cuenta, pl.nombre as nombreCuenta, @anio as anio,
+        'PRESUPUESTO' as ambito, convert(varchar(20),p.creafecha,103) as fecha,
+        '-' as proveedor, 'GASTOS' as motivo,'-' AS nroDoc,'S' as monedaOrigen
+        <!--, sum(P.presupuestoprog) -->
+        , 0 as valorsoles,p.idpresupuesto as codigo, concat(cr.cr,'-'+pl.cuenta,'-'+@anio) as crCuenta
+        ,isnull(p.presupuestoprog,0) as presupuestoProgramado
+        , 0 as presupuestoEje,
+        ( sum(isnull(P.presupuestoprog,0))-0) as saldo,
+        0 as porcEje ,
+        100 as porcSaldo
+        from MG_Presupuesto p
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        WHERE 
+        <if test="listCr != null" >
+            <if test="flg == 1" > 
+                CR.CR IN
+            </if>
+            <if test="flg == 2" > 
+                CR.CR NOT IN
+            </if>            
+            <foreach item="item" index="index" collection="listCr" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach> 
+        </if>
+        <if test="listCc != null" >
+            <if test="flg2 == 1" > 
+                AND PL.CUENTA IN
+            </if>
+            <if test="flg2 == 2" > 
+                AND PL.CUENTA NOT IN
+            </if>
+            <foreach item="item" index="index" collection="listCc" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and P.anio=@anio  and P.unineg=@unineg
+        and pl.cuenta not in (select cuenta from @listaPresupuesto lista where lista.cr in(cr.cr) and lista.cuenta in(pl.cuenta) )
+        group by cr.cr,pl.cuenta,p.idpresupuesto,cr.nombre,pl.nombre,p.creafecha,p.presupuestoprog
+        
+        <if test="verpor == 1" >
+            order by 3,5
+        </if>
+        <if test="verpor == 2" >
+            order by 5,3 
+        </if>
+    </select> 
+      
+    <select id="obtenerTituloDetalle" resultType="pe.marista.sigma.bean.reporte.PresupuestoDetalleRepBean" parameterType="map" >      
+        declare @anio int , @unineg varchar(6)
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        declare @totalpres varchar(20)=(select  convert(varchar,cast(sum(p.presupuestoprog)as money),1)      
+        from MG_Presupuesto p 
+        inner join MO_UnidadNegocio n on n.unineg=p.unineg
+        where anio=@anio and n.unineg=@unineg )  
+        
+        select n.nombreUniNeg as nombreUniNeg,convert(int,substring(convert(varchar,p.cuenta),1,2)) as cuenta, convert(varchar,cast(sum(p.presupuestoprog)as money),1) as presupuestoProg,        
+        @totalpres as totalPresupuestado
+        from MG_Presupuesto p 
+        inner join MO_UnidadNegocio n on n.unineg=p.unineg
+        where anio=@anio and n.unineg=@unineg
+        group by substring(convert(varchar,p.cuenta),1,2) , n.nombreUniNeg
+    </select>
+    <select id="obtenerEjecutado" resultType="pe.marista.sigma.bean.reporte.PresupuestoDetalleRepBean" parameterType="map" >       
+        declare @anio int, @cuenta int , @unineg varchar(6)
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        set @cuenta=#{cuenta}
+        declare @montoXCuentaEje decimal(20,2) = (select(  
+        (select isnull(sum(montoaprobado),0.00) from MT_SolicitudCajaCh s
+        inner join MT_Concepto c on c.idconcepto = s.idconcepto
+        inner join MO_Codigo co on co.idcodigo=s.idtipostatussolcajach
+        inner join MO_UnidadNegocio un on un.unineg=s.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(s.creafecha)=@anio
+        and co.codigo='PAGADO' and un.unineg=@unineg)
+        +
+        (select isnull(sum(f.montopago),0.00) from ML_CuentaFact c
+        inner join MT_Concepto con on con.idconcepto=c.idconcepto
+        inner join ML_FacturaCompra f on f.idfacturacompra=c.idfacturacompra
+        inner join MO_Codigo cod on cod.idcodigo=f.idtipostatusfactura
+        inner join MO_UnidadNegocio un on un.unineg=f.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(f.creafecha)=@anio
+        and cod.codigo='PAGADA' and un.unineg=@unineg
+        )
+        +(select isnull(sum(A.monto),0.00) from MT_Asiento a 
+        inner join MO_UnidadNegocio un on un.unineg=a.unineg
+        where year(a.creafecha)=@anio and un.unineg=@unineg and
+        substring(convert(varchar,a.cuentad),1,2)= @cuenta and objeto in('mo_planilla','mo_planillacts')
+        )
+        ))
+        SELECT convert(varchar,cast((@montoXCuentaEje) as money),1) as montoUtilizado,
+        @montoXCuentaEje as montoUtilizadoAyuda
+    </select>
+    <select id="obtenerPorcentaje" resultType="pe.marista.sigma.bean.reporte.PresupuestoDetalleRepBean" parameterType="map" >       
+        declare @anio int, @cuenta int , @unineg varchar(6)
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        set @cuenta=#{cuenta}
+    
+        declare @montoXCuentaEje decimal(20,2) = (select(  
+        (select isnull(sum(montoaprobado),0.00) from MT_SolicitudCajaCh s
+        inner join MT_Concepto c on c.idconcepto = s.idconcepto
+        inner join MO_Codigo co on co.idcodigo=s.idtipostatussolcajach
+        inner join MO_UnidadNegocio un on un.unineg=s.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(s.creafecha)=@anio
+        and co.codigo='PAGADO' and un.unineg=@unineg)
+        +
+        (select isnull(sum(f.montopago),0.00) from ML_CuentaFact c
+        inner join MT_Concepto con on con.idconcepto=c.idconcepto
+        inner join ML_FacturaCompra f on f.idfacturacompra=c.idfacturacompra
+        inner join MO_Codigo cod on cod.idcodigo=f.idtipostatusfactura
+        inner join MO_UnidadNegocio un on un.unineg=f.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(f.creafecha)=@anio
+        and cod.codigo='PAGADA' and un.unineg=@unineg
+        )
+        +(select isnull(sum(A.monto),0.00) from MT_Asiento a 
+        inner join MO_UnidadNegocio un on un.unineg=a.unineg
+        where year(a.creafecha)=@anio and un.unineg=@unineg and
+        substring(convert(varchar,a.cuentad),1,2)= @cuenta and objeto in('mo_planilla','mo_planillacts')
+        )
+        ))
+
+        declare @montoTotalEjecutado decimal(20,2) = (select(  
+        (select isnull(sum(montoaprobado),0.00) from MT_SolicitudCajaCh s
+        inner join MT_Concepto c on c.idconcepto = s.idconcepto
+        inner join MO_Codigo co on co.idcodigo=s.idtipostatussolcajach
+        inner join MO_UnidadNegocio un on un.unineg=s.unineg
+        where substring(convert(varchar,c.cuentad),1,2) in (select distinct substring(convert(varchar,p.cuenta),1,2) as cuenta
+        from MG_Presupuesto p ) and year(s.creafecha)=@anio and co.codigo='PAGADO' and un.unineg=@unineg)
+        +
+        (select isnull(sum(f.montopago),0.00) from ML_CuentaFact c
+        inner join MT_Concepto con on con.idconcepto=c.idconcepto
+        inner join ML_FacturaCompra f on f.idfacturacompra=c.idfacturacompra
+        inner join MO_Codigo cod on cod.idcodigo=f.idtipostatusfactura
+        inner join MO_UnidadNegocio un on un.unineg=f.unineg
+        where substring(convert(varchar,c.cuentad),1,2) in (select distinct substring(convert(varchar,p.cuenta),1,2) as cuenta
+        from MG_Presupuesto p ) and year(f.creafecha)=@anio and cod.codigo='PAGADA' and un.unineg=@unineg
+        )
+        +(select isnull(sum(A.monto),0.00) from MT_Asiento a 
+        inner join MO_UnidadNegocio un on un.unineg=a.unineg
+        where year(a.creafecha)=@anio and un.unineg=@unineg and
+        substring(convert(varchar,a.cuentad),1,2)= @cuenta and objeto in('mo_planilla','mo_planillacts')
+        )
+        ))
+ 
+        select onvert(varchar,cast(((@montoXCuentaEje/(@montoXCuentaEje-@presupuestoXCuenta))*100) as money),1)  as porcentajeEjecutado
+    </select>
+    <select id="obtenerUtilizado" resultType="pe.marista.sigma.bean.reporte.PresupuestoDetalleRepBean" parameterType="map" >       
+        declare @anio int, @cuenta int , @unineg varchar(6)
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        set @cuenta=#{cuenta}
+         
+        declare @montoXCuentaEje decimal(20,2) = (select(  
+        (select isnull(sum(montoaprobado),0.00) from MT_SolicitudCajaCh s
+        inner join MT_Concepto c on c.idconcepto = s.idconcepto
+        inner join MO_Codigo co on co.idcodigo=s.idtipostatussolcajach
+        inner join MO_UnidadNegocio un on un.unineg=s.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(s.creafecha)=@anio
+        and co.codigo='PAGADO' and un.unineg=@unineg)
+        +
+        (select isnull(sum(f.montopago),0.00) from ML_CuentaFact c
+        inner join MT_Concepto con on con.idconcepto=c.idconcepto
+        inner join ML_FacturaCompra f on f.idfacturacompra=c.idfacturacompra
+        inner join MO_Codigo cod on cod.idcodigo=f.idtipostatusfactura
+        inner join MO_UnidadNegocio un on un.unineg=f.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(f.creafecha)=@anio
+        and cod.codigo='PAGADA' and un.unineg=@unineg
+        )
+        +(select isnull(sum(A.monto),0.00) from MT_Asiento a 
+        inner join MO_UnidadNegocio un on un.unineg=a.unineg
+        where year(a.creafecha)=@anio and un.unineg=@unineg and
+        substring(convert(varchar,a.cuentad),1,2)= @cuenta and objeto in('mo_planilla','mo_planillacts')
+        )
+        ))
+        declare @presupuestoXCuenta decimal(20,2) = (select isnull(sum(p.presupuestoprog),0.00) from MG_Presupuesto p 
+        inner join MO_UnidadNegocio un on un.unineg=p.unineg
+        where anio=@anio and substring(convert(varchar,p.cuenta),1,2)=@cuenta and un.unineg=@unineg
+        group by substring(convert(varchar,p.cuenta),1,2))
+
+        select convert(varchar,cast((@presupuestoXCuenta-@montoXCuentaEje) as money),1) as presupuestoUtilizado,
+        @presupuestoXCuenta-@montoXCuentaEje as montoUtilizadoAyuda
+    </select>
+    <select id="obtenerDisponible" resultType="pe.marista.sigma.bean.reporte.PresupuestoDetalleRepBean" parameterType="map" >       
+        declare @anio int, @cuenta int , @unineg varchar(6)
+        set @anio=#{anio}
+        set @unineg=#{uniNeg}
+        set @cuenta=#{cuenta} 
+         
+        declare @montoXCuentaEje decimal(20,2) = (select(  
+        (select isnull(sum(montoaprobado),0.00) from MT_SolicitudCajaCh s
+        inner join MT_Concepto c on c.idconcepto = s.idconcepto
+        inner join MO_Codigo co on co.idcodigo=s.idtipostatussolcajach
+        inner join MO_UnidadNegocio un on un.unineg=s.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(s.creafecha)=@anio
+        and co.codigo='PAGADO' and un.unineg=@unineg)
+        +
+        (select isnull(sum(f.montopago),0.00) from ML_CuentaFact c
+        inner join MT_Concepto con on con.idconcepto=c.idconcepto
+        inner join ML_FacturaCompra f on f.idfacturacompra=c.idfacturacompra
+        inner join MO_Codigo cod on cod.idcodigo=f.idtipostatusfactura
+        inner join MO_UnidadNegocio un on un.unineg=f.unineg
+        where substring(convert(varchar,c.cuentad),1,2)= @cuenta and year(f.creafecha)=@anio
+        and cod.codigo='PAGADA' and un.unineg=@unineg
+        )
+        +(select isnull(sum(A.monto),0.00) from MT_Asiento a 
+        inner join MO_UnidadNegocio un on un.unineg=a.unineg
+        where year(a.creafecha)=@anio and un.unineg=@unineg and
+        substring(convert(varchar,a.cuentad),1,2)= @cuenta and objeto in('mo_planilla','mo_planillacts')
+        )
+        ))
+        declare @presupuestoXCuenta decimal(20,2) = (select isnull(sum(p.presupuestoprog),0.00) from MG_Presupuesto p 
+        inner join MO_UnidadNegocio un on un.unineg=p.unineg
+        where anio=@anio and substring(convert(varchar,p.cuenta),1,2)=@cuenta and un.unineg=@unineg
+        group by substring(convert(varchar,p.cuenta),1,2))
+ 
+        select  convert(varchar,cast((((@presupuestoXCuenta-@montoXCuentaEje)/@presupuestoXCuenta)*100)	 as money),1)   as presupuestoDisponible 
+    </select>
+    <select id="SP_obtenerConsolidado" resultMap="detPresupuestoResultado" parameterType="map" >    
+        declare @unineg varchar(6) ,@anio int,@idtipomoneda int,@tipoCuenta varchar(1) 
+        set @anio=#{presupuesto.anio}
+        set @unineg=#{presupuesto.unidadNegocioBean.uniNeg}
+        set @tipoCuenta='E'
+        set @idtipomoneda=14901
+        declare @idtiposolarendir int
+        declare @idtiposolcontrapago int 
+        declare @idtiposolgeneral int
+        declare @fechaini date
+        declare @fechafin date
+        set @idtiposolarendir=(select idtiposolicitud from MM_TipoSolicitud where nombre='A rendir')
+        set @idtiposolgeneral=(select idtiposolicitud from MM_TipoSolicitud where nombre='General')
+        set @idtiposolcontrapago=(select idtiposolicitud from MM_TipoSolicitud where nombre='Contra Pago') 
+        set @fechaini = <if test="fechaIni != null" >#{fechaIni}</if>
+        <if test="fechaIni == null" >(select convert(date,(select '01-01-'+convert(varchar(4),#{anio}))))</if>
+        set @fechafin = <if test="fechaFin != null" >#{fechaFin}</if>
+        <if test="fechaFin == null" >getdate()</if>
+        declare @listaPresupuesto as table(nombreUniNeg varchar(100),unineg char(6),anio integer,idTipoMoneda integer,
+        cuenta integer,presupuestoEje money)
+
+        insert into @listaPresupuesto(nombreUniNeg,unineg,anio,idTipoMoneda,cuenta,presupuestoEje)
+        select     
+        uni.nombreUniNeg,
+        @unineg as uniNeg, 
+        @anio AS anio ,
+        @idtipomoneda as idtipomoneda, 
+        substring(convert(varchar,pc.cuenta),1,2),
+        SUM(ROUND(convert(money,(
+        (	
+        (case	 
+        when (
+        case
+        when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach	is not null then  isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra		is not null then isnull(docLog.idtipomoneda,14901)	 
+        else 0
+        end) = 14901 
+        then 
+        (case 
+        when ch.idsolicitudcajach     is not null then isnull(asi.monto,0) 
+        when cajach.idsolicitudcajach is not null then isnull(solcrCP.valor,0) 
+        when doc.idsolicitudcajach	is not null then isnull(solcrdoc.valor,0) 
+        when docLog.idcompra		is not null then isnull(fact.valor,0)	 
+        else 0
+        end)   
+        when (case  when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach  is not null then isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra	  is not null then isnull(docLog.idtipomoneda,14901)	 
+        else 0
+        end)= 14902 then 
+        (case 
+        when ch.idsolicitudcajach is not null then (isnull(asi.monto,0) * isnull(doc.tc,3))
+        when cajach.idsolicitudcajach is not null then isnull(solcrCP.valor,0) *  ISNULL(asiMov.TC,3)
+        when doc.idsolicitudcajach is not null then isnull(solcrdoc.valor,0)   * isnull(doc.tc,3)
+        when docLog.idcompra		is not null then isnull(fact.valor,0) * isnull(docLog.tc,3)	 
+        else 0
+        end) 
+        else 0 
+        end
+        )))),2)) AS presupuestoEje
+        from MT_SolicitudCajaCh     sol 
+        inner join MO_UnidadNegocio uni on uni.unineg=sol.unineg
+
+        LEFT join MT_DocEgreso doc on doc.idsolicitudcajach=sol.idsolicitudcajach and doc.unineg=sol.unineg  and doc.flganulado is  null AND SOL.idtiposolicitud=@idtiposolgeneral 
+        left join MT_DetSolicitudCajaChCR solcrdoc on doc.idsolicitudCajach=solcrdoc.idsolicitudcajach  and sol.idtiposolicitud=@idtiposolgeneral
+
+        left join MT_cajachicaliquidacion ch on ch.idsolicitudcajach=sol.idsolicitudcajach and ch.unineg=sol.unineg
+        left join MT_Asiento asi on  asi.objeto='MT_CajaChicaLiquidacion' and asi.idobjeto=ch.idcajachicaliquidacion and isnull(asi.status,1)!=0 
+
+        left join MT_CajaChicaMov cajach on cajach.idsolicitudcajach=sol.idsolicitudcajach and sol.unineg=cajach.unineg  
+        left join MT_DetSolicitudCajaChCR solcrCP on solcrCP.idsolicitudCajach=cajach.idsolicitudcajach  and cajach.idtiposolicitud IN (@idtiposolarendir,@idtiposolcontrapago)
+        left join MT_Asiento asiMov on  asiMov.objeto='MT_CajaChicaMov' and asiMov.idobjeto=cajach.idcajachicamov and isnull(asiMov.status,1)!=0 and solcrCP.cr=asiMov.cr
+
+
+        left join ML_FacturaCompra f on f.idfacturacompra=doc.idcompra
+        LEFT join MT_DocEgreso docLog on docLog.idcompra =f.idfacturacompra and docLog.unineg=@unineg
+        LEFT join ML_CuentaFact fact on fact.idfacturacompra=docLog.idcompra and fact.unineg=docLog.unineg
+
+        inner join MT_CentroResponsabilidad cr  on (case when ch.idsolicitudcajach is not null then asi.cr		  /*ASIENTO*/ when cajach.idsolicitudcajach is not null then solcrCP.cr     /*MOV*/ when doc.idsolicitudcajach is not null then solcrdoc.cr	   /*GENERAL*/ when docLog.idcompra is not null then fact.cr         /*LOG*/	else 0  end) =cr.cr
+        inner join MT_Concepto              con on (case when ch.idsolicitudcajach is not null then ch.idconcepto /*ASIENTO*/ when cajach.idsolicitudcajach is not null then sol.idconcepto /*MOV*/ when doc.idsolicitudcajach is not null then sol.idconcepto /*GENERAL*/ when docLog.idcompra is not null then fact.idconcepto /*LOG*/	else 0  end) =con.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta=con.cuentad 
+
+        left join MO_Codigo cod on cod.idcodigo= (case 
+        when doc.idsolicitudcajach	is not null then doc.idtipomoneda
+        when ch.idsolicitudcajach is not null then asi.idtipomoneda
+        when cajach.idsolicitudcajach is not null then cajach.idtipomoneda
+        when docLog.idcompra		is not null then f.idtipomoneda
+        else 'X'
+        end)
+        left join MO_Codigo tip on tip.idcodigo= (case 
+        when doc.idsolicitudcajach	is not null then doc.idtipodoc
+        when ch.idsolicitudcajach is not null then ch.idtipodoc
+        when cajach.idsolicitudcajach is not null then null
+        when docLog.idcompra		is not null then (select r.idtipodoc from ML_RegistroCompra r where r.idregistrocompra=f.idregistrocompra and r.unineg=@unineg)
+        else 'X'
+        end)
+        where (case when sol.idsolicitudcajach is not null then ISNULL(sol.montoaprobado,0) when docLog.idcompra is not null then f.montopago end)<![CDATA[ >  ]]>    0   and  (case when ch.idsolicitudcajach is not null then ch.idsolicitudcajach /*ASIENTO*/ when cajach.idsolicitudcajach is not null then cajach.idsolicitudcajach     /*MOV*/ when doc.idsolicitudcajach is not null then doc.idsolicitudcajach /*GENERAL*/ when docLog.idcompra is not null then docLog.idcompra /*LOG*/ else null end) is not null
+        and (case 
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha)   
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago) 
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)  
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha)  
+        else null end) <![CDATA[ >=  ]]>   @fechaini 
+        and (case 
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha) 
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago) 
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)  
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha)  
+        else null end) <![CDATA[  <= ]]>    @fechafin
+        and (case 
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))   
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha)) 
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha)) 
+        when docLog.idcompra is not null then (YEAR(docLog.creafecha))	 
+        else 0
+        end)=@anio 
+        and cr.cr in  (select cr from MT_CentroResponsabilidad)
+        and cuenta in (Select  pla.cuenta From MT_PlanContable pla    where  (pla.cuenta like '6%' AND cuenta not like  '61%') or pla.cuenta like '33%')
+        and substring(convert(varchar,pc.cuenta),1,2) in (select substring(convert(varchar, cuenta),1,2) from MT_PlanContable) 
+
+
+        GROUP BY cr.cr,cr.nombrE,pc.cuenta,pc.nombre, uni.nombreUniNeg,
+        (case 
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))   
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha)) 
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha)) 
+        when docLog.idcompra is not null then (YEAR(docLog.creafecha))	 
+        else 0
+        end)
+
+        union all
+        select distinct uni.nombreUniNeg,@unineg as uniNeg,
+        @anio AS anio , @idtipomoneda as idtipomoneda ,
+        substring(convert(varchar,P.cuenta),1,2) AS cuenta, sum(a.monto)
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=a.unineg
+        inner join mt_centroresponsabilidad c on c.cr=a.cr
+        left join MT_PlanContable p on p.cuenta=a.cuentad
+        where objeto in('mo_planilla','mo_planillacts') and a.fechaope  <![CDATA[  >= ]]>  @fechaini and fechaope <![CDATA[  <= ]]>   @fechafin and a.anio=@anio 
+        and a.unineg=@unineg
+
+        and a.cr in (select cr from MT_CentroResponsabilidad)
+
+        and substring(convert(varchar, a.cuentad),1,2) in (select substring(convert(varchar, cuenta),1,2) from MT_PlanContable) 
+
+        group by p.cuenta,p.nombre,uni.nombreUniNeg 
+
+
+        SELECT 
+        'DEL '+CONVERT(VARCHAR,@fechaini,103)+' AL '+CONVERT(VARCHAR,@fechafin,103) AS rangoFecha,
+        l.nombreUniNeg as nombreUniNeg, @unineg as uniNeg,@anio as anio,
+        @idtipomoneda as idipomoneda,substring(convert(varchar, l.cuenta),1,2) as cuenta,
+
+        (select sum(l2.presupuestoEje) FROM @listaPresupuesto l2 
+        LEFT JOIN MG_Presupuesto P2 ON P2.cuenta=l2.cuenta AND P2.unineg=l2.uniNeg AND P2.anio=l2.anio
+        where substring(convert(varchar, l2.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2)) as presupuestoEje, 
+
+        (select isnull(convert(decimal(12,2),sum(ISNULL(P1.presupuestoprog,0))),'0.00') from  MG_Presupuesto p1
+        where substring(convert(varchar, p1.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2) 
+        AND P1.unineg=@unineg AND P1.anio=@anio) AS presupuestoProgramado ,   
+
+        (select(CASE WHEN sum(ISNULL(P3.presupuestoProg,0)) <![CDATA[  > ]]>   0 THEN 
+        isnull(convert(decimal(12,2),( (
+        ((select sum(l2.presupuestoEje) FROM @listaPresupuesto l2 
+        LEFT JOIN MG_Presupuesto P2 ON P2.cuenta=l2.cuenta AND P2.unineg=l2.uniNeg AND P2.anio=l2.anio
+        where substring(convert(varchar, l2.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2))*100) /
+        (select convert(decimal(12,2),sum(ISNULL(P1.presupuestoprog,0))) from  MG_Presupuesto p1 
+        where substring(convert(varchar, p1.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2) AND P1.unineg=@unineg AND P1.anio=@anio)
+        ))),'0.00') ELSE 0 END) 
+        FROM @listaPresupuesto l3
+        LEFT JOIN MG_Presupuesto P3 ON substring(convert(varchar, p3.cuenta),1,2)=substring(convert(varchar, l3.cuenta),1,2) 
+        AND P3.unineg=l3.uniNeg AND P3.anio=l3.anio)as porcEje , 
+
+        isnull(convert(decimal(12,2),(((select isnull(convert(decimal(12,2),sum(ISNULL(P1.presupuestoprog,0))),'0.00') from  MG_Presupuesto p1 where
+        substring(convert(varchar, p1.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2) AND P1.unineg=@unineg AND P1.anio=@anio
+        )) - ((select sum(l2.presupuestoEje) FROM @listaPresupuesto l2 
+        LEFT JOIN MG_Presupuesto P2 ON P2.cuenta=l2.cuenta AND P2.unineg=l2.uniNeg AND P2.anio=l2.anio
+        where  substring(convert(varchar, l2.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2))))),'0.00') as saldo,
+
+        (select(CASE WHEN sum(ISNULL(P3.presupuestoProg,0)) <![CDATA[  > ]]>   0 THEN 
+        isnull(convert(decimal(12,2),100-( (((select sum(l2.presupuestoEje) FROM @listaPresupuesto l2 
+        LEFT JOIN MG_Presupuesto P2 ON P2.cuenta=l2.cuenta AND P2.unineg=l2.uniNeg AND P2.anio=l2.anio
+        where substring(convert(varchar, l2.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2))*100)/
+        (select convert(decimal(12,2),sum(ISNULL(P1.presupuestoprog,0))) from  MG_Presupuesto p1 where
+        substring(convert(varchar, p1.cuenta),1,2)=substring(convert(varchar, l.cuenta),1,2) AND P1.unineg=@unineg AND P1.anio=@anio
+        )))),'0.00') ELSE 0 END) 
+        FROM @listaPresupuesto l3
+        LEFT JOIN MG_Presupuesto P3 ON substring(convert(varchar, p3.cuenta),1,2)=substring(convert(varchar, l3.cuenta),1,2) 
+        AND P3.unineg=l3.uniNeg AND P3.anio=l3.anio)  as porcSaldo
+
+        FROM @listaPresupuesto l 
+        LEFT JOIN MG_Presupuesto P ON P.cuenta=l.cuenta AND P.unineg=l.uniNeg AND P.anio=l.anio
+        group by l.cuenta  ,l.nombreUniNeg
+
+        union all  
+        SELECT distinct 
+        'DEL '+CONVERT(VARCHAR,@fechaini,103)+' AL '+CONVERT(VARCHAR,@fechafin,103) AS rangoFecha,
+        uni.nombreUniNeg,
+        @unineg as uniNeg,@anio as anio,
+        @idtipomoneda as idipomoneda,substring(convert(varchar,PL.cuenta),1,2) as cuenta ,0 as presupuestoEje,
+        (select isnull(convert(decimal(12,2),ISNULL(sum(P1.presupuestoprog),0)),'0.00') from MG_Presupuesto p1 where substring(convert(varchar, p1.cuenta),1,2)=substring(convert(varchar, p.cuenta),1,2) 
+        and p1.anio=@anio )AS presupuestoProg,
+        0 as porcEje,
+        (select isnull(convert(decimal(12,2),(ISNULL(sum(P2.presupuestoProg),0))),'0.00') from MG_Presupuesto p2 where substring(convert(varchar, p2.cuenta),1,2)=substring(convert(varchar, p.cuenta),1,2)
+        and p2.anio=@anio) as saldo,
+        100 as porcSaldo 
+        FROM MG_Presupuesto p 
+        inner join MO_UnidadNegocio uni on uni.unineg=p.unineg
+        inner join MT_CentroResponsabilidad cr on cr.cr=p.cr
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta
+        where anio=@anio 
+
+        and pl.cuenta not in (select cuenta from @listaPresupuesto lista where lista.cuenta in(pl.cuenta) )
+        and CR.cr in (select cr from MT_CentroResponsabilidad)
+
+        and substring(convert(varchar,PL.cuenta),1,2) not in( select substring(convert(varchar,cuenta),1,2) from @listaPresupuesto)
+    </select> 
+</mapper>

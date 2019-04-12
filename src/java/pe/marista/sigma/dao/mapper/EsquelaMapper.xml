@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.EsquelaDAO"> 
+    <sql id="consultaCampos">
+        SELECT 
+        e.idesquela
+        ,e.unineg
+        ,e.iddestino
+        ,e.nombredestino
+        ,e.tipodestino
+        ,e.titulo
+        ,e.mensaje
+        ,e.idtipoesquela
+        ,e.mes
+        ,e.flgEnvioApo
+        ,isnull(e.tipoaccion,0) as tipoaccion
+        ,case e.mes
+        WHEN 1 THEN 'Enero'
+        WHEN 2 THEN 'Febrero'
+        WHEN 3 THEN 'Marzo'
+        WHEN 4 THEN 'Abril'
+        WHEN 5 THEN 'Mayo'
+        WHEN 6 THEN 'Junio'
+        WHEN 7 THEN 'Julio'
+        WHEN 8 THEN 'Agosto'
+        WHEN 9 THEN 'Setiembre'
+        WHEN 10 THEN 'Octubre'
+        WHEN 11 THEN 'Noviembre'
+        WHEN 12 THEN 'Diciembre'
+        end as datoMes
+        ,(case
+            when e.flgenvioapo = 1 then 'Destino Padre'
+            when e.flgenviopapa = 1 then 'Destino Madre'
+            when e.flgenviomama = 1 then 'Destino Apoderado'
+            when e.flgenviorespago = 1 then 'Destino Resp. Pago'
+        end) as destino
+        ,e.creapor
+        ,e.creafecha
+        ,e.modipor
+        ,e.modiver
+        ,co.idcodigo
+        ,co.codigo
+        ,(select COUNT(*) from MM_DetEsquela det where det.unineg = e.unineg and det.idesquela = e.idesquela) as num
+        ,(select COUNT(*) from MM_DetEsquela det where det.unineg = e.unineg and det.idesquela = e.idesquela and det.status = 1) as numOk
+        ,(select COUNT(*) from MM_DetEsquela det where det.unineg = e.unineg and det.idesquela = e.idesquela and det.status = 0) as numFa
+        FROM MM_Esquela e
+        left join MO_Codigo co on e.idtipoesquela = co.idcodigo
+    </sql>
+    
+    <resultMap id="esquelaResultado" type="pe.marista.sigma.bean.EsquelaBean" >
+        <id property="idEsquela" column="idesquela" />
+        <result property="titulo" column="titulo" />
+        <result property="mensaje" column="mensaje" /> 
+        <result property="mes" column="mes" />
+        <result property="datoMes" column="datoMes" />
+        <result property="flgRecEnvio" column="flgEnvioApo" />
+        
+        <result property="flgenviopapa" column="flgenviopapa" />
+        <result property="flgenviomama" column="flgenviomama" />
+        <result property="flgenvioapo" column="flgenvioapo" />
+        <result property="flgenviorespago" column="flgenviorespago" />
+        <result property="tipoAccion" column="tipoaccion" />
+        
+        <result property="nombreDestino" column="nombreDestino" />
+        <result property="tipoDestino" column="tipoDestino" />
+        <result property="idDestino" column="idDestino" />
+        
+        <result property="destino" column="destino" />
+        <result property="num" column="num" />
+        <result property="numOk" column="numOk" />
+        <result property="numFa" column="numFa" />
+        <result property="creaPor" column="creapor" />
+        <result property="creaFecha" column="creafecha" />
+        <result property="modiPor" column="modipor" />
+        <result property="modiVer" column="modiver" />
+        <association property="tipoEsquelaBean" column="idtipoesquela" 
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoEsquelaResultado"/>
+    </resultMap>
+    
+    <resultMap id="tipoEsquelaResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idCodigo" />
+        <result property="codigo" column="codigo" />
+        <result property="descripcion" column="descripcion" />
+    </resultMap>
+    
+    <select id="obtenerEsquela" parameterType="pe.marista.sigma.bean.EsquelaBean" resultMap="esquelaResultado" >
+        <include refid="consultaCampos" />WHERE e.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerEsquelaFiltro" parameterType="pe.marista.sigma.bean.EsquelaBean" resultMap="esquelaResultado">
+        <include refid="consultaCampos" /> 
+        WHERE e.uniNeg = #{unidadNegocioBean.uniNeg}
+        <if test="tipoEsquelaBean.idCodigo != null" >
+            and e.idtipoesquela = #{tipoEsquelaBean.idCodigo}
+        </if>
+        <if test="flgRecEnvio != null" >
+            and e.flgenvioapo = #{flgRecEnvio}
+        </if>
+    </select>
+    
+    <select id="obtenerPorId" resultMap="esquelaResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE e.idEsquela = #{idEsquela} 
+    </select>
+    
+    <select id="obtenerPorIdEsq" resultMap="esquelaResultado" parameterType="pe.marista.sigma.bean.EsquelaBean" >
+        <include refid="consultaCampos" /> WHERE e.idEsquela = #{idEsquela} and e.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerMaxEsquela" parameterType="String" resultType="Integer" >
+        select ISNULL(max(idesquela),0) as idEsquela 
+        from MM_Esquela where unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerMaxAccion" parameterType="String" resultType="Integer" >
+        select ISNULL(max(tipoaccion),0) from MM_Esquela where unineg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerEsquelaAccion" resultMap="esquelaResultado" parameterType="pe.marista.sigma.bean.EsquelaBean" >
+        <include refid="consultaCampos" />
+        where e.unineg = #{unidadNegocioBean.uniNeg} and e.tipoaccion = #{tipoAccion} and e.tipodestino = #{tipoDestino}
+    </select>
+    
+    <insert id="insertarEsquela" parameterType="pe.marista.sigma.bean.EsquelaBean" >
+        INSERT INTO MM_Esquela
+        (unineg
+        ,titulo
+        ,mensaje 
+        ,idtipoesquela
+        ,mes
+        ,tipoaccion
+        ,flgenviopapa
+        ,flgenviomama
+        ,flgenvioapo
+        ,flgenviorespago
+        ,iddestino
+        ,nombredestino
+        ,tipodestino
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{titulo},
+        #{mensaje}, 
+        #{tipoEsquelaBean.idCodigo},
+        #{mes},
+        #{tipoAccion},
+        #{flgenviopapa},
+        #{flgenviomama},
+        #{flgenvioapo},
+        #{flgenviorespago},
+        #{idDestino},
+        #{nombreDestino},
+        #{tipoDestino},
+        #{creaPor},
+        getDate())
+    </insert>
+    
+    <update id="modificarEsquela" parameterType="pe.marista.sigma.bean.EsquelaBean" > 
+        UPDATE MM_Esquela
+        SET
+        titulo = #{titulo}
+        ,mensaje = #{mensaje}
+        ,idtipoesquela = #{tipoEsquelaBean.idCodigo}
+        ,mes = #{mes}
+        ,flgEnvioApo = #{flgRecEnvio}
+        ,modiPor = #{modiPor}
+        WHERE idEsquela = #{idEsquela}
+    </update>
+    
+    <update id="actualizarEsquela" parameterType="pe.marista.sigma.bean.EsquelaBean" >
+        UPDATE MM_Esquela
+        SET
+        titulo = #{titulo}
+        ,mensaje = #{mensaje}
+        ,nombreDestino = #{nombreDestino}
+        ,modiPor = #{modiPor}
+        WHERE idEsquela = #{idEsquela} and unineg = #{unidadNegocioBean.uniNeg}
+    </update>
+    
+    <delete id="eliminarEsquela" parameterType="Integer" >
+        DELETE FROM MM_Esquela
+        WHERE idEsquela = #{idEsquela}
+    </delete>
+    
+    <delete id="eliminarEsquelaMasivo" parameterType="pe.marista.sigma.bean.EsquelaBean" >
+        DELETE FROM MM_Esquela
+        WHERE idEsquela = #{idEsquela} and unineg = #{unidadNegocioBean.uniNeg}
+    </delete>
+    
+</mapper>

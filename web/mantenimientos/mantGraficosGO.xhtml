@@ -1,0 +1,263 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui"       
+                xmlns:webuijsf="http://www.sun.com/webui/webuijsf"
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:define name="content">
+    
+        <h:body > 
+
+            <h:panelGrid columns="1" style="margin: 0 auto;"> 
+                <h:form id="frmdemo">
+                    <script type="text/javascript" src="../resources/js/jquery.jqplot.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.barRenderer.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.categoryAxisRenderer.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.pieRenderer.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.pointLabelsEva.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.highlighter.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.blockRenderer.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.enhancedLegendRenderer.js"></script>                
+                    <script type="text/javascript" src="../resources/js/jqplot.enhancedPieLegendRenderer.js"></script>                
+                    <script type="text/javascript" src="../resources/js/jqplot.canvasAxisLabelRenderer.js"></script>
+                    <script type="text/javascript" src="../resources/js/jqplot.canvasTextRenderer.js"></script>
+                    <link rel="stylesheet" type="text/css" href="../resources/css/chartStyle.css" />                           
+                    <link rel="stylesheet" type="text/css" href="../resources/css/cssLayout.css" />  
+                    <!--background: rgba(138,221,45,0);    "-->
+                    <p:growl id="growl" showDetail="true" />
+                    <p:panel id="pnlfiltros" style="border: none; margin-bottom:10px;text-align:center;">
+                        <div align="center">
+                            <br/>
+                            <div style="font-size: 25px;font-weight: bold;">#{msgs.etiquetaEVA}</div>
+                            <br/><br/>
+                            <p:chart type="bar" model="#{evaluacionDesempenoMB.barNiveles}" style="text-align:center;width:1000px;height:350px" > 
+                                <p:ajax  event="itemSelect" listener="#{evaluacionDesempenoMB.itemSelect1}" update=":frmdemo:pnlfiltros3, :frmdemo2:pnlfiltros5" />
+                            </p:chart>
+                            <br/><br/>
+                            <p:panel id="pnlfiltros3" style="border: none; margin-bottom:10px;text-align:center;">
+                                <p:dataTable id="tbl" value="#{evaluacionDesempenoMB.listaDetalleNiveles}" styleClass="centrado" 
+                                             emptyMessage="No hay datos disponible."  selection="#{evaluacionDesempenoMB.nivelBean}"
+                                             var="resNivel" rowKey="#{resNivel.codper}"  selectionMode="single"
+                                             rows="10" editable="true" editMode="cell"  paginator="true"
+                                             style="margin-bottom:20px;text-align-last: center;width: 1000px;" >   
+                                    <f:facet name="header">
+                                        <h:outputText value="Personal por G.O  -  #{evaluacionDesempenoMB.paramTitle}"  style="text-align:center;" />
+                                    </f:facet>    
+                                    <p:ajax event="rowSelect" listener="#{evaluacionDesempenoMB.onrowSelectGraficoCargos(resNivel)}" 
+                                            onstart="PF('dlg5').show();" update=":frmdemo2:pnlfiltros5"/>                                
+                                    <p:column headerText="Unidad">
+                                        <h:outputText value="#{resNivel.unineg}"  style="text-align:center;" />
+                                    </p:column>
+                                    <p:column headerText="Unidad"  visible="false">
+                                        <h:outputText value="#{resNivel.idcargo}"  style="text-align:center;" />
+                                    </p:column>                                
+                                    <p:column headerText="Codigo" style="width: 200px;" visible="false">
+                                        <h:outputText value="#{resNivel.codper}"/>
+                                    </p:column>
+                                    <p:column headerText="Nombre" sortBy="#{resNivel.nombre}" style="width: 550px;">
+                                        <h:outputText value="#{resNivel.nombre}"/>
+                                    </p:column> 
+                                    <p:column headerText="Promedio" sortBy="#{resNivel.promedio}">
+                                        <h:outputText value="#{resNivel.promedio}"/>
+                                    </p:column>
+                                    <p:column headerText="Promedio Ponderado" sortBy="#{resNivel.ponderado}">
+                                        <h:outputText value="#{resNivel.ponderado}"  style="text-align:center;" />
+                                    </p:column>                                   
+                                    <p:column style="width: 50px;">
+                                        <p:commandLink id="cmdSelecSol5"  actionListener="#{evaluacionDesempenoMB.rowSelectGraficoCargos(resNivel)}"
+                                                       oncomplete="PF('dlg5').show();" process="@this" update=":frmdemo2:pnlfiltros5">
+                                            <h:graphicImage value="/resources/images/icons/search2.png" height="20px" width="20px" style="border:0; cursor:pointer;"/>
+                                         </p:commandLink>                                   
+                                        <p:tooltip id="toolTip" for="cmdSelecSol5" value="Detalle por Cargos" />                                                                    
+                                    </p:column>                                
+                                </p:dataTable>                             
+                            </p:panel>                               
+                        </div>
+                    </p:panel>
+                    </h:form>
+                <h:form id="frmdemo2">
+                    <p:dialog id="popupDetalle" header="Cargos del Personal" widgetVar="dlg5" height="700" width="1100" modal="true" position="top" resizable="true" >
+                        <br/>
+                        <p:panel id="pnlfiltros5" style="border: none; margin-bottom:10px;text-align:center;" >
+                            <p:dataTable id="tblcargos" widgetVar="tblcargos" value="#{evaluacionDesempenoMB.listaDetalleNivelesCargo}" styleClass="centrado" 
+                                         emptyMessage="No hay datos disponible."
+                                         var="resNivelCargo" rowKey="#{resNivelCargo.codper}"  selectionMode="single"
+                                         rows="5" paginator="true"  editable="true" editMode="cell"
+                                         style="margin-bottom:20px;text-align-last: center;" >    
+                                <f:facet name="header">
+                                    Cargos por Personal
+                                </f:facet>                                                 
+                                <p:column headerText="Unidad"  >
+                                    <h:outputText value="#{resNivelCargo.unineg}"  style="text-align:center;" />
+                                </p:column>
+                                <p:column headerText="idCargo"   visible="false">
+                                    <h:outputText value="#{resNivelCargo.idcargo}"  style="text-align:center;" />
+                                </p:column>                                
+                                <p:column headerText="Codigo" style="width: 200px;" visible="false">
+                                    <h:outputText value="#{resNivelCargo.codper}"/>
+                                </p:column>
+                                <p:column headerText="Nombre"  style="width: 200px;">
+                                    <h:outputText value="#{resNivelCargo.nombre}"/>
+                                </p:column>
+                                <p:column headerText="Cargo"  style="width: 200px;">
+                                    <h:outputText value="#{resNivelCargo.cargo}"/>
+                                </p:column>                                 
+                                <p:column headerText="Promedio">
+                                    <h:outputText value="#{resNivelCargo.promedio}"/>
+                                </p:column>
+                                <p:column headerText="Autoevaluacion">
+                                    <h:outputText value="#{resNivelCargo.autoevaluacion}"  style="text-align:center;" />
+                                </p:column>                                   
+                                <p:column >
+                                    <p:commandLink id="cmdSelecSol4" >
+                                        <h:graphicImage value="/resources/images/icons/chart_line.png" height="30px" width="30px" style="border:0; cursor:pointer;"/>
+                                        <p:ajax listener="#{evaluacionDesempenoMB.rowSelectGrafico(resNivelCargo)}" 
+                                                update=":frmdemo2:pnlfiltros5" />                                 
+                                    <p:tooltip id="toolTip" for="cmdSelecSol4" value="Ver Grafico" /> 
+                                    </p:commandLink>
+                                </p:column>                                
+                            </p:dataTable>             
+                            <br/><br/><br/>
+                        
+                            <h:outputText value="#{resNivelCargo.idcargo}"  style="text-align:center;" />
+                            <p:chart   id="charDemo2" type="line" model="#{evaluacionDesempenoMB.modelCompetencia}" style="width: 1000px;height:350px;" rendered="#{evaluacionDesempenoMB.flgGrafCompetencia==true}"/>    
+                         </p:panel>     
+                    </p:dialog>                       
+                </h:form>
+
+            </h:panelGrid>
+            <script type="text/javascript">
+
+                function pieExtender() {
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltipLocation: 'n',
+                        useAxesFormatters: false,
+                        formatString: '%s = %d'
+                    };
+                }
+                function chartBarSatisfaccionExtender() {
+                    this.cfg.seriesDefaults.rendererOptions.barWidth = 30;
+                    this.cfg.seriesDefaults.rendererOptions.barPadding = 5;
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltiplocation: 'ne',
+                        useAxesFormatters: true,
+                        formatString: "<div> </div>"
+                    };
+                }
+                function chartBarExtender() {
+                    //this.cfg.seriesDefaults.rendererOptions.varyBarColor = true;
+                    this.cfg.seriesDefaults.rendererOptions.barPadding = 10;
+                    this.cfg.seriesDefaults.rendererOptions.barWidth = 20;
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltiplocation: 'ne',
+                        useAxesFormatters: true,
+                        formatString: "<div> </div>"
+                    };
+                }
+                function chartLineExtender() {
+                    this.cfg.legend = {
+                        renderer: $.jqplot.EnhancedLegendRenderer,
+                        show: true,
+                        rendererOptions: {
+                            numberRows: 1
+                        },
+                        placement: 'outsideGrid',
+                        location: 's' // centrado debajo del grafico
+                    };
+
+                }
+                function chartBarHistoricoExtender() {
+                    this.cfg.seriesDefaults.rendererOptions.barWidth = 60;
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltiplocation: 'ne',
+                        useAxesFormatters: false,
+                        formatString: "<div><span>Nro: %s </span><br/><span>Porcentaje: %#.2f% </span></div>"
+                    };
+                }
+                function chartHorizontalExtender() {
+                    this.cfg.seriesDefaults.rendererOptions.barWidth = 30;
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltiplocation: 'ne',
+                        useAxesFormatters: false,
+                        formatString: "<div><span>Porcentaje: %s% </span><br/><span>Nro: %d </span></div>"
+                    };
+                }
+                function chartVerticalExtender() {
+                    this.cfg.seriesDefaults.rendererOptions.barWidth = 50;
+                    this.cfg.seriesDefaults.markerOptions = {
+                        show: true,
+                        style: 'circle',
+                        lineWidth: 2,
+                        size: 9,
+                        color: '#666666',
+                        shadow: true,
+                        shadowAngle: 45,
+                        shadowOffset: 1,
+                        shadowDepth: 3,
+                        shadowAlpha: 0.07
+
+                    };
+                    //this.cfg.seriesDefaults.rendererOptions.EPSILON = 215;
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltiplocation: 'ne',
+                        useAxesFormatters: false,
+                        formatString: "<div><span>Nro: %d</span><br/><span>Porcentaje: %s% </span></div>" //datos que se muestran en el tooltip del grafico
+                    };
+                }
+                function extLegend()
+                {
+
+                    this.cfg.grid = {
+                        drawBorder: false, // Quita borde de Grafico
+                        background: 'rgba(255, 255, 255, .0)', //Color de Fondo del Grafico
+                        shadow: false
+                    };
+                    this.cfg.legend = {
+                        renderer: $.jqplot.EnhancedPieLegendRenderer,
+                        show: true,
+                        location: 's', // centrado debajo del grafico
+                        marginTop: '15px', //margen de la legenda
+                        labels: {boxWidth: 80, fontColor: 'white'},
+                        //background: 'rgba(255, 255, 255, .0)',
+                        rendererOptions: {numberRows: 1} // legenda en forma horizontal
+
+                    };
+                    ///  borde del grafio de pie
+                    this.cfg.seriesDefaults = {
+                        renderer: $.jqplot.PieRenderer,
+                        //shadow: false,
+                        lineWidth: 1,
+                        markerOptions: {
+                            show: true, // wether to show data point markers.
+                            style: 'square', // circle, diamond, square, filledCircle.
+                            // filledDiamond or filledSquare.
+                            lineWidth: 2, // width of the stroke drawing the marker.
+                            size: 9, // size (diameter, edge length, etc.) of the marker.
+                            color: '#666666', // color of marker, set to color of line by default.
+                            shadow: true, // wether to draw shadow on marker or not.
+                            shadowAngle: 45, // angle of the shadow.  Clockwise from x axis.
+                            shadowOffset: 1, // offset from the line of the shadow,
+                            shadowDepth: 3, // Number of strokes to make when drawing shadow.  Each stroke
+                            // offset by shadowOffset from the last.
+                            shadowAlpha: 5   // Opacity of the shadow
+                        }
+                    };
+                    this.cfg.seriesDefaults.rendererOptions = {
+                        showDataLabels: true
+                    };
+                }
+            </script>            
+        </h:body>
+    </ui:define>    
+</ui:composition>

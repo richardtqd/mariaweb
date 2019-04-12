@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RepDetDocIngreso" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="eb3bbc41-75a0-433d-aa7c-3bfc14fb569a">
+	<property name="ireport.zoom" value="1.2100000000000026"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\Sigma\\Proyecto\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT distinct
+        upper(uni.nombreUniNeg) as nombreUniNeg,
+        caj.nombre as nomCaja,
+        concat(per.apePat+' ',per.apeMat+' ',per.nombre,' (',cajGen.usuario,')') as nomCompletoPersonal,
+        upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa,
+        cajGen.fecApertura,
+        cajGen.fecCierre,
+        cajGen.aperturaSol,
+        cajGen.aperturaDol,
+        cajGen.ingresoSol,
+        cajGen.ingresoDol,
+        cajGen.ingresoPos1,
+        cajGen.ingresoPos2,
+        (select isnull(sum(montosoles),0) from MT_DetDocIngreso det
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where det.iddocingreso in (select iddocingreso from MT_DocIngreso
+        where
+        idcajagen in
+        (1000)
+        and idcaja in
+       (3)
+        and unineg='CHAMPS') and det.unineg='CHAMPS' and
+        doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='banco' and idtipocodigo='tipomodopago')) as montoBanco,
+
+        (case when tc.idTipoConcepto in (100,101) then pcd.cuenta else pch.cuenta  end) as cuenta,
+        (case when tc.idTipoConcepto in (100) then pcd.nombre+ ' (MATRICULA)' WHEN tc.idTipoConcepto in (101) then pcd.nombre+ ' (PENSIÓN)'  else pch.nombre  end) as nombreCta,
+        (case when tc.idTipoConcepto in (100,101) then sum(det.montopagado-isnull(det.mora,0)+isnull(det.dscto,0))else sum(det.montosoles) end) as montoPorCtaSoles,
+        sum(det.montodolares) as montoPorCtaDolares,
+        (select sum(montosoles) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where
+        idcajagen in
+        (1000)
+        and idcaja in
+        (3)
+        and unineg='CHAMPS') and unineg='CHAMPS') as sumTotSoles,
+        (select sum(montodolares) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where
+        idcajagen in
+        (1000)
+        and idcaja in
+       (3)
+        and unineg='CHAMPS') and unineg='CHAMPS') as sumTotDolares
+
+        FROM MT_DetDocIngreso det
+
+        inner join MT_DocIngreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja  AND CAJ.unineg=UNI.unineg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg
+
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_TipoConcepto tc on con.idtipoconcepto=tc.idTipoConcepto
+        INNER JOIN MT_PlanContable pcd on pcd.cuenta=det.cuentad
+        INNER JOIN MT_PlanContable pch on pch.cuenta=det.cuentah
+        WHERE  doc.iddocingreso IN (SELECT DISTINCT iddocingreso FROM MT_DocIngreso WHERE
+        idcajagen in
+        (1000)
+        and unineg='CHAMPS') and doc.unineg='CHAMPS'
+        group by tc.idTipoConcepto,pcd.cuenta,pch.cuenta,pcd.nombre,pch.nombre,uni.nombreUniNeg,caj.nombre,per.apePat,per.apeMat,per.nombre,cajGen.usuario,
+        perSup.apePat,perSup.apeMat,perSup.nombre,cajGen.fecApertura,cajGen.feccierre,cajGen.aperturaSol,cajGen.aperturaDol
+        ,cajGen.ingresoSol, cajGen.ingresoDol,cajGen.ingresoPos1,cajGen.ingresoPos2
+
+		union all
+        SELECT distinct
+        upper(uni.nombreUniNeg) as nombreUniNeg,
+        caj.nombre as nomCaja,
+        concat(per.apePat+' ',per.apeMat+' ',per.nombre,' (',cajGen.usuario,')') as nomCompletoPersonal,
+        upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa,
+        cajGen.fecApertura,
+        cajGen.fecCierre,
+        cajGen.aperturaSol,
+        cajGen.aperturaDol,
+        cajGen.ingresoSol,
+        cajGen.ingresoDol,
+        cajGen.ingresoPos1,
+        cajGen.ingresoPos2,
+
+        (select isnull(sum(montosoles),0) from MT_DetDocIngreso det
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where det.iddocingreso in (select iddocingreso from MT_DocIngreso
+        where
+        idcajagen in
+        (1000)
+        and idcaja in
+       (3)
+        and unineg='CHAMPS') and det.unineg='CHAMPS' and
+        doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='banco' and idtipocodigo='tipomodopago')) as montoBanco,
+
+        772211 as cuenta,
+        (select nombre from MT_PlanContable where cuenta=772211) as nombreCta,
+        (select isnull(sum(isnull(mora,0)-isnull(dscto,0)),0)  from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where
+
+        idcajagen in
+        (1000)
+        and idcaja in
+       (3)
+        and unineg='CHAMPS') and unineg='CHAMPS') as montoPorCtaSoles,
+        0.0 as montoPorCtaDolares,
+        (select sum(montosoles) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where
+        idcajagen in
+        (1000)
+        and idcaja in
+       (3)
+        and unineg='CHAMPS') and unineg='CHAMPS') as sumTotSoles,
+        (select sum(montodolares) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where
+
+        idcajagen in
+        (1000)
+        and idcaja in
+       (3)
+        and unineg='CHAMPS') and unineg='CHAMPS') as sumTotDolares
+
+        FROM MT_DetDocIngreso det
+
+        inner join MT_DocIngreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja  AND CAJ.unineg=UNI.unineg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg
+
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_TipoConcepto tc on con.idtipoconcepto=tc.idTipoConcepto
+        INNER JOIN MT_PlanContable pcd on pcd.cuenta=det.cuentad
+        INNER JOIN MT_PlanContable pch on pch.cuenta=det.cuentah
+        WHERE  doc.iddocingreso IN (SELECT DISTINCT iddocingreso FROM MT_DocIngreso WHERE
+        idcajagen in
+        (1000)
+        AND idcaja in
+       (3)) and doc.unineg='CHAMPS'
+        group by tc.idTipoConcepto,pcd.cuenta,pch.cuenta,pcd.nombre,pch.nombre,uni.nombreUniNeg,caj.nombre,per.apePat,per.apeMat,per.nombre,cajGen.usuario,
+        perSup.apePat,perSup.apeMat,perSup.nombre,cajGen.fecApertura,cajGen.feccierre,cajGen.aperturaSol,cajGen.aperturaDol
+        ,cajGen.ingresoSol, cajGen.ingresoDol,cajGen.ingresoPos1,cajGen.ingresoPos2]]>
+	</queryString>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="nomCaja" class="java.lang.String"/>
+	<field name="nomCompletoPersonal" class="java.lang.String"/>
+	<field name="nomCompletoSupervisa" class="java.lang.String"/>
+	<field name="fecApertura" class="java.sql.Timestamp"/>
+	<field name="fecCierre" class="java.sql.Timestamp"/>
+	<field name="aperturaSol" class="java.math.BigDecimal"/>
+	<field name="aperturaDol" class="java.math.BigDecimal"/>
+	<field name="ingresoSol" class="java.math.BigDecimal"/>
+	<field name="ingresoDol" class="java.math.BigDecimal"/>
+	<field name="ingresoPos1" class="java.math.BigDecimal"/>
+	<field name="ingresoPos2" class="java.math.BigDecimal"/>
+	<field name="montoBanco" class="java.math.BigDecimal"/>
+	<field name="cuenta" class="java.lang.Integer"/>
+	<field name="nombreCta" class="java.lang.String"/>
+	<field name="montoPorCtaSoles" class="java.math.BigDecimal"/>
+	<field name="montoPorCtaDolares" class="java.math.BigDecimal"/>
+	<field name="sumTotSoles" class="java.math.BigDecimal"/>
+	<field name="sumTotDolares" class="java.math.BigDecimal"/>
+	<field name="tc" class="java.lang.String"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="59" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="d7f4ea97-ca08-4747-ba6b-b2e9e9a31351" x="153" y="23" width="248" height="22"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[PLANILLA DE COBRANZA]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="e8bad94c-5d85-45ab-86bc-d85c3c592bc4" x="100" y="2" width="357" height="18"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="d39ee123-b152-4428-8700-0e7a9228fe84" x="460" y="18" width="80" height="11"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5dea163d-3a5e-4777-a778-742137d7664e" x="450" y="10" width="103" height="13"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FECHA DE IMPRESIÓN:]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="22" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="62df1333-8b2e-4fbd-b658-d333b12786cb" x="0" y="2" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[RESUMEN]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="17" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="d91cb50f-ecd4-4299-ba1d-dc6703df6bcd" x="7" y="1" width="545" height="16"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="86903d5a-f505-4f53-9e7b-72d165c63ae1" x="10" y="2" width="54" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cuenta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d20b2132-e8f3-4086-996f-de3e149bdb97" x="470" y="2" width="35" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Soles]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9c3a3572-f6ed-4b0c-832f-816708173d96" x="65" y="2" width="118" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Concepto]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d7018f86-06a9-4e69-913b-0cca86c84654" x="518" y="2" width="35" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dólares]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="1d216624-3e3f-4c99-94c6-0ebcb237717b" x="507" y="0" width="43" height="15"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPorCtaDolares}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="fa4e4cbc-70c9-4af7-91c9-0baae4439978" x="459" y="0" width="43" height="15"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPorCtaSoles}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a3c21864-ad21-4be3-bce2-f5c5d6eb6377" x="7" y="0" width="57" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{cuenta}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ca7eab23-0256-4949-b03d-82c45a998254" x="65" y="0" width="392" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{nombreCta}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="83" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="8fc83b31-538f-4d61-9413-4903ac01fc8d" x="36" y="59" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6210c319-c6b8-4c75-a1ec-48b385ae9f38" x="3" y="59" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="df80ae6b-0084-46cb-ac81-b8fedea92052" x="23" y="59" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement uuid="38a4c902-998c-4238-a8a2-9628493acd34" x="51" y="59" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="203" splitType="Stretch">
+			<line>
+				<reportElement uuid="dcc29dd4-10f9-4639-b67a-b5565a22afb1" x="44" y="169" width="155" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="ae9721a1-3c29-47dd-87fc-efd2e1455630" x="352" y="168" width="155" height="1"/>
+			</line>
+			<textField pattern="#0.000">
+				<reportElement uuid="530d2f5a-985e-42a5-b992-7f5e82c3e93a" x="130" y="10" width="60" height="20"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{tc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="7366f7a3-0c7d-4125-8839-e7d8b8d6fee9" x="10" y="10" width="120" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipo de cambio del día: ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d834ce1c-f6b5-4d37-8f53-e329a85930b3" x="66" y="170" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TESORERÍA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6d4d5c11-d779-4885-80a3-f580edf91f0c" x="374" y="170" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[ADMINISTRACIÓN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9285af37-3327-476a-8812-1f5b480c6ddf" x="7" y="60" width="70" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="b34b07d6-0e02-4311-8e08-623fb2e3c3d9" x="80" y="63" width="56" height="14"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotSoles}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="72fca5ee-57cc-4e87-8736-af42b15f147e" x="446" y="0" width="56" height="14"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotSoles}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="b145816a-339b-4da9-9ab6-ce35f1923c9b" x="347" y="0" width="70" height="20"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTALES]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="621f77fb-0949-4601-90ae-be1dd6cc9d23" x="505" y="0" width="45" height="14"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotDolares}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="ee685af9-fdba-4aa1-87a0-37651446b76c" x="145" y="62" width="45" height="14"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotDolares}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2c7ab38f-6f60-4a56-9ac0-4658c78f44c6" x="77" y="64" width="24" height="14"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.LineaEstrategicaDAO">
+    <sql id="consultaCampos">
+        select 
+        lie.uniNeg,
+        lie.idLinea                     as idLinea,
+        lie.idPlanEstrategico           as idPlanEstrategico,
+        lie.nombre                      as nombreLinea,
+        lie.descripcion                 as descripLinea,
+        SUBSTRING(lie.nombre,1,30)       as nombreLineaSub,
+        SUBSTRING(lie.descripcion,1,50)  as descripLineaSub,
+        lie.status                      as statusLinea,
+        ple.idPlanEstrategico           as idPlanEs,
+        ple.nombre                      as nombrePlanEstrategico,
+        une.uniNeg                      as uniNeg,
+        une.nombreUniNeg                as nombreUniNeg 
+        from ME_Linea lie 
+        inner join ME_PlanEstrategico ple on ple.idPlanEstrategico = lie.idPlanEstrategico  
+        inner join MO_UnidadNegocio une on lie.unineg = une.unineg
+    </sql>
+    <resultMap id="lineaEstrategicoResultado" type="pe.marista.sigma.bean.LineaEstrategicaBean">
+        <id property="idLinea" column="idLinea" />
+        <result property="nombre" column="nombreLinea" />
+        <result property="descripcion" column="descripLinea" />
+        <result property="nombreLineaSub" column="nombreLineaSub" />
+        <result property="descripLineaSub" column="descripLineaSub" />
+        <result property="status" column="statusLinea" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="planEstrategicoBean" column="idPlanEstrategico" 
+                     javaType="pe.marista.sigma.bean.PlanEstrategicoBean" 
+                     resultMap="planEstrategicoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    
+    <!--Plan Estrategico Resultado-->
+    <resultMap id="planEstrategicoResultado" type="pe.marista.sigma.bean.PlanEstrategicoBean">
+        <id property="idPlanEstrategico" column="idPlanEs" />
+        <result property="nombre" column="nombrePlanEstrategico" />
+    </resultMap>
+    <!--Unidad Negocio Resultado-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <select id="obtenerLineaEstrategica" resultMap="lineaEstrategicoResultado">
+        <include refid="consultaCampos" />
+    </select>
+    
+    <select id="obtenerPorId" resultMap="lineaEstrategicoResultado" parameterType="Integer">
+        <include refid="consultaCampos" /> Where idLinea = #{idLinea}
+    </select>
+        
+    <select id="obtenerListaPorId" resultMap="lineaEstrategicoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> Where lie.idLinea = #{idLinea} and lie.uniNeg =#{uniNeg}
+    </select>
+        
+    <select id="obtenerLineaPorPlan" resultMap="lineaEstrategicoResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> WHERE lie.idPlanEstrategico = #{idPlanEstrategico} and lie.unineg = #{uniNeg}
+    </select>
+    
+    <insert id="insertarLineaEstrategica" parameterType="pe.marista.sigma.bean.LineaEstrategicaBean">
+        INSERT INTO  ME_Linea(idlinea,unineg,idplanestrategico,nombre,descripcion,status,creapor,creafecha)
+        Values (0,#{unidadNegocioBean.uniNeg},#{planEstrategicoBean.idPlanEstrategico},#{nombre},#{descripcion},#{status},#{creaPor},getDate())
+    </insert> 
+    
+    <update id="actualizarLineaEstrategica" parameterType="pe.marista.sigma.bean.LineaEstrategicaBean">
+        UPDATE ME_Linea
+        SET 
+        unineg = #{unidadNegocioBean.uniNeg} ,
+        idplanestrategico = #{planEstrategicoBean.idPlanEstrategico},
+        idlinea = #{idLinea} ,
+        nombre = #{nombre},
+        descripcion = #{descripcion},
+        status = #{status},
+        modiPor = #{modiPor}     
+        Where idLinea = #{idLinea}
+    </update>
+    <delete id="eliminarLineaEstrategica" parameterType="Integer">
+        Delete From ME_Linea Where idLinea = #{idLinea}
+    </delete>   
+      
+    <select id="obtenerUltimoCodigo" resultType="String" parameterType="String">     
+        <!--
+        select 
+        max(substring(a.codigoLinea,6,9)) as codigoLinea
+        from ME_Linea a
+        Inner Join ME_PlanEstrategico b on a.idPlanEstrategico = b.idPlanEstrategico
+        where unineg = #{uniNeg}
+        group by b.unineg
+        -->
+    </select>
+    
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.LineaEstrategicaBean">
+        UPDATE ME_Linea
+        SET 
+        status = #{status}
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and idLinea = #{idLinea}
+    </update>
+    
+    <select id="obtenerLineaPorPlanEstrategico" resultMap="lineaEstrategicoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        WHERE lie.idPlanEstrategico = #{idPlanEstrategico} and lie.unineg = #{uniNeg}
+    </select>
+     
+</mapper>

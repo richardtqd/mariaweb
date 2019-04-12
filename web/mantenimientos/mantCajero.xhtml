@@ -1,0 +1,182 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cajeroMB.obtenerTodos()}">
+            <h:form id="frmDatosCajero">
+                <h:panelGrid styleClass="centrado" id="pnlDatosCajero" style="text-align: center !important ; font-weight: bold; font-size:0.8em ; width: 700px" >
+                    <p:panel header="#{msgs.tituloMantCajero}" style="text-align: center !important">
+                        <h:panelGrid columns="1" cellpadding="2">
+                            <h:panelGrid columns="6" id="DatosCajero" class="siseFontGrid3" cellpadding="3" >
+                                <h:outputLabel value="#{msgs.etiquetaCajero}" class="negrita" for="nomCompleto"/>
+                                <h:outputText value=""  class="requerido"/>
+                                <h:panelGrid columns="10">
+                                    <p:selectOneMenu id="cmboCajeros" value="#{cajeroMB.cajeroCajaBean.usuarioBean.usuario}" required="true" disabled="#{cajeroMB.disabled}">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{cajeroMB.listaUsuario}" var="usu" itemLabel="#{usu.usuarioBean.personalBean.nombreCompleto} - #{usu.usuarioBean.usuario}" itemValue="#{usu.usuarioBean.usuario}"/>
+                                    </p:selectOneMenu>
+                                    <p:link id="cmdCajero" outcome="/configuracion/mantUsuario.xhtml" target="_blank">
+                                        <h:graphicImage value="/resources/images/icons/addverde3.png" style="border:0; cursor:pointer;"  width=""/>
+                                    </p:link>
+                                    <p:spacer width="1" height="2" />
+                                    <p:commandLink id="btnActualizarCajeros" actionListener="#{cajeroMB.actualizarListaCajero()}" process="@this" update="cmboCajeros">
+                                        <h:graphicImage value="/resources/images/icons/refrescar.png"   style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip value="#{msgs.tolTipActLisCajeros}" for="btnActualizarCajeros"/>
+                                    <p:tooltip value="#{msgs.tolTipAsignarCajero}" for="cmdCajero"/>
+                                </h:panelGrid> 
+                                <h:outputLabel value="#{msgs.etiquetaStatus}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputSwitch id="radioEstado"  value="#{cajeroMB.cajeroCajaBean.status}"  required="true" label="#{msgs.etiquetaEstado}" onLabel="#{msgs.etiquetaActi}" offLabel="#{msgs.etiquetaInactivo}"/>   
+                                <h:outputLabel value="#{msgs.etiquetaVigeEfec}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <h:panelGrid columns="3" class="siseFontGrid3" cellpadding="3">
+                                    <p:calendar id="fecVigencia"  showOn="button" value="#{cajeroMB.cajeroCajaBean.fecIni}" pattern="dd/MM/yyyy" locale="es" required="true" navigator="true" effect="fadeIn" size="7" >
+                                        <p:ajax event="dateSelect" update="fecTermino" />
+                                    </p:calendar>
+                                    <h:outputText value="&nbsp;&nbsp;al&nbsp;&nbsp;"/>
+                                    <p:calendar id="fecTermino"  showOn="button" value="#{cajeroMB.cajeroCajaBean.fecFin}" mindate="#{cajeroMB.cajeroCajaBean.fecIni}" pattern="dd/MM/yyyy" locale="es" required="true" navigator="true" effect="fadeIn" size="7" />
+                                </h:panelGrid>
+                            </h:panelGrid>
+                            <h:panelGrid columns="1" styleClass="centrado" id="listaCajero"> 
+                                <h:panelGrid columns="3" class="siseFontGrid4" cellpadding="3" > 
+                                    <h:outputLabel value="#{msgs.etiquetaAsignarCaja}" class="negrita"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:pickList disabled="#{cajeroMB.disabled}" id="pickListPerfil" value="#{cajeroMB.dualListaCajaBean}" var="ca" itemLabel="#{ca.nombre}" itemValue="#{ca.idCaja}"  required="true"
+                                                label="#{msgs.etiquetaAsignarCaja}"   >
+                                        <f:facet name="sourceCaption">#{msgs.etiquetaDisponibles} </f:facet>
+                                        <f:facet name="targetCaption">#{msgs.etiquetaSeleccionados}</f:facet>
+                                    </p:pickList>
+                                </h:panelGrid>
+                            </h:panelGrid>
+                            <h:panelGrid columns="1"  class="siseFontGrid3" cellpadding="3">
+                                <h:outputText value="(*) Requerido" class="requerido"/>  
+                            </h:panelGrid>
+                            <h:inputHidden value="#{cajeroMB.cajeroBean.idCajero}"/>                            
+                            <h:panelGrid class="centrado" columns="2" style=" font-size:0.8em ; " cellpadding="3">
+                                <p:commandButton actionListener="#{cajeroMB.guardarCajero()}" 
+                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                 update=":frmDatosCajero:pnlDatosCajero,msgsAddProc,:frmTablaCajero:tblCajero,:frmTablaCajero:pnlTblCajero"
+                                                 value="#{msgs.botonGrabar}">
+                                </p:commandButton>
+                                <p:commandButton actionListener="#{cajeroMB.limpiarCajerobean()}" 
+                                                 update=":frmDatosCajero:pnlDatosCajero,msgsAddProc,:frmTablaCajero:tblCajero,:frmDatosCajero:listaCajero"                                                                 
+                                                 value="#{msgs.botonNuevo}" process="@this">
+                                </p:commandButton>
+                            </h:panelGrid>
+                            <p:messages id="msgsAddProc" showDetail="false" showSummary="true"/>
+                            <h:inputHidden value="#{cajeroMB.cajeroCajaBean.unidadNegocioBean.uniNeg}"/>
+                        </h:panelGrid>
+                    </p:panel>
+                </h:panelGrid>
+            </h:form>  
+            <h:form id="frmTablaCajero">
+                <h:panelGrid styleClass="centrado" id="pnlTblCajero" style="text-align: center !important ; font-weight: bold; font-size: 0.9em" >
+                    <p:dataTable id="tblCajero" value="#{cajeroMB.listaUsuariosConCaja}" widgetVar="tblCajero"
+                                 paginator="true" selectionMode="single" 
+                                 selection="#{cajeroMB.cajeroCajaBean}"
+                                 var="usuario" rowKey="#{usuario}"
+                                 rows="#{cajeroMB.numRegistrosTablas}" 
+                                 rendered="#{not empty cajeroMB.listaUsuariosConCaja}" 
+                                 style="width: 1000px; font-size: 12px">
+                        <p:ajax event="rowSelect" listener="#{cajeroMB.rowSelect}" update=":frmDatosCajero:pnlDatosCajero"/>
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaCajero}" />  
+                        </f:facet>
+                        <p:column filterBy="#{usuario.usuarioBean.usuario}" headerText="#{msgs.etiquetaUsuario}" filterMatchMode="contains" width="40%" class="nombre2Filtro">
+                            <h:outputText value="#{usuario.usuarioBean.usuario}" />
+                        </p:column>
+                        <p:column filterBy="#{usuario.usuarioBean.personalBean.nombreCompleto}" headerText="#{msgs.etiquetaNomCom}" filterMatchMode="contains" width="40%" class="nombre2Filtro">
+                            <h:outputText value="#{usuario.usuarioBean.personalBean.nombreCompleto}" />
+                        </p:column>
+                        <p:column class="centrado-texto" filterBy="#{usuario.fecIni}" headerText="#{msgs.etiquetaFecIni}" filterMatchMode="contains" width="20%" styleClass="nombre1Filtro" >
+                            <f:facet name="filter">
+                                <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                    <p:ajax event="dateSelect" oncomplete="PF('tblCajero').filter()"/>
+                                </p:calendar> 
+                            </f:facet>
+                            <h:outputText value="#{usuario.fecIni}">
+                                <f:convertDateTime pattern="dd/MM/yyyy"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column class="centrado-texto" filterBy="#{usuario.fecFin}" headerText="#{msgs.etiquetaFecFin}" filterMatchMode="contains" width="20%" styleClass="nombre1Filtro" >
+                            <f:facet name="filter">
+                                <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                    <p:ajax event="dateSelect" oncomplete="PF('tblCajero').filter()"/>
+                                </p:calendar> 
+                            </f:facet>
+                            <h:outputText value="#{usuario.fecFin}">
+                                <f:convertDateTime pattern="dd/MM/yyyy"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column width="20%">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCambiarEstado}" />
+                            </f:facet>
+                            <center>
+                                <p:inputSwitch id="swCambio" value="#{usuario.status}">
+                                    <p:ajax listener="#{cajeroMB.ponerCajero(usuario)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </center>
+                        </p:column>
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEliminar" action="#{cajeroMB.obtenerPorId(usuario)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelCatCon}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCajero}: #{cajeroMB.cajeroCajaBean.usuarioBean.usuario}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cajeroMB.eliminarCajero()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTablaCajero:tblCajero,:frmTablaCajero:pnlTblCajero"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCajero}: #{cajeroMB.cajeroBean.personalBean.nombreCompleto}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cajeroMB.cambiarEstadoCajero()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCajero:radioEstado"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.CajaDAO">  
+    <sql id="consultaCampos">
+        Select
+        caj.idCaja,
+        caj.nombre,
+        caj.uniNeg,
+        caj.hostIp,
+        caj.hostName,
+        caj.mac,
+        caj.status,
+        uni.nombreUniNeg,
+        caj.creaPor,
+        caj.creaFecha
+        From MT_Caja  caj
+        Inner Join MO_UnidadNegocio uni ON caj.uniNeg=uni.uniNeg   
+    </sql>
+    <resultMap id="cajaResultado" type="pe.marista.sigma.bean.CajaBean">
+        <id property="idCaja" column="idCaja"/>
+        <result property="nombre" column="nombre"/>
+        <result property="hostIp" column="hostIp"/>
+        <result property="hostName" column="hostName"/>
+        <result property="mac" column="mac"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"  jdbcType="DATE"/>
+        <result property="status" column="status"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>
+    <select id="obtenerTodos" resultMap="cajaResultado" parameterType="String">
+        <include refid="consultaCampos" />Where caj.uniNeg = #{uniNeg}
+    </select>
+    <select id="obtenerTodosActivos" resultMap="cajaResultado" parameterType="String">
+        <include refid="consultaCampos" />Where caj.status = 1 and caj.uniNeg = #{uniNeg}
+    </select>
+    <select id="obtenerPorFiltro" resultMap="cajaResultado" parameterType="pe.marista.sigma.bean.CajaBean">
+        <include refid="consultaCampos" />
+        <where>
+            <if test="nombre != null and nombre != ''">
+                upper(nombre) like concat('%',#{nombre},'%')
+            </if>
+            <if test="unidadNegocioBean.uniNeg != null and unidadNegocioBean.uniNeg != null">
+                upper(caj.uniNeg) like concat('%',#{unidadNegocioBean.uniNeg},'%')
+            </if>
+            <if test="hostIp != null and hostIp != ''">
+                and upper(hostIp) like concat('%',#{hostIp},'%')
+            </if>
+            <if test="hostName != null and hostName != ''">
+                and upper(hostName) like concat('%',#{hostName},'%')
+            </if>
+        </where>
+    </select>
+    <select id="buscarPorId" resultMap="cajaResultado" parameterType="pe.marista.sigma.bean.CajaBean">
+        <include refid="consultaCampos" />WHERE idCaja= #{idCaja}
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.CajaBean">
+        INSERT INTO MT_Caja (nombre,uniNeg,hostIp,hostName,mac,status,creaFecha,creaPor)
+        Values (#{nombre},#{unidadNegocioBean.uniNeg},#{hostIp},#{hostName},#{mac},#{status},#{creaFecha},#{creaPor})
+        <selectKey keyProperty="idCaja" order="AFTER" resultType="Integer">
+            SELECT max(idCaja) FROM MT_Caja WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.CajaBean">
+        UPDATE MT_Caja
+        SET 
+        nombre = #{nombre},
+        uniNeg = #{unidadNegocioBean.uniNeg},
+        hostIp = #{hostIp},
+        hostName = #{hostName},
+        mac = #{mac},
+        status = #{status}
+        Where idCaja = #{idCaja}  and uniNeg = #{unidadNegocioBean.uniNeg}
+    </update>
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.CajaBean">
+        Delete From MT_Caja Where idCaja = #{idCaja} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </delete>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.CajaBean">
+        UPDATE MT_Caja
+        SET 
+        status = #{status}
+        Where idCaja = #{idCaja} and uniNeg = #{unidadNegocioBean.uniNeg}
+    </update>
+    
+    <!--Doc Ingreso Serie Caja 
+    <sql id="consultaDocIngresoSerieCaja">
+        SELECT 
+        doc.uniNeg,
+        doc.idTipoDoc,
+        doc.serie,
+        doc.idCaja,
+        caj.nombre,
+        caj.hostIp,
+        caj.hostName,
+        doc.status
+        FROM MT_DocIngresoSerieCaja doc
+        Inner Join MT_Caja caj ON doc.idcaja = caj.idcaja
+    </sql>
+    <select id="obtenerDocumentoPorCaja" resultMap="docIngresoSerieCajaResultado" parameterType="pe.marista.sigma.bean.CajaBean">
+        <include refid="consultaDocIngresoSerieCaja" /> where doc.idcaja = #{idCaja}
+    </select>
+    <select id="obtenerPorCaja" resultMap="docIngresoSerieResultado" parameterType="pe.marista.sigma.bean.CajaBean">
+        <include refid="consultaDocIngresoSerieCaja"/>Where doc.idcaja = #{idCaja}
+    </select>
+    <resultMap id="docIngresoSerieResultado" type="pe.marista.sigma.bean.DocIngresoSerieBean">
+        <id property="idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="serie" column="serie"/>
+        <association property="idTipoDoc" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="docIngresoSerieCajaResultado" type="pe.marista.sigma.bean.DocIngresoSerieCajaBean">        
+        <id property="cajaBean.idCaja" column="idCaja"/>
+        <id property="serie.serie" column="serie"/>
+        <id property="uniNeg.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idTipoDoc.idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <result property="status" column="status"/>
+        <association property="uniNeg" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.DocIngresoSerieBean" 
+                     resultMap="uniNegResultado"/>
+        <association property="idTipoDoc" column="idTipoDoc" 
+                     javaType="pe.marista.sigma.bean.DocIngresoSerieBean" 
+                     resultMap="idTipoDocResultado"/>
+        <association property="serie" column="serie" 
+                     javaType="pe.marista.sigma.bean.DocIngresoSerieBean" 
+                     resultMap="serieResultado"/>
+        <association property="cajaBean" column="idCaja" 
+                     javaType="pe.marista.sigma.bean.CajaBean" 
+                     resultMap="cajaResultado"/>
+    </resultMap>
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.DocIngresoSerieBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="idTipoDocResultado" type="pe.marista.sigma.bean.DocIngresoSerieBean">
+        <id property="idTipoDoc.idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <association property="idTipoDoc" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>
+    </resultMap>
+    <resultMap id="tipoDocResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDoc"/>
+        <result property="codigo" column="codigo"/>
+    </resultMap>
+    <resultMap id="serieResultado" type="pe.marista.sigma.bean.DocIngresoSerieBean">
+        <id property="serie" column="serie"/>
+    </resultMap>
+    <insert id="insertarDocIngresoSerieCaja" parameterType="pe.marista.sigma.bean.DocIngresoSerieCajaBean">
+        Insert Into MT_DocIngresoSerieCaja (idCaja,uniNeg,idTipoDoc,serie,status,creaPor)
+        Values(#{cajaBean.idCaja},#{uniNeg.unidadNegocioBean.uniNeg},#{idTipoDoc.idTipoDoc.idCodigo},#{serie.serie},#{status},#{creaPor})
+    </insert>
+    <delete id="eliminarDocIngresoSerieCajaAll" parameterType="pe.marista.sigma.bean.DocIngresoSerieCajaBean">
+        Delete From MT_DocIngresoSerieCaja where idCaja=#{cajaBean.idCaja}
+    </delete>-->
+    
+    <!--Impresora Caja -->
+    <sql id="consultaImpresoraCaja">
+        SELECT 
+        distinct
+        doc.uniNeg,
+        doc.impresora,
+        doc.idCaja,
+        caj.nombre,
+        caj.hostIp,
+        caj.hostName,
+        doc.status
+        FROM MT_ImpresoraCaja doc
+        Inner Join MT_Caja caj ON doc.idcaja = caj.idcaja and doc.unineg=caj.unineg
+    </sql>
+    <select id="obtenerImpresoraPorCaja" resultMap="impresoraResultado" parameterType="pe.marista.sigma.bean.CajaBean">
+        <include refid="consultaImpresoraCaja"/>Where doc.idcaja = #{idCaja} AND  doc.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>
+    <resultMap id="impresoraResultado" type="pe.marista.sigma.bean.ImpresoraBean">
+        <id property="idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="impresora" column="impresora"/>
+        <association property="idTipoDoc" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="impresoraCajaResultado" type="pe.marista.sigma.bean.ImpresoraCajaBean">        
+        <id property="cajaBean.idCaja" column="idCaja"/>
+        <id property="impresora.impresora" column="impresora"/>
+        <id property="uniNeg.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idTipoDoc.idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <result property="status" column="status"/>
+        <association property="uniNeg" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.ImpresoraBean" 
+                     resultMap="uniNegResultado"/>
+        <association property="idTipoDoc" column="idTipoDoc" 
+                     javaType="pe.marista.sigma.bean.ImpresoraBean" 
+                     resultMap="idTipoDocResultado"/>
+        <association property="impresora" column="impresora" 
+                     javaType="pe.marista.sigma.bean.ImpresoraBean" 
+                     resultMap="impResultado"/>
+        <association property="cajaBean" column="idCaja" 
+                     javaType="pe.marista.sigma.bean.CajaBean" 
+                     resultMap="cajaResultado"/>
+    </resultMap>
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.ImpresoraBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="idTipoDocResultado" type="pe.marista.sigma.bean.ImpresoraBean">
+        <id property="idTipoDoc.idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <association property="idTipoDoc" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>
+    </resultMap>
+    <resultMap id="tipoDocResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDoc"/>
+        <result property="codigo" column="codigo"/>
+    </resultMap>
+    <resultMap id="impResultado" type="pe.marista.sigma.bean.ImpresoraBean">
+        <id property="impresora" column="impresora"/>
+        <association property="chequeBean" column="idCheque"
+                     javaType="pe.marista.sigma.bean.ChequeBean"
+                     resultMap="chequeResultado"/>
+        
+    </resultMap>
+    <resultMap id="chequeResultado" type="pe.marista.sigma.bean.ChequeBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNegCheque"/>
+        <id property="idCheque" column="idCheque"/> 
+        <result property="nombre" column="nombreCheque"/> 
+        <result property="inicio" column="inicio"/> 
+        <result property="fin" column="fin"/> 
+        <result property="actual" column="actual"/> 
+        <result property="status" column="status"/> 
+        <association property="unidadNegocioBean" column="uniNegCheque"
+                      javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                      resultMap="unidadNegocioResultadoCheque"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultadoCheque" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCheque"/>
+        <result property="nombreUniNeg" column="nombreUniNegCheque"/> 
+    </resultMap> 
+    <insert id="insertarImpresoraCaja" parameterType="pe.marista.sigma.bean.ImpresoraCajaBean">
+        Insert Into MT_ImpresoraCaja (idCaja,uniNeg,idTipoDoc,impresora,status,creaPor,creaFecha)
+        Values(#{cajaBean.idCaja},#{uniNeg.unidadNegocioBean.uniNeg},#{idTipoDoc.idTipoDoc.idCodigo}
+        ,#{impresora.impresora},#{status},#{creaPor},#{creaFecha})
+    </insert>
+    <delete id="eliminarImpresoraCajaAll" parameterType="pe.marista.sigma.bean.ImpresoraCajaBean">
+        Delete From MT_ImpresoraCaja where idCaja=#{cajaBean.idCaja}   and uniNeg = #{uniNeg.unidadNegocioBean.uniNeg}
+    </delete>
+</mapper>

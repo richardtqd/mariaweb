@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteAprobadosEnvio" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" isFloatColumnFooter="true" uuid="58824783-9854-4a3f-ba61-baf9ee325a4e">
+	<property name="ireport.zoom" value="1.9487171000000014"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue()%2==0)]]></conditionExpression>
+			<style backcolor="#EFF7FF"/>
+		</conditionalStyle>
+	</style>
+	<subDataset name="listaEnvio" uuid="3b0e2aa7-bd6e-475f-9c1e-f869a736e9cb">
+		<queryString language="SQL">
+			<![CDATA[SELECT
+                      pe.unineg
+                     ,pe.idprocesoenvio
+                     ,ROW_NUMBER() over(order by pe.idprocesoenvio) as operacion
+                     ,ROW_NUMBER() over(order by pb.idprocesobanco) as operacionBanco
+                     ,pe.idprocesobanco
+                     ,pe.iddiscente
+                     ,pe.nomdiscente
+                     ,pe.inforetorno
+                     ,pe.fechaemision
+                     ,pe.fechavenc
+                     ,pe.moneda
+                     ,pe.monto
+                     ,pe.modiver
+                     ,pe.mora
+                     ,pe.tiporegistro
+                     ,pe.flgEnvio
+                     ,(case pe.flgEnvio when 1 then 'ENVIAR'  when 0 then 'NO ENVIAR' end) as EstadoEnvio
+                     ,pe.idctasxcobrar
+                     ,pe.idconcepto
+                     ,pe.creapor
+                     ,pe.creafecha
+                     ,DATEPART(YEAR,pe.creafecha)    as anioEnvio
+                     ,DATEPART(MONTH,pe.creafecha)   as mesEnvio
+                     ,DATEPART(DAY,pe.creafecha)     as diaEnvio
+                     ,DATEPART(HOUR,pe.creafecha)    as hora
+                     ,DATEPART(MINUTE,pe.creafecha)  as minuto
+                     ,DATEPART(SECOND,pe.creafecha)  as segundo
+                     ,pe.modipor
+                     ,pb.idprocesobanco
+                     ,pb.nombre as nomProcesoBanco
+                     ,pb.ruc
+                     ,ctaBan.numcuenta
+                     ,ctaBan.codunineg
+                     ,ent.ruc as rucEnt
+                     ,ent.nombre as nombreEntidad
+                     ,cc.cuentad as cuentaD
+                     ,cc.cuentah as cuentaH
+                     ,cc.fechaVenc
+                     ,cc.fechaPago
+                     ,cc.deuda
+                     ,cc.dscto
+                     ,cc.monto
+                     ,cc.montopagado
+                     ,cc.mora
+                     ,cc.tasainteres
+                     ,cc.deuda as flgDeuda
+                     ,es.idestudiante
+                     ,per.idPersona
+                     ,per.nombre as nombrePersona
+                     ,per.apepat
+                     ,per.apemat
+                     ,con.nombre as nomConcepto
+                     ,uni.unineg
+                     ,uni.nombreUniNeg
+                     ,tp.idTipoConcepto
+                     ,tp.nombre as nombreTipoCon
+                     FROM MT_ProcesoEnvio pe
+                     left join MO_UnidadNegocio uni on pe.unineg = uni.unineg
+                     left join MT_ProcesoBanco pb on pe.idprocesobanco = pb.idprocesobanco
+                     left join MT_CuentaBanco ctaBan on pb.numcuenta = ctaBan.numcuenta
+                     left join MO_Entidad ent on ctaBan.rucbanco = ent.ruc
+                     left join MT_CtasxCobrar cc on pe.idctasxcobrar = cc.idctasxcobrar
+                     left join MX_Estudiante es on cc.idestudiante = es.idestudiante
+                     left join MX_Persona per on es.idestudiante = per.idpersona
+                     left join MT_Concepto con on pe.idconcepto = con.idconcepto
+                     left join MT_TipoConcepto tp on con.idtipoconcepto = tp.idTipoConcepto]]>
+		</queryString>
+		<field name="nombrePersona" class="java.lang.String"/>
+		<field name="apepat" class="java.lang.String"/>
+		<field name="apemat" class="java.lang.String"/>
+		<field name="idPersona" class="java.lang.String"/>
+		<field name="nomConcepto" class="java.lang.String"/>
+		<field name="EstadoEnvio" class="java.lang.String"/>
+		<field name="nomProcesoBanco" class="java.lang.String"/>
+		<field name="monto" class="java.math.BigDecimal"/>
+	</subDataset>
+	<parameter name="rutaImagen" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT
+                cc.monto
+                ,per.idPersona
+                ,per.nombre as nombrePersona
+                ,per.apepat
+                ,per.apemat
+                ,con.nombre as nomConcepto
+		,(case pe.flgEnvio when 1 then 'ENVIADO'  when 0 then 'NO ENVIADO' end) as estadoEnvio
+                FROM MT_ProcesoEnvio pe
+                left join MO_UnidadNegocio uni on pe.unineg = uni.unineg
+                left join MT_ProcesoBanco pb on pe.idprocesobanco = pb.idprocesobanco
+		left join MT_CuentaBanco ctaBan on pb.numcuenta = ctaBan.numcuenta
+		left join MO_Entidad ent on ctaBan.rucbanco = ent.ruc
+                left join MT_CtasxCobrar cc on pe.idctasxcobrar = cc.idctasxcobrar
+		left join MX_Estudiante es on cc.idestudiante = es.idestudiante
+                left join MX_Persona per on es.idestudiante = per.idpersona
+                left join MT_Concepto con on pe.idconcepto = con.idconcepto
+                left join MT_TipoConcepto tp on con.idtipoconcepto = tp.idTipoConcepto]]>
+	</queryString>
+	<field name="monto" class="java.math.BigDecimal"/>
+	<field name="idPersona" class="java.lang.String"/>
+	<field name="nombrePersona" class="java.lang.String"/>
+	<field name="apepat" class="java.lang.String"/>
+	<field name="apemat" class="java.lang.String"/>
+	<field name="nomConcepto" class="java.lang.String"/>
+	<field name="estadoEnvio" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="97" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="cc5ff98a-8690-4716-828d-e108637df9b6" x="127" y="37" width="288" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Times New Roman" size="24" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Reporte Envios Aprobados]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="3579dda8-23d9-4a09-bba7-34530232af03" mode="Opaque" x="28" y="87" width="514" height="10" backcolor="#F2F2F2"/>
+			</rectangle>
+			<line>
+				<reportElement uuid="ffd2a2db-7672-42c0-9ce8-e4df3f0850f1" x="402" y="87" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="3d841ebd-3996-44d8-8c23-a87f676a8f20" x="336" y="87" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="b0c31459-439d-446b-877f-2e885333f381" x="477" y="87" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="3d946a5d-62de-490f-8cf4-31746561041b" x="272" y="87" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="9b6bfd58-e13b-4a2b-a519-6322e2aaf916" x="188" y="87" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="deaa396d-cb0d-4f58-85d8-26d0c3fffc41" x="91" y="87" width="1" height="10"/>
+			</line>
+			<staticText>
+				<reportElement uuid="8e1d0f8f-03d7-4a12-99e1-6aed00e335c0" x="28" y="87" width="63" height="10" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Codigo]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2d7757cb-8144-4ea6-98ca-1458235da9ba" x="92" y="87" width="96" height="10" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Apellido Paterno]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5cb0c4de-e3d4-4797-a488-d3bd6dd04a79" x="189" y="87" width="83" height="10" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Apellido Materno]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c52440d1-ac48-4a3e-b6a1-12d5ac0f212e" x="273" y="87" width="63" height="10" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Nombres]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="60cc2a72-fdc9-49b2-9303-5b47eaae4ea9" x="337" y="87" width="65" height="10" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Concepto]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5b18987c-021c-4337-ae99-5759a30498c4" x="403" y="87" width="74" height="10" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Monto a Pagar]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e756f0de-b6d4-4539-ac34-d85feedc2063" x="478" y="87" width="64" height="10" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Estado]]></text>
+			</staticText>
+			<image>
+				<reportElement uuid="34a53e20-806c-4b6b-97d6-d1d72bd6862c" x="26" y="10" width="74" height="67"/>
+				<imageExpression><![CDATA[$P{rutaImagen}+"\\resources\\images\\logosanluis.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="11" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="af1dbd47-fd7d-4358-9792-74846cdeada0" x="28" y="1" width="514" height="10"/>
+			</rectangle>
+			<textField>
+				<reportElement uuid="fb0c5ebf-5cb0-4c31-a2a7-fc30b06dd165" x="28" y="1" width="64" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{idPersona}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="3ed3dac3-2b7d-490f-bb84-ece0b0810877" x="92" y="1" width="96" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{apepat}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e5f9ed17-3e97-49e8-b32a-f8ecc486fc27" x="188" y="1" width="84" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{apemat}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="db38b28b-ceff-49d3-8ab6-17ec2bace8e7" x="273" y="1" width="63" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombrePersona}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="6b51b456-dddc-4527-8d7c-7808e889295e" x="336" y="1" width="66" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nomConcepto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4a535144-ccc3-4489-bc05-a3ebfa7989e0" x="402" y="1" width="75" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{monto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="7d2d0b5d-e6da-4418-9161-16dff71e76e0" x="477" y="1" width="64" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{estadoEnvio}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="20" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="30" splitType="Stretch">
+			<textField evaluationTime="Page">
+				<reportElement uuid="1456d556-9f3c-441d-ac41-0575a6bb98f8" x="222" y="0" width="101" height="20"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$V{PAGE_COUNT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

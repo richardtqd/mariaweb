@@ -1,0 +1,469 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>
+            <div>
+                <p:layout fullPage="false"  style="width:1800px;height:800px" styleClass="centrado" >
+                    <p:layoutUnit position="west" size="550" header="#{msgs.etiquetaBuscador}" minSize="150" maxSize="700" resizable="true" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500" >
+                        <div>
+                            <h:form id="frmOrden">
+                                <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro"  >
+                                    <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                                        <h:panelGrid columns="1">
+                                            <h:panelGrid columns="2" styleClass="centrado" id="pnlFiltroOr">
+                                                <h:outputLabel value="#{msgs.etiquetaNroOrden}:" class="negrita"/>
+                                                <p:inputText value="#{cotizacionMB.detCotizacionBean.solicitudLogisticoBean.nroSolicitud}" 
+                                                             size="10" maxlength="20" />
+                                                <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" class="negrita"/>
+                                                <p:calendar value="#{cotizacionMB.detCotizacionBean.fechaInicio}"
+                                                            effect="fold" mask="true" size="10" pattern="#{msgs.etiquetaFormatoFecha}" />
+                                                <h:outputLabel value="#{msgs.etiquetaFechaFin}:" class="negrita"/>
+                                                <p:calendar value="#{cotizacionMB.detCotizacionBean.fechaFin}"
+                                                            effect="fold" mask="true" size="10" pattern="#{msgs.etiquetaFormatoFecha}" />
+                                            </h:panelGrid> 
+                                            <h:panelGrid styleClass="centrado" columns="2">
+                                                <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{cotizacionMB.obtenerPorFiltro()}" update="pnlFiltro,pnlOrdenes,msg" />
+                                                <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{cotizacionMB.limpiarOrdenFiltro()}" update="pnlFiltro,pnlOrdenes,msg"/>
+                                            </h:panelGrid>
+                                            <p:messages autoUpdate="false" id="msg" />
+
+                                        </h:panelGrid>
+                                    </p:panel>
+                                </h:panelGrid>
+                                <h:panelGrid id="pnlOrdenes" styleClass="centrado">
+                                    <p:dataTable id="tblCompras" value="#{cotizacionMB.listaBuscadoDetCotizacionBean}" widgetVar="tblCompras" 
+                                                 selectionMode="single"
+                                                 paginator="true"
+                                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                                 rowsPerPageTemplate="5,10"
+                                                 var="compras"  rowKey="#{compras.idRequerimiento}" rows="10" 
+                                                 rendered="#{not empty cotizacionMB.listaBuscadoDetCotizacionBean}" 
+                                                 style="width: 600px;font-size:14px !important;margin-bottom:0">                        
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.tituloOrdsCom}" />  
+                                        </f:facet>
+                                        <p:column  headerText="#{msgs.etiquetaNroOrdenCom}" width="10">
+                                            <center><h:outputText value="#{compras.cotizacionBean.nroCotizacion}" /></center>
+                                        </p:column>
+                                        <p:column  class="nombre2Filtro" headerText="#{msgs.etiquetaDesc}" filterMatchMode="contains" width="80">
+                                            <center><h:outputText value="#{compras.cotizacionBean.obs}" /></center>
+                                        </p:column>
+                                        <p:column  class="nombre1Filtro" headerText="#{msgs.etiquetaTipoOrden}" filterMatchMode="contains" width="55">
+                                            <center><h:outputText value="#{compras.solicitudLogisticoBean.tipoCategoriaBean.codigo}" /></center>
+                                        </p:column>
+                                        <p:column style="text-align:center;width:35px">
+                                            <f:facet name="header">
+                                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                            </f:facet>
+                                            <p:commandLink id="cmdSelecOrden" actionListener="#{cotizacionMB.obtenerPorId(compras)}"   
+                                                           update=":frmDatosCompras, :frmDatosCompras:pnlOrdenes">
+                                                <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                            </p:commandLink>
+                                            <p:tooltip id="toolTip" for="cmdSelecOrden" value="#{msgs.toolTipSeleccionar}" />
+                                        </p:column>
+                                    </p:dataTable>
+                                </h:panelGrid>
+                            </h:form>
+                        </div>
+                    </p:layoutUnit>
+                    <p:layoutUnit position="center" styleClass="centrado">
+                        <div>
+                            <h:form id="frmDatosCompras">  
+
+                                <h:panelGrid columns="1"  styleClass="centrado" cellspacing="5">
+                                    <p:panel header="#{msgs.tituloDatosCotizacion}">
+                                        <center>
+                                            <h:panelGrid styleClass="centrado">
+                                                <h:panelGroup styleClass="centrado" >
+                                                    <h:outputText value="#{msgs.etiquetaSelectSoliciCoti}" style="color: red" /><br/>
+                                                    <center>
+                                                        <p:commandButton id="btnSol" value="#{msgs.tituloSolicitud}"   actionListener="#{cotizacionMB.cargarCotizacionesSolicitud()}"
+                                                                         update=":frmSolicitud" oncomplete="PF('popSolicitud').show();" process="@this">
+                                                        </p:commandButton>
+                                                    </center>
+                                                    <p:tooltip id="toolTipCata" for="btnSol" value="#{msgs.tituloSolicitud}" />
+                                                </h:panelGroup>
+                                            </h:panelGrid>
+                                        </center>
+                                        <h:panelGrid id="pnlDatos" columns="2" cellspacing="5" styleClass="centrado">
+                                            <h:panelGrid columns="3" cellspacing="5">
+                                                <h:outputLabel value="#{msgs.etiquetaNroOrdenCom}" class="negrita" />
+                                                <h:outputText value=" " class="requerido"/>
+                                                <p:inputText id="txtNro" value="#{cotizacionMB.cotizacionBean.nroCotizacion}" readonly="false" 
+                                                             maxlength="10" size="20" style="background-color: #f5f5f5"/>
+                                                <h:outputLabel value="#{msgs.etiquetaFecOrden}" class="negrita" />
+                                                <h:outputText value=" " class="requerido"/>
+                                                <p:inputText id="txtFecha" value="#{cotizacionMB.cotizacionBean.fechaCotizacion}" readonly="true" maxlength="10" size="20">
+                                                    <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}" />
+                                                </p:inputText>
+                                                <h:outputLabel value="#{msgs.etiquetaTipoCategoria}: " class="negrita" />
+                                                <h:outputText value=" " class="requerido"/>
+                                                <p:selectOneMenu id="cboTipCa" value="#{cotizacionMB.cotizacionBean.tipoCategoriaBean.idCodigo}"  style="width: 250px" >
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{cotizacionMB.listaTipoCategoriaBean}" var="orden" 
+                                                                   itemLabel="#{orden.codigo}" itemValue="#{orden.idCodigo}"/>
+                                                    <p:ajax event="change" listener="#{cotizacionMB.cargarEntidades()}" update=":frmProveedor"/>
+                                                </p:selectOneMenu> 
+                                                <h:outputLabel value="#{msgs.etiquetaTipoPrioridad}: " class="negrita" />
+                                                <h:outputText value=" " class="requerido"/>
+                                                <p:selectOneMenu  id="cboTipPri" value="#{cotizacionMB.cotizacionBean.tipoPrioridadBean.idCodigo}"  style="width: 250px" required="true">
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{ordenCompraMB.listaTipoPrioridadBean}" var="prio" 
+                                                                   itemLabel="#{prio.codigo}" itemValue="#{prio.idCodigo}"/>
+                                                </p:selectOneMenu>
+                                                <h:outputLabel value="#{msgs.etiquetaImporte}" class="negrita" />
+                                                <h:outputText value=" " class="requerido"/> 
+                                                <p:inputText id="txtImporte" value="#{cotizacionMB.sumaImporte}" readonly="true"  maxlength="6" size="20"/>
+                                                <h:outputLabel value="#{msgs.etiquetaIGV}" class="negrita" rendered="#{cotizacionMB.sumaImporte!=0}"/>
+                                                <h:outputText value=" " class="requerido" rendered="#{cotizacionMB.sumaImporte!=0}"/> 
+                                                <p:inputText id="txtImporteIgv" value="#{cotizacionMB.cotizacionBean.igvCoti}" readonly="false"  maxlength="20" size="20"
+                                                             rendered="#{cotizacionMB.sumaImporte!=0}">
+                                                  <p:ajax listener="#{cotizacionMB.calgularTotalCotIgv()}" 
+                                                update="txtImporteTotal" />
+                                                </p:inputText>
+                                                 <h:outputLabel value="#{msgs.etiquetaTotal}" class="negrita" rendered="#{cotizacionMB.sumaImporte!=0}"/>
+                                                <h:outputText value=" " class="requerido" rendered="#{cotizacionMB.sumaImporte!=0}"/> 
+                                                <p:inputText id="txtImporteTotal" value="#{cotizacionMB.sumaTotalCoti}" readonly="true"  maxlength="6" size="20" rendered="#{cotizacionMB.sumaImporte!=0}"/>
+                                                <h:outputLabel value="#{msgs.etiquetaTotal}" class="negrita" rendered="#{cotizacionMB.sumaImporte==0}"/>
+                                                <h:outputText value=" " class="requerido" rendered="#{cotizacionMB.sumaImporte==0}"/> 
+                                                <p:inputText id="txtImporteTotall" value="#{cotizacionMB.cotizacionBean.importePorTodo}" readonly="false"  maxlength="20" size="20"
+                                                             rendered="#{cotizacionMB.sumaImporte==0}"/>
+                                            </h:panelGrid>
+                                            <h:panelGrid columns="1" cellspacing="5">
+                                                <h:outputLabel value="#{msgs.etiquetaDesc}" class="negrita" />
+                                                <p:inputTextarea id="txtAreaTitulo" value="#{cotizacionMB.cotizacionBean.obs}" 
+                                                                 rows="7" cols="35"  maxlength="200" autoResize="false" />
+                                            </h:panelGrid>
+                                        </h:panelGrid>
+                                        <p:growl id="m" showDetail="true"/>
+                                        <p:separator/> 
+                                    </p:panel>
+                                </h:panelGrid> 
+                                <h:panelGrid id="pnlDetalleOrden" columns="1" styleClass="centrado" >
+                                    <p:dataTable value="#{cotizacionMB.listaDetCotizacionBean}" paginator="true"
+                                                 var="detalle" id="tblDet" rows="6" editable="true"
+                                                 rendered="#{not empty cotizacionMB.listaDetCotizacionBean}" 
+                                                 style="width:900px; font-size: 10px;margin-bottom:20px" > 
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.etiquetaDetalle}" />  
+                                        </f:facet>
+                                        <p:column class="nombre5Filtro"  headerText="#{msgs.etiquetaFecha}" filterMatchMode="contains" width="40" visible="#{cotizacionMB.flgTransporte==true}">
+                                            <center><h:outputText value="#{detalle.solicitudLogDetalleBean.fechaSalida}"  style=" font-size: 14px">
+                                            <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                                </h:outputText></center>
+                                        </p:column>
+                                        <p:column  class="nombre5Filtro"  headerText="#{msgs.etiquetaDestino}" filterMatchMode="contains" width="100" visible="#{cotizacionMB.flgTransporte==true}">
+                                            <center><h:outputText value="#{detalle.solicitudLogDetalleBean.destinoServicio}"  style=" font-size: 14px"/></center>
+                                        </p:column>
+                                        <p:column  class="nombre2Filtro"  headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="180">
+                                            <h:outputText value="#{detalle.catalogoBean.item}"  style=" font-size: 12px"/>
+                                        </p:column>
+                                        <p:column class="nombre5Filtro"  headerText="#{msgs.etiquetaHoraSalida}" filterMatchMode="contains" width="50" visible="#{cotizacionMB.flgTransporte==true}">
+                                            <center><h:outputText value="#{detalle.solicitudLogDetalleBean.horaSalida}"  style=" font-size: 14px"/></center>
+                                        </p:column> 
+                                        <p:column class="nombre5Filtro"  headerText="#{msgs.etiquetaHoraRegreso}" filterMatchMode="contains" width="50" visible="#{cotizacionMB.flgTransporte==true}">
+                                            <center><h:outputText value="#{detalle.solicitudLogDetalleBean.horaRegreso}"  style=" font-size: 14px"/></center>
+                                        </p:column>
+                                        <p:column class="nombre5Filtro" headerText="#{msgs.etiquetaPrecio}" filterMatchMode="contains" width="50">
+                                            <p:cellEditor>
+                                                <f:facet name="output"><center><h:outputText value="#{detalle.importe}" styleClass="centrado"/></center></f:facet>
+                                                <f:facet name="input"><center><p:inputText   value="#{detalle.importe}" style=" font-size: 14px" styleClass="centrado"/></center></f:facet>
+                                            </p:cellEditor>
+                                        </p:column> 
+                                        <p:column  class="nombre5Filtro"  headerText="#{msgs.etiquetaCant}" filterMatchMode="contains" width="50">
+                                            <center> <h:outputText value="#{detalle.cantidad}"  style=" font-size: 14px"/> </center>
+                                        </p:column>
+                                        <p:column style="width:15px">
+                                            <p:rowEditor id="editCantidad"/>
+                                            <p:tooltip id="toolTip" for="editCantidad" value="#{msgs.toolTipEditCantidad}" />
+                                        </p:column>
+                                        <p:ajax event="rowEdit" listener="#{cotizacionMB.calcularImportePorItem(detalle)}" 
+                                                update=":frmDatosCompras:txtImporte, :frmDatosCompras:tblCompras:montoRef, :frmDatosCompras:txtImporteTotal" />
+                                    </p:dataTable> 
+                                </h:panelGrid> 
+                                <center>
+                                    <h:panelGrid id="pnlProveedor">
+                                        <p:fieldset legend="#{msgs.etiquetaDatosProveedor}">
+                                            <h:panelGrid columns="1">
+                                                <h:panelGrid columns="6">
+                                                    <h:outputLabel value="#{msgs.etiquetaTipoFormaPago}: " class="negrita" />
+                                                    <h:outputText value=" " class="requerido"/>
+                                                    <p:selectOneMenu value="#{cotizacionMB.cotizacionBean.tipoPagoBean.idCodigo}"  style="width: 250px" required="true">
+                                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                        <f:selectItems value="#{ordenCompraServicioMB.listaTipoFormaPagoBean}" var="pago" 
+                                                                       itemLabel="#{pago.codigo}" itemValue="#{pago.idCodigo}"/> 
+                                                    </p:selectOneMenu>
+                                                    <h:outputLabel value="#{msgs.etiquetaNroCotiPro}" styleClass="negrita" />
+                                                        <h:outputText value="" styleClass="requerido"/>
+                                                        <p:inputText id="txtNroCo" value="#{cotizacionMB.cotizacionBean.nroCotiPro}" label="#{msgs.etiquetaNroCotiPro}" size="8"  />
+                                                </h:panelGrid>
+                                                <h:panelGrid columns="6">
+                                                    <h:outputLabel value="#{msgs.etiquetaRazonSocial}: " class="negrita" />
+                                                    <h:outputText value=" " class="requerido"/>
+                                                    <p:inputText id="txtNombre" value="#{cotizacionMB.cotizacionBean.entidadBean.nombre}" label="#{msgs.etiquetaRazonSocial}"
+                                                                 size="30" readonly="true" />
+                                                    <h:outputLabel value="#{msgs.etiquetaRuc}: " class="negrita" />
+                                                    <h:outputText value=" " class="requerido"/>
+                                                    <p:inputText id="txtRuc" value="#{cotizacionMB.cotizacionBean.entidadBean.ruc}" label="#{msgs.etiquetaRuc}" size="30" readonly="true"/>
+                                                    <h:outputLabel value="#{msgs.etiquetaDireccion}: " class="negrita" />
+                                                    <h:outputText value=" " class="requerido"/>
+                                                    <p:inputText id="txtDireccion" value="#{cotizacionMB.cotizacionBean.entidadBean.direccion}" label="#{msgs.etiquetaEntidadSede}" size="30" readonly="true"/>
+                                                    <h:panelGroup styleClass="centrado">
+                                                        <p:commandLink id="btnProveedor"  
+                                                                       update=":frmProveedor" oncomplete="PF('popProveedor').show();" >
+                                                            <h:graphicImage value="/resources/images/icons/search2.png" style="border:0; cursor:pointer;"/>
+                                                        </p:commandLink>
+                                                        <p:tooltip id="toolTipPlan" for="btnProveedor" value="#{msgs.toolTipSelectProveedor}" />
+                                                    </h:panelGroup>
+                                                    <p:link id="entSeg" outcome="/configuracion/mantEntidad.xhtml" target="_blank">
+                                                        <h:graphicImage value="/resources/images/icons/addverde3.png" style="border:0; cursor:pointer;"/>
+                                                    </p:link> 
+                                                    <p:commandLink id="btnActualizarComSeg" actionListener="#{cotizacionMB.actualizarEntidad}" process="@this" update=":frmDatosCompras">
+                                                        <h:graphicImage value="/resources/images/icons/refrescar.png"   style="border:0; cursor:pointer;"/>
+                                                    </p:commandLink> 
+                                                </h:panelGrid>
+                                            </h:panelGrid> 
+                                            <h:panelGrid class="centrado" columns="12"> 
+                                                <p:commandButton id="btnGraba" action="#{cotizacionMB.grabar()}"  
+                                                                 update=":frmDatosCompras,:frmOrden:pnlOrdenes"
+                                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                                 value="#{msgs.botonGrabar}">
+                                                </p:commandButton>
+                                                <p:commandButton id="btnLimpiaProveedores" action="#{cotizacionMB.limpiarProveedor()}" 
+                                                                 update=":frmDatosCompras:pnlProveedor"
+                                                                 value="#{msgs.botonLimpiarProveedor}" process="@this">
+                                                </p:commandButton>
+                                                <p:commandButton id="btnLimpiaCoti" action="#{cotizacionMB.limpiarCoti()}" 
+                                                                 update=":frmDatosCompras:pnlProveedor,:frmDatosCompras:pnlDatos, :frmDatosCompras:pnlDetalleOrden,:frmDatosCompras:pnlOrdenes
+                                                                 :frmDatosCompras:txtImporteTotal,:frmDatosCompras:txtImporte"
+                                                                 value="#{msgs.botonNuevoCotizacion}" process="@this">
+                                                </p:commandButton>
+                                            </h:panelGrid>
+                                        </p:fieldset>
+                                    </h:panelGrid>
+                                        
+                                    <h:panelGrid id="pnlOrdenes" styleClass="centrado">
+                                        <p:dataTable id="tblCompras" value="#{cotizacionMB.listaCotizacionPorId}" widgetVar="tblCompras" 
+                                                     selectionMode="single"
+                                                     paginator="true"
+                                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                                     rowsPerPageTemplate="5,10"
+                                                     var="cotizacionDet"  rowKey="#{cotizacionDet.idCotizacion}" rows="10" 
+                                                     rendered="#{not empty cotizacionMB.listaCotizacionPorId}" 
+                                                     style="width: 900px;font-size:14px !important;margin-bottom:0">                        
+                                            <f:facet name="header" >
+                                                <h:outputText value="#{msgs.tituloOrdsCom}" />  
+                                            </f:facet>
+                                            <p:column  headerText="#{msgs.etiquetaNroOrdenCom}" width="50">
+                                                <center><h:outputText value="#{cotizacionDet.idCotizacion}" /></center>
+                                            </p:column> 
+                                            <p:column  class="nombre2Filtro" headerText="#{msgs.etiquetaProvee}" filterMatchMode="contains" width="160">
+                                                <center><h:outputText value="#{cotizacionDet.cotizacionBean.entidadBean.nombre}" /></center>
+                                            </p:column>
+                                            <p:column class="nombre1Filtro" headerText="#{msgs.etiquetaTipoOrden}" filterMatchMode="contains" width="55">
+                                                <center><h:outputText value="#{cotizacionDet.cotizacionBean.tipoCategoriaBean.codigo}" /></center>
+                                            </p:column>
+                                            <p:column headerText="#{msgs.etiquetaTipoFormaPago}"  width="55">
+                                                <center><h:outputText value="#{cotizacionDet.cotizacionBean.tipoPagoBean.codigo}" /></center>
+                                            </p:column> 
+                                            <p:column headerText="#{msgs.etiquetaMontoRef}"  width="55">
+                                                <center><h:outputText  id="montoRef" value="#{cotizacionDet.cotizacionBean.montoRef}" /></center>
+                                            </p:column>
+                                            <p:column class="centrado" filterMatchMode="contains" width="30" styleClass="siseFont1">
+
+                                                <p:selectBooleanCheckbox value="#{cotizacionDet.cotizacionBean.flgAceptado}">
+                                                    <p:ajax event="change" listener="#{cotizacionMB.cambiarValCotizacionAprobada(cotizacionDet.cotizacionBean.idCotizacion)}" update=":frmDatosCompras:pnlOrdenes"/>
+                                                </p:selectBooleanCheckbox>
+                                            </p:column>
+                                            <p:column style="text-align:center;width:70px">
+                                                <f:facet name="header">
+                                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                                </f:facet>
+                                                <p:commandLink id="cmdSelecOrden" actionListener="#{cotizacionMB.obtenerCotizacion(cotizacionDet)}"   
+                                                               update=":frmDatosCompras">
+                                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                                </p:commandLink>
+                                                <p:tooltip id="toolTip" for="cmdSelecOrden" value="#{msgs.toolTipSeleccionar}" />
+                                            </p:column>
+                                            <p:column style="text-align:center;width:90px">
+                                                <div align="center"> 
+                                                    <h:commandLink action="#{cotizacionMB.obtenerCotizacionId(cotizacionDet)}"  target="_blank"  >
+                                                        <h:graphicImage value="/resources/images/icons/pdf.png" width="20%"/>
+                                                    </h:commandLink> 
+                                                </div>
+                                            </p:column>
+                                        </p:dataTable>
+                                    </h:panelGrid>
+
+                                </center>
+                            </h:form>
+                        </div> 
+                    </p:layoutUnit>
+                </p:layout>
+            </div> 
+            <h:form id="frmProveedor" styleClass="center_content">
+                <h:panelGrid  columns="1" styleClass="centrado">
+                    <p:dialog header="#{msgs.appSiglas}" widgetVar="popProveedor" showEffect="fade" hideEffect="explode"
+                              modal="true" styleClass="autoWidthDialog" position="top" resizable="false" dynamic="true">
+
+                        <h:panelGrid id="pnlProveedor" columns="1" styleClass="centrado">
+                            <p:dataTable id="tblSedeProveedor" value="#{cotizacionMB.listaEntidadBean}" paginator="true" 
+                                         var="entidad"  widgetVar="tblSedeProveedor"
+                                         rowKey="#{entidad.ruc}" rows="6"
+                                         rendered="#{not empty cotizacionMB.listaEntidadBean}" 
+                                         style="width:850px; font-size: 12px" >
+
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.tituloProveedores}" />  
+                                </f:facet>
+                                <p:column filterBy="#{entidad.nombre}" class="nombre2Filtro"  headerText="#{msgs.etiquetaRazonSocial}" filterMatchMode="contains" width="30%" >
+                                    <h:outputText value="#{entidad.nombre}"/>
+                                </p:column>
+                                <p:column filterBy="#{entidad.ruc}" class="nombre1Filtro"  headerText="#{msgs.etiquetaRuc}" filterMatchMode="contains" width="18%" >
+                                    <center><h:outputText value="#{entidad.ruc}"/></center>
+                                </p:column>
+                                <p:column filterBy="#{entidad.direccion}" class="nombre2Filtro"  headerText="#{msgs.etiquetaDireccion}" filterMatchMode="contains" width="20%" >
+                                    <h:outputText value="#{entidad.direccion}"/>
+                                </p:column>
+                                <p:column style="text-align:center;width:60px">
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                    </f:facet>
+                                    <p:commandLink id="cmdSelec" actionListener="#{cotizacionMB.obtenerEntidadPorId(entidad)}"  
+                                                   update=":frmDatosCompras:txtNombre,:frmDatosCompras:txtRuc ,:frmDatosCompras:txtDireccion"
+                                                   oncomplete="PF('popProveedor').hide();" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipEdit" for="cmdSelec" value="#{msgs.toolTipSeleccionar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <br/>
+                        <p:separator/>
+                        <div align="center">
+                            <p:commandButton oncomplete="PF('popProveedor').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                        </div>
+                    </p:dialog>
+                </h:panelGrid>
+            </h:form> 
+            <h:form id="frmSolicitud" styleClass="center_content">
+                <h:panelGrid  columns="1" styleClass="centrado">
+                    <p:dialog header="#{msgs.appSiglas}" widgetVar="popSolicitud" showEffect="fade" hideEffect="explode"
+                              modal="true" styleClass="autoWidthDialog" position="top" resizable="false" dynamic="true">
+
+                        <h:panelGrid id="pnlSolicitudes" styleClass="centrado">
+                            <p:dataTable id="tblSol" value="#{cotizacionMB.listaSolicitudActivosMaBean}" paginator="true" 
+                                         rowsPerPageTemplate="5,10"
+                                         widgetVar="tblSol" 
+                                         var="solicitud"  rowKey="#{solicitud.idRequerimiento}" rows="5" 
+                                         rendered="#{not empty cotizacionMB.listaSolicitudActivosMaBean}" 
+                                         style="width: 1000px; font-size: 10px">
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.tituloSolicitudes}" />  
+                                </f:facet>
+                                <p:column filterBy="#{solicitud.nroSolicitud}" headerText="#{msgs.etiquetaNroSol}" class="nombre11Filtro" filterMatchMode="contains" style="width: 90px">
+                                    <center><h:outputText value="#{solicitud.nroSolicitud}" /></center>
+                                </p:column>
+                                <p:column class="centrado-texto" headerText="#{msgs.etiquetaFecSol}"  style="width: 80px" >
+                                    <h:outputText value="#{solicitud.fechaSolicitud}">
+                                        <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}"/>
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column filterBy="#{solicitud.personalBean.nombreCompleto}" class="nombre2Filtro" headerText="#{msgs.etiquetaSolicitante}" filterMatchMode="contains" style="width: 300px">
+                                    <center><h:outputText value="#{solicitud.personalBean.nombreCompleto}" /></center>
+                                </p:column>  
+                                 <p:column filterBy="#{solicitud.titulo}" styleClass="nombre2Filtro" headerText="#{msgs.etiquetaDescripcion}" filterMatchMode="contains" style="width: 220px">
+                                    <center><h:outputText value="#{solicitud.titulo}" /></center>
+                                </p:column>
+                                <p:column filterBy="#{solicitud.importePropuesto}" styleClass="nombre2Filtro" headerText="#{msgs.etiquetaImportePro}" filterMatchMode="contains" style="width: 75px">
+                                    <center><h:outputText value="#{solicitud.importePropuesto}" /></center>
+                                </p:column>
+                                <p:column style="text-align:center;width:60px">
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                    </f:facet>
+                                    <p:commandLink id="cmdSelecSol" actionListener="#{cotizacionMB.obtenerDetalleSolPorId(solicitud)}"    
+                                                   update=":frmSolicitud:pnlDetalle,:frmDatosCompras:cboTipCa , :frmDatosCompras:cboTipPri, :frmDatosCompras:txtAreaTitulo, :frmDatosCompras:txtNro" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/select.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>    
+                                    <p:tooltip id="toolTip" for="cmdSelecSol" value="#{msgs.toolTipVerDetalle}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid id="pnlDetalle" columns="1" styleClass="centrado" >
+                            <p:dataTable value="#{cotizacionMB.listaSolicitudLogDetalleBean}" paginator="true"
+                                         var="detalle" id="tblCatalogoSelec" rows="6" editable="true"
+                                         rendered="#{not empty cotizacionMB.listaSolicitudLogDetalleBean}" 
+                                         style="width:1100px; font-size: 10px;margin-bottom:20px" > 
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaDetalleSolicitud}" />  
+                                </f:facet>
+                                <p:column filterBy="#{detalle.catalogoBean.idCatalogo}" class="nombre5Filtro"  headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="60">
+                                    <center><h:outputText value="#{detalle.catalogoBean.idCatalogo}"  style=" font-size: 12px"/></center>
+                                </p:column>
+                                <p:column filterBy="#{detalle.catalogoBean.item}" class="nombre2Filtro"  headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="220">
+                                    <h:outputText value="#{detalle.catalogoBean.item}"  style=" font-size: 12px"/>
+                                </p:column>
+                                <p:column filterBy="#{detalle.catalogoBean.precioRef}" class="nombre5Filtro" headerText="#{msgs.etiquetaPrecio}" filterMatchMode="contains" width="50">
+                                    <center><h:outputText value="#{detalle.catalogoBean.precioRef}" style=" font-size: 14px" /></center> 
+                                </p:column>
+                               <!-- <p:column id="stockactivo" filterBy="#{detalle.catalogoBean.inventarioActivoBean.stockActual}" class="nombre5Filtro"  headerText="#{msgs.etiquetaStockAct}" filterMatchMode="contains" width="70"
+                                          rendered="#{solicitudLogisticoMB.flgActivo==true}">
+                                    <center><h:outputText value="#{detalle.catalogoBean.inventarioActivoBean.stockActual}"  style=" font-size: 14px" rendered="#{solicitudLogisticoMB.flgActivo==true}"/></center>
+                                </p:column>
+                                <p:column id="stockAlmacen" filterBy="#{detalle.catalogoBean.inventarioAlmacenBean.stockActual}" class="nombre5Filtro"  headerText="#{msgs.etiquetaStockAct}" filterMatchMode="contains" width="70"
+                                          rendered="#{solicitudLogisticoMB.flgAlmacen==true}">
+                                    <center><h:outputText value="#{detalle.catalogoBean.inventarioAlmacenBean.stockActual}"  style=" font-size: 14px" rendered="#{solicitudLogisticoMB.flgAlmacen==true}"/></center>
+                                </p:column>
+                               <p:column filterBy="#{detalle.materialBean.stockMin}" class="nombre5Filtro"  headerText="#{msgs.etiquetaStockMin}" filterMatchMode="contains" width="70">
+                                    <center><h:outputText value="#{detalle.materialBean.stockMin}"  style=" font-size: 14px"/></center>
+                                </p:column>-->
+                                <p:column filterBy="#{detalle.cantidadSolicitada}" class="nombre5Filtro"  headerText="#{msgs.etiquetaCantSolicitada}" filterMatchMode="contains" width="70">
+                                    <center><h:outputText value="#{detalle.cantidadSolicitada}"  style=" font-size: 14px"/></center>
+                                </p:column>
+                                <p:column filterBy="#{detalle.cantidadEntregada}" class="nombre5Filtro"  headerText="#{msgs.etiquetaCantEntregada}" filterMatchMode="contains" width="70">
+                                    <center><h:outputText value="#{detalle.cantidadEntregada}"  style=" font-size: 14px"/></center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaEstadoDetalle}" width="150">
+                                    <center><h:outputText value="#{detalle.tipoEstadoBean.codigo}"  style=" font-size: 14px"/></center>
+                                </p:column>
+                                <p:column style="text-align:center;width:60px">
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                    </f:facet>
+                                    <p:commandLink id="cmdAdd" actionListener="#{cotizacionMB.agregarItem(detalle)}"  
+                                                   update=":frmDatosCompras:pnlDetalleOrden,:frmDatosCompras:txtImporte"
+                                                   oncomplete="if(args.operacionCorrecta){PF('popDone').show();}">
+                                        <h:graphicImage value="/resources/images/icons/agregar.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipAdd" for="cmdAdd" value="#{msgs.toolTipAgregar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <p:separator/>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton id="btnAgregarItems" action="#{cotizacionMB.agregarItems()}"  
+                                             update=":frmDatosCompras:pnlDetalleOrden,:frmDatosCompras:txtImporte,:frmDatosCompras:txtImporteTotal"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();PF('popSolicitud').hide();}"
+                                             value="#{msgs.botonAgregar}">
+                            </p:commandButton>
+                            <p:commandButton oncomplete="PF('popSolicitud').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:tooltip id="toolTipAddItems" for="btnAgregarItems" value="#{msgs.toolTipAgregarToOrden}" />
+                    </p:dialog>
+                </h:panelGrid>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

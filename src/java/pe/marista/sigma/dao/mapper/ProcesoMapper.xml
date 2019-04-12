@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ProcesoDAO">  
+    <sql id="consultaProceso">
+        Select  
+        pro.idProceso,
+        pro.descripcion,
+        pro.uniNeg,
+        uni.nombreUniNeg,
+        pro.anio,
+        pro.idTipoProceso,
+        cod.codigo,
+        cod.valor,
+        pro.fecIni,
+        pro.fecFin,
+        pro.status,
+        pro.creaPor,
+        pro.creaFecha,
+        pro.modiPor
+        From MX_Proceso pro  
+        Inner Join MO_Codigo cod ON pro.idTipoProceso=cod.idCodigo
+        Inner Join MO_UnidadNegocio uni ON pro.uniNeg=uni.uniNeg
+    </sql>
+    <select id="obtenerProceso" resultMap="procesoResultado">
+        <include refid="consultaProceso"/>
+    </select>
+    <select id="obtenerProcesoPorUniNeg" resultMap="procesoResultado" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        <include refid="consultaProceso"/>Where pro.uniNeg = #{uniNeg}  order by idproceso desc
+    </select>
+    <select id="obtenerProcesoActivos" resultMap="procesoResultado" parameterType="pe.marista.sigma.bean.UnidadNegocioBean">
+        <include refid="consultaProceso"/>Where pro.uniNeg = #{uniNeg}   and pro.status = 1
+    </select>
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBean">
+        <id property="idProceso" column="idProceso"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <result property="descripcion" column="descripcion"/>
+        <result property="anio" column="anio"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="codigoBean" column="idTipoProceso"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoProceso"/>
+        <result property="codigo" column="codigo"/>
+        <result property="valor" column="valor"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <select id="obtenerProcPorId" resultMap="procesoResultado" parameterType="pe.marista.sigma.bean.ProcesoBean">
+        <include refid="consultaProceso" />
+        Where pro.uniNeg=#{unidadNegocioBean.uniNeg} and pro.idProceso=#{idProceso} 
+    </select>
+    <insert id="insertarProceso" parameterType="pe.marista.sigma.bean.ProcesoBean">
+        INSERT INTO MX_Proceso(uniNeg,descripcion,anio,idTipoProceso,fecIni,fecFin,status,creaPor,creaFecha)
+        Values (#{unidadNegocioBean.uniNeg},#{descripcion},#{anio},#{codigoBean.idCodigo},#{fecIni},#{fecFin},#{status},#{creaPor},getDate())
+    </insert> 
+    <update id="modificarProceso" parameterType="pe.marista.sigma.bean.ProcesoBean">
+        UPDATE MX_Proceso SET 
+        descripcion = #{descripcion},
+        anio = #{anio},
+        idTipoProceso = #{codigoBean.idCodigo},
+        fecIni = #{fecIni},
+        fecFin = #{fecFin},
+        status = #{status},
+        modiPor=#{modiPor}
+        Where uniNeg=#{unidadNegocioBean.uniNeg} and idProceso=#{idProceso} 
+    </update>
+    <delete id="eliminarProceso" parameterType="pe.marista.sigma.bean.ProcesoBean">
+        Delete From MX_Proceso 
+        Where uniNeg=#{unidadNegocioBean.uniNeg} and idProceso=#{idProceso}  
+    </delete>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.ProcesoBean">
+        Update MX_Proceso set
+        status=#{status}
+        Where uniNeg=#{unidadNegocioBean.uniNeg} and  idProceso=#{idProceso} 
+    </update> 
+    <!--Check List --><!--Check List --><!--Check List --><!--Check List --><!--Check List --><!--Check List --><!--Check List --><!--Check List -->
+    <sql id="consultaCheckList">
+        Select 
+         proce.idProceso
+        ,proce.uniNeg
+        ,checkL.idCheckList
+        ,checkL.documento
+        ,checkL.flgObligatorio
+        ,checkL.idTipoCopia
+        ,codTipCop.codigo as codTipoCopia
+        ,checkL.flg01
+        ,checkL.flg02
+        ,checkL.flg03
+        ,checkL.flg04
+        ,checkL.flg05
+        ,checkL.flg06
+        ,checkL.flg07
+        ,checkL.flg08
+        ,checkL.flg09
+        ,checkL.flg10
+        ,checkL.flg11
+        ,checkL.flg23
+        ,checkL.flg24
+        ,checkL.flg25 
+        FROM MX_CheckList checkL
+        Inner Join MX_Proceso proce on proce.idProceso=checkL.idProceso
+        Inner Join MO_Codigo codTipCop on codTipCop.idCodigo=checkL.idTipoCopia
+    </sql>
+    <resultMap id="checkListResultado" type="pe.marista.sigma.bean.CheckListBean">
+        <id property="procesoBean.idProceso" column="idProceso"/>
+        <id property="procesoBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idCheckList" column="idCheckList"/>
+        <result property="documento" column="documento"/>
+        <result property="flgObligatorio" column="flgObligatorio"/>
+        <result property="flg01" column="flg01"/> 
+        <result property="flg02" column="flg02"/> 
+        <result property="flg03" column="flg03"/> 
+        <result property="flg04" column="flg04"/> 
+        <result property="flg05" column="flg05"/> 
+        <result property="flg06" column="flg06"/> 
+        <result property="flg07" column="flg07"/> 
+        <result property="flg08" column="flg08"/> 
+        <result property="flg09" column="flg09"/> 
+        <result property="flg10" column="flg10"/> 
+        <result property="flg11" column="flg11"/> 
+        <result property="flg23" column="flg23"/> 
+        <result property="flg24" column="flg24"/> 
+        <result property="flg25" column="flg25"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="tipoCopiaBean" column="idTipoCopia"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCopiaResultado"/>
+        <association property="procesoBean" column="idProceso"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="procesoResultado"/>
+    </resultMap>
+    <resultMap id="tipoCopiaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCopia"/>
+        <result property="codigo" column="codTipoCopia"/> 
+    </resultMap>
+    
+    <insert id="insertarCheckList" parameterType="pe.marista.sigma.bean.CheckListBean">
+        INSERT INTO MX_CheckList
+        (uniNeg,idProceso,documento,idTipoCopia,
+        flg01,flg02,flg03,flg04,flg05,flg06,flg07,flg08,flg09,flg10,
+        flg11,flg23,flg24,flg25,creaPor,creaFecha,flgObligatorio)
+        Values (#{procesoBean.unidadNegocioBean.uniNeg},#{procesoBean.idProceso},#{documento},#{tipoCopiaBean.idCodigo},
+        #{flg01},#{flg02},#{flg03},#{flg04},#{flg05},#{flg06},#{flg07},#{flg08},#{flg09},#{flg10},
+        #{flg11},#{flg23},#{flg24},#{flg25},#{creaPor},getDate(),#{flgObligatorio}) 
+    </insert>
+    <update id="modificarCheckList" parameterType="pe.marista.sigma.bean.CheckListBean">
+        UPDATE MX_CheckList SET 
+        documento=#{documento},
+        flgObligatorio=#{flgObligatorio},
+        idTipoCopia=#{tipoCopiaBean.idCodigo},
+        flg01=#{flg01},
+        flg02=#{flg02},
+        flg03=#{flg03},
+        flg04=#{flg04},
+        flg05=#{flg05},
+        flg06=#{flg06},
+        flg07=#{flg07},
+        flg08=#{flg08},
+        flg09=#{flg09},
+        flg10=#{flg10},
+        flg11=#{flg11},
+        flg23=#{flg23},
+        flg24=#{flg24},
+        flg25=#{flg25},
+        modiPor=#{modiPor}
+        Where uniNeg=#{procesoBean.unidadNegocioBean.uniNeg} and idProceso=#{procesoBean.idProceso} and idCheckList=#{idCheckList}
+    </update>
+    <delete id="eliminarCheckList" parameterType="pe.marista.sigma.bean.CheckListBean">
+        Delete From MX_CheckList
+        Where uniNeg=#{procesoBean.unidadNegocioBean.uniNeg} and 
+        idProceso=#{procesoBean.idProceso} and 
+        idCheckList=#{idCheckList}
+    </delete>
+    
+    <select id="obtenerCheckListPorId" resultMap="checkListResultado" parameterType="pe.marista.sigma.bean.CheckListBean">
+        <include refid="consultaCheckList" />
+        Where proce.uniNeg=#{procesoBean.unidadNegocioBean.uniNeg} and proce.idProceso=#{procesoBean.idProceso} and checkL.idCheckList=#{idCheckList}
+    </select>
+    <select id="obtenerCheckListPorProceso" resultMap="checkListResultado" parameterType="pe.marista.sigma.bean.ProcesoBean">
+        <include refid="consultaCheckList" />
+        Where proce.uniNeg=#{unidadNegocioBean.uniNeg} and proce.idProceso=#{idProceso} 
+    </select>
+   
+</mapper>

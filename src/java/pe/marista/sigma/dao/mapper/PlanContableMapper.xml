@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.PlanContableDAO">  
+    <sql id="consultaCampos">
+        Select  
+        pla.cuenta,
+        pla.nombre,
+        pla.idTipoCuenta, 
+        pla.nivel,
+        pla.creaPor,
+        pla.creaFecha
+        From MT_PlanContable pla
+    </sql>
+    <resultMap id="planContableResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="cuenta" column="cuenta"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nivel" column="nivel"/><!--Cambio-->
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="idTipoCategoriaActa" column="idTipoCategoriaActa"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="categoriaActaResultado"/>
+        <association property="idTipoCuenta" column="idTipoCuenta"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCuentaResultado"/>
+    </resultMap>
+    
+    <resultMap id="presupuestoUniNeg" type="pe.marista.sigma.bean.PlanContableBean" >
+        <id property="col" column="col" />
+        <result property="cuenta" column="cuenta" />
+        <result property="importe" column="importe" />
+        <result property="nombrePlan" column="nombrePlan" />
+    </resultMap>
+    
+    <select id="obtenerPlanContable" resultMap="planContableResultado">
+        <include refid="consultaCampos" />
+    </select>
+    <select id="obtenerPlanContableIngresos" resultMap="planContableResultado">
+        <include refid="consultaCampos" />
+        where pla.cuenta  like ('7%')
+    </select>
+    <select id="obtenerPlanContableNombre" resultMap="planContableResultado">
+        select cuenta,nombre from MT_PlanContable
+        order by 1
+    </select>
+    <select id="obtenerPlanContableFiltro" resultMap="planContableResultado" parameterType="pe.marista.sigma.bean.PlanContableBean">
+        <include refid="consultaCampos" />
+        <where>
+            <if test="cuenta != null and cuenta != 0 "> 
+                pla.cuenta like concat('%',#{cuenta},'%')
+            </if> 
+        </where>  
+    </select>
+    <select id="obtenerPlanFiltro" resultMap="planContableResultado">
+        <include refid="consultaCampos" />
+        WHERE
+        SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%33%' 
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%60%'  
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%62%'
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%63%'
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%64%'
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%65%'
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%67%'
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%68%' 
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%70%' 
+        or SUBSTRING(convert(varchar,pla.cuenta),0,3) like '%75%'
+    </select>
+    <select id="obtenerPlanFiltroCuenta" resultMap="planContableResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        <where>
+            <if test="cuenta != null and cuenta != 0 "> 
+                pla.cuenta like concat(#{cuenta},'%')
+            </if> 
+        </where>  
+    </select>
+    
+    <select id="obtenerPresupuestoUniNeg" resultMap="presupuestoUniNeg" parameterType="String" >
+        select 
+        ROW_NUMBER() over(order by SUBSTRING(CONVERT(varchar,pl.cuenta),1,2)) as col,
+        SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) as cuenta,isnull(sum(dea.importe),0) as importe,
+        case
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '33' then 'Nro. Cuenta 33'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '60' then 'Nro. Cuenta 60'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '62' then 'Nro. Cuenta 62'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '63' then 'Nro. Cuenta 63'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '64' then 'Nro. Cuenta 64'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '65' then 'Nro. Cuenta 65'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '67' then 'Nro. Cuenta 67'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '68' then 'Nro. Cuenta 68'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '70' then 'Nro. Cuenta 70'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '75' then 'Nro. Cuenta 75'
+        end
+        as nombrePlan 
+        from MT_PlanContable pl 
+        left join ME_DetActividad dea on pl.cuenta = dea.cuenta
+        where 
+        SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) in ('33','60','62','63','64','65' ,'67','68','70','75')
+        and dea.unineg = #{unidadNegocioBean.uniNeg}
+        group by SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) order by SUBSTRING(CONVERT(varchar,pl.cuenta),1,2)
+    </select>
+
+    <sql id="consultaPresupuestoUniNeg" >
+        select 
+        ROW_NUMBER() over(order by SUBSTRING(CONVERT(varchar,pl.cuenta),1,2)) as col,
+        SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) as cuenta,isnull(sum(dea.importe),0) as importe,
+        case
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '33' then 'Nro. Cuenta 33'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '60' then 'Nro. Cuenta 60'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '63' then 'Nro. Cuenta 63'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '64' then 'Nro. Cuenta 64'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '65' then 'Nro. Cuenta 65'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '67' then 'Nro. Cuenta 67'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '68' then 'Nro. Cuenta 68'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '70' then 'Nro. Cuenta 70'
+        when SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) = '75' then 'Nro. Cuenta 75'
+        end
+        as nombrePlan 
+        from MT_PlanContable pl 
+        left join ME_DetActividad dea on pl.cuenta = dea.cuenta
+    </sql>
+
+    <select id="obtenerPresupuestoUniNegAnio" resultMap="presupuestoUniNeg" parameterType="map" >
+        <include refid="consultaPresupuestoUniNeg" />
+        where SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) in ('33','60','63','64','65' ,'67','68','70','75')
+        and dea.unineg = #{uniNeg} and dea.anio = #{anio}
+        group by SUBSTRING(CONVERT(varchar,pl.cuenta),1,2) order by SUBSTRING(CONVERT(varchar,pl.cuenta),1,2)
+    </select>
+          
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    
+    
+    <resultMap id="categoriaActaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idTipoCategoriaActa.idCodigo" column="idCodigo"/>
+        <result property="idTipo" column="idTipo"/> 
+        <result property="codigo" column="codigo"/> 
+    </resultMap> <!--Cambio1-->
+        
+    <resultMap id="tipoCuentaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idTipoCuenta.idCodigo" column="idCodigo"/>
+        <result property="idTipo" column="idTipo"/> 
+        <result property="codigo" column="codigo"/>  
+    </resultMap> <!--Cambio2-->    
+    
+    <select id="obtenerInCuentaAcceso" resultMap="planContableResultado" parameterType="map">
+        Select  
+        pla.cuenta,
+        pla.nombre,
+        pla.idTipoCuenta, 
+        pla.nivel,
+        pla.creaPor,
+        pla.creaFecha
+        From MT_PlanContable pla
+        where  pla.cuenta in (
+        SELECT  distinct ta.nivel 
+        FROM  MM_NivelTipoAcceso ta  
+        where ta.unineg=#{uniNeg} and ta.anio=#{anio} and ta.idtipoacceso=#{idTipoAcceso} and ta.tiponivel='CC'
+        )
+        order by  pla.cuenta 
+    </select>     
+    <select id="obtenerOutCuentaAcceso" resultMap="planContableResultado" parameterType="map">
+        Select  
+        pla.cuenta,
+        pla.nombre,
+        pla.idTipoCuenta, 
+        pla.nivel,
+        pla.creaPor,
+        pla.creaFecha
+        From MT_PlanContable pla
+        where  pla.cuenta NOT in (
+        SELECT  distinct ta.nivel 
+        FROM  MM_NivelTipoAcceso ta  
+        where ta.unineg=#{uniNeg} and ta.anio=#{anio} and ta.idtipoacceso=#{idTipoAcceso} and ta.tiponivel='CC'
+        ) and pla.cuenta in (SELECT cuenta  FROM MG_Presupuesto where anio=#{anio} and unineg=#{uniNeg})
+        order by  pla.cuenta 
+    </select>     
+    <select id="obtenerCuentaPorPresupuesto" resultMap="planContableResultado" parameterType="map">
+        Select  
+        pla.cuenta,
+        pla.nombre,
+        pla.idTipoCuenta, 
+        pla.nivel,
+        pla.creaPor,
+        pla.creaFecha
+        From MT_PlanContable pla
+        where  
+        (pla.cuenta like '6%' AND cuenta not like  '61%') or
+        pla.cuenta like '33%'
+        order by  pla.cuenta 
+    </select>     
+    <select id="obtenerInCuentaAccesoPorNivel" resultMap="planContableResultado" parameterType="map">
+        Select  
+        pla.cuenta,
+        pla.nombre,
+        pla.idTipoCuenta, 
+        pla.nivel,
+        pla.creaPor,
+        pla.creaFecha
+        From MT_PlanContable pla
+        where  pla.cuenta in (
+        SELECT  distinct ta.nivel 
+        FROM  MM_NivelTipoAcceso ta  
+        where ta.unineg=#{uniNeg} and ta.anio=#{anio} and ta.idtipoacceso in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and ta.tiponivel='CC' and ta.status=1
+        )
+        order by  pla.cuenta 
+    </select>     
+</mapper>

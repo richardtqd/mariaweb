@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportePensionesPorCobrar" language="groovy" pageWidth="640" pageHeight="842" columnWidth="600" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d0f925b0-b9ad-4871-bb82-9a61cc9545d1">
+	<property name="ireport.zoom" value="1.0000000000000044"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[DECLARE @MES INT, @FECHA DATETIME,@ANIO INT,@UNINEG VARCHAR(6)
+        SET @MES=12
+        SET @ANIO=2018
+        SET @FECHA='09-01-2019'
+        SET @UNINEG='barina'
+
+        declare @fechavenmesfinmas1 date = (select convert(date,fechavenc) from MT_CronogramaPago where mes= (case when @MES=1 then 2 else @MES end)  and anio=@anio)
+        set @fechavenmesfinmas1= convert(date, DATEADD(day, +1, @fechavenmesfinmas1) )
+
+        select UPPER(uni.nombreUniNeg) AS nombreUniNeg,
+        uni.RUC as ruc,
+        upper('Pensiones por cobrar al '+
+        CONVERT(VARCHAR(25),@FECHA,106 ) )  as titulo ,
+        upper('Pensiones correspondientes al periodo: '+CONVERT(VARCHAR(4),@ANIO)) AS subTitulo,
+        (case when per.idtipodocper=10701 then 1
+        when per.idtipodocper=10704 then 4
+        when per.idtipodocper in(10707,10709) then 0 end) as tipoDocPersona,
+        per.nrodoc as nroDoc,
+        upper(concat(per.apepat,' '+per.apemat,', '+per.nombre)) as nombreCompleto,
+        (case when d.idtipodoc=15201 then 1
+        when d.idtipodoc= 15202 then 3
+        when d.idtipodoc=15203 then 45 end)  as tipoDoc,
+        concat(convert(varchar(6),d.serie),' - '+convert(varchar(12),d.nrodoc)) as numeroRecibo,
+
+        CONVERT(varchar, CAST(isnull( isnull((isnull(c.monto,0)-isnull(c.dsctobeca,0)),0) ,0) AS money), 1) as monto,
+        convert(varchar(20),c.fechavenc,103) as fechaEmision
+        ,concat((case when n.nombre='Inicial' then'I' WHEN n.nombre='Primaria' then 'P'
+        when n.nombre='Secundaria' then 'S' end),''+
+        (case when g.CODIGO='PRIMERO' THEN 1
+        when g.CODIGO='SEGUNDO' THEN 2
+        when g.CODIGO='TERCERO' THEN 3
+        when g.CODIGO='CUARTO' THEN 4
+        when g.CODIGO='QUINTO' THEN 5
+        when g.CODIGO='SEXTO' THEN 6
+        when g.CODIGO='SETIMO' THEN 1
+        when g.CODIGO='OCTAVO' THEN 2
+        when g.CODIGO='NOVENO' THEN 3
+        when g.CODIGO='DECIMO' THEN 4
+        when g.CODIGO='UNDECIMO' THEN 5
+        when g.CODIGO='DECIMO-BACH' THEN 4
+        when g.CODIGO='UNDECIMO-BACH' THEN 5
+        when g.CODIGO='PRE-INICIAL(3)' THEN 3
+        when g.CODIGO='PRE-INICIAL(4)' THEN 4
+        when g.CODIGO='INICIAL(5)' THEN 5 END),''+e.seccion) as codigoGrado
+        from MT_CtasxCobrar c
+        left join MT_DocIngreso d on d.iddocingreso=c.iddocingreso
+        inner join MO_UnidadNegocio uni on uni.unineg=c.unineg
+        inner join MX_Estudiante e on e.idestudiante = c.idestudiante
+        inner join MX_Persona per on per.idpersona=e.idestudiante
+        inner join MX_Matricula m on m.idestudiante=c.idestudiante and m.anio=@anio
+        inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+        inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+        where  c.anio=@anio
+        and isnull(idtipostatusctacte,19401) not in (19406) and monto!=isnull(dsctobeca,0)
+        and fechavenc    <  (case when mes=month(@fecha) then @fechavenmesfinmas1 else @fecha end) and c.anio=@anio
+        and (case when c.fechapago is not null then (case when convert(date,c.fechapago)     >   @fecha then 0 else 1 end) else 0 end)=0
+        and c.unineg=@unineg
+        order by (concat(per.apepat,' '+per.apemat,', '+per.nombre)) asc]]>
+	</queryString>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="ruc" class="java.lang.String"/>
+	<field name="titulo" class="java.lang.String"/>
+	<field name="subTitulo" class="java.lang.String"/>
+	<field name="tipoDocPersona" class="java.lang.Integer"/>
+	<field name="nroDoc" class="java.lang.String"/>
+	<field name="nombreCompleto" class="java.lang.String"/>
+	<field name="tipoDoc" class="java.lang.Integer"/>
+	<field name="numeroRecibo" class="java.lang.String"/>
+	<field name="monto" class="java.lang.String"/>
+	<field name="fechaEmision" class="java.lang.String"/>
+	<field name="codigoGrado" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="77" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="a8eebef3-3566-4c84-9a26-dd80050ce497" x="92" y="0" width="415" height="11" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="7df48e16-e6b5-40c8-8eaf-0cbff5dc4328" x="10" y="0" width="82" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RAZÓN SOCIAL: ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="312fbeef-da8f-4438-be96-2d71975a4b12" x="10" y="10" width="82" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RUC:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="233423bd-f464-4cc1-ae50-9ca9a7dd295b" x="92" y="10" width="100" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ruc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a8fa783a-0d92-49b3-8731-1b79d9e8ad5c" x="0" y="27" width="600" height="18"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{titulo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="911b7d64-e10f-469e-9b96-d36ece1812c3" x="11" y="51" width="552" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{subTitulo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="34" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="26575c71-c58c-44df-a7e2-e232ce68c438" x="0" y="23" width="65" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[TIPO (TABLA 2)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="672b6b0b-8eb2-4253-b218-6181d3a7e193" x="0" y="2" width="342" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[INFORMACIÓN DEL ALUMNO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="8d30d6f7-7c9d-4aa7-aacd-35047b8bf9c0" x="9" y="13" width="121" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[DOCUMENTO DE IDENTIDAD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="048be571-92ab-4400-8a13-9f8debd7f0c3" x="65" y="23" width="65" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[NÚMERO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="ab521b50-aea5-407c-9ffa-2a1db5a2e939" x="130" y="12" width="166" height="22"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[APELLIDOS Y NOMBRES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f9c7c200-959b-4ee6-a8e6-337de73bdf16" x="345" y="2" width="102" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[COMPROBANTE DE PAGO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="567f12e8-c1dd-4db1-bb26-8ff69f9985e0" x="343" y="12" width="44" height="22"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[TIPO (TABLA 10)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2d92004e-0c22-4052-845b-a95b98d30ccd" x="386" y="12" width="61" height="22"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[NÚMERO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0afd4f9c-52ba-4ac4-80a7-d605657281db" x="447" y="2" width="67" height="32"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[MONTO DE LA CUENTA POR COBRAR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1433bda5-7d90-4a01-bc41-2c7ef14bc566" x="514" y="2" width="86" height="32"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[FECHA DE EMISIÓN DEL COMPROBANTE DEPAGO]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="4955d06d-39d2-454d-8337-86b56391b9d9" x="0" y="0" width="600" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="a7d708a0-0cd0-4b71-914b-3e9c372f025a" x="0" y="13" width="342" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="13e65156-ecef-4b2e-8bbd-23fca8c38a11" x="0" y="23" width="130" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="715fb089-9d98-4ef9-801a-40b965ae35b8" x="130" y="14" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="ed3a4e6d-7bc7-4872-ae39-56963aaead78" x="296" y="14" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="17f43b0d-ba46-4e29-a20b-94c5289be339" x="447" y="0" width="1" height="34"/>
+			</line>
+			<line>
+				<reportElement uuid="2850c48f-e436-4984-b5cc-6a509fce966d" x="342" y="13" width="106" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="f8ca7c32-c2f4-4e1a-9cc2-f41a0972aa02" x="514" y="0" width="1" height="33"/>
+			</line>
+			<line>
+				<reportElement uuid="e051b392-36ef-4724-ba28-69346526de66" x="600" y="0" width="1" height="34"/>
+			</line>
+			<line>
+				<reportElement uuid="6bbe59a7-b6ac-4af4-b920-d00445f6d6c5" x="386" y="14" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="1f337703-cdff-41a6-ae00-aed424fca505" x="65" y="24" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="1ad5b4ee-fa7e-4cdf-99ac-394b789beb36" x="0" y="25" width="1" height="9"/>
+			</line>
+			<line>
+				<reportElement uuid="eda6df64-f2e5-4f12-a647-aba866adf880" x="0" y="14" width="1" height="11"/>
+			</line>
+			<line>
+				<reportElement uuid="bbacbaa9-6514-4f8b-9b29-702c1b590960" x="0" y="1" width="1" height="13"/>
+			</line>
+			<staticText>
+				<reportElement uuid="e69696bc-8ed2-438c-bed3-eb178db0f7e9" x="297" y="14" width="46" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[GRADO]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="60e6e9bb-69ae-46bb-b295-87f1359a9032" x="342" y="0" width="1" height="34"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="11" splitType="Stretch">
+			<textField>
+				<reportElement uuid="15b50e3c-9547-47d9-a92f-605391c77448" positionType="FixRelativeToBottom" x="0" y="0" width="65" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoDocPersona}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ee4b51b6-5faa-4c00-a6a1-bffca3ab4f58" positionType="FixRelativeToBottom" x="65" y="0" width="65" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nroDoc}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="3004c069-babd-49c9-bccf-998b180e5fc2" positionType="Float" x="133" y="0" width="163" height="11"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCompleto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="601c3676-42b4-4db2-9366-97571065c22b" positionType="FixRelativeToBottom" x="343" y="0" width="43" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoDoc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="9e937ee8-d78d-4baf-8447-232edaa98803" positionType="FixRelativeToBottom" x="386" y="0" width="61" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{numeroRecibo}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="87360f80-938e-4ef9-9e44-8aea7f4e0dbc" positionType="FixRelativeToBottom" mode="Transparent" x="447" y="0" width="56" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{monto}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="18a115bf-3dab-4fd8-94a1-ffc59851dad5" positionType="FixRelativeToBottom" x="514" y="0" width="74" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fechaEmision}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="3266c369-7d6c-4261-bb48-9e4f7dc443ee" positionType="Float" stretchType="RelativeToBandHeight" x="514" y="-1" width="1" height="12" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="bea866ab-6896-413a-ad77-cdfa20ac035c" positionType="Float" stretchType="RelativeToBandHeight" x="447" y="0" width="1" height="11" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="183ef250-22ce-4933-a930-6acc35c09865" positionType="Float" stretchType="RelativeToBandHeight" x="386" y="0" width="1" height="11" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="d9d02f91-34cc-44ec-924d-b0f996045d33" positionType="Float" stretchType="RelativeToBandHeight" x="296" y="0" width="1" height="11" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="7395a3ff-a241-42e8-9ab5-34ff8f7724cf" positionType="Float" stretchType="RelativeToBandHeight" x="130" y="0" width="1" height="11" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="5a38139a-1828-4d6c-a5e8-f836401afcc3" positionType="Float" stretchType="RelativeToBandHeight" x="65" y="0" width="1" height="11" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="6c699147-bf8a-4aca-8ec6-3d2a64fe06fb" positionType="Float" stretchType="RelativeToBandHeight" x="0" y="0" width="1" height="11" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="a7286ddf-ed35-47b3-9a11-4eb1afd7d44e" positionType="Float" stretchType="RelativeToBandHeight" x="600" y="-1" width="1" height="12" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="a070b41f-c0e4-4470-8d83-c386f2b1c43e" x="0" y="0" width="600" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="591e5daa-9ac8-4ad3-8813-d04217be6351" positionType="Float" stretchType="RelativeToBandHeight" x="342" y="0" width="1" height="11" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<textField>
+				<reportElement uuid="b3333f07-5799-476b-8f82-694e43dceab9" x="296" y="0" width="46" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{codigoGrado}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="1">
+			<line>
+				<reportElement uuid="c2091236-0313-4f6a-8576-a1226b43ac9c" positionType="Float" x="0" y="0" width="601" height="1"/>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

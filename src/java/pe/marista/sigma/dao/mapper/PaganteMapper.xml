@@ -1,0 +1,1159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.PaganteDAO">
+    <sql id="consultaCampos" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,per.apepat as pagApePat,per.apemat as pagApeMat,per.nombre as pagNombre,per.idpersona as idPagPersona
+        ,m.idMatricula,m.anio,est.idestudiante,est.codigo,prp.idpersona,prp.apepat as apellidoPat,prp.apemat as apellidoMat,prp.nombre as nombre
+        ,en.ruc,en.nombre as nombreEntidad
+        ,pr.idpersonal,pr.codper,pr.nrodoc,pr.apepat as apePatPersonal,pr.apemat as apeMatPersonal,pr.nombre as nombrePersonal
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        from MT_Pagante p
+        inner join MX_Persona per on p.idpagante = per.idpersona and p.unineg = per.unineg   
+        inner join MX_Matricula m on p.idpagante = CONVERT(varchar,m.idmatricula) and p.unineg = m.unineg  
+        inner join MX_Estudiante est on m.idestudiante = est.idestudiante and m.unineg = est.unineg
+        inner join MX_Persona prp on prp.idpersona = est.idestudiante and prp.unineg = est.unineg
+        inner join MO_Personal pr on p.idpagante = CONVERT(varchar,pr.idpersonal) and p.unineg = pr.unineg 
+        inner join MO_Entidad en on p.idpagante = en.ruc and p.unineg = en.unineg  
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+    </sql>
+    
+    <!-- PAGANTE-ESTUDIANTE -->
+    <sql id="consultaEstudiante" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,m.idMatricula,m.anio,est.idestudiante,est.codigo,prp.idpersona,prp.apepat as apellidoPat,prp.apemat as apellidoMat,prp.nombre as nombre
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        from MT_Pagante p
+        inner join MX_Matricula m on p.idpagante = CONVERT(varchar,m.idmatricula) and p.unineg = m.unineg  
+        inner join MX_Estudiante est on m.idestudiante = est.idestudiante and m.unineg = est.unineg
+        inner join MX_Persona prp on prp.idpersona = est.idestudiante and prp.unineg = est.unineg
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+    </sql>
+    
+    <!-- PAGANTE-PERSONAL -->
+    <sql id="consultaPersonal" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,pr.idpersonal,pr.codper,pr.nrodoc,pr.apepat as apePatPersonal,pr.apemat as apeMatPersonal,pr.nombre as nombrePersonal
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        from MT_Pagante p
+        inner join MO_Personal pr on p.idpagante = CONVERT(varchar,pr.idpersonal) and p.unineg = pr.unineg 
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+    </sql>
+    
+    <!-- PAGANTE-EXTERNO -->
+    <sql id="consultaExterno" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,per.apepat as pagApePat,per.apemat as pagApeMat,per.nombre as pagNombre,per.idpersona as idPagPersona
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        from MT_Pagante p
+        inner join MX_Persona per on p.idpagante = per.idpersona and p.unineg = per.unineg   
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+    </sql>
+    
+    <!-- PAGANTE-ENTIDAD -->
+    <sql id="consultaEntidad" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,en.ruc as rucEntidad,en.nombre as nombreEntidad
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        from MT_Pagante p
+        inner join MO_Entidad en on p.idpagante = en.ruc and p.unineg = en.unineg  
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+    </sql>
+    
+    <!-- Pagante Objeto -->
+    <sql id="consultaCamposObj" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante       
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        from MT_Pagante p
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+    </sql>
+    
+    <resultMap id="paganteResultado" type="pe.marista.sigma.bean.PaganteBean" >
+        <id property="idPagante" column="idpagante" />
+        <result property="nomPagante" column="nompagante" />
+        <result property="data" column="data" />
+        <result property="nroDoc" column="nroDoc" />
+        <association property="tipoPaganteBean" column="idtipopagante"
+                     javaType="pe.marista.sigma.bean.TipoPaganteBean"
+                     resultMap="tipoPaganteResultado"/>
+        <association property="eventoBean" column="idevento"
+                     javaType="pe.marista.sigma.bean.EventoBean"
+                     resultMap="eventoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        
+        <!-- CAMPOS DE IDPAGANTE -->
+        <association property="personaBean" column="idpagante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaPagResultado"/>
+        <association property="matriculaBean" column="idpagante"
+                     javaType="pe.marista.sigma.bean.MatriculaBean"
+                     resultMap="matriculaResultado"/>
+        <association property="personalBean" column="idpagante"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <association property="entidadBean" column="idpagante"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+    </resultMap>
+    
+    <!-- UNIDAD DE NEGOCIO RESULTADO -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>
+    
+    <!-- MATRICULA -->
+    <resultMap id="matriculaResultado" type="pe.marista.sigma.bean.MatriculaBean">
+        <id property="idMatricula" column="idMatricula"/>
+        <result property="anio" column="anio"/>    
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/> 
+    </resultMap>
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante"/> 
+        <result property="codigo" column="codigo"/> 
+        <result property="motivoStatusEst" column="motivoStatusEst"/> 
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+    </resultMap> 
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idpersona"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apellidoPat"/>
+        <result property="apemat" column="apellidoMat"/>  
+    </resultMap> 
+    
+    <!-- PERSONA -->
+    <resultMap id="personaPagResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPagPersona"/>
+        <result property="nombre" column="pagNombre"/>
+        <result property="apepat" column="pagApePat"/>
+        <result property="apemat" column="pagApeMat"/>  
+    </resultMap> 
+    
+    <!-- PERSONAL -->
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="apepat" column="apePatPersonal"/>
+        <result property="apemat" column="apeMatPersonal"/>
+        <result property="nombre" column="nombrePersonal"/>  
+        <result property="codPer" column="codPer"/> 
+        <result property="nombreCompleto" column="nombreCompleto"/> 
+    </resultMap>
+    
+    <!-- ENTIDAD -->
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucEntidad" /> 
+        <result property="nombre" column="nombreEntidad" /> 
+    </resultMap>
+    
+    <!-- TIPO PAGANTE -->
+    <resultMap id="tipoPaganteResultado" type="pe.marista.sigma.bean.TipoPaganteBean" >
+        <id property="idtipoPagante" column="idtipopagante" />
+        <result property="nomPagante" column="nompagante" />
+        <result property="nroAsignaciones" column="nroasignaciones" />
+    </resultMap>
+    
+    <!-- EVENTO -->
+    <resultMap id="eventoResultado" type="pe.marista.sigma.bean.EventoBean" >
+        <id property="idEvento" column="idEvento" />
+        <result property="nombre" column="nomEvento" />
+    </resultMap>
+    
+    <select id="obtener" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        <include refid="consultaCampos" />
+        where p.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerPorId" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        <include refid="consultaCamposObj" />    
+        where p.unineg = #{unidadNegocioBean.uniNeg} and p.idpagante = #{idPagante} and p.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+    </select>
+    
+    <!-- PAGANTE-ESTUDIANTE -->
+    <select id="obtenerPorIdPagEst" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        <include refid="consultaEstudiante" />  
+        where p.unineg = #{unidadNegocioBean.uniNeg} and idpagante = #{idPagante} and p.idtipopagante = #{tipoPaganteBean.idtipoPagante} 
+    </select>
+    
+    <!-- PAGANTE-PERSONAL -->
+    <select id="obtenerPorIdPagPer" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        <include refid="consultaPersonal" />  
+        where p.unineg = #{unidadNegocioBean.uniNeg} and idpagante = #{idPagante} and p.idtipopagante = #{tipoPaganteBean.idtipoPagante} 
+    </select>
+    
+    <!-- PAGANTE-EXTERNO -->
+    <select id="obtenerPorIdPagExt" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        <include refid="consultaExterno" />  
+        where p.unineg = #{unidadNegocioBean.uniNeg} and idpagante = #{idPagante} and p.idtipopagante = #{tipoPaganteBean.idtipoPagante} 
+    </select>
+    
+    <!-- PAGANTE-ENTIDAD -->
+    <select id="obtenerPorIdPagEnt" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        <include refid="consultaEntidad" />  
+        where p.unineg = #{unidadNegocioBean.uniNeg} and idpagante = #{idPagante} and p.idtipopagante = #{tipoPaganteBean.idtipoPagante} 
+    </select>
+    
+    <select id="filtrarPagante" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" > 
+        <include refid="consultaCampos" />
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+        </where>
+    </select>
+    
+    <select id="filtrarPaganteEst" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,m.idMatricula,m.anio
+        ,est.idestudiante
+        ,est.idestudiante as nroDoc
+        ,est.codigo,prp.idpersona,prp.apepat as apellidoPat,prp.apemat as apellidoMat,prp.nombre as nombre
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MX_Matricula m on p.idpagante = CONVERT(varchar,m.idmatricula) and p.unineg = m.unineg  
+        inner join MX_Estudiante est on m.idestudiante = est.idestudiante and m.unineg = est.unineg
+        inner join MX_Persona prp on prp.idpersona = est.idestudiante and prp.unineg = est.unineg
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and est.idestudiante like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante   
+        </where>
+    </select>
+    
+    <select id="filtrarPagantePer" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,pr.idpersonal,pr.codper,pr.nrodoc as nroDoc,pr.apepat as apePatPersonal,pr.apemat as apeMatPersonal,pr.nombre as nombrePersonal,concat(pr.apepat,' ', pr.apemat,' ', pr.nombre) as nombreCompleto
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MO_Personal pr on p.idpagante = CONVERT(varchar,pr.idpersonal) and p.unineg = pr.unineg 
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and pr.nrodoc like concat('%',#{nroDoc},'%') 
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante
+        </where>
+    </select>
+    
+    <select id="filtrarPaganteExt" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,per.apepat as pagApePat,per.apemat as pagApeMat,per.nombre as pagNombre
+        ,per.idpersona as idPagPersona
+        ,per.idpersona as nroDoc
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MX_Persona per on p.idpagante = per.idpersona and p.unineg = per.unineg   
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and per.idpersona like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante
+        </where>
+    </select>
+    
+    <select id="filtrarPaganteEnt" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,en.ruc
+        ,en.ruc as nroDoc
+        ,en.nombre as nombreEntidad
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MO_Entidad en on p.idpagante = en.ruc and p.unineg = en.unineg  
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and en.ruc like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante
+        </where>
+    </select>
+    
+    <select id="filtrarPaganteObj" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        declare @valor Integer = 0
+        <if test="nroDoc != null and nroDoc != '' " >
+            declare @nrodoc varchar(20) = #{nroDoc}
+            <!-- declare @valor Integer = 0 -->
+            set @valor = (select (case
+            when (select  COUNT(idestudiante) from MX_Matricula m where m.unineg = 'SANJOC' and m.idestudiante = @nrodoc) <![CDATA[ <> ]]> 0 then 1
+            when (select  COUNT(idpersonal) from MO_Personal m where m.unineg = 'SANJOC' and m.nrodoc = @nrodoc) <![CDATA[ <> ]]> 0 then 2
+            when (select  COUNT(idpersona) from MX_Persona m where m.unineg = 'SANJOC' and m.idpersona = @nrodoc
+            and m.idpersona not in (select e.idestudiante from MX_Estudiante e where e.unineg = m.unineg)) <![CDATA[ <> ]]> 0 then 3
+            when (select  COUNT(m.ruc) from MO_Entidad m where m.unineg = 'SANJOC' and m.ruc = @nrodoc) <![CDATA[ <> ]]> 0 then 4
+            end))
+        </if>
+        <if test="tipoPaganteBean.idtipoPagante == null" >
+            <!-- declare @valor Integer = 0 -->
+        </if>
+        if(@valor = 1)  
+        begin
+        select 
+        p.unineg
+        ,p.idpagante 
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,m.idMatricula,m.anio
+        ,est.idestudiante
+        ,est.idestudiante as nroDoc
+        ,est.codigo,prp.idpersona,prp.apepat as apellidoPat,prp.apemat as apellidoMat,prp.nombre as nombre
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MX_Matricula m on p.idpagante = CONVERT(varchar,m.idmatricula) and p.unineg = m.unineg  
+        inner join MX_Estudiante est on m.idestudiante = est.idestudiante and m.unineg = est.unineg
+        inner join MX_Persona prp on prp.idpersona = est.idestudiante and prp.unineg = est.unineg
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and est.idestudiante like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante   
+        </where>
+        end
+        
+        if(@valor = 2)  
+        begin
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,pr.idpersonal,pr.codper,pr.nrodoc as nroDoc,pr.apepat as apePatPersonal,pr.apemat as apeMatPersonal,pr.nombre as nombrePersonal,concat(pr.apepat,' ', pr.apemat,' ', pr.nombre) as nombreCompleto
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MO_Personal pr on p.idpagante = CONVERT(varchar,pr.idpersonal) and p.unineg = pr.unineg 
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and pr.nrodoc like concat('%',#{nroDoc},'%') 
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante
+        </where>
+        end
+        
+        if(@valor = 3)  
+        begin
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,per.apepat as pagApePat,per.apemat as pagApeMat,per.nombre as pagNombre
+        ,per.idpersona as idPagPersona
+        ,per.idpersona as nroDoc
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MX_Persona per on p.idpagante = per.idpersona and p.unineg = per.unineg   
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and per.idpersona like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante
+        </where>
+        end
+        
+        if(@valor = 4)
+        begin
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,p.idevento
+        ,p.nompagante
+        ,en.ruc
+        ,en.ruc as nroDoc
+        ,en.nombre as nombreEntidad
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MO_Entidad en on p.idpagante = en.ruc and p.unineg = en.unineg  
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nroDoc != null and nroDoc != '' " >
+                and en.ruc like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante
+        </where>
+        end
+        
+        if(@valor = 0)
+        begin
+        select 
+        p.unineg
+        ,p.idpagante
+        ,p.idtipopagante 
+        ,(case
+        when (select CONVERT(varchar(20),m.idmatricula) from MX_Matricula m where CONVERT(varchar(20),m.idmatricula) = p.idpagante and m.unineg = p.unineg) is not null
+        then (select CONVERT(varchar(20),m.idmatricula) from MX_Matricula m where CONVERT(varchar(20),m.idmatricula) = p.idpagante and m.unineg = p.unineg)
+        when (select CONVERT(varchar(20),m.idpersonal) from MO_Personal m where CONVERT(varchar(20),m.idpersonal) = p.idpagante and m.unineg = p.unineg) is not null
+        then (select CONVERT(varchar(20),m.idpersonal) from MO_Personal m where CONVERT(varchar(20),m.idpersonal) = p.idpagante and m.unineg = p.unineg)
+        when (select m.idpersona from MX_Persona m where CONVERT(varchar(20),m.idpersona) = p.idpagante and m.unineg = p.unineg
+        and m.idpersona not in (select e.idestudiante from MX_Estudiante e where e.unineg = p.unineg) ) is not null
+        then (select CONVERT(varchar(20),m.idpersona) from MX_Persona m where CONVERT(varchar(20),m.idpersona) = p.idpagante and m.unineg = p.unineg)
+        when (select e.ruc from MO_Entidad e where e.ruc = p.idpagante and e.unineg = p.unineg) is not null
+        then (select e.ruc from MO_Entidad e where e.ruc = p.idpagante and e.unineg = p.unineg)
+        end) as idPagantePru
+        ,(case
+        when (select CONVERT(varchar(20),m.idmatricula) from MX_Matricula m where CONVERT(varchar(20),m.idmatricula) = p.idpagante and m.unineg = p.unineg) is not null
+        then 1
+        when (select CONVERT(varchar(20),m.idpersonal) from MO_Personal m where CONVERT(varchar(20),m.idpersonal) = p.idpagante and m.unineg = p.unineg) is not null
+        then 2
+        when (select m.idpersona from MX_Persona m where CONVERT(varchar(20),m.idpersona) = p.idpagante and m.unineg = p.unineg
+        and m.idpersona not in (select e.idestudiante from MX_Estudiante e where e.unineg = p.unineg) ) is not null
+        then 3
+        when (select e.ruc from MO_Entidad e where e.ruc = p.idpagante and e.unineg = p.unineg) is not null
+        then 4
+        end) as idTipoPagantePru
+        ,p.idevento
+        ,p.nompagante
+        ,tp.idtipopagante,tp.nompagante,tp.nroasignaciones
+        ,ev.idevento,ev.nombre as nomEvento
+        ,(case
+        when p.idtipopagante = 1 then (select e.idestudiante from MX_Matricula e where p.unineg = e.unineg and p.idpagante = CONVERT(Integer,e.idmatricula))
+        when p.idtipopagante = 2 then (select per.nrodoc from MO_Personal per where per.unineg = p.unineg and p.idpagante = CONVERT(varchar(20),per.idpersonal))
+        when p.idtipopagante = 3 then (select pe.idpersona from MX_Persona pe where p.unineg = pe.unineg and p.idpagante = pe.idpersona 
+        and pe.idpersona not in(select e.idestudiante from MX_Estudiante e where e.unineg = pe.unineg))
+        when p.idtipopagante = 4 then (select en.ruc from MO_Entidad en where p.unineg = en.unineg and p.idpagante = en.ruc)
+        end) as nroDoc
+        ,u.unineg
+        ,u.nombreUniNeg
+        ,u.ruc
+        ,u.fecfundacion
+        ,(select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) FOR XML PATH('')) as data
+        from MT_Pagante p
+        inner join MO_TipoPagante tp on tp.idtipopagante = p.idtipopagante and tp.unineg = p.unineg
+        inner join MO_Evento ev on p.idevento = ev.idevento and p.unineg = ev.unineg
+        inner join MO_UnidadNegocio u on p.unineg = u.unineg
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nomPagante != null and nomPagante != '' " >
+                and p.nompagante like concat('%',#{nomPagante},'%')
+            </if>
+            <if test="eventoBean.idEvento != null and eventoBean.idEvento != '' " >
+                and ev.idevento = #{eventoBean.idEvento}
+            </if>
+            <if test="tipoPaganteBean.idtipoPagante != null and tipoPaganteBean.idtipoPagante != '' " >
+                and tp.idtipopagante = #{tipoPaganteBean.idtipoPagante}
+            </if>
+            <if test="nroFicha != null" >
+                and p.idpagante in (select f.idpagante from MT_Ficha f where f.unineg = p.unineg and f.idtipopagante = p.idtipopagante and f.nroficha =  #{nroFicha})
+            </if>
+            order by p.nompagante
+        </where>
+        end
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.PaganteBean" >
+        INSERT INTO [MT_Pagante]([unineg],[idpagante],[idtipopagante],[idevento],[nompagante],creapor,creafecha)
+        VALUES(#{unidadNegocioBean.uniNeg},#{idPagante},#{tipoPaganteBean.idtipoPagante},#{eventoBean.idEvento},#{nomPagante},#{creaPor},getdate())
+    </insert>
+    
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.PaganteBean" >
+        UPDATE [dbo].[MT_Pagante]
+        SET 
+        [idevento] = #{eventoBean.idEvento},
+        [nompagante] = #{nomPagante},
+        modiPor = #{modiPor},
+        modiFecha = getdate()
+        WHERE unineg = #{unidadNegocioBean.uniNeg} and idpagante = #{idPagante} and [idtipopagante] = #{tipoPaganteBean.idtipoPagante}
+    </update>
+    
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.PaganteBean" >
+        delete from [MT_Pagante] where unineg = #{unidadNegocioBean.uniNeg} and idpagante = #{idPagante}
+    </delete>
+    
+    <!-- FILTRO DE FICHAS ESTUDIANTE GRAFICO -->
+    <select id="obtenerGrafoFichaEstudiante" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteResultado" >
+        select 
+        sum(f.montopagado) as monto,
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null
+                    and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico == null
+                        and matriculaBean.seccion == null" >
+            n.nombre as nivel,
+            '' as grado,
+            '' as seccion,
+            '' as pagante
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                     and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null
+                        and matriculaBean.seccion == null " >
+            n.nombre as nivel,
+            g.nombre as grado,
+            '' as seccion,
+            '' as pagante
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                    and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null
+                        and matriculaBean.seccion != null " >
+            n.nombre as nivel,
+            g.nombre as grado,
+            m.seccion as seccion,
+            '' as pagante
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                    and matriculaBean.seccion != null
+                        and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico == null" >
+            n.nombre as nivel,
+            '' as grado,
+            m.seccion as seccion,
+            '' as pagante
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico == null 
+                    and matriculaBean.seccion == null
+                        and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico == null
+                            and matriculaBean.estudianteBean != null" >
+            n.nombre as nivel, 
+            g.nombre as grado,
+            m.seccion as seccion,
+            CONCAT(p.apepat,' ',p.apemat,',',p.nombre) as pagante
+        </if>
+        from mt_ficha f 
+        inner join mx_matricula m on f.idpagante = m.idmatricula and f.unineg = m.unineg and f.idtipopagante = 1
+        inner join MX_Estudiante e on m.idestudiante = e.idestudiante and m.unineg = e.unineg
+        inner join MX_Persona p on e.idestudiante = p.idpersona and e.unineg = p.unineg
+        inner join MX_GradoAcademico g on m.idgradoacademico = g.idgradoacademico
+        inner join MX_NivelAcademico n on g.idnivelacademico = n.idnivelacademico
+        where f.unineg = #{unidadNegocioBean.uniNeg} 
+        and f.idtipopagante = 1
+        <if test="idTipoEstado != null and idTipoEstado != 0" >
+            and f.idtipostatusficha = #{idTipoEstado}     
+        </if>
+        <if test="idTipoModoPago != null and idTipoModoPago != 0" >
+            and f.idtipomodopago = #{idTipoModoPago}
+        </if>
+        
+        <!-- FILTRO POR PERSONA -->
+        <if test="matriculaBean.estudianteBean.idEstudiante != null and matriculaBean.estudianteBean.idEstudiante != '' " >
+            and p.idpersona like CONCAT('%',#{matriculaBean.estudianteBean.idEstudiante},'%')
+        </if>
+        <if test="matriculaBean.estudianteBean.personaBean.apepat != null and matriculaBean.estudianteBean.personaBean.apepat != '' " >
+            and p.apepat like CONCAT('%',#{matriculaBean.estudianteBean.personaBean.apepat},'%')
+        </if>
+        <if test="matriculaBean.estudianteBean.personaBean.apemat != null and matriculaBean.estudianteBean.personaBean.apemat != '' " >
+            and p.apemat like CONCAT('%',#{matriculaBean.estudianteBean.personaBean.apemat},'%')
+        </if>
+        <if test="matriculaBean.estudianteBean.personaBean.nombre != null and matriculaBean.estudianteBean.personaBean.nombre != ''" >
+            and p.nombre like CONCAT('%',#{matriculaBean.estudianteBean.personaBean.nombre},'%')
+        </if>
+        
+        <!-- FILTRO POR NIVELES Y GRADO -->
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null
+                    and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico == null
+                        and matriculaBean.seccion == null" >
+            and g.idnivelacademico = #{matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                     and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null
+                        and matriculaBean.seccion == null" >
+            and g.idgradoacademico = #{matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                    and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null
+                        and matriculaBean.seccion != null" >
+            and m.seccion = #{matriculaBean.seccion}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null
+                    and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico == null
+                        and matriculaBean.seccion == null" >
+            group by g.idnivelacademico,n.nombre
+            order by g.idnivelacademico desc,g.idgradoacademico,m.seccion
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                     and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null
+                        and matriculaBean.seccion == null" >
+            group by g.idnivelacademico,g.idgradoacademico,g.nombre,n.nombre
+            order by g.idnivelacademico desc,g.idgradoacademico,m.seccion
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                    and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico != null
+                        and matriculaBean.seccion != null" >
+            group by g.idnivelacademico,g.idgradoacademico,g.nombre,n.nombre,m.seccion
+            order by g.idnivelacademico desc,g.idgradoacademico,m.seccion
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null 
+                    and matriculaBean.seccion != null                          
+                        and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico == null" >
+            group by g.idnivelacademico,n.nombre,m.seccion
+            order by g.idnivelacademico desc,m.seccion
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico == null 
+                    and matriculaBean.seccion == null 
+                        and matriculaBean.estudianteBean.gradoHabilitado.idGradoAcademico == null
+                            and matriculaBean.estudianteBean != null" >
+            group by g.idnivelacademico,g.idgradoacademico,g.nombre,n.nombre,m.seccion,CONCAT(p.apepat,' ',p.apemat,',',p.nombre) 
+            order by g.idnivelacademico desc,g.idgradoacademico,m.seccion                
+        </if>
+    </select>
+    
+    <!-- RESULT GRAFICO -->
+    <resultMap id="paganteGrafoResultado" type="pe.marista.sigma.bean.PaganteBean" >
+        <id property="idPagante" column="idPagante" />
+        <result property="monto" column="monto" />
+        <result property="grafo" column="grafo" />
+    </resultMap>
+    
+    <!-- GRAFO ESTUDIANTE -->
+    <select id="obtenerGrafoEstudiante" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteGrafoResultado" >
+        declare @valor Integer = #{dato}
+        if(@valor = 1)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if>
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                'Monto Total' as grafo
+                from mt_ficha f 
+                inner join MT_Pagante pag on pag.idpagante = f.idpagante and f.unineg = pag.unineg and f.idtipopagante = pag.idtipopagante
+                inner join mx_matricula m on f.idpagante = m.idmatricula and f.unineg = m.unineg and f.idtipopagante = 1
+                inner join MX_Estudiante e on m.idestudiante = e.idestudiante and m.unineg = e.unineg
+                inner join MX_Persona p on e.idestudiante = p.idpersona and e.unineg = p.unineg
+                inner join MX_GradoAcademico g on m.idgradoacademico = g.idgradoacademico
+                inner join MX_NivelAcademico n on g.idnivelacademico = n.idnivelacademico
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 1 
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if> 
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and e.idestudiante like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and pag.nompagante like concat('%',#{nomPagante},'%')
+                </if> 
+            end
+        if(@valor = 2)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if> 
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                n.nombre as grafo
+                from mt_ficha f 
+                inner join MT_Pagante pag on pag.idpagante = f.idpagante and f.unineg = pag.unineg and f.idtipopagante = pag.idtipopagante
+                inner join mx_matricula m on f.idpagante = m.idmatricula and f.unineg = m.unineg and f.idtipopagante = 1
+                inner join MX_Estudiante e on m.idestudiante = e.idestudiante and m.unineg = e.unineg
+                inner join MX_Persona p on e.idestudiante = p.idpersona and e.unineg = p.unineg
+                inner join MX_GradoAcademico g on m.idgradoacademico = g.idgradoacademico
+                inner join MX_NivelAcademico n on g.idnivelacademico = n.idnivelacademico
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 1
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if>  
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and e.idestudiante like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and pag.nompagante like concat('%',#{nomPagante},'%')
+                </if>
+                group by n.idnivelacademico,n.nombre
+                order by n.idnivelacademico desc
+            end
+        if(@valor = 3)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if>
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                g.nombre as grafo
+                from mt_ficha f 
+                inner join MT_Pagante pag on pag.idpagante = f.idpagante and f.unineg = pag.unineg and f.idtipopagante = pag.idtipopagante
+                inner join mx_matricula m on f.idpagante = m.idmatricula and f.unineg = m.unineg and f.idtipopagante = 1
+                inner join MX_Estudiante e on m.idestudiante = e.idestudiante and m.unineg = e.unineg
+                inner join MX_Persona p on e.idestudiante = p.idpersona and e.unineg = p.unineg
+                inner join MX_GradoAcademico g on m.idgradoacademico = g.idgradoacademico
+                inner join MX_NivelAcademico n on g.idnivelacademico = n.idnivelacademico
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 1
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if>  
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and e.idestudiante like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and pag.nompagante like concat('%',#{nomPagante},'%')
+                </if>
+                group by n.idnivelacademico,g.idgradoacademico,n.nombre,g.nombre
+                order by n.idnivelacademico desc,g.idgradoacademico
+            end
+        if(@valor = 4)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if>
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                CONCAT(g.nombre,' - ',m.seccion) as grafo
+                from mt_ficha f 
+                inner join MT_Pagante pag on pag.idpagante = f.idpagante and f.unineg = pag.unineg and f.idtipopagante = pag.idtipopagante
+                inner join mx_matricula m on f.idpagante = m.idmatricula and f.unineg = m.unineg and f.idtipopagante = 1
+                inner join MX_Estudiante e on m.idestudiante = e.idestudiante and m.unineg = e.unineg
+                inner join MX_Persona p on e.idestudiante = p.idpersona and e.unineg = p.unineg
+                inner join MX_GradoAcademico g on m.idgradoacademico = g.idgradoacademico
+                inner join MX_NivelAcademico n on g.idnivelacademico = n.idnivelacademico
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 1
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if>  
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and e.idestudiante like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and pag.nompagante like concat('%',#{nomPagante},'%')
+                </if>
+                group by n.idnivelacademico,g.idgradoacademico,n.nombre,g.nombre,m.seccion
+                order by n.idnivelacademico desc,g.idgradoacademico,m.seccion
+            end
+    </select>
+    
+    <!-- OBTENER GRAFO PERSONAL -->
+    <select id="obtenerGrafoPersonal" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteGrafoResultado" >
+        declare @valor Integer = #{dato}
+        if(@valor = 1)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if>
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                'Monto Total' as grafo
+                from mt_ficha f 
+                inner join MT_Pagante p on p.idpagante = f.idpagante and f.unineg = p.unineg and f.idtipopagante = p.idtipopagante
+                inner join MO_Personal per on f.idpagante = per.idpersonal and f.unineg = per.unineg
+                inner join MO_UnidadOrganica uo on per.iduniorg = uo.iduniorg
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 2
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if>  
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and per.nrodoc like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and p.nompagante like concat('%',#{nomPagante},'%')
+                </if>
+            end
+        if(@valor = 2)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if>
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                uo.nombreuniorg as grafo
+                from mt_ficha f 
+                inner join MT_Pagante p on p.idpagante = f.idpagante and f.unineg = p.unineg and f.idtipopagante = p.idtipopagante
+                inner join MO_Personal per on f.idpagante = per.idpersonal and f.unineg = per.unineg
+                inner join MO_UnidadOrganica uo on per.iduniorg = uo.iduniorg
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 2
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if>
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and per.nrodoc like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and p.nompagante like concat('%',#{nomPagante},'%')
+                </if>  
+                group by uo.iduniorg,uo.nombreuniorg
+                order by uo.iduniorg desc
+            end
+    </select>
+    
+    <select id="obtenerGrafoExterno" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteGrafoResultado" >
+        declare @valor Integer = #{dato}
+        if(@valor = 1)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if>
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                'Monto Total' as grafo
+                from mt_ficha f 
+                inner join MT_Pagante p on p.idpagante = f.idpagante and f.unineg = p.unineg and f.idtipopagante = p.idtipopagante
+                inner join MX_Persona per on f.idpagante = per.idpersona and f.unineg = per.unineg
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 3  
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if> 
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and per.idpersona like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and p.nompagante like concat('%',#{nomPagante},'%')
+                </if>      
+            end
+    </select>
+        
+    <select id="obtenerGrafoEntidad" parameterType="pe.marista.sigma.bean.PaganteBean" resultMap="paganteGrafoResultado" >
+        declare @valor Integer = #{dato}
+        if(@valor = 1)
+            begin
+                select
+                <if test="idTipoEstado == 26101 or idTipoEstado == 26103 or idTipoEstado == 26104" >
+                    sum(f.monto) as monto,
+                </if>
+                <if test="idTipoEstado == 26102" >
+                    sum(f.montopagado) as monto,
+                </if>
+                <if test="idTipoEstado == null" >
+                    sum(f.montopagado) as monto,
+                </if>
+                'Monto Total' as grafo
+                from mt_ficha f 
+                inner join MT_Pagante p on p.idpagante = f.idpagante and f.unineg = p.unineg and f.idtipopagante = p.idtipopagante
+                inner join MO_Entidad en on f.idpagante = en.ruc and f.unineg = en.unineg
+                where f.unineg = #{unidadNegocioBean.uniNeg}
+                and f.idtipopagante = 4
+                <if test="idTipoEstado != null" >
+                    and f.idtipostatusficha = #{idTipoEstado}     
+                </if>
+                <if test="idTipoModoPago != null" >
+                    and f.idtipomodopago = #{idTipoModoPago}
+                </if>
+                <if test="nroDoc != null and nroDoc != '' " >
+                    and en.ruc like concat('%',#{nroDoc},'%')
+                </if>
+                <if test="nomPagante != null and nomPagante != '' " >
+                    and p.nompagante like concat('%',#{nomPagante},'%')
+                </if>  
+            end 
+    </select>
+    
+</mapper> 

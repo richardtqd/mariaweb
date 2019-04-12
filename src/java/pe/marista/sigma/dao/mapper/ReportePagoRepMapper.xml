@@ -1,0 +1,31 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ReportePagoRepDAO">  
+    
+    <select id="obtenerTotalRepBanco" resultType="pe.marista.sigma.bean.reporte.ReportePagoRepBean" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        ;with listaMeses as (
+                select sum(isnull(c.montopagado,0)) as monto,ga.idgradoacademico,ga.nombre as nomGrado,mat.seccion,
+                (case
+                        when mes = 2 then 'montoFebrero'
+                        when mes = 3 then 'montoMarzo'
+                        when mes = 4 then 'montoAbril'
+                        when mes = 5 then 'montoMayo'
+                        when mes = 6 then 'montoJunio'
+                        when mes = 7 then 'montoJulio'
+                        when mes = 8 then 'montoAgosto'
+                        when mes = 9 then 'montoSetiembre'
+                        when mes = 10 then 'montoOctubre'
+                        when mes = 11 then 'montoNoviembre'
+                        when mes = 12 then 'montoDiciembre'
+                end) as mes  
+                from mt_ctasxcobrar C
+                INNER JOIN mt_concepto co on c.idconcepto = co.idconcepto
+                inner join MX_Matricula mat on c.idmatricula = mat.idmatricula and c.unineg = mat.unineg
+                inner join MX_GradoAcademico ga on mat.idgradoacademico = ga.idgradoacademico
+                where c.unineg = #{unidadNegocioBean.uniNeg} and c.anio in (year(#{fechaInicio}),year(#{fechaFin})) and c.idtipostatusctacte = #{} and c.mes is not null
+                and c.idestudiante <![CDATA[ <> ]]> '48227010' and c.fechapago <![CDATA[ >= ]]> #{fechaInicio} and c.fechapago <![CDATA[ <= ]]> #{fechaFin}
+                group by ga.idgradoacademico,ga.nombre,mat.seccion,c.mes)
+        select * from listaMeses PIVOT(SUM(monto) for mes in ([montoFebrero],[montoMarzo],[montoAbril],[montoMayo],[montoJunio],[montoJulio],[montoAgosto],[montoSetiembre],[montoOctubre],[montoNoviembre],[montoDiciembre])) AS pt order by idgradoacademico;
+    </select>
+    
+</mapper>

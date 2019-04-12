@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.CuentaBancoDAO"> 
+    <sql id="consultaCampos">
+        Select 
+        ctaB.uniNeg as uniNegCuenta
+        ,ctaB.rucBanco 
+        ,entBan.nombre as nombreEntBanco
+        ,entBan.uniNeg as uniNegBanco
+        ,ctaB.numCuenta
+        ,ctaB.idTipoMoneda
+        ,codMon.codigo as codigoMoneda
+        ,ctaB.idTipoCuentaBanco <!--idTipoCuenta-->
+        ,ctaB.idTipoCuentaBanco
+        ,codCta.codigo as codigoCuenta
+        ,ctaB.descripcion
+        ,ctaB.flgCtaCongre
+        ,ctaB.ctaContBco
+        ,ctaB.fechaApertura
+        ,ctaB.fechaCierre
+        ,ctaB.flgCobranza
+        ,ctaB.flgEgreso
+        ,ctaB.codUniNeg
+        ,ctaB.status
+        ,ctaB.creaPor
+        ,ctaB.creaFecha
+        ,ctaB.ctaContBco
+        from MT_CuentaBanco ctaB
+        left Join MO_Entidad entBan on ctaB.rucBanco=entBan.ruc and entBan.uniNeg=ctaB.uniNeg
+        left Join MO_Codigo codMon on ctaB.idTipoMoneda=codMon.idCodigo
+        left Join MO_Codigo codCta on ctaB.idTipoCuentaBanco=codCta.idCodigo  
+    </sql>
+    <resultMap id="cuentaBancoResultado" type="pe.marista.sigma.bean.CuentaBancoBean">
+        <id property="numCuenta" column="numCuenta"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="entidadBancoBean.ruc" column="rucBanco"/>
+        <result property="descripcion" column="descripcion"/> 
+        <result property="fechaApertura" column="fechaApertura"/>
+        <result property="fechaCierre" column="fechaCierre"/> 
+        <result property="flgCobranza" column="flgCobranza"/> 
+        <result property="flgCtaCongre" column="flgCtaCongre"/> 
+        <result property="codUniNeg" column="codUniNeg"/> 
+        <result property="ctaContBco" column="ctaContBco"/> 
+        <result property="status" column="status"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="flgEgreso" column="flgEgreso"/>
+        <!-- unidad negocio de cuenta banco -->
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/> 
+        <association property="entidadBancoBean" column="rucBanco"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadBancoResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/>
+        <!--<association property="tipoCuentaBean" column="idTipoCuentaBanco"/>-->
+        <association property="tipoCuentaBancoBean" column="idTipoCuentaBanco"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCuentaResultado"/>
+    </resultMap>
+    <!-- unidad negocio de entidad  -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCuenta" />
+        <id property="nombre" column="nombreCuenta" />
+    </resultMap>
+    
+    <!--entidad Banco   -->
+    <resultMap id="entidadBancoResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucBanco" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegBanco"/>
+        <result property="nombre" column="nombreEntBanco" />
+        <!--   unidad negocio de entidad -->
+        <association property="unidadNegocioBean" column="uniNegBanco" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultadoBanco"/> 
+    </resultMap>
+    <!--   unidad negocio de cuenta banco -->
+    <resultMap id="unidadNegocioResultadoBanco" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegBanco" />
+        <id property="nombre" column="nombreBanco" />
+    </resultMap>
+    <!--  tipo moneda -->
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="codigoMoneda"/>
+    </resultMap> 
+    <!--  tipo cuenta -->
+    <resultMap id="tipoCuentaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCuentaBanco"/>
+        <result property="codigo" column="codigoCuenta"/>
+    </resultMap> 
+    <select id="obtenerCuentaBancoPorId" resultMap="cuentaBancoResultado" parameterType="pe.marista.sigma.bean.CuentaBancoBean">
+        <include refid="consultaCampos" />
+        WHERE ctaB.uniNeg=#{unidadNegocioBean.uniNeg} and ctaB.rucBanco=#{entidadBancoBean.ruc} and numCuenta=#{numCuenta}
+    </select> 
+    <select id="obtenerCuentaBancoPorNumCta" resultMap="cuentaBancoResultado" parameterType="pe.marista.sigma.bean.CuentaBancoBean">
+        Select top 1
+        ctaB.uniNeg as uniNegCuenta
+        ,ctaB.rucBanco 
+        ,entBan.nombre as nombreEntBanco
+        ,entBan.uniNeg as uniNegBanco
+        ,ctaB.numCuenta 
+        from MT_CuentaBanco ctaB
+        left Join MO_Entidad entBan on ctaB.rucBanco=entBan.ruc and entBan.uniNeg=ctaB.uniNeg 
+        WHERE ctaB.uniNeg=#{unidadNegocioBean.uniNeg}  and numCuenta=#{numCuenta}
+    </select> 
+    <select id="obtenerCuentaPorUniNeg" resultMap="cuentaBancoResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        WHERE ctaB.uniNeg=#{unidadNegocioBean.uniNeg}
+    </select> 
+    <select id="obtenerCuentaPorCongregacion" resultMap="cuentaBancoResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        WHERE ctaB.uniNeg=#{unidadNegocioBean.uniNeg} and flgCtaCongre=1
+    </select> 
+    <select id="obtenerBancoPorTipMonedaBcoColegio" resultMap="cuentaBancoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        WHERE idTipoMoneda = (Select idCodigo from MO_Codigo Where idTipoCodigo=#{idTipoCodigo} and codigo = #{codigo}) and ctaB.uniNeg=#{uniNeg}
+        and ctaB.flgCtaCongre=0 and isnull(flgEgreso,0)=1
+    </select> 
+    <select id="obtenerBancoPorTipMoneda" resultMap="cuentaBancoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        WHERE idTipoMoneda = (Select idCodigo from MO_Codigo Where idTipoCodigo=#{idTipoCodigo} and codigo = #{codigo}) and ctaB.uniNeg=#{uniNeg}
+    </select> 
+    <select id="obtenerBancoPorTipMonedaYBanco" resultMap="cuentaBancoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        WHERE idTipoMoneda = (Select idCodigo from MO_Codigo Where idTipoCodigo=#{idTipoCodigo} and codigo = #{codigo}) 
+        and ctaB.uniNeg=#{uniNeg} and ctaB.rucBanco=#{rucBanco}  
+    </select> 
+    <select id="obtenerBancoPorTipMonedaYBancoFlgCobranza" resultMap="cuentaBancoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        WHERE idTipoMoneda = (Select idCodigo from MO_Codigo Where idTipoCodigo=#{idTipoCodigo} and codigo = #{codigo}) 
+        and ctaB.uniNeg=#{uniNeg} and ctaB.rucBanco=#{rucBanco} and ctaB.flgCobranza=#{flgCobranza}
+    </select> 
+    <select id="obtenerPorRuc" resultMap="cuentaBancoResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> 
+        WHERE ctaB.uniNeg=#{uniNeg} and ctaB.rucbanco = #{ruc} and ctaB.idTipoMoneda = #{idTipoMoneda}
+    </select>
+    <select id="obtenerPorRucRecauda" resultMap="cuentaBancoResultado" parameterType="map" > 
+        <include refid="consultaCampos" /> 
+        WHERE ctaB.uniNeg=#{uniNeg} and ctaB.rucbanco = #{ruc} and ctaB.idTipoMoneda = #{idTipoMoneda} 
+        and ctaB.flgrecaudabanco = 1 
+    </select>
+    <select id="obtenerPorRucRecaudaVer2" resultMap="cuentaBancoResultado" parameterType="map" > 
+        Select top 1
+        ctaB.uniNeg as uniNegCuenta
+        ,ctaB.rucBanco 
+        ,entBan.nombre as nombreEntBanco
+        ,entBan.uniNeg as uniNegBanco
+        ,ctaB.numCuenta
+        ,ctaB.idTipoMoneda
+        ,codMon.codigo as codigoMoneda
+        ,ctaB.idTipoCuentaBanco <!--idTipoCuenta-->
+        ,ctaB.idTipoCuentaBanco
+        ,codCta.codigo as codigoCuenta
+        ,ctaB.descripcion
+        ,ctaB.flgCtaCongre
+        ,ctaB.ctaContBco
+        ,ctaB.fechaApertura
+        ,ctaB.fechaCierre
+        ,ctaB.flgCobranza
+        ,ctaB.flgEgreso
+        ,ctaB.codUniNeg
+        ,ctaB.status
+        ,ctaB.creaPor
+        ,ctaB.creaFecha
+        ,ctaB.ctaContBco
+        from MT_CuentaBanco ctaB
+        left Join MO_Entidad entBan on ctaB.rucBanco=entBan.ruc and entBan.uniNeg=ctaB.uniNeg
+        left Join MO_Codigo codMon on ctaB.idTipoMoneda=codMon.idCodigo
+        left Join MO_Codigo codCta on ctaB.idTipoCuentaBanco=codCta.idCodigo
+        WHERE ctaB.uniNeg=#{uniNeg}  and ctaB.idTipoMoneda = #{idTipoMoneda} and ctaB.flgrecaudabanco = 1 
+    </select>
+    <select id="obtenerRucEntidad" resultType="String" parameterType="map" >
+        SELECT distinct rucbanco FROM MT_CuentaBanco WHere unineg = #{uniNeg} AND flgCtaCongre = 0
+    </select>
+    <insert id="insertarCuentaBanco" parameterType="pe.marista.sigma.bean.CuentaBancoBean"> 
+        INSERT INTO MT_CuentaBanco    
+        (uniNeg,rucBanco,numCuenta,idTipoMoneda,idTipoCuentaBanco
+        ,descripcion,fechaApertura,fechaCierre        
+        ,creaPor,creaFecha,flgCobranza,codUniNeg,status,ctaContBco,flgCtaCongre,flgEgreso)
+        Values
+        (#{unidadNegocioBean.uniNeg},#{entidadBancoBean.ruc},#{numCuenta},#{tipoMonedaBean.idCodigo},#{tipoCuentaBancoBean.idCodigo}
+        ,#{descripcion},#{fechaApertura},#{fechaCierre}
+        ,#{creaPor},getDate(),#{flgCobranza},#{codUniNeg},#{status},#{ctaContBco},#{flgCtaCongre},#{flgEgreso})  
+    </insert>  
+    <update id="modificarCuentaBanco" parameterType="pe.marista.sigma.bean.CuentaBancoBean">
+        UPDATE MT_CuentaBanco
+        SET 
+        idTipoMoneda=#{tipoMonedaBean.idCodigo}
+        ,idTipoCuentaBanco=#{tipoCuentaBancoBean.idCodigo}
+        ,descripcion=#{descripcion}
+        ,fechaApertura=#{fechaApertura}
+        ,fechaCierre=#{fechaCierre}
+        ,flgCobranza=#{flgCobranza}
+        ,flgEgreso=#{flgEgreso}
+        ,codUniNeg=#{codUniNeg}
+        ,ctaContBco=#{ctaContBco}
+        ,status=#{status}
+        ,flgCtaCongre=#{flgCtaCongre}
+        ,modiPor=#{modiPor}
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} and rucBanco=#{entidadBancoBean.ruc} and numCuenta=#{numCuenta}
+    </update> 
+    <delete id="eliminarCuentaBanco" parameterType="pe.marista.sigma.bean.CuentaBancoBean">
+        Delete From MT_CuentaBanco 
+        WHERE uniNeg=#{unidadNegocioBean.uniNeg} and rucBanco=#{entidadBancoBean.ruc} and numCuenta=#{numCuenta}
+    </delete>
+    <select id="obtenerCuentaPorFiltro" resultMap="cuentaBancoResultado" parameterType="pe.marista.sigma.bean.CuentaBancoBean">
+        <include refid="consultaCampos"/>
+        <where>
+            ctaB.uniNeg=#{entidadBancoBean.unidadNegocioBean.uniNeg}
+            <if test="entidadBancoBean.ruc != null and entidadBancoBean.ruc != 0 ">
+                and  ctaB.rucBanco=#{entidadBancoBean.ruc}
+            </if>  
+            <if test="tipoMonedaBean.idCodigo != null and tipoMonedaBean.idCodigo != 0 ">
+                and  ctaB.idTipoMoneda=#{tipoMonedaBean.idCodigo}
+            </if> 
+            <if test="tipoCuentaBancoBean.idCodigo != null and tipoCuentaBancoBean.idCodigo != 0 ">
+                and  ctaB.idTipoCuentaBanco=#{tipoCuentaBancoBean.idCodigo}
+            </if>
+            <if test="descripcion != null and descripcion != '' ">
+                and ctaB.descripcion=#{descripcion}
+            </if>  
+            <if test="flgCobranza != null and flgCobranza != '' ">
+                and ctaB.flgCobranza=#{flgCobranza}
+            </if>  
+            <if test="flgEgreso != null and flgEgreso != '' ">
+                and ctaB.flgEgreso=#{flgEgreso}
+            </if>  
+            <if test="flgCtaCongre != null and flgCtaCongre != '' ">
+                and ctaB.flgCtaCongre=#{flgCtaCongre}
+            </if>  
+            <if test="fechaApertura != null" >
+                <![CDATA[
+                and  ctaB.fechaApertura >= #{fechaApertura}
+                ]]>
+            </if>  
+            <if test="fechaCierre != null" >
+                <![CDATA[
+                and  ctaB.fechaCierre >= #{fechaCierre}
+                ]]>
+            </if> 
+        </where>
+        order by ctaB.numCuenta desc
+    </select> 
+    <select id="obtenerCuentaPorTipo" resultMap="cuentaBancoResultado" parameterType="pe.marista.sigma.bean.CuentaBancoBean">
+        <include refid="consultaCampos"/>
+        <where>
+            ctaB.uniNeg=#{entidadBancoBean.unidadNegocioBean.uniNeg}
+            <if test="entidadBancoBean.ruc != null and entidadBancoBean.ruc != 0 ">
+                and  ctaB.rucBanco=#{entidadBancoBean.ruc}
+            </if>  
+            <if test="tipoMonedaBean.idCodigo != null and tipoMonedaBean.idCodigo != 0 ">
+                and  ctaB.idTipoMoneda=#{tipoMonedaBean.idCodigo}
+            </if> 
+            <if test="tipoCuentaBancoBean.idCodigo != null and tipoCuentaBancoBean.idCodigo != 0 ">
+                and  ctaB.idTipoCuentaBanco=#{tipoCuentaBancoBean.idCodigo}
+            </if>
+            <if test="descripcion != null and descripcion != '' ">
+                and ctaB.descripcion=#{descripcion}
+            </if>  
+            <if test="flgCobranza != null and flgCobranza != '' ">
+                and ctaB.flgCobranza=#{flgCobranza}
+            </if>  
+            <if test="flgEgreso != null and flgEgreso != '' ">
+                and ctaB.flgEgreso=#{flgEgreso}
+            </if>  
+            <if test="flgCtaCongre != null and flgCtaCongre != '' ">
+                and ctaB.flgCtaCongre=#{flgCtaCongre}
+            </if>   
+        </where>
+        order by ctaB.numCuenta desc
+    </select> 
+</mapper> 

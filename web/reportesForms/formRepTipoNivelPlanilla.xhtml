@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core"> 
+    <ui:define name="content">
+        <h:body onload="#{planillaMB.cargarDatosTipoNiveles()}">
+            <div style="text-align: center;height: 750px">  
+
+                <h:panelGrid styleClass="centrado" style="display: inline-block;" columns="4">
+                    <p:panel style="width: 600px" class="center">
+                        <p:fieldset  class="centrado">
+                            <h:form id="frmDatosLegajo"> 
+                                <h:panelGrid columns="3">
+                                    <h:outputLabel value="#{msgs.etiquetaEscogerReporte}" class="titulo"  />
+                                    <h:outputLabel value=" " class="requerido" />
+                                    <p:selectOneMenu effect="fold" value="#{planillaMB.orden}"  class="resetSelect" style="width:250px" panelStyle="width:125px" required="false" label="#{msgs.etiquetaEscogerReporte}">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}"/>
+                                        <f:selectItems value="#{planillaMB.listaReporte}"/>
+                                        <p:ajax event="change" listener="#{planillaMB.obtenerReporte()}" update="planilla"/>
+                                    </p:selectOneMenu>
+
+
+                                </h:panelGrid>
+                                <h:panelGrid id="planilla"> 
+                                    <h:panelGrid rendered="#{planillaMB.orden==1 || planillaMB.orden==2 || planillaMB.orden==4 || planillaMB.orden==5}">
+                                        <h2>#{msgs.etiquetaTipoNivelPlanilla}</h2>  
+                                        <p:selectManyCheckbox id="grid" value="#{planillaMB.selectedIdTipoAcceso}" layout="grid" columns="3">
+                                            <f:selectItems value="#{planillaMB.listaNivelIns}" var="tipo" itemLabel="#{tipo.codigo}" itemValue="#{tipo.idCodigo}" />
+                                        </p:selectManyCheckbox>
+                                        <br></br>
+                                    </h:panelGrid> 
+                                    <h:panelGrid columns="1" class="izquiera" rendered="#{planillaMB.orden==3 || planillaMB.orden==4 || planillaMB.orden==5 || legajoMB.orden==6}">
+                                        <h:panelGrid columns="2">
+                                            <p:outputLabel value="#{msgs.etiquetaMes}: " />
+                                            <p:selectOneMenu id="cboMes" value="#{planillaMB.mes}" required="false"  >                                
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{planillaMB.listaMesAll}" var="mes" itemLabel="#{mes.descripcion}" itemValue="#{mes.valor}" />
+                                            </p:selectOneMenu>
+                                            <p:outputLabel value="#{msgs.etiquetaPeriodo}:" /> 
+                                            <p:spinner id="txtAnio" value="#{planillaMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="8"/>
+                                        </h:panelGrid>  
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" class="izquiera" rendered="#{planillaMB.orden==7}">
+                                        <h:panelGrid columns="2"> 
+                                            <p:outputLabel value="#{msgs.etiquetaPeriodo}:" /> 
+                                            <p:spinner id="txtAnioPlanCts" value="#{planillaMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="8"/>
+                                        </h:panelGrid> 
+                                        <h:outputLabel value="#{msgs.etiquetaMes}: " class="negrita"  /> 
+                                        <p:selectOneRadio  value="#{planillaMB.planillaCtsBean.parte}" label="#{msgs.etiquetaMes}" >      
+                                            <f:selectItem itemValue="5" itemLabel="#{msgs.etiquetaMayo}" />
+                                            <f:selectItem itemValue="11" itemLabel="#{msgs.etiquetaNoviembre}" />
+                                            <p:ajax event="change" listener="#{planillaMB.cargarAnio()}" />
+                                        </p:selectOneRadio>     
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="9" class="centrado">
+                                        <h:commandLink id="btnPrintActivo" action="#{planillaMB.imprimirTodosPdfActivos(1)}" target="_blank" rendered="#{planillaMB.orden==1}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                        </h:commandLink>
+                                        <p:tooltip for="btnPrintActivo" value="#{msgs.etiquetaPersonalAc}" />
+                                        <h:commandLink id="btnPrintDebaja" action="#{planillaMB.imprimirTodosPdfActivos(0)}" target="_blank" rendered="#{planillaMB.orden==2}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                        </h:commandLink>
+                                        <p:tooltip for="btnPrintDebaja" value="#{msgs.etiquetaPersonalBaja}" />  
+                                        <h:commandLink id="btnPrintRemuneraciones" action="#{planillaMB.imprimirTodosPdfRemuneracion()}" target="_blank" rendered="#{planillaMB.orden==3}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                        </h:commandLink>
+                                        <p:tooltip for="btnPrintRemuneraciones" value="#{msgs.etiquetaRemumeracion}" />
+                                        <h:commandLink id="btnPrintCuenta" action="#{planillaMB.imprimirPdfCuentas()}" target="_blank" rendered="#{planillaMB.orden==4}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                        </h:commandLink>
+                                        <p:tooltip for="btnPrintCuenta" value="#{msgs.etiquetaPlanillaCuentas}" />  
+                                        <h:commandLink id="btnPrintCr" action="#{planillaMB.imprimirPdfCrPlanilla()}" target="_blank" rendered="#{planillaMB.orden==5}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                        </h:commandLink>
+                                        <p:tooltip for="btnPrintCr" value="#{msgs.etiquetaCenCos}" />  
+                                        <h:commandLink id="btnPrintCrTrabajador" action="#{planillaMB.imprimirPdfCrTrabajador()}" target="_blank"  rendered="#{planillaMB.orden==6}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                        </h:commandLink>
+                                        <p:tooltip for="btnPrintCrTrabajador" value="#{msgs.etiquetaTrabajadorCr}" />  
+                                        <h:commandLink id="btnPrintPlanillaCts" action="#{planillaMB.imprimirPlanillaCts(planillaMB.planillaCtsBean.parte)}" target="_blank"  rendered="#{planillaMB.orden==7}"> 
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                                        </h:commandLink>
+                                        <p:tooltip for="btnPrintPlanillaCts" value="#{msgs.etiquetaReportePlanillaCts}" />  
+
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                            </h:form> 
+                        </p:fieldset>
+                    </p:panel> 
+                </h:panelGrid>
+            </div>   
+        </h:body> 
+    </ui:define>
+</ui:composition>

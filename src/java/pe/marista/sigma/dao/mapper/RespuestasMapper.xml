@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.RespuestasDAO"> 
+     
+    <sql id="consultaCamposR">
+        SELECT 
+        res.idRespuesta
+        ,res.idPregunta
+        ,pre.texto 
+        ,res.orden
+        ,(select isnull(max(orden),0) from MX_Respuestas) as ordenUltimo
+        ,res.rta1
+        ,res.rta2
+        ,res.rta3
+        ,res.rta4
+        FROM MX_Respuestas res
+        inner join MX_Pregunta pre on pre.idPregunta=res.idPregunta
+    </sql>
+    <resultMap id="respuestasResultado" type="pe.marista.sigma.bean.RespuestasBean">
+        <id property="idRespuesta" column="idRespuesta"/>
+        <result property="orden" column="orden"/>
+        <result property="ordenUltimo" column="ordenUltimo"/>
+        <result property="rta1" column="rta1"/>
+        <result property="rta2" column="rta2"/>
+        <result property="rta3" column="rta3"/>
+        <result property="rta4" column="rta4"/> 
+        <association property="preguntaBean" column="idPregunta"
+                     javaType="pe.marista.sigma.bean.PreguntaBean"
+                     resultMap="preguntaResultado"/>
+    </resultMap>
+    <sql id="consultaCamposP">
+        SELECT 
+        idPregunta
+        ,texto
+        FROM MX_Pregunta
+    </sql>
+    <resultMap id="preguntaResultado" type="pe.marista.sigma.bean.PreguntaBean">
+        <id property="idPregunta" column="idPregunta"/>
+        <result property="texto" column="texto"/> 
+    </resultMap>
+      
+    <!-- respuesta -->
+    <select id="obtenerRespuestas" resultMap="respuestasResultado">
+        <include refid="consultaCamposR" />
+    </select>    
+    <select id="obtenerRespuestasPorOrden" resultMap="respuestasResultado" resultType="Integer">
+        <include refid="consultaCamposR" />
+        where orden=#{orden}
+    </select>    
+    <select id="obtenerRespuestasPorId" resultMap="respuestasResultado" resultType="pe.marista.sigma.bean.RespuestasBean">
+        <include refid="consultaCamposR" />
+        where idRespuesta=#{idRespuesta}
+    </select>    
+    <select id="obtenerUltimoOrden" resultMap="respuestasResultado" >
+        <include refid="consultaCamposR" />
+        where idRespuesta=(SELECT max(idRespuesta) FROM MX_Respuestas)
+    </select>    
+    <insert id="insertarRespuestas" parameterType="pe.marista.sigma.bean.RespuestasBean">
+        INSERT INTO MX_Respuestas (idPregunta,orden)
+        Values (#{preguntaBean.idPregunta},#{orden})
+    </insert>  
+    <update id="modificarRespuestas" parameterType="pe.marista.sigma.bean.RespuestasBean">
+        UPDATE MX_Respuestas
+        SET  
+        rta1=#{rta1}
+        ,rta2=#{rta2}
+        ,rta3=#{rta3}
+        ,rta4=#{rta4}
+        where idRespuesta=#{idRespuesta}
+    </update> 
+    <delete id="eliminarRespuestas" parameterType="pe.marista.sigma.bean.PreguntaBean">
+        Delete From MX_Respuestas  where idRespuesta=#{idRespuesta}
+    </delete>
+    
+    <!-- pregunta -->
+    <select id="obtenerPregunta" resultMap="preguntaResultado" >
+        <include refid="consultaCamposP" />
+    </select>    
+    <select id="obtenerPreguntaPorId" resultMap="preguntaResultado" resultType="pe.marista.sigma.bean.PreguntaBean">
+        <include refid="consultaCamposP" />
+        where idPregunta=#{idPregunta}
+    </select>    
+    <insert id="insertarPregunta" parameterType="pe.marista.sigma.bean.PreguntaBean">
+        INSERT INTO MX_Pregunta (texto)
+        Values (#{texto})
+    </insert>  
+    <update id="modificarPregunta" parameterType="pe.marista.sigma.bean.PreguntaBean">
+        UPDATE MX_Pregunta
+        SET 
+        texto = #{texto}
+        where idPregunta=#{idPregunta}
+    </update> 
+    <delete id="eliminarPregunta" parameterType="pe.marista.sigma.bean.PreguntaBean">
+        Delete From MX_Pregunta  where idPregunta=#{idPregunta}
+    </delete>
+    
+</mapper>

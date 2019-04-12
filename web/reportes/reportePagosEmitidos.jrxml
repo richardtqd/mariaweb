@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportePagosEmitidos" language="groovy" pageWidth="595" pageHeight="842" columnWidth="581" leftMargin="7" rightMargin="7" topMargin="20" bottomMargin="20" uuid="f3ea0c1a-a4a6-4cce-9b87-8d4102073464">
+	<property name="ireport.zoom" value="1.5026296018031562"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="143"/>
+	<queryString>
+		<![CDATA[declare
+@montoChequeSol money = (select sum(isnull(doc.montopagado,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago    where tipo.codigo='Cheque' and doc.unineg='sanjoc'),
+@montoChequeDol money = (select sum(isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago where tipo.codigo='Cheque' and doc.unineg='sanjoc'),
+@montoTransSol money =  (select sum(isnull(doc.montopagado,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago where tipo.codigo='Transferencia' and doc.unineg='sanjoc') ,
+@montoTransDol money =  (select sum(isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago where tipo.codigo='Transferencia' and doc.unineg='sanjoc'),
+@montoSol money = (select sum(isnull(montopagado,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago ),
+@montoDol money = (select sum(isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  inner join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago ) ,
+@montoDetraSol money = (select sum(isnull(doc.valorDetraccion,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14901 ) ,
+@montoDetraDol money = (select sum(isnull(doc.valorDetraccion,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14902 ) ,
+@montoTotSol money = (select sum(isnull(doc.valorDetraccion,0)+isnull(doc.montopagado,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14901 ) ,
+@montoTotDol money = (select sum(isnull(doc.valorDetraccion,0)+isnull(doc.montopagadodol,0)) from MT_DocEgreso doc  WHERE idtipomoneda=14902),
+@cantAnulados money = (select count(*) from MT_DocEgreso doc  WHERE flganulado=1)
+
+
+
+
+select  DISTINCT
+        uni.nombreUniNeg as nombreUniNeg,
+        'R.U.C.: '+UNI.RUC  as rucUniNeg,
+        convert(varchar,doc.creafecha,101) as fecha,
+        (CASE WHEN tipo.codigo='Cheque' THEN 'CH/ '+(isnull(substring(convert(varchar,doc.numcheque),1,4)+ ' '+substring(convert(varchar,doc.numcheque),5,15),'-')) WHEN tipo.codigo='Transferencia' THEN 'Cta. '+doc.numcuenta else '' END) as numCheque,
+        (case
+        when doc.idtipodocegreso='A' then upper(isnull(sol.nomRespCheque,'-'))
+        WHEN   doc.idtipodocegreso='R'    then ENT.nombre
+        WHEN DOC.idtipodocegreso='O' THEN ENT.nombre
+        ELSE ' - '
+        end) as nomRespCheque,
+        CONVERT(varchar, CAST(isnull((SELECT SUM(ISNULL(D.montopagado,0)) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null),0) AS money), 1)  as montoPagadoSol,
+        CONVERT(varchar, CAST(isnull((SELECT SUM(ISNULL(D.montopagadodol,0)) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg AND D.flganulado is null),0) AS money), 1)  as montoPagadoDol,
+
+	    CONCAT((case when doc.flganulado = 1 then '--Anulado--' end),' ',(SELECT top 1 upper(d.glosa) FROM MT_DocEgreso D WHERE D.nrodocegreso=doc.nrodocegreso AND D.unineg=DOC.unineg)) AS glosa,
+		tipo.codigo as modoPago,
+		CONVERT(varchar, CAST(isnull(@montoChequeSol,0) AS money), 1) as montoChequeSol,
+		CONVERT(varchar, CAST(isnull(@montoChequeDol,0) AS money), 1) as montoChequeDol,
+		CONVERT(varchar, CAST(isnull(@montoTransSol,0) AS money), 1) as montoTransSol,
+		CONVERT(varchar, CAST(isnull(@montoTransDol,0) AS money), 1) as montoTransDol,
+		CONVERT(varchar, CAST(isnull(@montoSol,0) AS money), 1) as montoSol,
+		CONVERT(varchar, CAST(isnull(@montoDol,0) AS money), 1) as montoDol,
+		CONVERT(varchar, CAST(isnull(@montoDetraSol,0) AS money), 1) as detraccionSol,
+		CONVERT(varchar, CAST(isnull(@montoDetraDol,0) AS money), 1) as detraccionDol,
+
+		CONVERT(varchar, CAST(isnull(@montoTotSol,0) AS money), 1) as montoTotSol,
+		CONVERT(varchar, CAST(isnull(@montoTotDol,0) AS money), 1) as montoTotDol,
+		(case when @cantAnulados<10 then convert(varchar(2),right(replicate('0', 1) + rtrim(isnull( @cantAnulados,0)), 2)) else    convert(varchar,convert(integer,@cantAnulados))end) as cantAnulados
+        from MT_DocEgreso doc
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=doc.idsolicitudcajach and sol.unineg=doc.unineg
+        left join MT_Concepto con on con.idconcepto=sol.idconcepto
+        left join MT_TipoConcepto tc on tc.idTipoConcepto=con.idtipoconcepto
+        left join ML_RegistroCompra reg on reg.idregistrocompra=doc.idcompra and reg.unineg=doc.unineg
+        left join ML_OrdenCompra oc on oc.idordencompra=doc.idcompra and oc.unineg=doc.unineg
+        left join ML_FacturaCompra fact on (case
+        when doc.idtipodocegreso='R' then fact.idregistrocompra
+        WHEN DOC.idtipodocegreso='O'  THEN FACT.idordencompra END)=DOC.idcompra
+        AND DOC.unineg=FACT.unineg
+        left join MO_Entidad ent on ent.ruc=(case when doc.idtipodocegreso='R' then REG.ruc WHEN DOC.idtipodocegreso='O' THEN OC.ruc END) and ent.unineg=
+        (case when doc.idtipodocegreso='R' then REG.unineg WHEN DOC.idtipodocegreso='O' THEN OC.unineg END)
+        inner join MO_UnidadNegocio uni on doc.unineg=uni.unineg
+		left join MO_Codigo tipo on tipo.idcodigo=doc.idtipopago]]>
+	</queryString>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="rucUniNeg" class="java.lang.String"/>
+	<field name="fecha" class="java.lang.String"/>
+	<field name="numero" class="java.lang.String"/>
+	<field name="nomRespCheque" class="java.lang.String"/>
+	<field name="montoPagadoSol" class="java.lang.String"/>
+	<field name="montoPagadoDol" class="java.lang.String"/>
+	<field name="glosa" class="java.lang.String"/>
+	<field name="modoPago" class="java.lang.String"/>
+	<field name="montoChequeSol" class="java.lang.String"/>
+	<field name="montoChequeDol" class="java.lang.String"/>
+	<field name="montoTransSol" class="java.lang.String"/>
+	<field name="montoTransDol" class="java.lang.String"/>
+	<field name="montoSol" class="java.lang.String"/>
+	<field name="montoDol" class="java.lang.String"/>
+	<field name="detraccionSol" class="java.lang.String"/>
+	<field name="detraccionDol" class="java.lang.String"/>
+	<field name="montoTotSol" class="java.lang.String"/>
+	<field name="montoTotDol" class="java.lang.String"/>
+	<field name="cantAnulados" class="java.lang.String"/>
+	<field name="textoFiltro" class="java.lang.String"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="93" splitType="Stretch">
+			<textField>
+				<reportElement uuid="d38025a9-8f1d-430a-8a66-613907e65a83" x="6" y="3" width="268" height="14"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="374050dd-01d7-4410-9bd2-36650e290245" x="6" y="16" width="268" height="14"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{rucUniNeg}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="ad7c1c80-fd16-4e17-8c95-779b96ec0c2d" x="117" y="38" width="342" height="22"/>
+				<textElement textAlignment="Center">
+					<font size="11" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[RELACIÓN DE PAGOS EMITIDOS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="31062a3f-7159-40d1-8733-902451ec30b3" x="474" y="5" width="100" height="13"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FECHA DE IMPRESIÓN:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="86deec8a-5c98-42ee-8bb2-febef774bb2f" x="484" y="13" width="80" height="11"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="9b342e66-acde-49ed-bbe2-7119c27e42f3" x="3" y="63" width="561" height="28"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{textoFiltro}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="16" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="686233ae-849f-439d-9b66-74ef1b03f803" x="0" y="1" width="581" height="15"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="5c6eb726-0ff2-4879-868a-60cb7a3dc8d2" x="344" y="2" width="135" height="12"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[REFERENCIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e3bea941-25a0-413c-818f-d80e0bc41159" x="3" y="3" width="41" height="12"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FECHA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b5ae6afb-59f1-471a-a849-fc330ce774cc" x="497" y="3" width="31" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Soles]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7ec896b3-8834-4506-9870-3592fb0c87b1" x="540" y="3" width="38" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dólares]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="95cb57a5-42f6-4c2f-9a7f-b5db9336a0cb" x="105" y="2" width="95" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NÚMERO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="36b9e6ee-9da6-4f06-90fb-0926bfa941c0" x="201" y="2" width="145" height="12"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RESPONSABLE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5941643f-67b6-4538-8079-d228a03f957e" x="44" y="3" width="61" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MODO]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField>
+				<reportElement uuid="60cc0752-6d18-48a9-8ae9-4e50341b917f" x="200" y="0" width="146" height="12"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nomRespCheque}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e420d70a-eebc-4797-8676-e056fac713e8" x="0" y="0" width="44" height="12"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecha}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="c2dcec60-19fa-457b-aa30-f136df12f0b4" x="44" y="0" width="61" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{modoPago}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a78db0cf-a14e-44e4-97ee-db708a47079b" x="105" y="0" width="95" height="12"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{numero}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4f3dc0f1-4706-4419-ae6c-18af1f82d0c4" x="527" y="0" width="47" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoDol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a11e0dfc-d1e4-48fd-a57e-dc576b2724d8" x="480" y="0" width="47" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagadoSol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="c34c1f65-938f-4807-8dd9-6ed652a506f0" x="345" y="0" width="135" height="12"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{glosa}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="30" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="30" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="48ce5781-6c1b-4947-b1c6-768ffa98c1eb" x="38" y="17" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="ac7db8a5-fd63-4afa-9459-1fce9557ef14" x="5" y="17" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="43563f71-18b7-4ac2-b5df-ec3af6f1d23c" x="25" y="17" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement uuid="15120de5-cff5-449b-b24e-d12d2654d946" x="53" y="17" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="234" splitType="Immediate">
+			<textField>
+				<reportElement uuid="8db55e0f-78ae-476f-83af-ea69aef70267" x="97" y="33" width="69" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{montoChequeSol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="5c6c0595-91e0-4066-a046-e305d02852e4" x="185" y="33" width="69" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{montoChequeDol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="c79534f4-b009-4309-ae17-9b0be71a1e9e" x="97" y="48" width="69" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{montoTransSol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="7515b55a-71db-408f-96ff-e8c99c35bb12" x="185" y="48" width="69" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{montoTransDol}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="47e3d76f-1327-4650-bc93-fb8712702e83" x="89" y="191" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TESORERÍA]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="02240b95-ffb0-4ea7-85be-43bae9f5aaf5" x="67" y="189" width="155" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="4cd99694-28a7-4d43-b7d9-ba7778daaf9b" x="375" y="188" width="155" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="33ed75e9-d0ee-4182-b45f-2425d9241f88" x="397" y="190" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[ADMINISTRACIÓN]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="f51721eb-448c-455e-a380-a5e5842207a4" x="479" y="4" width="48" height="15"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoSol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="22b4bab5-a49f-4c57-b84b-8dd782b784ed" x="527" y="4" width="46" height="15"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoDol}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="77628fd1-39d2-468e-a11f-538ff1e3e536" x="0" y="2" width="581" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement uuid="388af06e-6b44-46d2-88f0-3a3f53fc71f4" x="407" y="4" width="67" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTALES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="cfaa6089-b7f9-4630-af47-6f7c27e8d443" x="3" y="33" width="70" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cheque]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2a40fdbd-352f-4b8d-a99f-a6a8d83fc4cd" x="3" y="48" width="86" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Transferencia]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="0ee3ef73-6cde-4343-bf66-b8f6b82924a5" x="97" y="63" width="69" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{detraccionSol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="29565c9a-37c0-4bb8-87ca-3e94ff49a4ef" x="212" y="63" width="42" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{detraccionDol}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="83a16605-4c40-4688-a1e0-765a06e2dff4" x="96" y="16" width="70" height="15"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f7330d8e-d50b-45b6-80f7-97d70a696d28" x="184" y="16" width="70" height="15"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[$.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e7a495c9-3913-490b-b963-89bc1917637d" x="3" y="63" width="96" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Retención]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="53437d5a-b070-448d-9ed2-a8e008278be3" x="97" y="96" width="71" height="20"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoTotSol}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4171a207-da4e-4f98-be74-d4e339b362c7" x="185" y="96" width="69" height="20"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoTotDol}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="726f0440-124a-4940-afc8-cdb7dfdba73f" x="3" y="96" width="70" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f64c85e4-d5d7-456a-98a5-54267c200331" x="86" y="33" width="11" height="15"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2455cd84-d38a-481d-b562-9d3ab2f3e539" x="86" y="48" width="11" height="15"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="965fcce5-05ca-4dcd-bea0-d59bc76cce48" x="86" y="63" width="11" height="15"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9fc23de3-19bf-4f85-9247-b53a538d50f5" x="86" y="96" width="11" height="15"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="68d2ce4a-ef32-4d95-86ca-2986dca8847a" x="346" y="64" width="113" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cantidad de anulados: ]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="4b19c2ff-257d-4a30-82c6-b91ee49cde9c" x="459" y="64" width="47" height="15"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{cantAnulados}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

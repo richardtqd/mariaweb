@@ -1,0 +1,320 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{admisionMB.cargarFormulario()}">
+            <p:layout fullPage="false"  style="width:1800px;height:750px" styleClass="centrado" >
+                <p:layoutUnit position="west" size="850" header="#{msgs.etiquetaBuscadorAdmision}" minSize="150" maxSize="680" resizable="true" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500" >
+                    <h:form id="frmDatosAdmision">
+                        <h:panelGrid  id="pnlFiltro" style="width: 450px;padding: 5px" styleClass="centrado"> 
+                            <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}" style="width: 500px" >
+                                <h:panelGrid columns="2">
+                                    <h:outputLabel value="#{msgs.etiquetaPeriodo}"/>
+                                    <p:selectOneMenu value="#{admisionMB.admisionFiltroBean.programacionBean.procesoBean.anio}"    label="#{msgs.etiquetaPeriodo}" filter="true" style="width: 105px" panelStyle="width:105px">
+                                        <f:selectItem itemValue="#{admisionMB.num}" itemLabel="#{msgs.etiquetaTodos}"/>
+                                        <f:selectItems value="#{admisionMB.listaAnios}" var="fila" itemLabel="#{fila}" itemValue="#{fila}"/>
+                                    </p:selectOneMenu>
+                                    <h:panelGrid columns="2" class="siseFontGrid5">
+                                        <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                        <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                    </h:panelGrid>
+                                    <p:inputText value="#{admisionMB.admisionFiltroBean.estudianteBean.personaBean.idPersona}" size="15" maxlength="15"/>
+                                    <h:outputLabel value="#{msgs.etiquetaGradoPostulacion}"/>
+                                    <p:selectOneMenu value="#{admisionMB.admisionFiltroBean.gradoAcademicoBean.idGradoAcademico}"    label="#{msgs.etiquetaGradoPost}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                        <f:selectItem itemValue="#{admisionMB.num}" itemLabel="#{msgs.etiquetaTodos}"/>
+                                        <f:selectItems value="#{admisionMB.listaGradoAcademicoBean}" var="gradoAcademico" itemLabel="#{gradoAcademico.nombre}" itemValue="#{gradoAcademico.idGradoAcademico}"/>
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaProgramacion}"/>
+                                    <p:selectOneMenu value="#{admisionMB.admisionFiltroBean.programacionBean.idProgramacion}"    label="#{msgs.etiquetaGradoPost}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                        <f:selectItem itemValue="#{admisionMB.num}" itemLabel="#{msgs.etiquetaTodos}"/>
+                                        <f:selectItems value="#{admisionMB.listaProgramacionBean}" var="progra" itemLabel="#{progra.nombreProgramacion}" itemValue="#{progra.idProgramacion}"/>
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaStatusPostulante}"/>
+                                    <p:selectOneMenu value="#{admisionMB.admisionFiltroBean.codigoBean.idCodigo}"    label="#{msgs.etiquetaStatusPostulante}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                        <f:selectItem itemValue="#{admisionMB.num}" itemLabel="#{msgs.etiquetaTodos}"/>
+                                        <f:selectItems value="#{admisionMB.listaCodigoBean}" var="estadoPostulante" itemLabel="#{estadoPostulante.codigo}" itemValue="#{estadoPostulante.idCodigo}"/> 
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaDocRef}"/>
+                                    <p:inputText value="#{admisionMB.admisionFiltroBean.docRefeIngreso}" label="#{msgs.etiquetaDocRef}" size="20" maxlength="20"/>  
+                                </h:panelGrid>
+                                <p:separator/>
+                                <h:panelGrid  columns="2" styleClass="centrado">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{admisionMB.obtenerAdmisionFiltro()}"
+                                                     update="pnlTablaAdmision,msg" /> 
+                                    <p:commandButton actionListener="#{admisionMB.limpiarAdmision()}" 
+                                                     update="msg,:tabViewAdm,,:frmDatosAdmision:pnlTablaAdmision,:frmDatosAdmision:pnlFiltro"  
+                                                     value="#{msgs.botonLimpiar}" process="@this">
+                                    </p:commandButton>  
+                                </h:panelGrid>
+                                <p:messages autoUpdate="false" id="msg" />
+                            </p:panel>
+                        </h:panelGrid>
+                        <h:panelGrid  id="pnlTablaAdmision" styleClass="centrado"> 
+                            <p:dataTable id="tblAdmision" value="#{admisionMB.listaAdmisionBean}" widgetVar="tblPersona"
+                                         selectionMode="single"   paginator="true"  rowsPerPageTemplate="10,20"
+                                         paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                         selection="#{admisionMB.admisionBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                         var="admision" rowKey="#{admision}"  scrollRows="#{admisionMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty admisionMB.listaAdmisionBean}" 
+                                         style="width: 650px;font-size:14px !important;margin-bottom:0">
+                                <p:ajax event="rowSelect" listener="#{admisionMB.rowSelect}" update=":tabViewAdm:frmMantAdmision:pnlDatosAdmision,:tabViewAdm:frmDatosDocumentos:pnlTablaDocumentos,:tabViewAdm:frmMantAdmision:pnlBtnGrabar" />
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaProspecto}" />  
+                                </f:facet>
+                                <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#
+                                          {admision.idPersona}" >
+                                    <h:outputText value="#{admision.estudianteBean.personaBean.idPersona}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="15%" styleClass="siseFontTable3 centrado-texto" sortBy="#
+                                          {admision.nombre}">
+                                    <h:outputText value="#{admision.estudianteBean.personaBean.nombreCompletoDesdeApellidos}"/>
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaGradoPostulacion}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#
+                                          {admision.apemat}">
+                                    <h:outputText value="#{admision.gradoAcademicoBean.nombre}" />
+                                </p:column>  
+                                <p:column headerText="#{msgs.etiquetaStatus}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#
+                                          {admision.apemat}">
+                                    <h:outputText value="#{admision.codigoBean.codigo}" />
+                                </p:column> 
+                            </p:dataTable>
+                        </h:panelGrid>
+                    </h:form>
+                </p:layoutUnit>
+                <p:layoutUnit position="center" styleClass="centrado">
+                    <center>
+                        <h:outputText value="#{msgs.etiquetaSeguimientoAdm}" class="tituloPantalla" style="margin: auto !important;font-size: 16px"/>
+                        <br></br>
+                    </center>
+                    <p:tabView dynamic="true" cache="true"  styleClass="centrado" id="tabViewAdm"  scrollable="true" style="width: 1000px">
+                        <p:tab title="#{msgs.tituloInserModAdmision}" id="tabMantAdm" titleStyle="font-size: 0.9em">     
+                            <h:panelGrid styleClass="centrado" >
+                                <h:form id="frmMantAdmision">
+                                    <p:panel header="#{msgs.etiquetaDatosAdmi}">
+                                        <h:panelGrid columns="1" id="pnlDatosAdmision" class="centrado" style="padding: 10px">  
+                                            <h:panelGrid columns="1" width="400">
+                                                <p:dataTable id="tblProgramacion" value="#{admisionMB.listaProgramacionBean}" widgetVar="tblProgramacion"
+                                                             paginator="true" selectionMode="single" paginatorPosition="bottom"
+                                                             selection="#{admisionMB.admisionBean.programacionBean}"
+                                                             var="programacion" rowKey="#{programacion.idProgramacion}"
+                                                             rows="3" 
+                                                             rendered="#{not empty admisionMB.listaProgramacionBean}" 
+                                                             style="width: 850px; font-size: 10px;font-size:14px !important;">
+                                                    <p:ajax event="rowSelect" listener="#{admisionMB.rowSelectProgramacion}" update=":tabViewAdm:frmMantAdmision:pnlProgramacion,:tabViewAdm:frmMantAdmision:pnlBtnGrabar" />
+                                                    <f:facet name="header" >
+                                                        <h:outputText value="#{msgs.tituloSelPro}" />  
+                                                    </f:facet>
+                                                    <p:column filterBy="#{programacion.procesoBean.descripcion}" headerText="#{msgs.etiquetaProceso}" filterMatchMode="contains" width="155" styleClass="nombreFiltro7 siseFontTable3 centrado-texto">
+                                                        <h:outputText value="#{programacion.procesoBean.descripcion}" />
+                                                    </p:column>
+                                                    <p:column sortBy="#{programacion.ambienteBean.nombre}" headerText="#{msgs.etiquetaAmbiente}" filterMatchMode="contains" width="90" styleClass="nombreFiltro4 siseFontTable3 centrado-texto">
+                                                        <h:outputText value="#{programacion.ambienteBean.nombre}" />
+                                                    </p:column>
+                                                    <p:column sortBy="#{programacion.procesoBean.anio}" headerText="#{msgs.etiquetaPeriodo}" filterMatchMode="contains" width="40" styleClass="nombreFiltro1 centrado-texto siseFontTable3">
+                                                        <h:outputText value="#{programacion.procesoBean.anio}" />
+                                                    </p:column>
+
+                                                    <p:column class="centrado-texto" sortBy="#{programacion.fecIni}" headerText="#{msgs.etiquetaFecIn}" filterMatchMode="contains" width="70" styleClass="nombreFiltro3 centrado-texto siseFontTable3" >
+                                                        <f:facet name="filter">
+                                                            <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                                                <p:ajax event="dateSelect" oncomplete="PF('tblProgramacion').filter()"/>
+                                                            </p:calendar> 
+                                                        </f:facet>
+                                                        <h:outputText value="#{programacion.fecIni}">
+                                                            <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                                        </h:outputText>
+                                                    </p:column>
+                                                    <p:column class="centrado-texto" sortBy="#{programacion.fecFin}" headerText="#{msgs.etiquetaFecFin}" filterMatchMode="contains" width="70" styleClass="nombreFiltro3 centrado-texto siseFontTable3" >
+                                                        <f:facet name="filter">
+                                                            <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                                                <p:ajax event="dateSelect" oncomplete="PF('tblProgramacion').filter()"/>
+                                                            </p:calendar> 
+                                                        </f:facet>
+                                                        <h:outputText value="#{programacion.fecFin}">
+                                                            <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                                        </h:outputText>
+                                                    </p:column>
+                                                    <p:column sortBy="#{programacion.max}" headerText="#{msgs.etiquetaMaxAbr}" filterMatchMode="contains" width="30" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto">
+                                                        <h:outputText value="#{programacion.max}" />
+                                                    </p:column>
+                                                    <p:column sortBy="#{programacion.min}" headerText="#{msgs.etiquetaMimAbr}" filterMatchMode="contains" width="30" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto">
+                                                        <h:outputText value="#{programacion.min}" />
+                                                    </p:column>
+                                                    <p:column filterBy="#{programacion.horario}" headerText="#{msgs.etiquetaHorario}" filterMatchMode="contains" width="50" styleClass="nombreFiltro1 siseFontTable3 centrado-texto">
+                                                        <h:outputText value="#{programacion.horario}" />
+                                                    </p:column>
+                                                    <p:column filterBy="#{programacion.seccion}" headerText="#{msgs.etiquetaSeccAbr}" filterMatchMode="contains" width="40" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto">
+                                                        <h:outputText value="#{programacion.seccion}" />
+                                                    </p:column>
+                                                    <p:column filterBy="#{programacion.grupo}" headerText="#{msgs.etiquetaGrupAbr}" filterMatchMode="contains" width="40" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto">
+                                                        <h:outputText value="#{programacion.grupo}" />
+                                                    </p:column>
+                                                    <p:column filterBy="#{programacion.disponiblesAdm}" headerText="#{msgs.etiquetaDisponibles}" filterMatchMode="contains" width="40" styleClass="nombreFiltrom1 siseFontTable3 centrado-texto" style="font-weight: bolder;background-color: gold">
+                                                        <h:outputText value="#{programacion.disponiblesAdm}" />
+                                                    </p:column>
+                                                </p:dataTable>
+                                            </h:panelGrid>
+                                            <h:panelGrid columns="3" cellpadding="3" class="siseFontGrid3" style="width: 675px" id="caniari20">
+                                                <h:outputLabel value="#{msgs.etiquetaProgramacion}" class="negrita"/>
+                                                <h:outputText value="*" class="requerido"/>
+                                                <h:panelGrid id="pnlProgramacion" columns="1">
+                                                    <p:inputTextarea value="#{admisionMB.admisionBean.programacionBean.nombreProgramacion}" readonly="true" cols="40" rows="2" required="true"/>
+                                                    <h:inputHidden value="#{admisionMB.admisionBean.programacionBean.idProgramacion}"/>
+                                                </h:panelGrid>
+                                                <h:outputLabel value="#{msgs.etiquetaPost}" class="negrita"/>
+                                                <h:outputText value="" class="requerido"/> 
+                                                <p:inputText value="#{admisionMB.admisionBean.estudianteBean.personaBean.nombreCompleto}" size="50" readonly="true"></p:inputText>
+                                                <h:outputLabel value="#{msgs.EtiquetaCodigo}" class="negrita"/>
+                                                <h:outputText value="" class="requerido"/> 
+                                                <p:inputText value="#{admisionMB.admisionBean.estudianteBean.personaBean.idPersona}"  size="20" readonly="true"> 
+                                                </p:inputText>
+                                                <h:outputLabel value="#{msgs.etiquetaGradoPost}" class="negrita"/>
+                                                <h:outputText value="" class="requerido"/>
+                                                <p:selectOneMenu id="cmboGraAca" value="#{admisionMB.admisionBean.gradoAcademicoBean.idGradoAcademico}" label="#{msgs.etiquetaGradoPost}" filter="true" style="width:205px" panelStyle="width:205px" required="true">
+                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                    <f:selectItems value="#{admisionMB.listaGradoAcademicoBean}" var="gradoAcademico" itemLabel="#{gradoAcademico.nombre}" itemValue="#{gradoAcademico.idGradoAcademico}"/>
+                                                </p:selectOneMenu> 
+                                                <h:outputLabel value="#{msgs.etiquetaFecIns}" class="negrita"/>
+                                                <h:outputText value="" class="requerido"/>
+                                                <p:calendar value="#{admisionMB.admisionBean.fechaInscripcion}" label="#{msgs.etiquetaFecIns}" mode="popup"
+                                                            pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaFecCita}" class="negrita"/>
+                                                <h:outputText value="" class="requerido"/>
+                                                <p:calendar value="#{admisionMB.admisionBean.fecExamen}" label="#{msgs.etiquetaFecExa}" mode="popup"
+                                                            pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaHorExa}" class="negrita"/>
+                                                <h:outputText value="" class="requerido"/>
+                                                <p:calendar value="#{admisionMB.admisionBean.horaExamen}" label="#{msgs.etiquetaHorExa}" mode="popup"
+                                                            pattern="HH:mm a" timeOnly="true" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaGrupo}" class="negrita"/>
+                                                <h:inputHidden />
+                                                <p:inputText id="txtCuenta" value="#{admisionMB.admisionBean.grupo}" label="#{msgs.etiquetaGrupo}"/>
+                                                <h:outputLabel value="#{msgs.etiquetaStatusPostulante}" class="negrita"/>
+                                                <h:outputText value="" class="requerido"/>
+                                                <h:outputLabel id="cmboStatusPostulante" value="#{admisionMB.admisionBean.codigoBean.codigo}" style="width:205px"/>
+                                                   
+                                                <h:outputText value="(*) Requerido" class="requerido"/>
+                                                <h:outputText value="" />
+                                                <h:outputText value="" />
+                                                <h:outputText value="Enviar mensaje por Email: " />
+                                                <h:inputHidden value="#{admisionMB.admisionBean.idAdmision}"/>
+                                                <p:selectBooleanCheckbox label="Envia Mensaje: " id="basic" value="#{admisionMB.flgEmail}" >
+                                                    <p:ajax event="change" listener="#{admisionMB.ponerEmail()}"  />
+                                                </p:selectBooleanCheckbox>
+                                            </h:panelGrid>
+                                        </h:panelGrid>
+                                        <h:panelGrid class="centrado" columns="2" id="pnlBtnGrabar">
+                                            <p:commandButton actionListener="#{admisionMB.guardarAdmision()}"  disabled="#{admisionMB.admisionBean.estudianteBean.personaBean.idPersona==null}"
+                                                             update=":tabViewAdm:frmMantAdmision:pnlDatosAdmision,:tabViewAdm:frmMantAdmision:caniari20,:frmDatosAdmision:pnlTablaAdmision,:frmDatosAdmision:pnlFiltro,msgsAddPro"
+                                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                             value="#{msgs.botonGrabar}">
+                                            </p:commandButton>
+                                            <p:commandButton actionListener="#{admisionMB.limpiarAdmision()}" 
+                                                             update="msgsAddPro,:tabViewAdm,,:frmDatosAdmision:pnlTablaAdmision,:frmDatosAdmision:pnlFiltro"  
+                                                             value="#{msgs.botonNuevo}" process="@this">
+                                            </p:commandButton>
+                                        </h:panelGrid>
+                                        <p:growl id="msgsAddPro" showDetail="false" showSummary="true"/>
+                                    </p:panel>
+                                </h:form> 
+                            </h:panelGrid>                 
+                        </p:tab>
+                        <p:tab title="#{msgs.etiquetaDocAPresentar}" id="tabEstDoc" titleStyle="font-size: 0.9em">     
+                            <h:form id="frmDatosDocumentos"> 
+                                <h:panelGrid  id="pnlTablaDocumentos"  columns="1" styleClass="centrado">
+                                    <p:dataTable id="tblDocumento" value="#{admisionMB.listaEstudianteDocumentoBean}" widgetVar="tblDocumento"
+                                                 paginator="true"  editable="true" rowStyleClass="#{documento.status eq false and documento.checkListBean.flgObligatorio eq true ? 'pintarFila' : null}"
+                                                 paginatorPosition="bottom" 
+                                                 var="documento" rowKey="#{documento}" rows="10"
+                                                 rendered="#{not empty admisionMB.listaEstudianteDocumentoBean}" 
+                                                 style="width: 600px; overflow-x: auto;font-size:14px !important;">  
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.etiquetaDocAPresentar}" style="font-size: 1.1em"/>  
+                                        </f:facet>
+                                        <p:column sortBy="#{documento.checkListBean.documento}" headerText="#{msgs.etiquetaDocumento}" filterMatchMode="contains" width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                            <h:outputText value="#{documento.checkListBean.documento}"/>
+                                        </p:column>
+                                        <p:column sortBy="#{documento.checkListBean.tipoCopiaBean.codigo}" headerText="#{msgs.etiquetaTipoCopia}" filterMatchMode="contains" width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                            <h:outputText value="#{documento.checkListBean.tipoCopiaBean.codigo}"/>
+                                        </p:column> 
+                                        <p:column sortBy="#{documento.checkListBean.flgObligatorio}" headerText="#{msgs.etiquetaObligatorio}" filterMatchMode="contains" width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                            <h:outputText value="#{documento.checkListBean.flgObligatorioVista}"/>
+                                        </p:column>
+                                        <p:column sortBy="#{documento.status}" headerText="#{msgs.etiquetaEstado}"   width="40%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                            <h:outputText value="#{documento.statusVista}"/>
+                                        </p:column> 
+                                        <p:column class="centrado" filterMatchMode="contains" width="30" styleClass="siseFont1">
+                                            <center>
+                                                <p:selectBooleanCheckbox value="#{documento.status}"/>
+                                            </center>
+                                        </p:column> 
+                                    </p:dataTable>
+                                    <p:growl id="msgsDoc" showDetail="true" life="5000"  autoUpdate="false"/>
+                                </h:panelGrid> 
+                                <h:panelGrid class="centrado" columns="2"> 
+                                    <p:commandButton    actionListener="#{admisionMB.darCheckDocumentoAdmision()}" 
+                                                        update=":tabViewAdm:frmMantAdmision:caniari20,:tabViewAdm:frmDatosDocumentos:pnlTablaDocumentos,:frmDatosAdmision:pnlTablaAdmision,:frmDatosAdmision:pnlFiltro" disabled="#{not empty admisionMB.listaEstudianteDocumentoBean==false}"
+                                                        oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                        value="#{msgs.botonGrabar}">
+                                    </p:commandButton> 
+                                </h:panelGrid> 
+                                <p:growl id="msgsAddDoc" showDetail="false" showSummary="true" autoUpdate="false"/>
+                            </h:form> 
+                        </p:tab>
+                    </p:tabView> 
+                </p:layoutUnit>
+            </p:layout>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <!--h:outputLabel value="#{msgs.etiquetaAdmision}: #{admisionMB.admisionBean}"-->
+                            <h:inputHidden value="#{admisionMB.admisionBean.idAdmision}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{admisionMB.eliminarAdmision()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update="msgsConfirma,:tabViewAdm:frmMantAdmision:pnlDatosAdmision"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update="msgsConfirma"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsConfirma" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <!--h:outputLabel value="#{msgs.etiquetaNombre}: #{admisionMB.admisionBean}"/-->
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{admisionMB.eliminarAdmision()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update="msgsDelProc"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

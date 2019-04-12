@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RepDetDocIngresoPorCuentaFor_subreport1" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="fbd4eb32-3f9d-45ad-8107-e8f473ee69f0">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[declare @mora money = (select isnull(sum(isnull(mora,0)-isnull(dscto,0)),0)
+					   from MT_DetDocIngreso det
+					   inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+					   where doc.idcajagen in (1000) and doc.unineg='champs')
+select distinct
+(case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end ) as cuenta ,
+(case when con.idTipoConcepto in (100)   then pc.nombre+ '(MATRICULA)'  else pc.nombre end) as nombreCta,
+(case when con.idTipoConcepto in (100,101) then sum(det.montopagado-isnull(det.mora,0)+isnull(det.dscto,0)) else sum(det.montosoles) end) as montoPorCtaSoles,
+sum(det.montodolares) as montoPorCtaDolares
+
+from MT_DetDocIngreso det
+inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+inner join MT_Concepto con on con.idconcepto=det.idconcepto
+inner join MT_PlanContable pc on pc.cuenta=(case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end )
+ where doc.idcajagen in (1000) and doc.unineg='champs'
+ group by con.idtipoconcepto,pc.nombre,det.cuentad,det.cuentah
+
+UNION ALL
+SELECT
+772211 as cuenta,
+(select nombre from MT_PlanContable where cuenta=772211) as nombreCta,
+CONVERT(varchar, CAST(isnull(@mora,0) AS money), 1)  as montoPorCtaSoles,
+0 AS montoPorCtaDolares]]>
+	</queryString>
+	<field name="cuenta" class="java.lang.Integer"/>
+	<field name="nombreCta" class="java.lang.String"/>
+	<field name="montoPorCtaSoles" class="java.lang.Double"/>
+	<field name="montoPorCtaDolares" class="java.lang.Double"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="19" splitType="Stretch">
+			<textField>
+				<reportElement uuid="16e94127-2baa-4247-a455-abed986dd8fe" x="4" y="3" width="60" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{cuenta}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="c5a34ea9-06af-4469-acf6-b48aa4f5cfa9" stretchType="RelativeToBandHeight" x="63" y="3" width="322" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{nombreCta}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="e3f5b733-9e44-4952-89cf-2d6d66050d1e" x="389" y="3" width="76" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{montoPorCtaSoles}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="d6439185-a620-4be3-b742-4bff4331683d" x="465" y="3" width="58" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{montoPorCtaDolares}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

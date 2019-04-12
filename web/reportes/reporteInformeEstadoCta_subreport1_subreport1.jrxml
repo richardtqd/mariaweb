@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteInformeEstadoCta_subreport1_subreport1" language="groovy" pageWidth="555" pageHeight="13" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="b8e3fe10-1e46-4130-94fa-21936885fc61">
+	<property name="ireport.zoom" value="1.7715610000000017"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[declare
+@mes int =null,
+@anio int =2015,
+@facturado money = (select isnull(sum(isnull(monto,0)),0) from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs'),
+@importe   money = (select isnull(sum(isnull(monto,0)-isnull(dsctobeca,0)),0) from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs'),
+@deuda     money = (select isnull(sum(isnull(monto,0)-isnull(dsctobeca,0)),0)
+ from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs' and idtipostatusctacte=19401 and fechavenc<GETDATE()),
+
+@mora          money = (select isnull(sum(isnull(mora,0)),0) from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs'),
+@canceladoConM money = (select isnull(sum(isnull(montopagado,0)),0) from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs'),
+@canceladoSinM money = (select isnull(sum(isnull(montopagado-mora,0)),0) from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs'),
+
+@dsctobeca money = (select isnull(sum(isnull(dsctobeca,0)),0) from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs'),
+@dscto     money = (select isnull(sum(isnull(dscto,0)),0) from MT_CtasxCobrar where anio=2015 and mes=12 and unineg='champs'),
+@nombreUniNeg varchar(200)= (select ent.nombre from MO_UnidadNegocio un inner join MO_Entidad ent on ent.ruc=un.RUC and ent.unineg=un.unineg where un.unineg='champs'),
+@rucUniNeg varchar(11)= (select RUC from MO_UnidadNegocio where unineg='champs')
+
+select
+upper(@nombreUniNeg) as nombreUniNeg
+,'R.U.C.: '+@rucUniNeg as rucUniNeg
+,@anio as anio
+,(case
+when @mes=2 then 'MATRÍCULA'
+when @mes=3 then 'MARZO'
+when @mes=4 then 'ABRIL'
+when @mes=5 then 'MAYO'
+when @mes=6 then 'JUNIO'
+when @mes=7 then 'JULIO'
+when @mes=8 then 'AGOSTO'
+when @mes =9 then 'SEPTIEMBRE'
+when @mes=10 then 'OCTUBRE'
+when @mes=11 then 'NOVIEMBRE'
+when @mes=12 then 'DICIEMBRE'
+ELSE '' end) as mes
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@facturado,0) AS money), 1) ELSE '0.0' END) as facturado
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@dsctobeca,0) AS money), 1) ELSE '0.0' END) as dsctobeca
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@importe,0) AS money), 1) ELSE '0.0' END) as importe
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@mora,0) AS money), 1) ELSE '0.0' END) as mora
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@dscto,0) AS money), 1) ELSE '0.0' END) as dscto
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@canceladoSinM,0) AS money), 1) ELSE '0.0' END) as  canceladoSinMora
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@canceladoConM,0) AS money), 1) ELSE '0.0' END) as  canceladoConM
+
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(ROUND(convert(varchar,isnull((((@canceladoSinM)*100)/(@importe)),0)), 2),0) AS money), 1) ELSE '0.0' END) as  porcentajeImp
+,(case when @mes!=0 THEN CONVERT(varchar, CAST(isnull(@importe-@canceladoSinM,0) AS money), 1) ELSE '0.0' END) as saldo
+,(case when @mes!=0 THEN CONVERT(varchar, (convert(money,CONVERT(varchar, CAST(isnull(ROUND(convert(varchar,isnull((((@importe-@canceladoSinM)*100)/(@importe)),0)), 2),0) AS money), 1)) )) ELSE '0.0' END) as  porcentajeSaldo]]>
+	</queryString>
+	<field name="mes" class="java.lang.String"/>
+	<field name="facturado" class="java.lang.String"/>
+	<field name="dsctobeca" class="java.lang.String"/>
+	<field name="importe" class="java.lang.String"/>
+	<field name="mora" class="java.lang.String"/>
+	<field name="dscto" class="java.lang.String"/>
+	<field name="canceladoSinMora" class="java.lang.String"/>
+	<field name="canceladoConM" class="java.lang.String"/>
+	<field name="porcentajeImp" class="java.lang.String"/>
+	<field name="saldo" class="java.lang.String"/>
+	<field name="porcentajeSaldo" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField>
+				<reportElement uuid="7a6a9dff-ee4b-4ca0-ac30-3a56399809f0" x="0" y="0" width="60" height="12"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mes}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b17ecab4-06f8-4c6c-adef-98913e0adb38" x="60" y="0" width="60" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{facturado}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="20557f3e-ef4f-4470-8606-e1609b0eec43" x="120" y="0" width="60" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dsctobeca}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="48e519a7-4e59-4236-88cf-13a51a19a13c" x="184" y="0" width="60" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importe}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="f3ccf7c6-b04f-44df-806d-ef6d31b94b58" x="240" y="0" width="60" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mora}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="28792a1c-86ae-4820-b157-ac2e45881026" x="300" y="0" width="60" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dscto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b61cad2e-cb27-4334-b2fe-18bba6239bb5" x="366" y="0" width="60" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{canceladoSinMora}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="fb0b7611-b22c-4d42-a385-f8442c7faf95" x="431" y="0" width="30" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentajeImp}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="8b77073d-5dc5-4c1d-a281-634d8684e125" x="461" y="0" width="60" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{saldo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="3d67b7c5-9845-45e6-946a-4faaf2fce9b3" x="519" y="0" width="30" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcentajeSaldo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

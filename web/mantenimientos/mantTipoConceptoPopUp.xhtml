@@ -1,0 +1,329 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{tipoConceptoMB.obtenerTipoConcepto()}">
+            <center>
+                <h:outputText value="#{msgs.tituloMantCatCon}" class="tituloPantalla" style="margin: auto !important;font-size: 16px"/>
+            </center>
+            <br/>
+            <h:panelGrid styleClass="centrado"> 
+                <h:form id="frmDatosTipoConcepto">
+                    <h:panelGrid  id="pnlTablaTipoConcepto" >
+                        <p:dataTable id="tblTipoConcepto" value="#{tipoConceptoMB.listaTipoConceptoBean}" widgetVar="tblTipoConcepto"
+                                     paginator="true" selectionMode="single" 
+                                     selection="#{tipoConceptoMB.tipoConceptoBean}"
+                                     var="tipoConcepto" rowKey="#{tipoConcepto}"
+                                     rows="20" 
+                                     rendered="#{not empty tipoConceptoMB.listaTipoConceptoBean}" 
+                                     style="width: 700px; font-size: 10px;font-size:14px !important;">
+
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloCategorias}" />  
+                            </f:facet>
+                            <p:column sortBy="#{tipoConcepto.idTipoConcepto}" headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 centrado-texto siseFont1">
+                                <h:outputText value="#{tipoConcepto.idTipoConcepto}" />
+                            </p:column>
+                            <p:column filterBy="#{tipoConcepto.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="25%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{tipoConcepto.nombre}" />
+                            </p:column>
+                            <p:column sortBy="#{tipoConcepto.flgIngresoVista}"  headerText="#{msgs.etiquetaFlgIngreso}" width="5%" styleClass="nombreFiltro3 siseFont1">
+                                <h:outputText value="#{tipoConcepto.flgIngresoVista}" />
+                            </p:column>  
+                            <p:column class="centrado-texto" width="8%" styleClass="centrado-texto siseFont1">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                </f:facet>
+                                <p:commandLink id="cmdEditSede" action="#{tipoConceptoMB.obtenerPorId(tipoConcepto)}" update=":frmMantTipoConcepto:pnlDatosTipoConcepto,:frmDatosTipoConcepto:pnlTablaTipoConcepto,:frmMantTipoConcepto:pnlTablaConcepto,:frmMantTipoConcepto:btnAddCod"
+                                               oncomplete="PF('popNewTipoConcepto').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/edit.png" style="border:0;cursor:pointer;" />
+                                </p:commandLink>&nbsp;&nbsp;&nbsp;
+                                <p:commandLink id="cmdEliminarCod" action="#{tipoConceptoMB.ponerTipoConcepto(tipoConcepto)}" update=":frmElimina:pnlDatosElimina"
+                                               oncomplete="PF('popEliminar').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip id="toolCodDel" for="cmdEliminarCod" value="#{msgs.mensajeDelCod}" />
+                            </p:column>
+                        </p:dataTable>
+                        <p:growl id="growlFiltro" showDetail="true" life="5000" /> 
+                    </h:panelGrid>
+                    <p:panelGrid columns="1" class="centrado q-b" >         
+                        <p:commandButton value="#{msgs.botonNuevo}" action="#{tipoConceptoMB.limpiarTipoConceptoBean()}" 
+                                         update=":frmMantTipoConcepto" oncomplete="PF('popNewTipoConcepto').show();"/>
+                    </p:panelGrid>
+                </h:form>
+            </h:panelGrid>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{tipoConceptoMB.tipoConceptoBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoConceptoMB.eliminarTipoConcepto()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosTipoConcepto:pnlTablaTipoConcepto,msgsDelProc,:frmDatosTipoConcepto:tblTipoConcepto"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmMantTipoConcepto">
+                <p:dialog header="#{msgs.tituloMantCatCon}" widgetVar="popNewTipoConcepto" styleClass="autoWidthDialog"  resizable="false" modal="true" position="top">
+                    <p:panel header="#{msgs.tituloInserModCat}" style="width: 400px" styleClass="centrado">
+                        <h:panelGrid columns="3" id="pnlDatosTipoConcepto" cellpadding="3" style="width: 400px" > 
+                            <h:outputLabel value="#{msgs.etiquetaNombre}"  class="negrita"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <p:inputText  value="#{tipoConceptoMB.tipoConceptoBean.nombre}" required="true"  label="#{msgs.etiquetaNombre}"/> 
+                            <h:outputLabel value="#{msgs.etiquetaFlg}" class="negrita"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <p:selectOneRadio value="#{tipoConceptoMB.tipoConceptoBean.flgIngreso}" label="#{msgs.etiquetaFlgIngreso}" required="true">
+                                <f:selectItem itemLabel="#{msgs.etiquetaIngreso}" itemValue="1"/>
+                                <f:selectItem itemLabel="#{msgs.etiquetaEgreso}" itemValue="0"/>
+                            </p:selectOneRadio>
+                            <h:inputHidden value="#{tipoConceptoMB.tipoConceptoBean.idTipoConcepto}"/><h:inputHidden/>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{tipoConceptoMB.guardarTipoConcepto()}" 
+                                             update=":frmDatosTipoConcepto:pnlTablaTipoConcepto,msgsAdd,:frmDatosTipoConcepto:tblTipoConcepto"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <!--<p:commandButton actionListener="#{tipoConceptoMB.limpiarTipoConceptoBean()}" 
+                                             update=":frmMantTipoConcepto:pnlDatosTipoConcepto,msgsAdd,:frmDatosTipoConcepto:tblTipoConcepto"                                                                 
+                                             value="#{msgs.botonNuevo}" process="@this">
+                            </p:commandButton>-->
+                        </h:panelGrid>
+                        <h:panelGrid columns="1" class="centrado" id="btnAddCod">         
+                            <p:commandButton actionListener="#{tipoConceptoMB.limpiarConceptoBean()}" update=":frmMantConcepto:pnlDatosConcepto,msgsAdd" 
+                                             oncomplete="PF('popNewConcepto').show();" disabled="#{tipoConceptoMB.tipoConceptoBean.idTipoConcepto == null}"
+                                             value="#{msgs.etiquetaAddConcepto}">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAdd" showDetail="true" showSummary="true"/>
+                    </p:panel>
+                    <br></br>
+                    <h:panelGrid styleClass="centrado" id="pnlTablaConcepto" >
+                        <p:dataTable id="tblConcepto" value="#{tipoConceptoMB.listaConceptUniNegBean}" widgetVar="tblConcepto"
+                                     paginator="true"   paginatorPosition="bottom" 
+                                     var="concepto" rowKey="#{tipoConceptoMB.conceptoUniNegBean.conceptoBean.idConcepto}"
+                                     rows="#{tipoConceptoMB.numRegistrosTablasPorFiltroMin}" 
+                                     rendered="#{not empty tipoConceptoMB.listaConceptUniNegBean}" 
+                                     style="width: #{tipoConceptoMB.anchoTablasBig};font-size:14px !important;">  
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloConceptos}" />  
+                            </f:facet>
+                            <p:column filterBy="#{concepto.conceptoBean.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro6 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.nombre}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaCuentaDebe}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.planContableCuentaDBean.cuenta}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaCuentaHaber}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.planContableCuentaHBean.cuenta}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaEsEst}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.vistaFlgShowEstudiante}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaEsExEst}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.vistaFlgShowExAlumno}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaEsExt}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.vistaFlgShowExterno}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaFlgProg}" filterMatchMode="contains" width="6%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.vistaFlgProgramacion}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaFlgPrecio}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.vistaFlgPrecio}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaFlgTieneCr}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.flgTieneCrVista}"/>
+                            </p:column> 
+                            <p:column class="centrado-texto"  headerText="#{msgs.etiquetaEstado}" width="10%" styleClass="nombreFiltro3 centrado-texto siseFont1">
+                                <h:outputText value="#{concepto.conceptoBean.vistaStatus}"/>
+                            </p:column> 
+                            <p:column class="centrado-texto siseFont1" width="5%">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                </f:facet>
+                                <p:commandLink id="cmdEditSede" action="#{tipoConceptoMB.obtenerConceptoPorId(concepto.conceptoBean)}" update=":frmMantConcepto:pnlDatosConcepto"
+                                               oncomplete="PF('popNewConcepto').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/edit.png" style="border:0;cursor:pointer;" />
+                                </p:commandLink>&nbsp;&nbsp;&nbsp;
+                                <p:commandLink id="cmdEliminarCod" action="#{tipoConceptoMB.obtenerConceptoPorId(concepto.conceptoBean)}" update=":frmEliminaConcepto:pnlDatosEliminaConcepto"
+                                               oncomplete="PF('popEliminarConcepto').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip id="toolCodDel" for="cmdEliminarCod" value="#{msgs.mensajeDelCod}" />
+                            </p:column>
+                        </p:dataTable>
+                        <p:growl id="msgsConcepto" showDetail="true" life="5000" />
+                    </h:panelGrid>
+                    <h:panelGrid class="centrado" columns="2">
+
+                        <p:commandButton   
+                            oncomplete="{PF('popNewTipoConcepto').hide();}"                                                            
+                            value="#{msgs.botonCerrar}" process="@this">
+                        </p:commandButton>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirmaConcepto">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirmaConcepto" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirmaConcepto">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaConcepto}: #{tipoConceptoMB.conceptoBean.nombre}"/>
+                            <h:inputHidden value="#{tipoConceptoMB.conceptoBean.status}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoConceptoMB.cambiarEstadoConcepto()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmMantTipoConcepto:pnlTablaConcepto,msgsConfirmaConcepto"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirmaConcepto').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update=":frmMantTipoConcepto:pnlTablaConcepto,msgsConfirmaConcepto"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirmaConcepto').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsConfirmaConcepto" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmEliminaConcepto">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarConcepto" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosEliminaConcepto">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{tipoConceptoMB.conceptoBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoConceptoMB.eliminarConcepto()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmMantTipoConcepto:pnlTablaConcepto,msgsDelProc,:frmMantTipoConcepto:tblConcepto"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarConcepto').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarConcepto').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmMantConcepto">
+                <p:dialog header="#{msgs.tituloMantCatCon}" widgetVar="popNewConcepto" styleClass="autoWidthDialog"  resizable="false" modal="true" position="top">     
+                    <p:panel header="#{msgs.tituloInserModConcepto}" > 
+                        <h:panelGrid columns="1" id="pnlDatosConcepto" cellpadding="5" class="centrado">
+                            <p:panel header="#{msgs.etiquetaDatosConcepto}" style="width: 415px">
+                                <h:panelGrid columns="3" class="siseFontGrid"> 
+                                    <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                    <h:outputText value=" " class="requerido"/>
+                                    <p:inputTextarea  value="#{tipoConceptoMB.conceptoBean.nombre}" required="false"  label="#{msgs.etiquetaNombre}" maxlength="100"
+                                                      style="width: 250px;height: 50px"/>  
+                                    <h:outputLabel value="#{msgs.etiquetaDescripcion}" class="negrita"/>
+                                    <h:outputText value=" " class="requerido"/>
+                                    <p:inputTextarea  value="#{tipoConceptoMB.conceptoBean.descrip}"  label="#{msgs.etiquetaDescripcion}" maxlength="100"
+                                                      style="width: 250px;height: 50px"/> 
+
+                                    <h:outputLabel value="#{msgs.etiquetaPlanContableDebe}:" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:selectOneMenu  value="#{tipoConceptoMB.conceptoBean.planContableCuentaDBean.cuenta}" label="#{msgs.etiquetaCuenta}" filter="true" style="width: 240px" panelStyle="width:175px"
+                                                      filterMatchMode="contains">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{tipoConceptoMB.listaPlanContableBean}" var="cuenta" itemLabel="#{cuenta.nombre}" itemValue="#{cuenta.cuenta}"/> 
+                                   <p:ajax event="change" listener="#{tipoConceptoMB.obtenerCuentaContable()}" update="cuentaDebe"/>
+                                    </p:selectOneMenu> 
+                                    <h:outputLabel value="#{msgs.etiquetaCuentaDebe}:" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:inputText id="cuentaDebe" value="#{tipoConceptoMB.conceptoBean.planContableCuentaDBean.cuenta}"  label="#{msgs.etiquetaCuentaDebe}" size="20" maxlength="30" 
+                                                 readonly="true" style="background-color: #f5f5f5" /> 
+                                    <h:outputLabel value="#{msgs.etiquetaPlanContableHaber}:" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:selectOneMenu  value="#{tipoConceptoMB.conceptoBean.planContableCuentaHBean.cuenta}" label="#{msgs.etiquetaCuenta}" filter="true" style="width: 240px" panelStyle="width:175px"
+                                                      filterMatchMode="contains">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{tipoConceptoMB.listaPlanContableBean}" var="cuenta" itemLabel="#{cuenta.nombre}" itemValue="#{cuenta.cuenta}"/> 
+                                   <p:ajax event="change" listener="#{tipoConceptoMB.obtenerCuentaContable()}" update="cuentaHaber"/>
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaCuentaHaber}:" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:inputText id="cuentaHaber" value="#{tipoConceptoMB.conceptoBean.planContableCuentaHBean.cuenta}"  label="#{msgs.etiquetaCuentaDebe}" size="20" maxlength="30" 
+                                                 readonly="true" style="background-color: #f5f5f5" /> 
+                                    <h:outputLabel value="#{msgs.etiquetaEstado}: " class="negrita" />
+                                    <h:outputText value=" " class="requerido"/> 
+                                    <p:selectOneRadio value="#{tipoConceptoMB.conceptoBean.status}"    label="#{msgs.etiquetaEstado}">
+                                        <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.etiquetaActi}"/>
+                                        <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.etiquetaInactivo}"/>
+                                    </p:selectOneRadio>
+                                    <h:outputLabel value="#{msgs.etiquetaFlgTieneCr}:" class="negrita"/> 
+                                    <h:outputText value=" " class="requerido"/> 
+                                    <p:selectOneRadio value="#{tipoConceptoMB.conceptoBean.flgTieneCr}"    label="#{msgs.etiquetaFlgTieneCr}">
+                                        <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.etiquetaSi}"/>
+                                        <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.etiquetaNo}"/>
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                            </p:panel>
+                            <p:panel header="#{msgs.etiquetaFlgs}" style="width: 415px">
+                                <h:panelGrid columns="2" class="siseFontGrid" >
+                                    <h:panelGrid columns="2" class="siseFontGrid" width="200">
+                                        <h:outputLabel value="¿#{msgs.etiquetaEs} #{msgs.etiquetaEstudiante}?" class="negrita" /> 
+                                        <p:selectOneRadio value="#{tipoConceptoMB.conceptoBean.flgShowEstudiante}"    label="#{msgs.etiquetaEstudiante}">
+                                            <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.cmboSi}"/>
+                                            <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.cmboNo}"/>
+                                        </p:selectOneRadio>
+                                        <h:outputLabel value="¿#{msgs.etiquetaEs} #{msgs.etiquetaExAlumno}?" class="negrita" /> 
+                                        <p:selectOneRadio value="#{tipoConceptoMB.conceptoBean.flgShowExAlumno}"    label="#{msgs.etiquetaEs} #{msgs.etiquetaExAlumno}">
+                                            <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.cmboSi}"/>
+                                            <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.cmboNo}"/>
+                                        </p:selectOneRadio>
+                                        <h:outputLabel value="¿#{msgs.etiquetaEs} #{msgs.etiquetaExterno}?" class="negrita" />
+                                        <p:selectOneRadio value="#{tipoConceptoMB.conceptoBean.flgShowExterno}"    label="#{msgs.etiquetaEs} #{msgs.etiquetaExterno}">
+                                            <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.cmboSi}"/>
+                                            <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.cmboNo}"/>
+                                        </p:selectOneRadio>
+
+                                        <h:outputLabel value="¿#{msgs.etiquetaTiene} #{msgs.etiquetaProgramacion}?" class="negrita" />
+                                        <p:selectOneRadio value="#{tipoConceptoMB.conceptoBean.flgProgramacion}"    label="#{msgs.etiquetaTiene} #{msgs.etiquetaProgramacion}">
+                                            <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.cmboSi}"/>
+                                            <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.cmboNo}"/>
+                                        </p:selectOneRadio>
+
+                                        <h:outputLabel value="¿#{msgs.etiquetaPrecioModi} ?" class="negrita" /> 
+                                        <p:selectOneRadio value="#{tipoConceptoMB.conceptoBean.flgPrecio}"    label="#{msgs.etiquetaPrecio}">
+                                            <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.cmboSi}"/>
+                                            <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.cmboNo}"/>
+                                        </p:selectOneRadio>
+
+                                        <h:inputHidden value="#{tipoConceptoMB.conceptoBean.idConcepto}"/>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                            </p:panel>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{tipoConceptoMB.guardarConcepto()}" 
+                                             update=":frmMantTipoConcepto:pnlTablaConcepto,:frmMantTipoConcepto:tblConcepto,:frmMantConcepto:pnlDatosConcepto"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton   
+                                oncomplete="{PF('popNewConcepto').hide();}"                                                            
+                                value="#{msgs.botonCerrar}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAddCod" showDetail="true" showSummary="true"/>
+                    </p:panel>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

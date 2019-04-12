@@ -1,0 +1,729 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml">
+    <ui:define name="content"> 
+        <h:body onload="#{docIngresoMB.cargarDatosCobranza(1)}">
+            <center>
+                <div style="display: inline-block">
+                    <div style="float: left">
+                        <p:panel style="width: 665px ; text-align: left">
+                            <h:panelGrid columns="1">                      
+                                <h:form id="fmrTblAlumno"> 
+                                    <h:panelGrid  id="pnlTablaPostulante" style="width: 500PX;padding: 5px" styleClass="centrado" rendered="#{docIngresoMB.tipIndividuo==1}">
+                                        <p:panel   style="width: 535px" >
+                                            <h:panelGrid columns="4" styleClass="centrado">
+                                                <h:outputLabel value="#{msgs.etiquetaNombre}" />
+                                                <p:inputText value="#{docIngresoMB.personaFiltroBean.nombreFiltro}" size="35" maxlength="70"> 
+                                                    <p:ajax event="blur" listener="#{docIngresoMB.buscarPersona()}" update=":fmrTblAlumno:pnlGrdTblAlumno,msg"/>
+                                                </p:inputText> 
+                                                <p:selectBooleanCheckbox rendered="#{docIngresoMB.tipIndividuo==1}" id="chkSP" value="#{docIngresoMB.flgSoloEst}"  >
+                                                    <p:ajax event="change" listener="#{docIngresoMB.changeFlgEst()}" update=":fmrTblAlumno,:frmCtasXCobrar,:frmSerGen:pnlSerGen"/>
+                                                </p:selectBooleanCheckbox>
+                                                <h:panelGrid columns="2"  >    
+                                                    <h:panelGrid styleClass="centrado" columns="2">
+                                                        <p:commandButton value="#{msgs.botonBuscar}" action="#{docIngresoMB.buscarPersona()}" 
+                                                                         update=":fmrTblAlumno:pnlGrdTblAlumno,msg" process="@this"/>
+                                                    </h:panelGrid>
+                                                </h:panelGrid>
+                                                <h:panelGrid columns="2"  >                                          
+                                                    <h:outputLabel value="#{msgs.etiquetaNroDocAbb}" />
+                                                    <h:outputLabel value=" " style="color: red" />
+                                                </h:panelGrid>
+                                                <p:inputText value="#{docIngresoMB.personaFiltroBean.idPersona}" size="15" maxlength="15">
+                                                    <p:ajax event="blur" listener="#{docIngresoMB.aaa()}"/>
+                                                </p:inputText>
+                                            </h:panelGrid> 
+                                            <p:messages autoUpdate="false" id="msg"/>
+                                        </p:panel>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" styleClass="centrado" id="pnlGrdTblAlumno" rendered="#{docIngresoMB.tipIndividuo==1}">                                       
+                                        <p:dataTable id="tblAlumno" widgetVar="tblAlumno"  value="#{docIngresoMB.listaPersonaBean}" var="persona"
+                                                     selection="#{docIngresoMB.personaBean}" scrollable="true" scrollHeight="100"  
+                                                     selectionMode="single" rowKey="#{persona.idPersona}"  
+                                                     rendered="#{not empty docIngresoMB.listaPersonaBean}"                                                                                                
+                                                     style="width:550px; font-size: 10px"> 
+                                            <p:ajax event="rowSelect"  listener="#{docIngresoMB.rowSelect}" 
+                                                    update=":frmDetCobranza,:frmCobranza,:fmrTblAlumno,:frmCtasXCobrar,:frmSerGen,:fmrTblAlumno:msg" />
+                                            <p:column sortBy="#{persona.idPersona}"   filterMatchMode="exact" headerText="#{msgs.etiquetaCodigo}" width="15%" style="text-align: center; font-size: 0.95em" >
+                                                <h:outputText value="#{persona.idPersona}" style="font-size: 0.95em"/>
+                                            </p:column>
+                                           <!-- <p:column sortBy="#{persona.estado}"   filterMatchMode="exact" headerText="#{msgs.etiquetaCodigo}" width="15%" style="text-align: center; font-size: 0.95em" >
+                                                <h:outputText value="#{persona.estado}" style="font-size: 0.95em"/>
+                                            </p:column>-->
+                                            <p:column  sortBy="#{persona.nombreCompletoDesdeApellidos}" filterMatchMode="contains" headerText="#{msgs.etiquetaNombreCompleto}" width="50%" style=" font-size: 0.95em" class="nombre3Filtro">
+                                                <h:outputText value="#{persona.nombreCompletoDesdeApellidos}"  style="font-size: 0.95em" />
+                                            </p:column>
+                                        </p:dataTable> 
+                                    </h:panelGrid>  
+                                </h:form>
+                                <h:form id="frmCtasXCobrar" >
+                                    <h:panelGrid id="pnlCtasXCobrar" rendered="#{docIngresoMB.tipIndividuo==1}"> 
+
+                                    </h:panelGrid> 
+                                </h:form>         
+                                <h:form id="frmSerGen"  >
+                                    <h:panelGrid id="pnlSerGen">
+                                        <p:fieldset id="fsSerGen" legend="#{msgs.etiquetaSerGen}" toggleSpeed="500" toggleable="true" style="width: 600px" collapsed="false"  >
+                                            <p:dataTable id="tblSerGen"  widgetVar="tblSerGen"  
+                                                         scrollable="true" scrollHeight="208"  
+                                                         value="#{docIngresoMB.listaConceptoUniNegBean}" var="serGen" 
+                                                         style="width: 610px"    editable="true" >
+                                                <p:column  sortBy="#{serGen.conceptoBean.nombre}" filterBy="#{serGen.conceptoBean.nombre}" filterMatchMode="contains"
+                                                           headerText="#{msgs.etiquetaConcepto}" width="25%"   style="font-size: 0.85em" styleClass="nombre2Filtro" >
+                                                    <h:outputText value="#{serGen.conceptoBean.nombre}" /> 
+                                                </p:column>  
+                                                <p:column id="aaa" headerText="#{msgs.etiquetaImporte}"  sortBy="#{serGen.importe}" width="9%" style="font-size: 0.80em; text-align: right;" styleClass="nombre0Filtro">
+                                                    <p:cellEditor>
+                                                        <f:facet name="output">
+                                                            <h:outputText value="#{serGen.importe}" styleClass="black">
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US" />
+                                                            </h:outputText>
+                                                        </f:facet>
+                                                        <f:facet name="input">
+                                                            <p:inputText value="#{serGen.importe}"  styleClass="black" label="#{msgs.etiquetaImporte}">
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US" />
+                                                            </p:inputText>
+                                                        </f:facet>
+                                                    </p:cellEditor> 
+                                                </p:column> 
+                                                <p:column colspan="2" style="text-align:center" width="6%">
+                                                    <center>
+                                                        <p:commandLink id="cmdAgregar" action="#{docIngresoMB.agregarConcepto(serGen.conceptoBean.idConcepto)}" disabled="#{serGen.flgDisable}"
+                                                                       update=":frmDetCobranza:tblDetCobranza,:frmDetCobranza:pnlDetCobranza,:frmDetCobranza,:frmCobranza,:frmDatosProgramacion:pnlTablaProgramacion"
+                                                                       oncomplete="if(args.abrirProgramcion){PF('popProgramacion').show();}"  >
+                                                            <h:graphicImage value="/resources/images/icons/agregar.png" style="border:0;cursor:pointer;" />
+                                                        </p:commandLink> 
+                                                    </center> 
+                                                    <p:tooltip id="toolTipAdd" for="cmdAgregar" value="#{msgs.etiquetaAgregar}" />
+                                                </p:column>
+                                                <p:column width="6%" >
+                                                    <f:facet name="header">
+                                                        <h:outputText value="#{msgs.etiquetaModAbb}" style="font-size: 0.85em"/>
+                                                    </f:facet> 
+                                                    <p:rowEditor style="width: 200px" id="editCantidad" rendered="#{serGen.conceptoBean.flgPrecio==true}"/>
+                                                    <p:tooltip id="toolTip" for="editCantidad" value="#{msgs.toolTipEditImporte}" />
+                                                </p:column>
+                                                <p:ajax event="rowEdit" listener="#{docIngresoMB.cambiarMonto}"
+                                                        update=":frmSerGen:tblSerGen:aaa" /> 
+                                            </p:dataTable>
+                                        </p:fieldset>
+                                        <br></br>
+                                    </h:panelGrid> 
+                                </h:form>
+                            </h:panelGrid>
+                        </p:panel>
+                    </div>
+                    <div style="float: right;display: inline-block" > 
+                        <p:panel style="width: 675px ; text-align: left" >
+                            <center>
+                                <h:panelGrid columns="1">
+                                    <h:form id="frmCobranza">
+                                        <h:panelGrid columns="2" style="float: left;display: inline-block"> 
+                                            <h:panelGrid>
+                                                <p:panel >
+                                                    <h:panelGrid id="pnlTipDoc" columns="3">
+                                                        <h:outputLabel value="#{msgs.etiquetaImpr}:" class="negrita" style="font-size: 1em"/>
+                                                        <h:outputText value=" " class="requerido"/>
+                                                        <p:selectOneMenu value="#{docIngresoMB.docIngresoBean.impresoraCajaBean.impresora.impresora}" required="true"  label="#{msgs.etiquetaImpr}"  style="width: 275px" panelStyle="width:275px">
+                                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                                            <f:selectItems value="#{docIngresoMB.listaImpresora}" var="impr" itemLabel="#{impr.impresora}" itemValue="#{impr.impresora}"/>
+                                                            <p:ajax event="change" listener="#{docIngresoMB.obtenerTipDoc()}"
+                                                                    update="pnlTipDoc,pnlRecibo , pnlCobranza,:frmDetCobranza:botones,:frmDetCobranza,:frmDetCobranza:pnlDetCobranza"/>
+                                                        </p:selectOneMenu>
+                                                        <h:outputLabel value="#{msgs.etiquetaTipoDoc}:" style="font-size: 1em" class="negrita" rendered="#{docIngresoMB.docIngresoBean.impresoraCajaBean.impresora.impresora != null}"/>
+                                                        <h:outputText value=" " class="requerido" rendered="#{docIngresoMB.docIngresoBean.impresoraCajaBean.impresora.impresora != null}"/>
+                                                        <p:selectOneRadio rendered="#{docIngresoMB.docIngresoBean.impresoraCajaBean.impresora.impresora != null}" value="#{docIngresoMB.docIngresoBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo}" required="true"  label="#{msgs.etiquetaTipoDoc}" id="cmbTipDoc">
+                                                            <f:selectItems value="#{docIngresoMB.listaTipoDocumento}" var="tipDoc" itemLabel="#{tipDoc.codigo}" itemValue="#{tipDoc.idCodigo}"/>
+                                                            <p:ajax event="change" listener="#{docIngresoMB.obtenerDetalleDoc()}" 
+                                                                    update="pnlRecibo , pnlCobranza,:frmDetCobranza:botones,:frmDetCobranza,:frmDetCobranza:pnlDetCobranza"/>
+                                                        </p:selectOneRadio> 
+                                                    </h:panelGrid>   
+                                                    <h:panelGrid id="pnlRecibo" columns="3" style="text-align: center" >
+                                                        <h:outputText value="#{docIngresoMB.impresoraCajaBean.impresora.idTipoDoc.codigo}" style="font-size: 1.5em" rendered="#{docIngresoMB.docIngresoBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo != null}" />
+                                                        <h:outputText value=" " class="requerido"/>
+                                                        <h:outputText value="#{docIngresoMB.impresoraCajaBean.impresora.serie} - Nro. #{docIngresoMB.numActual}" style="font-size: 1.5em" rendered="#{docIngresoMB.docIngresoBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo != null}" />
+                                                    </h:panelGrid> 
+                                                </p:panel>
+                                            </h:panelGrid>
+                                            <p:panel>
+                                                <h:panelGrid id="pnlTC" columns="1" styleClass="siseFontGrid3"> 
+                                                    <p:link id="linkSunat" styleClass="siseFontGrid5s" style="font-size: 2em"  value="#{msgs.etiquetaTcambio}"
+                                                            href="http://www.sunat.gob.pe/cl-at-ittipcam/tcS01Alias" target="_blank" />
+                                                    <br></br>
+                                                    <p:tooltip id="toolTipPagTC" for="linkSunat" value="#{msgs.mensajeIrAPagSunat}" />
+                                                    <h:outputLabel value="#{docIngresoMB.tipoCambio.fecha}" class="negrita">   
+                                                    </h:outputLabel>
+                                                    <p:inplace id="tc" editor="true" class="black"  effectSpeed="fast" event="dblclick" >
+                                                        <p:inputText  size="4" value="#{docIngresoMB.tipoCambio.tcVenta}"  > 
+                                                            <p:ajax event="change" listener="#{docIngresoMB.insertarTipoCambio()}" update="pnlTC"/>
+                                                            <f:convertNumber pattern="#,##0.000" locale="en_US"/>
+                                                        </p:inputText>  
+                                                    </p:inplace>
+                                                    <p:tooltip id="toolTC" for="tc" value="#{msgs.mensajeCambiarTpCambio}" />
+                                                    <br></br> 
+                                                </h:panelGrid> 
+                                            </p:panel>
+                                        </h:panelGrid>
+                                        <br></br> 
+                                        <h:panelGrid style="float: left;display: inline-block" id="pnlCobranza" columns="1" rendered="#{docIngresoMB.personaBean.idPersona !=null or docIngresoMB.personalBean.idPersonal!=null}">
+                                            <p:panelGrid id="panel2">                                                    
+                                                <p:row>
+                                                    <p:column styleClass="ui-widget-header">
+                                                        <h:outputText value="#{msgs.etiquetaMoneda}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                    </p:column>
+                                                    <p:column>
+                                                        <p:selectOneRadio value="#{docIngresoMB.docIngresoBean.idTipoMoneda.idCodigo}" required="true"  label="#{msgs.etiquetaTipoMoneda}" id="cmbMon" >
+                                                            <f:selectItems value="#{docIngresoMB.listaMoneda}" var="mon" itemLabel="#{mon.codigo}" itemValue="#{mon.idCodigo}"/>                                                        
+                                                            <p:ajax event="change" update=":frmDetCobranza:hdMon,:frmDetCobranza:tblDetCobranza,:frmDetCobranza:pnlDetCobranza,:frmDetCobranza:pnlIngEfec,chkSD" 
+                                                                    listener="#{docIngresoMB.obtenerCambio()}"/>
+                                                        </p:selectOneRadio> 
+                                                    </p:column>
+                                                    <p:column > 
+                                                        <p:selectBooleanCheckbox id="chkSD" value="#{docIngresoMB.flgPagoParDol}"   itemLabel="S/D" disabled="#{docIngresoMB.docIngresoBean.idTipoModoPago.idCodigo == 15805}" >
+                                                            <p:ajax event="change"  update=":frmDetCobranza:pnlIngEfec" listener="#{docIngresoMB.resetearMontoDol()}"/>
+                                                        </p:selectBooleanCheckbox>  
+                                                    </p:column>
+                                                </p:row> 
+                                            </p:panelGrid>
+                                            <h:panelGrid id="panel" columns="2" style="float: left;display: inline-block"> 
+                                                <p:panelGrid >  
+                                                    <p:row>
+                                                        <p:column styleClass="ui-widget-header">
+                                                            <h:outputText value="#{msgs.etiquetaModali}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                        </p:column> 
+                                                        <p:column>
+                                                            <p:selectOneRadio style="font-size: 1.1em ;text-align: left !important;font-weight: bold" value="#{docIngresoMB.docIngresoBean.idTipoModoPago.idCodigo}"  styleClass="black" required="true"  label="#{msgs.etiquetaModali}" id="cmbModPag"  >
+                                                                <f:selectItems value="#{docIngresoMB.listaModoPago}" var="modo" itemLabel="#{modo.codigo}" itemValue="#{modo.idCodigo}" />
+                                                                <p:ajax event="change"
+                                                                        update=":frmDetCobranza:hdModPag,:frmDetCobranza:pnlDetCobranza,:frmDetCobranza:pnlIngEfec,cmbMon,chkSD"
+                                                                        listener="#{docIngresoMB.mostrarModAmbos()}"/>
+                                                            </p:selectOneRadio>
+                                                        </p:column> 
+                                                    </p:row> 
+                                                    <p:row rendered="#{docIngresoMB.personaBean.idPersona!=null}">
+                                                        <p:column styleClass="ui-widget-header">
+                                                            <h:outputText value="#{msgs.etiquetaDisce}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                        </p:column>
+                                                        <p:column>
+                                                            <h:panelGrid columns="10">           
+                                                                <p:inputText id="txtApePat" value="#{docIngresoMB.personaBean.apepat}" style="font-size: 1.1em"  class="black" size="8">                                                    
+                                                                    <p:ajax event="change"   listener="#{docIngresoMB.aaaaa()}"   /> 
+                                                                </p:inputText>
+                                                                <p:inputText id="txtApeMat" value="#{docIngresoMB.personaBean.apemat}" style="font-size: 1.1em"  class="black" size="8">
+                                                                    <p:ajax event="change"   listener="#{docIngresoMB.aaaaa()}"   /> 
+                                                                </p:inputText>
+                                                                <p:inputText id="txtNomt" value="#{docIngresoMB.personaBean.nombre}" style="font-size: 1.1em"  class="black" size="10">   
+                                                                    <p:ajax event="change"   listener="#{docIngresoMB.aaaaa()}"   /> 
+                                                                </p:inputText>
+                                                                <p:watermark for="txtApePat" value="#{msgs.etiquetaAbApePaterno}" id="watermark1"/>
+                                                                <p:watermark for="txtApeMat" value="#{msgs.etiquetaAAbApeMaterno}" id="watermark2"/>
+                                                                <p:watermark for="txtNomt" value="#{msgs.etiquetaNombres}" id="watermark3" />                                                                     
+                                                            </h:panelGrid>
+                                                            <h:panelGrid columns="10" id="pnlDatosPB">   
+                                                                <p:inputText disabled="#{docIngresoMB.flgGenCod}" id="txtCodigo" value="#{docIngresoMB.personaBean.idPersona}" style="background-color: #E6E6E6"  size="10">   
+                                                                    <p:ajax event="blur"   listener="#{docIngresoMB.generarCodigoPersona()}" update=":frmCobranza:txtCodigo"/>
+                                                                </p:inputText>
+                                                                <p:selectBooleanCheckbox id="checkCod" value="#{docIngresoMB.flgGenCod}" styleClass="titulo" disabled="#{docIngresoMB.flgDisableGenCod}"> 
+                                                                    <p:ajax event="change"   listener="#{docIngresoMB.generarCodigoPersona()}" update=":frmCobranza:txtCodigo"/>
+                                                                </p:selectBooleanCheckbox> 
+                                                                <p:spacer width="15"/>
+                                                                <p:selectOneRadio  value="#{docIngresoMB.personaBean.sexo}" label="#{msgs.etiquetaSexo}">
+                                                                    <f:selectItem itemValue="1" itemLabel="#{msgs.comboAbbMasculino}"/>
+                                                                    &nbsp;&nbsp;&nbsp;&nbsp;
+                                                                    <f:selectItem itemValue="0" itemLabel="#{msgs.comboAbbFemenino}"/>
+                                                                    <p:ajax event="change"   listener="#{docIngresoMB.verSexo()}"/>
+                                                                </p:selectOneRadio>
+                                                                <p:watermark for="txtCodigo" value="#{msgs.etiquetaCodigo}" id="watermark4" />     
+                                                                <p:tooltip id="toolGenCod" for="checkCod" value="#{msgs.etiquetaGenCodigo}" />
+                                                            </h:panelGrid>
+                                                        </p:column> 
+                                                        <br></br>
+                                                    </p:row>
+                                                    <p:row rendered="#{docIngresoMB.personalBean.idPersonal!=null}">
+                                                        <p:column styleClass="ui-widget-header">
+                                                            <h:outputText value="#{msgs.etiquetaPersonal}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                        </p:column>
+                                                        <p:column>
+                                                            <h:outputText value="#{docIngresoMB.personalBean.nombreCompleto}" style="font-size: 1.25em" class="black"/>
+                                                        </p:column>
+                                                    </p:row>
+                                                    <p:row id="pnlCr" rendered="#{not empty docIngresoMB.listaCentroResponsabilidadBean}">
+                                                        <p:column styleClass="ui-widget-header">
+                                                            <h:outputText value="#{msgs.etiquetaCentResAb}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                        </p:column>
+                                                        <p:column> 
+                                                            <p:selectOneMenu id="cmboCR" value="#{docIngresoMB.cr}" required="true"  label="#{msgs.etiquetaCentRes}" filter="true" filterMatchMode="contains" style="width: 305px" panelStyle="width:305px">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{docIngresoMB.listaCentroResponsabilidadBean}" var="cr" itemLabel="#{cr.cr} - #{cr.nombre}" itemValue="#{cr.cr}"/> 
+                                                                <p:ajax event="change" listener="#{docIngresoMB.obtenerCr()}" />
+                                                            </p:selectOneMenu>
+                                                        </p:column> 
+                                                    </p:row>
+                                                    <p:row rendered="#{docIngresoMB.personalBean.idPersonal==null}">
+                                                        <p:column styleClass="ui-widget-header">
+                                                            <h:outputText value="#{msgs.etiquetaObs}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                        </p:column>
+                                                        <p:column> 
+                                                            <p:commandLink id="cmdObservacion" oncomplete="PF('popObserv').show();">
+                                                                <h:graphicImage value="/resources/images/observacion.png" style="border:0;cursor:pointer;" />
+                                                            </p:commandLink>
+                                                            <p:tooltip id="toolTipObs" for="cmdObservacion" value="#{msgs.mensajeObser}" />
+                                                        </p:column>
+                                                    </p:row>
+                                                    <p:row rendered="#{docIngresoMB.personalBean.idPersonal!=null}">
+                                                        <p:column styleClass="ui-widget-header">
+                                                            <h:outputText value="#{msgs.etiquetaSolicitud}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                        </p:column>
+                                                        <p:column>
+                                                            <p:selectOneMenu value="#{docIngresoMB.docEgresoBean.solicitudCajaCHBean.idSolicitudCajaCh}" required="false"  label="#{msgs.etiquetaSolicitud}" id="cmbCR2"
+                                                                             style="width: 305px" panelStyle="width:305px" filter="true" filterMatchMode="contains">
+                                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                                <f:selectItems value="#{docIngresoMB.listaSolicitudCajaCHBean}" var="solicitud" 
+                                                                               itemLabel="#{solicitud.motivo} : Monto a Devolver: #{solicitud.diferenciaAdevolver} #{solicitud.tipoMonedaBean.codigo}" 
+                                                                               itemValue="#{solicitud.idSolicitudCajaCh}"/>
+                                                                <p:ajax event="change" update=":frmDetCobranza"
+                                                                        listener="#{docIngresoMB.settearMontoDevolucion(docIngresoMB.docEgresoBean.solicitudCajaCHBean.idSolicitudCajaCh)}" />
+                                                            </p:selectOneMenu>
+                                                        </p:column>
+                                                    </p:row>
+                                                </p:panelGrid>
+                                                <p:graphicImage url="/#{docIngresoMB.personaBean.foto}" 
+                                                                width="105" height="130" cache="false" styleClass="foto"/>   
+                                            </h:panelGrid>
+                                        </h:panelGrid> 
+                                    </h:form>
+                                    <h:form id="frmDetCobranza">  
+                                        <h:panelGrid id="pnlDetCobranza" rendered="#{not empty docIngresoMB.listDetDocIngreso}" style="float: left;display: inline-block" >
+                                            <p:dataTable id="tblDetCobranza"  widgetVar="tblDetCobranza"    scrollable="true"  
+                                                         value="#{docIngresoMB.listDetDocIngreso}" var="detDoc"    rowIndexVar="n"
+                                                         style="width: 625px"    editable="true" editMode="cell" > 
+                                                <p:ajax event="cellEdit" listener="#{docIngresoMB.onCellEdit}" update=":frmDetCobranza:tblDetCobranza" />
+                                                <p:column style="text-align:center;font-size: 0.65em " width="3%" headerText="#{msgs.etiquetaAcci}">
+                                                    <p:commandLink id="cmdEliminar" action="#{docIngresoMB.quitarConcepto(detDoc)}" update=":frmDetCobranza:tblDetCobranza,:frmDetCobranza:pnlDetCobranza,:frmDetCobranza,:frmCobranza:cmboCR">
+                                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                                    </p:commandLink>
+                                                    <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.etiquetaDelConcepto}" />
+                                                </p:column>  
+                                                <p:column headerText="#{msgs.etiquetaRef}"  width="25%" style="font-size: 0.85em" > 
+                                                    <p:cellEditor>
+                                                        <f:facet name="output"> <h:outputText value="#{detDoc.referencia}" /></f:facet>
+                                                        <f:facet name="input"> <p:inputTextarea value="#{detDoc.referencia}" cols="65" rows="3"  maxlength="100"/> </f:facet>
+                                                    </p:cellEditor>
+                                                </p:column> 
+                                                <p:column  headerText="#{msgs.etiquetaDscto}"  width="7%" style="font-size: 0.85em; text-align: right;" visible="#{docIngresoMB.flgPension==false}">
+                                                    <p:cellEditor>
+                                                        <f:facet name="output"> 
+                                                            <h:outputText value="#{detDoc.dscto}" >
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                            </h:outputText>
+                                                        </f:facet>
+                                                        <f:facet name="input">
+                                                            <p:inputText value="#{detDoc.dscto}" disabled="#{detDoc.conceptoBean.flgPrecio==false}"  >
+                                                                <p:ajax listener="#{docIngresoMB.obtenerDsctoDet(n)}" update=":frmDetCobranza"></p:ajax>
+                                                            </p:inputText> 
+                                                        </f:facet>
+                                                    </p:cellEditor>
+                                                </p:column>  
+                                                <p:column  headerText="#{msgs.etiquetaImporte}"  width="7%" style="font-size: 0.85em; text-align: right;" >
+                                                    <h:outputText value="#{detDoc.montoPagado}" >
+                                                        <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                    </h:outputText> 
+                                                </p:column>  
+                                                <p:columnGroup type="footer" >
+                                                    <p:column colspan="4" width="15%"  style="font-size: 0.9em; text-align: right;" footerText="#{msgs.etiquetaTotal}:" />
+                                                    <p:column footerText="Dscto: #{docIngresoMB.dscto}" style="font-size: 1em; text-align: right;" >
+                                                    </p:column>
+                                                    <p:column width="30%" footerText="#{docIngresoMB.montoTotal}" style="font-size: 1em; text-align: right; width: 200px" id="prueba"/> 
+                                                </p:columnGroup>
+                                            </p:dataTable> 
+                                            <h:panelGrid id="pnlIngEfec">
+                                                <p:panel rendered="#{docIngresoMB.flgModPagoAmbos==true or docIngresoMB.flgModPOS==true or docIngresoMB.flgPagoParDol==true}" >
+                                                    <h:panelGrid id="pnlMontos" columns="4" > 
+                                                        <h:outputLabel value="#{msgs.etiquetaMontoEfecDol}:" rendered="#{docIngresoMB.flgPagoParDol==true}" />
+                                                        <h:panelGrid columns="2" id="pnlCamDol" rendered="#{docIngresoMB.flgPagoParDol==true}"  >  
+                                                            <p:inputText id="txtMontoDol" size="5" value="#{docIngresoMB.docIngresoBean.montoEfectivoDol}" > 
+                                                                <p:ajax event="blur" listener="#{docIngresoMB.obtenerCambioParcial('dolares')}" update="txtMontoDol,txtCambioDol,txtMontoParSol"/>
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                            </p:inputText> 
+                                                            <h:outputLabel id="txtCambioDol"    value="#{docIngresoMB.montoParcialDol}">
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                            </h:outputLabel> 
+                                                        </h:panelGrid>  
+                                                        <h:outputLabel value="#{msgs.etiquetaMontoEfecSol}:" rendered="#{docIngresoMB.flgModPOS==false}"/>
+                                                        <p:inputText id="txtMontoParSol" size="5" value="#{docIngresoMB.docIngresoBean.montoEfectivoSol}" rendered="#{docIngresoMB.flgModPOS==false}">
+                                                            <p:ajax event="blur" listener="#{docIngresoMB.obtenerCambioParcial('soles')}" update="txtMontoDol,txtCambioDol,txtMontoParSol"/>
+                                                            <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                        </p:inputText>  
+                                                    </h:panelGrid>
+                                                    <h:panelGrid id="pnlMontos2" columns="5" > 
+                                                        <p:selectBooleanCheckbox id="chkV" value="#{docIngresoMB.posVisa}" rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}">
+                                                            <p:ajax event="change"  update="basic1,basic2" listener="#{docIngresoMB.montosPOS()}"/>
+                                                        </p:selectBooleanCheckbox>  
+                                                        <h:graphicImage value="/resources/images/icons/icon-visa.png" width="20%" style="width: 60px;height: 45px"
+                                                                        rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}"/>
+                                                        <p:spacer width="10"/>
+                                                        <p:inplace id="basic1" effectSpeed="fast"   editor="true" class="black"  rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}">
+                                                            <p:inputText  size="4" value="#{docIngresoMB.docIngresoBean.montoPos1}" id="visa"
+                                                                          rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}" >
+
+                                                                <p:ajax event="change" listener="#{docIngresoMB.diferenciaPOS()}" update="mc,visa,basic1,basic2,val" ></p:ajax> 
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                            </p:inputText>  
+                                                        </p:inplace>
+                                                        <p:spacer width="20"/>
+                                                        <p:selectBooleanCheckbox id="chkMC" value="#{docIngresoMB.posMC}" rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}">
+                                                            <p:ajax event="change"  update="basic1,basic2" listener="#{docIngresoMB.montosPOS()}"/>
+                                                        </p:selectBooleanCheckbox> 
+                                                        <h:graphicImage value="/resources/images/icons/icon-mcard.png" width="20%" style="width: 60px;height: 45px"
+                                                                        rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}"/>
+                                                        <p:spacer width="10"/>
+                                                        <p:inplace id="basic2" effectSpeed="fast"   editor="true" class="black"  rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}">
+                                                            <p:inputText size="4" value="#{docIngresoMB.docIngresoBean.montoPos2}"  id="mc"
+                                                                         rendered="#{docIngresoMB.flgModPOS==true or docIngresoMB.flgModPagoAmbos==true}" >   
+
+                                                                <p:ajax event="change" listener="#{docIngresoMB.diferenciaPOS()}" update="mc,visa,basic1,basic2,val" ></p:ajax> 
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                            </p:inputText>
+                                                        </p:inplace>
+                                                    </h:panelGrid> 
+                                                </p:panel>
+                                            </h:panelGrid> 
+                                            <h:panelGrid id="botones" class="centrado" style="font-size: 0.95em" columns="1" rendered="#{docIngresoMB.docIngresoBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo != null}">
+                                                <h:panelGrid columns="2" class="centrado">
+                                                    <p:commandButton actionListener="#{docIngresoMB.guardarDocIngreso()}" disabled="#{docIngresoMB.docIngresoBean.idDocIngreso != null}" id="grabar" 
+                                                                     oncomplete="if(args.operacionCorrecta){PF('popDone2').show();}if(args.errorMontos){PF('popErrorMon').show()}if(args.operacionErronea){PF('popAumentarSec').show()}if(args.operacionSinCupos){PF('popCupos').show()}" 
+                                                                     update=":frmCobranza:pnlRecibo,:frmSerieRepe:sec,val,grabar,:frmDetCobranza:impr,:frmDetCobranza:imprimir,:frmCtasXCobrar:pnlCtasXCobrar,:frmSerGen,:frmSerGen:tblSerGen" value="#{msgs.botonGrabar}">
+                                                    </p:commandButton>
+                                                    <p:commandButton actionListener="#{docIngresoMB.limpiarDocIngreso()}" value="#{msgs.botonNuevo}" 
+                                                                     update=":frmSerieRepe,:frmCobranza,:frmDetCobranza,:frmSerGen,:frmSerGen:tblSerGen,
+                                                                     :fmrTblAlumno,:frmCtasXCobrar" >
+                                                    </p:commandButton>
+                                                </h:panelGrid>     
+                                                <p:messages id="val"></p:messages>
+                                                <h:panelGrid columns="1" id="impr" class="centrado" >
+                                                    <h:commandLink action="#{docIngresoMB.imprimirFormatoPdf()}" target="_blank" id="imprimir"
+                                                                   disabled="#{docIngresoMB.docIngresoBean.idDocIngreso == null}">
+                                                        <h:graphicImage value="/resources/images/impresora.png" />
+                                                    </h:commandLink>
+                                                    <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" />
+                                                </h:panelGrid>
+                                                <h:inputHidden value="#{docIngresoMB.docIngresoBean.idTipoLugarPago.idCodigo}" id="hdLugar"/>
+                                                <h:inputHidden  value="#{docIngresoMB.docIngresoBean.familiarBean.idPersona}" id="hdFam"/>
+                                                <h:inputHidden value="#{docIngresoMB.docIngresoBean.obs}" id="hdObs"/>
+                                                <h:inputHidden value="#{docIngresoMB.docIngresoBean.idTipoModoPago.idCodigo}" id="hdModPag"/>
+                                                <h:inputHidden value="#{docIngresoMB.docIngresoBean.idTipoMoneda.idCodigo}" id="hdMon"/>
+                                            </h:panelGrid> 
+                                        </h:panelGrid>  
+                                    </h:form>
+                                </h:panelGrid>
+                            </center>
+                        </p:panel>
+                    </div>
+                </div>
+            </center>
+            <h:form id="frm">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton  
+                            oncomplete="{PF('popDone').hide();PF('popPersona').hide();}"
+                            value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popObserv" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+                    <p:panelGrid columns="2">     
+                        <h:outputText value="#{msgs.etiquetaObs}:" style="font-size: 1em" />
+                        <p:inputTextarea value="#{docIngresoMB.docIngresoBean.obs}" maxlength="50" cols="30" rows="5"/>
+
+                        <h:outputText value="#{msgs.etiquetaRuc}:" style="font-size: 1em" /> 
+                        <p:inputText value="#{docIngresoMB.docIngresoBean.ruc}" maxlength="11"/> 
+
+                    </p:panelGrid>
+                    <br/>
+                    <p:commandButton oncomplete="PF('popObserv').hide();" value="#{msgs.botonAgregar}" update=":frmDetCobranza:hdObs">
+                    </p:commandButton> 
+                </p:dialog>
+            </h:form>
+            <h:form id="frmStatus">
+                <p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()" />
+                <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+                    <h:graphicImage value="/resources/images/ajaxloader.gif"/>
+                </p:dialog>
+            </h:form>
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popErrorMon" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.etiquetaMontoIngInc}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popErrorMon').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmSerieRepe">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popAumentarSec" width="400" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.mensajeAumentarSec}: "/>
+                    <h:outputText id="sec"  value="#{docIngresoMB.impresoraCajaBean.impresora.serie} - Nro. #{docIngresoMB.numActual}" style="font-size: 1.2em" rendered="#{docIngresoMB.docIngresoBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo != null}" />
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popAumentarSec').hide();" 
+                                         value="#{msgs.botonAceptar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmDatosProgramacion">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popProgramacion"  styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode"
+                          modal="true" closable="false" > 
+                    <h:panelGrid  id="pnlTablaProgramacion" >
+                        <p:dataTable id="tblProgramacion" value="#{docIngresoMB.listaProgramacionBean}" widgetVar="tblProgramacion"
+                                     selectionMode="single"  scrollable="true" scrollHeight="200"  
+                                     selection="#{docIngresoMB.programacionBean}"
+                                     var="programacion" rowKey="#{programacion.idProgramacion}" 
+                                     rendered="#{not empty docIngresoMB.listaProgramacionBean}" 
+                                     style="width: #{docIngresoMB.anchoTablasGrande}; font-size: 14px;font-size:14px !important;">
+
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloProgramaciones}" />  
+                            </f:facet>
+                            <p:column filterBy="#{programacion.descripProgramacion}" sortBy="#{programacion.descripProgramacion}" headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="40%" styleClass="nombreFiltro7 siseFont3">
+                                <h:outputText value="#{programacion.descripProgramacion}" />
+                            </p:column> 
+                            <p:column sortBy="#{programacion.mesProg}" headerText="#{msgs.etiquetaMes}" filterMatchMode="contains" width="8%" styleClass="nombreFiltrom1 siseFont3 centrado-texto">
+                                <h:outputText value="#{programacion.mesProg}" />
+                            </p:column> 
+                            <p:column sortBy="#{programacion.grupo}" filterBy="#{programacion.grupo}" headerText="#{msgs.etiquetaGrupo}" filterMatchMode="contains" width="115" styleClass="nombreFiltro3 siseFont3 centrado-texto">
+
+                                <h:outputText value="#{programacion.grupo}" />
+                            </p:column> 
+                            <p:column sortBy="#{programacion.horario}" filterBy="#{programacion.horario}" headerText="#{msgs.etiquetaHorario}" filterMatchMode="contains" width="15%" styleClass="nombreFiltro3 siseFont3 centrado-texto">
+                                <h:outputText value="#{programacion.horario}" />
+                            </p:column>
+                            <!--<p:column    sortBy="#{programacion.seccVista}" headerText="#{msgs.etiquetaSeccAbr}" filterMatchMode="contains" width="8%" styleClass="nombreFiltrom1 siseFont3 centrado-texto" >
+                                <h:outputText value="#{programacion.seccVista}" />
+                            </p:column> -->
+                            <p:column sortBy="#{programacion.disponibles}" headerText="#{msgs.etiquetaDisponiblesAbb}" style="font-weight: bolder;background-color: gold" filterMatchMode="contains" width="8%" styleClass="nombreFiltro3 siseFont3 centrado-texto">
+                                <h:outputText value="#{programacion.cupos}" />
+                            </p:column>  
+                            <p:column    headerText="#{msgs.etiquetaSeleccionar}" filterMatchMode="contains" width="8%" styleClass="nombreFiltro3 siseFont3">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaSeleccionar}"/><br/>
+                                    <p:selectBooleanCheckbox value="#{docIngresoMB.valAdmTodos}">
+                                        <p:ajax event="change" listener="#{docIngresoMB.noSeleccionarProgra}" update=":frmDatosProgramacion:pnlTablaProgramacion"/>
+                                    </p:selectBooleanCheckbox>
+                                </f:facet>
+                                <center>
+                                    <p:selectBooleanCheckbox value="#{programacion.flgInscrito}" disabled="#{programacion.flgBloqueado==true}" >
+                                        <p:ajax event="change" listener="#{docIngresoMB.validarProgramacion(programacion.idProgramacion)}" update=":frmDatosProgramacion:pnlTablaProgramacion"/>
+                                    </p:selectBooleanCheckbox>
+                                </center>    
+                            </p:column> 
+                        </p:dataTable>
+                        <br></br>  
+                        <h:panelGrid styleClass="centrado">
+                            <p:commandButton actionListener="#{docIngresoMB.obtenerProgramacionRegistroVer2()}" 
+                                             update=":frmDetCobranza:pnlDetCobranza"  value="#{msgs.botonCerrar}"  
+                                             oncomplete="if(args.operacionError){PF('popErrorProg').show();}else if(args.operacionCorrecta){PF('popProgramacion').hide()}"
+                                             /> 
+                        </h:panelGrid> 
+                        <p:messages id="growlFiltro" showDetail="false"   autoUpdate="false"/> 
+                    </h:panelGrid> 
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmConUni" >
+                <p:dialog id="popConUni" header="#{msgs.etiquetaConcepto}" widgetVar="popConUni" styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode"
+                          modal="true" closable="false" closeOnEscape="true" >
+                    <p:panelGrid id="pnlConUni" style="margin: 0 auto;" columns="2" >
+                        <p:outputLabel value="#{msgs.etiquetaConcepto}: " />
+                        <h:outputText value="#{docIngresoMB.conceptoUniNegBean.conceptoBean.nombre}" />
+                        <p:outputLabel value="#{msgs.etiquetaImpor}: " />
+                        <h:outputText value="#{docIngresoMB.conceptoUniNegBean.importe}" /> 
+                    </p:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmPersona" >
+                <p:dialog id="persona" header="#{msgs.tituloInserModPersona}" widgetVar="popPersona" styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode"
+                          modal="true" closable="false" closeOnEscape="true" >
+                    <h:panelGrid styleClass="centrado" id="pnlDatosPersona" style="text-align: center !important ; font-weight: bold ">
+                        <h:panelGrid columns="3" id="pnlPersona" cellpadding="3" styleClass="centrado siseFontGrid4">
+                            <h:panelGrid columns="3" style="font-size: 1em;padding: 5px;width: 405px" >
+                                <h:panelGrid columns="3">
+                                    <p:selectBooleanCheckbox  value="#{personaMB.flgGenCod}" styleClass="titulo" > 
+                                        <p:ajax event="change"   listener="#{personaMB.generarCodigoPersona()}" update="idPersona"/>
+                                    </p:selectBooleanCheckbox>
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                    <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                </h:panelGrid>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  id="idPersona" value="#{personaMB.personaBean.idPersona}"    label="#{msgs.etiquetaCodigo} (#{msgs.etiquetaDocId})" maxlength="15">
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaApepat}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{personaMB.personaBean.apepat}"    label="#{msgs.etiquetaApepat}" size="30" maxlength="29"> 
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaApemat}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{personaMB.personaBean.apemat}"    label="#{msgs.etiquetaApemat}" size="30" maxlength="29">
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{personaMB.personaBean.nombre}"    label="#{msgs.etiquetaNombre}" size="30" maxlength="29"> 
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaFecNac}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:calendar id="fecIni" value="#{personaMB.personaBean.fecNac}" label="#{msgs.etiquetaNaci}" mode="popup" size="10"
+                                            pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar> 
+                            </h:panelGrid>
+                            <p:separator style="width:5px;height:215px" />
+                            <h:panelGrid columns="3" style="font-size: 1em;padding: 5px;width: 515px">
+                                <h:outputLabel value="#{msgs.etiquetaSexo}" class="negrita"/>
+                                <h:outputText value=""  class="requerido"/>
+                                <p:selectOneRadio  value="#{personaMB.personaBean.sexo}" label="#{msgs.etiquetaSexo}">
+                                    <f:selectItem itemValue="1" itemLabel="#{msgs.comboMasculino}"/>
+                                    <f:selectItem itemValue="0" itemLabel="#{msgs.comboFemenino}"/>
+                                </p:selectOneRadio>
+                                <h:outputLabel value="#{msgs.etiquetaContactoPer}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputTextarea  value="#{personaMB.personaBean.contacto}"  label="#{msgs.etiquetaContactoPer}" cols="45" rows="3" maxlength="99"> 
+                                </p:inputTextarea>  
+                                <br></br> 
+                            </h:panelGrid> 
+                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                            <h:inputHidden />
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{personaMB.comprobarPersonaDocIng('desc4')}" 
+                                             update=":frmDetCobranza,:frmCobranza,:frmCtasXCobrar,:frmSerGen,msgsAddPer,:frmError:pnlDatosError"
+                                             oncomplete="if(args.error){PF('popError').show();}else if(args.operacionCorrecta){PF('popDone').show();PF('popPersona').hide()}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton> 
+                            <p:commandButton oncomplete="PF('popPersona').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages id="msgsAddPer" showDetail="false" showSummary="true" autoUpdate="false"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmError">
+                <p:dialog header="#{msgs.appTitulo}" width="600" showEffect="fade" hideEffect="explode" widgetVar="popError" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png" style="padding-right: 20px"/>
+                        <h:panelGrid columns="1" id="pnlDatosError" >
+                            <h:panelGrid columns="1">
+                                <h:outputText value="#{msgs.errorDNIDupBack}" class="requerido"/>
+                            </h:panelGrid>
+                            <h:panelGrid columns="2">
+                                <h:outputLabel value="#{msgs.etiquetaDNI}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.idPersona}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaNombre}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.nombre}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaApepat}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.apepat}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaApemat}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.apemat}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaFecNac}: " />
+                                <h:outputLabel value="#{personaMB.personaVista.fecNac}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaCorreoPer}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.correo}" />
+                            </h:panelGrid>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado"> 
+                        <h:panelGrid columns="2" class="centrado">
+
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <p:messages id="msgsDelProc" showDetail="false" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmErrorProg">
+                <p:dialog header="#{msgs.appTitulo}" width="600" showEffect="fade" hideEffect="explode" widgetVar="popErrorProg" resizable="false" modal="true">
+                    <h:panelGrid columns="1" styleClass="centrado">
+                        <h:panelGrid columns="2" id="pnlDatosErrorProg" > 
+                            <h:graphicImage value="/resources/images/icons/warning.png" style="padding-right: 20px"/> 
+                            <h:outputLabel value="#{msgs.etiquetaMsjProgReq} " /> 
+                        </h:panelGrid>
+                        <h:panelGrid columns="3" styleClass="centrado">  
+                            <p:commandButton oncomplete="PF('popErrorProg').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{docIngresoMB.quitarUltimoConceptoProgramacion()}" 
+                                             oncomplete="PF('popErrorProg').hide();PF('popProgramacion').hide();" 
+                                             update=":frmSerieRepe,:frmCobranza,:frmDetCobranza,:frmSerGen,:frmSerGen:tblSerGen,
+                                             :fmrTblAlumno,:frmCtasXCobrar" 
+                                             value="#{msgs.etiquetaEliminarUltProgr}" >
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{docIngresoMB.limpiarDocIngreso()}" value="#{msgs.botonNuevo}" 
+                                             update=":frmSerieRepe,:frmCobranza,:frmDetCobranza,:frmSerGen,:frmSerGen:tblSerGen,
+                                             :fmrTblAlumno,:frmCtasXCobrar" 
+                                             oncomplete="PF('popErrorProg').hide();PF('popProgramacion').hide();" 
+                                             >
+                            </p:commandButton>
+                        </h:panelGrid>
+                    </h:panelGrid> 
+                </p:dialog>
+            </h:form>
+            <h:form id="frmCupo">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popCupos" width="400" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="se acabaron los cupos... vuelva a intentarlo. "/>                     
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popCupos').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form> 
+            <h:form  id="form" target="_blank">
+                <p:dialog id="popDone2" header="#{msgs.appSiglas}" widgetVar="popDone2" styleClass="autoWidthDialog" 
+                          showEffect="fade" hideEffect="explode" resizable="false" position="center" closeOnEscape="true"
+                          modal="true" closable="true" focus="imprimir2">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"  /> 
+                    <div align="center"> 
+                        <h:panelGrid columns="1"   class="centrado" >    
+                            <center>
+                                <h:commandLink action="#{docIngresoMB.imprimirFormatoPdf()}" target="_blank" id="imprimir2" >
+                                    <h:graphicImage value="/resources/images/impresora.png" />
+                                </h:commandLink>
+                                <p:commandButton id="btnCerrar" oncomplete="PF('popDone2').hide();"   
+                                                 action="#{docIngresoMB.limpiarDocIngreso()}" 
+                                                 update=":frmSerieRepe,:frmCobranza,:frmDetCobranza,:frmSerGen,:frmSerGen:tblSerGen,
+                                                 :fmrTblAlumno,:frmCtasXCobrar" style="width: 100px"
+                                                 value="  #{msgs.botonCerrar}  " > 
+                                </p:commandButton>  
+                            </center>
+                        </h:panelGrid>
+                        <p:tooltip id="toolTip" for="imprimir2" value="#{msgs.tooltipImpr}" />
+                    </div>
+                </p:dialog>
+            </h:form> 
+        </h:body>
+    </ui:define>
+</ui:composition>

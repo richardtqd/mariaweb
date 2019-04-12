@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{bloqueoMB.cargarDatos()}" >
+            <h:form id="frmBloqueo" >  
+                <p:panel header="#{msgs.etiquetaConfBloqueo}" style="width: 500px;" styleClass="centrado" >
+                    <h:panelGrid id="pnlBloqueo" styleClass="centrado" >
+                        <h:panelGrid styleClass="centrado-derecha" columns="5" >
+                            <p:outputLabel value="#{msgs.etiquetaAnio}: " />
+                            <p:spinner value="#{bloqueoMB.bloqueoBean.anio}"  min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="5" required="true" />
+                            <p:separator style="height:20px;"  />
+                            <p:outputLabel value="#{msgs.etiquetaBloqueo}: " />
+                            <p:selectOneMenu value="#{bloqueoMB.bloqueoBean.tipoStatusBloqueo.idCodigo}" >
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.etiquetaSeleccionar}" noSelectionOption="true" />
+                                <f:selectItems value="#{bloqueoMB.listaTipoEstadoEstudiante}" var="bloqueo" itemValue="#{bloqueo.idCodigo}" itemLabel="#{bloqueo.codigo}" />
+                            </p:selectOneMenu>
+                        </h:panelGrid>  
+                        <h:panelGrid styleClass="centrado" >
+                            <h:panelGrid id="pnlResponsable" columns="2" >
+                                <p:inputTextarea cols="41" value="#{bloqueoMB.bloqueoBean.personalBean.nombreCompleto}" placeholder="#{msgs.etiquetaResponsable}"  />                            
+                                <p:commandLink id="cmdSelA3" oncomplete="PF('popSoli').show();">
+                                    <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                            </h:panelGrid>
+                            <p:inputTextarea cols="41" value="#{bloqueoMB.bloqueoBean.descripcion}" placeholder="#{msgs.etiquetaDescrip}" />
+                        </h:panelGrid> 
+                        <h:panelGrid columns="5" styleClass="centrado-derecha" >
+                            <p:outputLabel value="#{msgs.etiquetaEstado}: " />
+                            <p:selectOneRadio value="#{bloqueoMB.bloqueoBean.flgConf}" required="true" >
+                                <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaActivo}" />
+                                <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaInactivo}" />
+                            </p:selectOneRadio>
+                            <p:separator style="height:15px;"  />
+                            <p:outputLabel value="#{msgs.etiquetaPosicion}: " />
+                            <p:inputText value="#{bloqueoMB.bloqueoBean.posicion}" size="3" />
+                        </h:panelGrid> 
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <p:commandButton value="#{msgs.botonGrabar}" action="#{bloqueoMB.guardar()}"
+                                         oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                         update=":frmTblBloqueo:pnlTblBloqueo,msgBloqueo,:frmBloqueo:pnlBloqueo" />
+                        <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{bloqueoMB.limpiarBloqueo()}"
+                                         update=":frmBloqueo:pnlBloqueo"/>
+                    </h:panelGrid>
+                </p:panel>
+                <p:messages id="msgBloqueo" showDetail="false" autoUpdate="false" />
+            </h:form>
+            <h:form id="frmTblBloqueo" >  
+                <h:panelGrid id="pnlTblBloqueo" styleClass="centrado" >
+                    <p:dataTable value="#{bloqueoMB.listaBloqueoBean}" var="bloqueo"
+                                 paginator="true" paginatorPosition="bottom"
+                                 style="width: 900px;font-size:14px !important;margin-bottom:0"
+                                 rendered="#{not empty bloqueoMB.listaBloqueoBean}">
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                        </f:facet>
+                        <p:column headerText="#{msgs.etiquetaAnio}" styleClass="nombre3Filtro centrado-texto" filterMatchMode="contains" width="50" >
+                            <h:outputText value="#{bloqueo.anio}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaEstado}" styleClass="nombre3Filtro centrado-texto" filterMatchMode="contains" width="50" >
+                            <h:outputText value="#{bloqueo.estado}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPosicion}" styleClass="nombre3Filtro centrado-texto" filterMatchMode="contains" width="50" >
+                            <h:outputText value="#{bloqueo.posicion}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaDescrip}" styleClass="nombre3Filtro centrado-texto" filterMatchMode="contains" width="50" >
+                            <h:outputText value="#{bloqueo.descripcion}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaAcciones}" colspan="2" styleClass="centrado-texto" filterMatchMode="contains" width="50">
+                            <p:commandLink id="cmdEditar" actionListener="#{bloqueoMB.obtenerPorId(bloqueo)}" 
+                                           update=":frmBloqueo:pnlBloqueo" process="@this">
+                                <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                            <p:tooltip id="toolTipEdit" for="cmdEditar" value="#{msgs.mensajeEditUsuario}" />
+                            &nbsp;&nbsp;&nbsp;
+                            <p:commandLink id="cmdEliminar" action="#{bloqueoMB.obtenerPorId(bloqueo)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelUsuario}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+
+            <!-- POP_ELIMINA_PRO_BANCO -->
+            <h:form id="frmElimina"> 
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaDescrip}: #{bloqueoMB.bloqueoBean.descripcion}"/> 
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{bloqueoMB.eliminar()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTblBloqueo:pnlTblBloqueo"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+            <!-- MODAL DE PERSONAL -->
+            <h:form id="frmBuscarAutoPer1">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popSoli" resizable="false" modal="true" styleClass="autoWidthDialog" position="center">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid id="pnlGeneral" styleClass="centrado" >
+                                <h:panelGrid styleClass="centrado" >  
+                                    <h:panelGrid columns="2" styleClass="centrado" id="pnlFiltroAutoPer1">
+                                        <h:outputLabel value="#{msgs.etiquetaCodigo} " /> 
+                                        <p:inputText value="#{bloqueoMB.personalFiltroBean.codPer}" size="15" maxlength="15"/>
+                                        <h:outputLabel value="#{msgs.etiquetaApePat}"/> 
+                                        <p:inputText value="#{bloqueoMB.personalFiltroBean.apepat}" size="28" maxlength="30"/>  
+                                        <h:outputLabel value="#{msgs.etiquetaApeMat}"/> 
+                                        <p:inputText  value="#{bloqueoMB.personalFiltroBean.apemat}" size="28" maxlength="30"/>
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}"/> 
+                                        <p:inputText value="#{bloqueoMB.personalFiltroBean.nombre}" size="28" maxlength="30"/>  
+                                        <h:outputLabel value="#{msgs.etiquetaUniOrg}"/>  
+                                        <p:selectOneMenu value="#{bloqueoMB.personalFiltroBean.unidadOrganicaBean.idUniOrg}"   label="#{msgs.etiquetaUnidOrg}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{bloqueoMB.listaUniNegUniOrgBean}" var="uo" itemLabel="#{uo.unidadOrganicaBean.nombreUniOrg}" itemValue="#{uo.unidadOrganicaBean.idUniOrg}"/> 
+                                        </p:selectOneMenu>
+                                    </h:panelGrid> 
+                                    <h:panelGrid styleClass="centrado" columns="3">
+                                        <p:commandButton id="btnBuscar1" value="#{msgs.botonBuscar}" actionListener="#{bloqueoMB.obtenerFiltroPersonal()}" update=":frmBuscarAutoPer1:pnlGeneral,:frmBuscarAutoPer1:pnlTablaAutoPer1,msgP" />
+                                        <p:commandButton id="btnNuevo1"  value="#{msgs.botonNuevo}"  actionListener="#{bloqueoMB.limpiarPersonalFiltro()}" update=":frmBuscarAutoPer1:pnlGeneral,:frmBuscarAutoPer1:pnlTablaAutoPer1,msgP"/>
+                                        <p:commandButton id="btnCerrar1"  value="#{msgs.botonCerrar}"  oncomplete="PF('popSoli').hide();" />
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                            </h:panelGrid> 
+                            <p:messages autoUpdate="false" id="msgP" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro2" >
+                        <h:panelGrid  id="pnlTablaAutoPer1" styleClass="centrado" > 
+                            <p:dataTable id="tblPersonal" value="#{bloqueoMB.listaPersonalBean}" widgetVar="tblPersonal"
+                                         selectionMode="single" 
+                                         paginator="true"
+                                         paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                         rowsPerPageTemplate="5,10"
+                                         paginatorPosition="bottom" rowIndexVar="n" 
+                                         var="personal" rowKey="#{personal.idPersonal}"  rows="10" 
+                                         rendered="#{not empty bloqueoMB.listaPersonalBean}" 
+                                         style="width: 725px;font-size:14px !important;margin-bottom:0"> 
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaPersonal}" />  
+                                </f:facet>
+                                <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{personal.idPersona}" >
+                                    <h:outputText value="#{personal.codPer}"/>
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaAbApePaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apepat}" >
+                                    <h:outputText value="#{personal.apepat}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAAbApeMaterno}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.apemat}">
+                                    <h:outputText value="#{personal.apemat}" />
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{personal.nombre}">
+                                    <h:outputText value="#{personal.nombre}"/>
+                                </p:column>
+                                <p:column style="text-align:center;width:60px" width="6%" >
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                    </f:facet>
+                                    <p:commandLink id="cmdSelA1" actionListener="#{bloqueoMB.ponerPersonal(personal)}" 
+                                                   update=":frmBloqueo:pnlResponsable" process="@this,:frmBloqueo:pnlResponsable" oncomplete="PF('popSoli').hide();">
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipAdd1" for="cmdSelA1" value="#{msgs.toolTipSeleccionar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>  
+
+        </h:body>
+    </ui:define>
+</ui:composition>
+

@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="estadoCuentaEstudiante" language="groovy" pageWidth="595" pageHeight="842" columnWidth="567" leftMargin="14" rightMargin="14" topMargin="20" bottomMargin="20" uuid="f2457082-bf63-475c-935d-276f0f5691cb">
+	<property name="ireport.zoom" value="2.5937424601000134"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="36"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\Sigma\\Proyecto\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[declare
+@totMora money=(select sum(isnull(mora,0)) from MT_CtasxCobrar cta where cta.unineg='champs' and cta.idestudiante='73755941' and cta.anio=2015 and iddocingreso is not null),
+@totDesc money=(select sum(isnull(cta.dscto,0)) from MT_CtasxCobrar cta
+        where cta.unineg='champs' and cta.idestudiante='73755941' and cta.anio=2015 and iddocingreso is not null),
+@totDeuda money=(select sum(isnull(deuda,0)) from MT_CtasxCobrar cta where cta.unineg='champs' and cta.idestudiante='73755941' and cta.anio=2015 and iddocingreso is not null),
+@totPag money=(select sum(isnull(montopagado,0)) from MT_CtasxCobrar cta where cta.unineg='champs' and cta.idestudiante='73755941' and cta.anio=2015 and iddocingreso is not null
+AND idtipostatusctacte=19404),
+@totMoroso money=( SELECT isnull(sum(isnull(ISNULL(monto,0)-ISNULL(dscto,0)-ISNULL(dsctobeca,0)+ISNULL(mora,0),0)),0)  FROM MT_CtasxCobrar cta
+ WHERE  cta.unineg='champs' and cta.idestudiante='73755941' and fechavenc<GETDATE() AND idtipostatusctacte=19401  and iddocingreso is not null),
+ @totProg money=( SELECT isnull(sum(isnull(ISNULL(monto,0)-ISNULL(dscto,0)-ISNULL(dsctobeca,0)+ISNULL(mora,0),0)),0)  FROM MT_CtasxCobrar cta
+ WHERE  cta.unineg='champs' and cta.idestudiante='73755941' and fechavenc>GETDATE() AND idtipostatusctacte=19401  and iddocingreso is not null)
+select distinct top 11
+upper(ent.nombre) as nombreUniNeg,
+'R.U.C.: '+ent.ruc as ruc,
+'AÑO: '+CONVERT(VARCHAR(4),cta.anio) AS anio,
+ltrim(upper(concat(perEst.apepat,' ',perEst.apemat,', ',perEst.nombre))) as nombreEstudiante,
+est.idestudiante as idEstudiante,
+est.codigo as codigoCole,
+mat.seccion as seccion,
+gra.nombre as nombreGradoAca,
+ltrim(upper(concat(cod.codigo,': ', perResp.apepat,' ',rtrim(perResp.apemat),', ',perResp.nombre))) as nombreRespPago,
+
+(case when cta.iddocingreso is not null then concat(doc.serie,'-',right(replicate('0', 7) + rtrim(doc.nrodoc), 7)) else ' ' end ) as nrodoc,
+isnull(beca.nombre,'0/6') as beca,
+(case
+when cta.mes=2 then 'MATRÍCULA'
+when cta.mes=3 then 'MARZO'
+when cta.mes=4 then 'ABRIL'
+when cta.mes=5 then 'MAYO'
+when cta.mes=6 then 'JUNIO'
+when cta.mes=7 then 'JULIO'
+when cta.mes=8 then 'AGOSTO'
+when cta.mes=9 then 'SEPTIEMBRE'
+when cta.mes=10 then 'OCTUBRE'
+when cta.mes=11 then 'NOVIEMBRE'
+when cta.mes=12 then 'DICIEMBRE'
+ELSE (con.nombre)
+ END ) as concepto,
+(case when cta.iddocingreso is not null then CONVERT(varchar, CAST(isnull(cta.monto,0) AS money), 1) else '0.0' end ) as importe,
+
+(case when cta.iddocingreso is not null then  CONVERT(varchar, CAST(isnull(cta.dscto,0) AS money), 1) else '0.0' end ) as dscto,
+(case when cta.iddocingreso is not null then  CONVERT(varchar, CAST(isnull(cta.dsctoBeca,0) AS money), 1) else '0.0' end ) as dsctoBeca,
+(case when cta.iddocingreso is not null then  (case when cta.fechapago is null then ' /  / ' else (SELECT CONVERT(VARCHAR(10), cta.fechapago , 103))  end) else ' /  / ' end ) as fechaPago,
+(case when cta.iddocingreso is not null then  (case when cta.fechavenc is null then ' /  / ' else (SELECT CONVERT(VARCHAR(10), cta.fechavenc , 103))  end) else ' /  / ' end ) as fechaVenc,
+(case when cta.iddocingreso is not null then  isnull(lug.codigo,' ') else '' end ) as lugar,
+
+(case when cta.iddocingreso is not null then  CONVERT(varchar, CAST(isnull(cta.monto-cta.dsctobeca,0) AS money), 1) else '0.0' end ) as importeConDsctoBeca,
+(case when cta.iddocingreso is not null then  CONVERT(varchar, CAST(isnull(cta.mora,0) AS money), 1) else '0.0' end ) as mora,
+(case when cta.iddocingreso is not null then  CONVERT(varchar, CAST(isnull(cta.deuda,0) AS money), 1) else '0.0' end ) as adeuda,
+(case when cta.iddocingreso is not null then  CONVERT(varchar, CAST(isnull(cta.montopagado,0) AS money), 1) else '0.0' end ) as montoPagado,
+ CONVERT(varchar, CAST(isnull(@totMora,0) AS money), 1)  as totMora,
+ CONVERT(varchar, CAST(isnull(@totDeuda,0) AS money), 1)  as totAdeuda,
+ CONVERT(varchar, CAST(isnull(@totPag,0) AS money), 1)  as totPag,
+ CONVERT(varchar, CAST(isnull(@totMoroso,0) AS money), 1)  as totMoroso,
+ CONVERT(varchar, CAST(isnull(@totProg,0) AS money), 1)  as totProg,
+CONVERT(varchar, CAST(isnull(@totDesc,0) AS money), 1)  as totDesc,
+cta.mes,isnull(convert(varchar,fechastatusest,103),'-') as fechaStatusEstAyuda,
+		sta.codigo as tipoStatusEst
+from MT_CtasxCobrar  cta
+left join  MX_Estudiante est on est.idestudiante=cta.idestudiante and cta.unineg=est.unineg
+inner join MO_UnidadNegocio uni on uni.unineg=cta.unineg
+left join MO_Entidad ent on ent.ruc=uni.RUC and uni.unineg=ent.unineg
+left join MX_Persona perEst on est.idestudiante=perEst.idpersona and cta.unineg=perest.unineg
+left join MX_Persona perResp on perResp.idpersona=est.idresppago and cta.unineg=perResp.unineg
+inner join MX_Matricula mat on mat.idestudiante=est.idestudiante and est.unineg=mat.unineg and mat.anio=2015
+inner join MX_GradoAcademico gra on gra.idgradoacademico = mat.idgradoacademico
+left join MO_Codigo cod on cod.idcodigo=est.idtiporesppago
+left join MX_EstudianteBeca eb on eb.idestudiante=est.idestudiante and est.unineg=eb.unineg
+left join MT_Beca beca on eb.idbeca=beca.idbeca
+LEFT JOIN MT_Concepto con on con.idconcepto=cta.idconcepto
+left join MT_DetDocIngreso det on det.idctasxcobrar=cta.idctasxcobrar and cta.unineg=det.unineg
+LEFT JOIN MT_DocIngreso DOC ON det.iddocingreso=doc.iddocingreso AND det.unineg=DOC.unineg
+LEFT JOIN MO_Codigo lug on lug.idcodigo=doc.idtipolugarpago
+left join MO_Codigo sta on sta.idcodigo=est.idtipostatusest
+where cta.unineg='champs' and cta.idestudiante='73755941' and cta.anio=2015
+order by cta.mes]]>
+	</queryString>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="ruc" class="java.lang.String"/>
+	<field name="anio" class="java.lang.String"/>
+	<field name="nombreEstudiante" class="java.lang.String"/>
+	<field name="idEstudiante" class="java.lang.String"/>
+	<field name="codigoCole" class="java.lang.String"/>
+	<field name="seccion" class="java.lang.String"/>
+	<field name="nombreGradoAca" class="java.lang.String"/>
+	<field name="nombreRespPago" class="java.lang.String"/>
+	<field name="nrodoc" class="java.lang.String"/>
+	<field name="beca" class="java.lang.String"/>
+	<field name="concepto" class="java.lang.String"/>
+	<field name="importe" class="java.lang.String"/>
+	<field name="dscto" class="java.lang.String"/>
+	<field name="dsctoBeca" class="java.lang.String"/>
+	<field name="fechaPago" class="java.lang.String"/>
+	<field name="fechaVenc" class="java.lang.String"/>
+	<field name="lugar" class="java.lang.String"/>
+	<field name="importeConDsctoBeca" class="java.lang.String"/>
+	<field name="mora" class="java.lang.String"/>
+	<field name="adeuda" class="java.lang.String"/>
+	<field name="montoPagado" class="java.lang.String"/>
+	<field name="totMora" class="java.lang.String"/>
+	<field name="totAdeuda" class="java.lang.String"/>
+	<field name="totPag" class="java.lang.String"/>
+	<field name="totMoroso" class="java.lang.String"/>
+	<field name="totProg" class="java.lang.String"/>
+	<field name="totDesc" class="java.lang.String"/>
+	<field name="mes" class="java.lang.Short"/>
+	<field name="fechaStatusEstAyuda" class="java.lang.String"/>
+	<field name="tipoStatusEst" class="java.lang.String"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="153" splitType="Stretch">
+			<textField>
+				<reportElement uuid="d4b77e70-6948-4093-b60e-96f03ccdf5e0" x="0" y="0" width="217" height="13"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4bb8ddf7-e14f-4316-b492-b825e2b9bac8" x="0" y="11" width="100" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{ruc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="db7b081c-3eee-4839-b905-9bcecae7268e" x="446" y="4" width="100" height="13"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FECHA DE IMPRESIÓN:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="0d90ce0f-a58c-4628-9cc4-40d4cff60b4b" x="456" y="14" width="80" height="11"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="6b49ae26-9707-4f47-8259-52a8b9637e94" x="153" y="37" width="224" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[CUENTA CORRIENTE DEL ALUMNO]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="2c297125-7890-4bc6-bab7-7a9af62ebfc8" x="112" y="75" width="41" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{codigoCole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="cc811ae7-d313-410a-af8b-fbc1e7f49fa1" x="152" y="75" width="224" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreEstudiante}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement uuid="e606e2e1-acbc-445c-8f87-fc6f455c8307" mode="Transparent" x="112" y="99" width="100" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{seccion}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4efe5f1b-fca1-4990-945b-a63f2c7ddf71" x="153" y="52" width="224" height="15"/>
+				<textElement textAlignment="Center">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{anio}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="30cae7ac-aa66-424f-8726-fef675fba34e" x="112" y="111" width="301" height="24"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreRespPago}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="085ec949-0e2a-407f-bdef-73a53100f7eb" x="51" y="99" width="61" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sección:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="27c01423-293a-40f3-bd8e-769ac9174dd5" x="51" y="75" width="61" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Alumno:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="583dbaf4-935d-47ad-978a-fd62415aa3bf" x="112" y="87" width="76" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{idEstudiante}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="d8f7b88d-d208-44c9-bca0-8bb893a68e33" x="51" y="87" width="61" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Código:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d12ccbda-652e-4912-845a-0aa28f9dd1c6" x="51" y="111" width="61" height="24"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Responsable Económico:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3c177f2e-ce4c-4190-9710-b5845a87bb3a" x="51" y="134" width="61" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Estado:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="2bf5f538-b04b-4c53-90a0-0a41512ecc25" x="211" y="134" width="247" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fechaStatusEstAyuda}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e7ae765d-1fee-4d9c-a59d-074b90d7fbc0" x="112" y="134" width="96" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoStatusEst}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="19" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="b906ef49-6433-4d8c-9033-a1fa097ec929" x="1" y="0" width="570" height="18"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="d83457dd-d7bd-432e-b430-a4707e73657a" x="-1" y="3" width="53" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NRO. REC.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b8874a6f-3373-46e2-823a-932a2d8aa426" x="50" y="3" width="27" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BECA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7b797167-6840-4c9c-9899-cd4e5f6c2681" x="78" y="3" width="59" height="12"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CONCEPTO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b08b46cd-dbff-4ca2-9f7a-5b05a768b519" x="133" y="3" width="57" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FACTURADO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="35dcc649-1af5-40c2-b32a-60f7cffd6b7d" x="408" y="3" width="30" height="12"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MORA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0b46c67c-933a-46a9-ba5e-4cdfa07dd3dc" x="191" y="3" width="30" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BECA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0f090af8-f0f0-439b-a06d-71cc3f9ec353" x="221" y="3" width="52" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FEC. VENC.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2caa584f-7f51-48e1-9544-252331357dbc" x="321" y="3" width="40" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LUGAR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7cf27074-5235-4494-a60d-3b98eb20ef90" x="360" y="2" width="43" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FACT - BECA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="38fadc7c-cf3b-43c4-b0ce-9436de649164" x="479" y="3" width="40" height="12"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ADEUDA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c759e18e-e58c-4599-8777-c4a514064a8c" x="516" y="3" width="52" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CANCELADO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9df1e455-7762-4310-a9db-8d7ec1c2caac" x="273" y="3" width="50" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FEC. PAGO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7b54b79d-cf6d-4ada-ae7e-230969ffaede" x="442" y="0" width="32" height="18"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+					<paragraph lineSpacing="Fixed" lineSpacingSize="6.0"/>
+				</textElement>
+				<text><![CDATA[DSCTO MORA]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField>
+				<reportElement uuid="4819aa7f-b67d-4d7d-a19d-5cdfd78472bc" x="3" y="0" width="51" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nrodoc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="dbbdc6b3-74ec-441a-9043-28e15eca56f7" x="49" y="0" width="27" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{beca}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="92ba11c6-59cd-4833-b04b-6f66873e19da" x="77" y="0" width="60" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{concepto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="1427a80d-0f65-4c38-967d-fc6d3d68b15a" x="137" y="0" width="41" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importe}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="bc3b88e7-1098-454e-b74a-c3e9870ad8a0" x="393" y="0" width="41" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mora}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="21e15f89-f657-481c-891a-12de9af4a7c5" x="175" y="0" width="41" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dsctoBeca}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="70976ed0-b9fa-4d7a-ac16-ba22337bea75" x="221" y="0" width="52" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fechaVenc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="d5c19f7a-10c4-4812-8c1f-3845269e9e3c" x="334" y="0" width="26" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{lugar}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="d62cee04-2a0a-4c1d-8264-a201d53568d0" x="357" y="0" width="41" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importeConDsctoBeca}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="da0ad232-5e3b-4d99-a81e-1e2996c59b88" x="473" y="0" width="41" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{adeuda}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="c1f86c6d-7291-4056-b040-696dc66dcb96" x="523" y="0" width="41" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoPagado}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b869a301-ff78-40a2-aace-a13962a79d8f" x="275" y="0" width="50" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fechaPago}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="95717cce-2ffe-4ffc-95b0-bfcf524bb31a" x="433" y="0" width="41" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dscto}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="22" splitType="Stretch">
+			<textField evaluationTime="Report">
+				<reportElement uuid="0cf7c510-35c8-43bb-852f-66eb38d9c8b6" x="51" y="10" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="9be64ea0-d033-4542-bc95-73399497317a" x="3" y="10" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9960db62-3112-4dfc-880d-0d8a2bcf01c3" x="36" y="10" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="0965dac9-ed9f-49f2-a435-b82b121e11a7" x="23" y="10" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="90" splitType="Stretch">
+			<textField>
+				<reportElement uuid="c6bb3b53-bc79-468b-9414-717ff967123f" x="392" y="3" width="41" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totMora}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b6c70a9d-71cb-429d-8dd7-6d43ef8dac2f" x="523" y="3" width="44" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totPag}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b9acad8b-df3b-4e8a-933a-edec91d06f5f" x="473" y="3" width="41" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totAdeuda}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="d8771b98-096d-4dbd-9a0c-e2704a5943a0" x="341" y="3" width="39" height="13"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL:]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="d858567d-e7b8-4d86-a0ff-9489d49bbee2" x="0" y="0" width="568" height="1"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</line>
+			<rectangle>
+				<reportElement uuid="7dda1a55-b941-4177-b8f6-04d04411ec6c" x="37" y="37" width="479" height="40" backcolor="#FFFFFF"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<line>
+				<reportElement uuid="e01023d3-f5c8-4b46-8679-e8ad0784e2ca" x="37" y="49" width="479" height="1"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement uuid="2469e776-89f2-462b-a879-1e5199b6ccc2" x="275" y="37" width="1" height="40"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement uuid="9530ad3e-006c-432a-ab54-acdf57f4996d" x="39" y="37" width="105" height="12"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RESUMEN GENERAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="05e4c272-2d3a-4394-b32f-3831ed0d4efe" x="278" y="37" width="136" height="12"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RESUMEN DE LA DEUDA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2358dec0-2260-4285-b9b1-25133f9377c8" x="41" y="50" width="60" height="13"/>
+				<textElement/>
+				<text><![CDATA[Cancelado:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b20f30e2-064d-4072-9b61-ee1bf77669e9" x="41" y="62" width="60" height="13"/>
+				<textElement/>
+				<text><![CDATA[Deuda:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5fa5b940-a79a-40f2-85ab-d3fa0c6acbff" x="280" y="50" width="87" height="13"/>
+				<textElement/>
+				<text><![CDATA[Vencido (Moroso):]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3102946b-0f25-4c1f-9940-327aaf0d5044" x="280" y="62" width="125" height="13"/>
+				<textElement/>
+				<text><![CDATA[Por Vencer (Programado):]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="fd6b08ea-d3fc-4efc-9358-482a3193acdd" x="144" y="62" width="41" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totAdeuda}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="1b5c68f4-2e68-4d01-969d-2bdb5b7ed856" x="414" y="63" width="41" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totProg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="d6a1ae2c-3a68-4f62-a160-91d883705b77" x="414" y="51" width="41" height="12"/>
+				<textElement textAlignment="Right">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totMoroso}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="876d3f2d-01a0-4ef9-a6a3-00631e2b2a39" x="144" y="50" width="41" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totPag}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="29fa2ab7-fc58-45c8-966a-e1e1727e31db" x="147" y="37" width="41" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a576a695-0068-4b98-a55a-e4431002717a" x="417" y="37" width="41" height="12"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/.]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="0902e1e5-f622-4267-91ef-be41a4d39db6" x="433" y="3" width="41" height="13"/>
+				<textElement textAlignment="Right">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totDesc}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

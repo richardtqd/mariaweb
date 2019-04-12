@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{eventoMB.cargarDatos()}" >
+            <h:form id="frmEvento" > 
+                <h:panelGrid styleClass="centrado" >
+                    <p:panel header="#{msgs.etiquetaConfEvento}" style="margin-bottom:20px;width: 350px;">
+                        <h:panelGrid id="pnlEvento" styleClass="centrado" columns="2" >
+                            <p:outputLabel value="#{msgs.etiquetaEvento}: " />
+                            <p:inputText value="#{eventoMB.eventoBean.nombre}" />
+                            <p:outputLabel value="#{msgs.etiquetaEstado}: " />
+                            <p:selectOneRadio id="txtEvento" value="#{eventoMB.eventoBean.estado}"  layout="grid" columns="2">
+                                <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaActivo}" />
+                                <f:selectItem itemValue="0" itemLabel="#{msgs.etiquetaInactivo}" />
+                            </p:selectOneRadio>
+                            <p:outputLabel value="#{msgs.etiquetaFechaInicio}: " />
+                            <p:calendar  value="#{eventoMB.eventoBean.fechaIni}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30"/>
+                            <p:outputLabel value="#{msgs.etiquetaFechaFin}: " />
+                            <p:calendar  value="#{eventoMB.eventoBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30"/>
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{eventoMB.guardarEvento()}" update=":frmEvento:pnlEvento,:frmTblEvento:pnlTblEvento" />
+                            <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{eventoMB.limpiarEvento()}" update="@this,:frmEvento:pnlEvento" />
+                        </h:panelGrid>
+                    </p:panel>
+                </h:panelGrid> 
+            </h:form>
+            <h:form id="frmTblEvento" > 
+                <h:panelGrid id="pnlTblEvento" styleClass="centrado" >
+                    <p:dataTable value="#{eventoMB.listaEventoBean}" var="evento"
+                                 paginator="true" selection="#{eventoMB.eventoBean}"
+                                 rendered="#{not empty eventoMB.listaEventoBean}" paginatorPosition="bottom"
+                                 rows="#{eventoMB.numRegistrosTablas}" id="tblEvento" rowKey="#{evento}"  
+                                 style="width: 750px;font-size:14px !important">
+                        <p:column headerText="#{msgs.etiquetaEvento}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{evento.nombre}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{evento.estadoEvento}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaInicio}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{evento.fechaIniVista}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaFin}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{evento.fechaFinVista}" />
+                        </p:column>
+                        <p:column colspan="3" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" > 
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaAcciones}" />
+                            </f:facet> 
+                            <p:commandLink id="cmdSelEve" action="#{eventoMB.obtenerEventoPorId(evento)}" process="@this" 
+                                           update=":frmEvento:pnlEvento" > 
+                                <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            &nbsp;&nbsp;&nbsp;
+                            <p:commandLink id="cmdEliminarCod" actionListener="#{eventoMB.obtenerEventoPorId(evento)}" 
+                                           update=":frmElimina" oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink> 
+                            &nbsp;&nbsp;&nbsp;
+                            <p:commandLink id="cmdVerPag" actionListener="#{eventoMB.obtenerEventoPorIdEvento(evento)}" 
+                                           update=":frmEventoPagT:pnlEventoPagT,:frmTblEventoPagT:pnlTblEventoPagT" 
+                                           oncomplete="PF('popTipoPagante').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/ver_detalle.png" style="border:0;cursor:pointer;" />
+                            </p:commandLink> 
+                            <p:tooltip  for="cmdSelEve" value="#{msgs.mensajeSelect}" />
+                            <p:tooltip  for="cmdEliminarCod" value="#{msgs.mensajeDelEvento}" />
+                            <p:tooltip  for="cmdVerPag" value="#{msgs.mensajeVerTipoPag}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+
+            <!-- POP_ELIMINA_PRO_BANCO -->
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaEvento}: #{eventoMB.eventoBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{eventoMB.eliminarEvento()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTblEvento:pnlTblEvento"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+            <!-- ELIMINA POP TIPO PAGANTE EVENTO -->
+            <h:form id="frmEliminaTipoPag">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarTipPag" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaTipoPagante}: #{eventoMB.eventoTipoPaganteBean.tipoPaganteBean.nomPagante}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{eventoMB.eliminarEventoTipoPag()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTblEventoPagT:pnlTblEventoPagT"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarTipPag').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelTipPag" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+
+            <!-- POP_EVENTO_TIPO_PAGANTE -->
+            <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popTipoPagante" resizable="false" modal="true">
+                <h:form id="frmEventoPagT" > 
+                    <h:panelGrid id="pnlEventoPagT" styleClass="centrado" >
+                        <h:panelGrid styleClass="centrado" columns="2" >
+                            <p:outputLabel for="tipoPag" value="#{msgs.etiquetaTipoPagante}: " />
+                            <p:selectOneRadio id="tipoPag" value="#{eventoMB.eventoTipoPaganteBean.tipoPaganteBean.idtipoPagante}"  layout="grid" columns="4">
+                                <f:selectItems value="#{eventoMB.listaTipoPaganteBean}" var="tipo" itemLabel="#{tipo.nomPagante}" itemValue="#{tipo.idtipoPagante}"/>
+                            </p:selectOneRadio>
+                        </h:panelGrid>
+                        <h:panelGrid columns="6" styleClass="centrado" >
+                            <p:outputLabel value="#{msgs.etiquetaNroAsigna}: " />
+                            <p:inputText value="#{eventoMB.eventoTipoPaganteBean.nroAsignaciones}" size="5" label="#{msgs.etiquetaNroAsigna}" />
+                            <p:outputLabel value="#{msgs.etiquetaNroIni}: " />
+                            <p:inputText value="#{eventoMB.eventoTipoPaganteBean.nroIni}" size="5" label="#{msgs.etiquetaNroIni}" />
+                            <p:outputLabel value="#{msgs.etiquetaNroFin}: " />
+                            <p:inputText value="#{eventoMB.eventoTipoPaganteBean.nroFin}" size="5" label="#{msgs.etiquetaNroFin}" />
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{eventoMB.insertarEventoTipoPag}" 
+                                         update=":frmTblEventoPagT:pnlTblEventoPagT"/>
+                        <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{eventoMB.limpiarEventoTipoPag}" 
+                                         update=":frmEventoPagT:pnlEventoPagT"/>
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmTblEventoPagT" >
+                    <h:panelGrid id="pnlTblEventoPagT" styleClass="centrado" >
+                        <p:dataTable value="#{eventoMB.listaEventoTipoPaganteBean}" var="eventoTipo"
+                                     paginator="true" selection="#{eventoMB.eventoBean}"
+                                     rendered="#{not empty eventoMB.listaEventoTipoPaganteBean}" paginatorPosition="bottom"
+                                     rows="#{eventoMB.numRegistrosTablas}" id="tblEventoTipo" rowKey="#{eventoTipo}"  
+                                     style="width: 750px;font-size:14px !important">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaTipoPagante}(s)" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetaTipoPagante}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{eventoTipo.tipoPaganteBean.nomPagante}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaNroIni}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{eventoTipo.nroIni}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaNroFin}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{eventoTipo.nroFin}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaNroAsigna}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{eventoTipo.nroAsignaciones}" />
+                            </p:column>
+                            <p:column colspan="2" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" > 
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaAcciones}" />
+                                </f:facet> 
+                                <p:commandLink id="cmdSelEve" action="#{eventoMB.obtenerTipoEventoPorId(eventoTipo)}" process="@this" 
+                                               update=":frmEventoPagT:pnlEventoPagT" > 
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                &nbsp;&nbsp;&nbsp;
+                                <p:commandLink id="cmdEliEve" actionListener="#{eventoMB.obtenerTipoEventoPorId(eventoTipo)}" 
+                                               update=":frmEliminaTipoPag" oncomplete="PF('popEliminarTipPag').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+        </h:body>
+    </ui:define>
+</ui:composition>
+

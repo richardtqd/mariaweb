@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.TipoConceptoDAO">  
+    <sql id="consultaCampos">
+        Select  
+        idTipoConcepto,
+        (case when flgIngreso=1 then 'I - '+nombre else 'E - '+nombre end) AS nombre,
+        flgIngreso,
+        creaPor,
+        creaFecha
+        From MT_TipoConcepto     
+    </sql>
+    <resultMap id="tipoConceptoResultado" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+        <result property="nombre" column="nombre"/>
+        <result property="flgIngreso" column="flgIngreso"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="idTipoConceptoVista" column="idTipoConceptoVista"/>
+        <result property="nomTipoConceptoVista" column="nomTipoConceptoVista"/>
+        <result property="idConceptoVista" column="idConceptoVista"/>
+        <result property="nomConceptoVista" column="nomConceptoVista"/>
+    </resultMap>
+    <select id="obtenerTipoConcepto" resultMap="tipoConceptoResultado">
+        <include refid="consultaCampos" />	  order by flgIngreso,2
+    </select>
+    <select id="obtenerTipoConceptoPorId" resultMap="tipoConceptoResultado" parameterType="pe.marista.sigma.bean.TipoConceptoBean">
+        <include refid="consultaCampos" />WHERE  idTipoConcepto = #{idTipoConcepto}	  order by flgIngreso desc
+    </select>
+    <select id="obtenerListaTipoConceptoPorId" resultMap="tipoConceptoResultado" parameterType="pe.marista.sigma.bean.TipoConceptoBean">
+        <include refid="consultaCampos" />WHERE  idTipoConcepto = #{idTipoConcepto}	  order by flgIngreso desc
+    </select>
+    <select id="obtenerPorTipoProcesoBanco" resultMap="tipoConceptoResultado" parameterType="map">
+        <include refid="consultaCampos" /> 
+        WHERE nombre in (#{parms.matricula},#{parms.pension})   order by flgIngreso desc
+    </select>
+    <select id="obtenerPorTipoProcesoBancoCur" resultMap="tipoConceptoResultado" parameterType="map">
+        <include refid="consultaCampos" /> 
+        WHERE nombre in (#{parms.matricula},#{parms.pension},#{parms.curso}) order by flgIngreso desc
+    </select>
+    
+    <select id="obtenerPorTipoCronograma" resultMap="tipoConceptoResultado" parameterType="map">
+        <include refid="consultaCampos" /> 
+        WHERE idTipoConcepto = #{idTipoConcepto1} or idTipoConcepto = #{idTipoConcepto2} 
+        order by nombre
+    </select>
+    
+    <insert id="insertarTipoConcepto" parameterType="pe.marista.sigma.bean.TipoConceptoBean">
+        INSERT INTO MT_TipoConcepto (nombre,flgIngreso,creaPor,creaFecha)
+        Values (#{nombre},#{flgIngreso},#{creaPor},getDate())
+    </insert> 
+    <update id="modificarTipoConcepto" parameterType="pe.marista.sigma.bean.TipoConceptoBean">
+        UPDATE MT_TipoConcepto
+        SET 
+        nombre = #{nombre},
+        flgIngreso = #{flgIngreso}
+        Where idTipoConcepto = #{idTipoConcepto}
+    </update>
+    <delete id="eliminarTipoConcepto" parameterType="pe.marista.sigma.bean.TipoConceptoBean">
+        Delete From MT_TipoConcepto Where idTipoConcepto = #{idTipoConcepto}
+    </delete>
+    <select id="obtenerTipoConceptoIngreso" resultMap="tipoConceptoResultado">
+        <include refid="consultaCampos" /> Where flgIngreso = 1 
+    </select>
+    <select id="obtenerTipoConceptoSalida" resultMap="tipoConceptoResultado">
+        <include refid="consultaCampos" /> Where flgIngreso = 0
+    </select> 
+    <select id="obtenerConceptosTree" resultMap="tipoConceptoResultado" parameterType="string">
+        select c.idtipoconcepto as idTipoConceptoVista,tc.nombre as nomTipoConcepto,c.idconcepto as idConceptoVista,c.nombre as nomConceptoVista
+        ,(case when c.idconcepto is not null then c.nombre else tc.nombre end) as nomTipoConceptoVista
+        from MT_ConceptoUniNeg conu
+        inner join MT_Concepto c on conu.idconcepto=c.idconcepto
+        inner join MT_TipoConcepto tc on tc.idTipoConcepto=c.idtipoconcepto
+        where conu.unineg='champs'
+        union all
+        select idTipoConcepto  as idTipoConceptoVista ,nombre as nomTipoConcepto ,null,null
+        ,(case when idTipoConcepto is not null then nombre else  nombre end) as nomTipoConceptoVista
+        from MT_TipoConcepto
+        where idTipoConcepto in (
+        select distinct c.idtipoconcepto from MT_ConceptoUniNeg conu
+        inner join MT_Concepto c on conu.idconcepto=c.idconcepto
+        inner join MT_TipoConcepto tc on tc.idTipoConcepto=c.idtipoconcepto
+        where conu.unineg='champs')
+    </select>    
+</mapper>

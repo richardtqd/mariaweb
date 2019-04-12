@@ -1,0 +1,266 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{usuarioMB.obtenerTodos()}">
+            <h:form id="frmDatosUsuario">
+                <h:outputText value="#{msgs.tituloMantoUsuario}" class="tituloPantalla"/>
+                <br/>
+                <p:panel>
+                    <f:facet name="header">
+                        <h:outputText value="#{msgs.tituloBusFiltro}"/>
+                    </f:facet>
+                    <h:panelGrid columns="10">      
+                        <h:outputLabel value="#{msgs.etiquetaUsuario}"/>
+                        <p:inputText value="#{usuarioMB.usuarioFiltroBean.usuario}"/>
+                        <h:outputLabel value="#{msgs.etiquetaNombre}"/>
+                        <p:inputText value="#{usuarioMB.usuarioFiltroBean.personalBean.nombre}"/>
+                        <h:outputLabel value="#{msgs.etiquetaApepat}"/>
+                        <p:inputText value="#{usuarioMB.usuarioFiltroBean.personalBean.apepat}"/>
+                        <h:outputLabel value="#{msgs.etiquetaApemat}"/>
+                        <p:inputText value="#{usuarioMB.usuarioFiltroBean.personalBean.apemat}"/>
+                        <p:commandButton value="#{msgs.botonBuscar}" action="#{usuarioMB.obtenerPorFiltro()}" update=":frmDatosUsuario:pnlTablaUsuario"/>
+                    </h:panelGrid>
+                    <h:panelGrid columns="1" class="centrado">         
+                        <p:commandButton value="#{msgs.botonNuevo}" action="#{usuarioMB.limpiarUsuarioBean()}" update=":frmMantUsuario:pnlDatosUsuario" 
+                                         oncomplete="PF('popNewUsuario').show();"/>
+                    </h:panelGrid>
+                </p:panel>
+                <br/>
+                <h:panelGrid styleClass="centrado" id="pnlTablaUsuario" >
+                    <p:dataTable value="#{usuarioMB.listaUsuarioBean}" paginator="true" paginatorPosition="bottom" 
+                                 var="usuario" id="tblUsuario" rowIndexVar="n"
+                                 rows="#{usuarioMB.numRegistrosTablasPorFiltro}" 
+                                 rendered="#{not empty usuarioMB.listaUsuarioBean}" 
+                                 style="width: #{usuarioMB.anchoTablasBig}; font-size: 12px">
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.tituloUsuarios}" />  
+                        </f:facet>
+                        <p:column width="25">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaNro}" />
+                            </f:facet>
+                            <h:outputText value="#{n+1}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaUsuario}" />
+                            </f:facet>
+                            <h:outputText value="#{usuario.usuario}"/>
+                        </p:column>
+                        <p:column width="400">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaNombreCompleto}" />
+                            </f:facet>
+                            <h:outputText value="#{usuario.personalBean.nombreCompleto}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaEstado}" />
+                            </f:facet>
+                            <center>
+                                <h:outputText value="#{usuario.statusVista}"/>
+                            </center>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCambiarEstado}" />
+                            </f:facet>
+                            <center>
+                                <p:inputSwitch id="swCambio" value="#{usuario.estado}">
+                                    <p:ajax listener="#{usuarioMB.ponerUsuario(usuario)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </center>
+                        </p:column>
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEditar" actionListener="#{usuarioMB.obtenerPorId(usuario.usuario)}" 
+                                           update=":frmMantUsuario"
+                                           oncomplete="PF('popNewUsuario').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                            <p:tooltip id="toolTipEdit" for="cmdEditar" value="#{msgs.mensajeEditUsuario}" />
+                            &nbsp;&nbsp;&nbsp;
+                            <p:commandLink id="cmdEliminar" action="#{usuarioMB.obtenerPorId(usuario.usuario)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelUsuario}" />
+                        </p:column>
+                    </p:dataTable>
+                    <h:panelGroup rendered="#{not empty usuarioMB.listaUsuarioBean}">
+                        <div align="center"> 
+                            <h:commandLink action="#{usuarioMB.imprimirTodosPdf()}" target="_blank">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                        </div>
+                    </h:panelGroup>  
+                    <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmMantUsuario">
+                <p:dialog header="#{msgs.tituloMantoUsuario}" widgetVar="popNewUsuario" width="650" resizable="false" modal="true" position="top">
+                    <h:panelGrid columns="2" id="pnlDatosUsuario" cellpadding="5">
+                        <h:outputLabel value="#{msgs.etiquetaUsuario}" class="negrita"/>
+                        <p:inputText  value="#{usuarioMB.usuarioBean.usuario}" required="true" disabled="#{usuarioMB.usuarioBean.edita != null}" label="#{msgs.etiquetaUsuario}"/> 
+                        <h:outputLabel value="#{msgs.etiquetaColaborador}" class="negrita"/>
+                        <h:panelGrid columns="2">
+                            <p:inputText id="txtNombre" value="#{usuarioMB.usuarioBean.personalBean.nombreCompleto}" required="true" readonly="true" label="#{msgs.etiquetaPersonal}"/>
+                            <p:commandButton value=" . . . " actionListener="#{usuarioMB.limpiarPersonalBean()}" oncomplete="PF('popBusPersonal').show();" 
+                                             update=":frmBusPersonal:pnlDatosPersonal,:frmBusPersonal:pnlTablaPersonal,:frmBusPersonal:tblPersonal" process="@this"/>
+                            <h:inputHidden id="txtIdPersonal" value="#{usuarioMB.usuarioBean.personalBean.idPersonal}"/>
+                        </h:panelGrid>
+                        <h:outputLabel value="#{msgs.etiquetaClave}" class="negrita"/>
+                        <p:password id="txtPass" value="#{usuarioMB.usuarioBean.clave}" required="true" label="#{msgs.etiquetaClave}" match="passCon"
+                                    validatorMessage="#{msgs.mensajeConfirmaClave}" redisplay="true"/>
+
+                        <h:outputLabel value="#{msgs.etiquetaConfirmaClave}" class="negrita"/>
+                        <p:password id="passCon" required="true" label="#{msgs.etiquetaConfirmaClave}" value="#{usuarioMB.usuarioBean.clave}" redisplay="true"/>
+
+                        <h:outputLabel value="#{msgs.etiquetaEstado}" class="negrita"/>
+                        <h:selectOneRadio value="#{usuarioMB.usuarioBean.status}" label="#{msgs.etiquetaEstado}">
+                            <f:selectItem itemLabel="#{msgs.etiquetaEstadoAct}" itemValue="1"/>
+                            <f:selectItem itemLabel="#{msgs.etiqeutaEstadoInac}" itemValue="0"/>
+                        </h:selectOneRadio>
+                        <h:outputLabel value="#{msgs.etiquetaPerfiles}" class="negrita"/>
+                        <h:panelGrid columns="1"> 
+                            <p:pickList id="pickListPerfil" value="#{usuarioMB.dualListaPerfilBean}" var="perfil" itemLabel="#{perfil.nombre}" itemValue="#{perfil.idPerfil}" 
+                                        label="#{msgs.etiquetaPerfiles}" required="true" showSourceFilter="true" showTargetFilter="true" filterMatchMode="contains">
+                                <f:facet name="sourceCaption">#{msgs.etiquetaDisponibles}</f:facet>
+                                <f:facet name="targetCaption">#{msgs.etiquetaSeleccionados}</f:facet>
+                            </p:pickList>
+                        </h:panelGrid>
+                        <h:inputHidden value="#{usuarioMB.usuarioBean.edita}"/><h:inputHidden/>
+                    </h:panelGrid>
+                    <h:panelGrid>
+                        <h2>#{msgs.etiquetaTipoAcceso}</h2>
+                        <p:selectManyCheckbox id="grid" value="#{usuarioMB.selectedIdTipoAcceso}" layout="grid" columns="3">
+                            <f:selectItems value="#{usuarioMB.listaTipoAccesoBean}" var="tipo" itemLabel="#{tipo.codigo}" itemValue="#{tipo.idCodigo}" />
+                        </p:selectManyCheckbox>
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid class="centrado">
+                        <p:commandButton actionListener="#{usuarioMB.guardarUsuario()}" update=":frmDatosUsuario:pnlTablaUsuario,msgsAdd,msgsAddSol"
+                                         oncomplete="if(args.operacionCorrecta){PF('popNewUsuario').hide();PF('popDone').show();}"
+                                         value="#{msgs.botonGrabar}">
+                        </p:commandButton>
+                    </h:panelGrid>
+                    <p:growl id="msgsAdd" showDetail="true" showSummary="true"/>
+                    <p:messages id="msgsAddSol"  autoUpdate="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmBusPersonal">
+                <p:dialog header="#{msgs.tituloBusFiltro}" widgetVar="popBusPersonal" width="750" resizable="false" modal="true">
+                    <p:panel>
+                        <h:panelGrid columns="2" id="pnlDatosPersonal">
+                            <h:outputLabel value="#{msgs.etiquetaApepat}"/>
+                            <h:inputText  value="#{usuarioMB.personalBean.apepat}"  label="#{msgs.etiquetaApepat}"/>
+                            <h:outputLabel value="#{msgs.etiquetaApemat}" />
+                            <h:inputText  value="#{usuarioMB.personalBean.apemat}" label="#{msgs.etiquetaApemat}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}" />
+                            <h:inputText  value="#{usuarioMB.personalBean.nombre}"  label="#{msgs.etiquetaNombre}"/> 
+                            <p:commandButton value="#{msgs.botonBuscar}" action="#{usuarioMB.obtenerPersonalsFiltro()}" 
+                                             update=":frmBusPersonal:pnlTablaPersonal,:frmBusPersonal:tblPersonal"/>
+                        </h:panelGrid>
+                    </p:panel>
+                    <h:panelGrid styleClass="centrado" id="pnlTablaPersonal" >
+                        <p:dataTable value="#{usuarioMB.listaPersonalBean}" paginator="true" 
+                                     var="personal" id="tblPersonal"
+                                     rows="#{usuarioMB.numRegistrosTablas}" 
+                                     rendered="#{not empty usuarioMB.listaPersonalBean}" 
+                                     style="width: #{usuarioMB.anchoTablasPopup}; font-size: 12px">
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloBusPersonal}" />  
+                            </f:facet>
+                            <p:column>
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaNombre}" />
+                                </f:facet>
+                                <p:commandLink actionListener="#{usuarioMB.ponerPersonal(personal)}" update=":frmMantUsuario:txtNombre,:frmMantUsuario:txtIdPersonal"
+                                               oncomplete="PF('popBusPersonal').hide();">
+                                    <center>
+                                        <h:outputText value="#{personal.nombre}"/>
+                                    </center>
+                                </p:commandLink>
+                            </p:column>
+                            <p:column>
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaApepat}" />
+                                </f:facet>
+                                <center>
+                                    <h:outputText value="#{personal.apepat}"/>
+                                </center>
+                            </p:column>
+                            <p:column>
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaApemat}" />
+                                </f:facet>
+                                <center>
+                                    <h:outputText value="#{personal.apemat}"/>
+                                </center>
+                            </p:column> 
+                            <p:column>
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaDNI}" />
+                                </f:facet>
+                                <center>
+                                    <h:outputText value="#{personal.nroDoc}"/>
+                                </center>
+                            </p:column> 
+                        </p:dataTable>
+                        <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                    </h:panelGrid>
+                    <p:growl id="msgsAdd" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaUsuario}: #{usuarioMB.usuarioBean.usuario}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{usuarioMB.eliminarUsuario()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosUsuario:pnlTablaUsuario,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaUsuario}: #{usuarioMB.usuarioBean.usuario}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{usuarioMB.cambiarEstado()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosUsuario:pnlTablaUsuario,msgsCon"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update=":frmDatosUsuario:pnlTablaUsuario,msgsCon"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsCon" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

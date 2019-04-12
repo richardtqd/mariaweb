@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.RecibosMoraDAO">  
+    <sql id="consultaCampos">
+        select  
+        r.idrecibosmora as idRecibosMora,
+        r.seriemora as serieMora,
+        r.nrodocmora as nroDocMora,
+        r.mes as mes,
+        r.anio as anio, 
+        r.creapor as creaPor,
+        r.creafecha as creaFecha,
+        r.modipor as modiPor,
+        r.flgimpresionmora as flgImpresionMora,
+        r.fechaimpresionmora as fechaImpresionMora,
+        uni.unineg as uniNeg,
+        uni.nombreUniNeg,  
+        e.idestudiante as idEstudiante,
+        d.iddocingreso as idDocIngreso
+        from MT_RecibosMora r
+        inner join MO_UnidadNegocio uni on uni.unineg=r.unineg  
+        inner join MX_Estudiante e on e.idestudiante=r.idestudiante   
+        inner join MT_DocIngreso d on d.iddocingreso= r.iddocingreso
+    </sql>
+    <resultMap id="recibosMoraResultado" type="pe.marista.sigma.bean.RecibosMoraBean">
+        <id property="idRecibosMora" column="idRecibosMora" /> 
+        <result property="serieMora" column="serieMora" />
+        <result property="nroDocMora" column="nroDocMora" />
+        <result property="mes" column="mes" />
+        <result property="anio" column="anio" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="flgImpresionMora" column="flgImpresionMora" />
+        <result property="fechaImpresionMora" column="fechaImpresionMora" /> 
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadResultado"/>  
+        <association property="estudianteBean" column="idEstudiante" 
+                     javaType="pe.marista.sigma.bean.EstudianteBean" 
+                     resultMap="estudianteResultado"/>
+        <association property="docIngresoBean" column="idDocIngreso" 
+                     javaType="pe.marista.sigma.bean.DocIngresoBean" 
+                     resultMap="docIngresoResultado"/>
+    </resultMap>
+    <resultMap id="unidadResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>  
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante" /> 
+    </resultMap>
+    <resultMap id="docIngresoResultado" type="pe.marista.sigma.bean.DocIngresoBean">
+        <id property="idDocIngreso" column="idDocIngreso" /> 
+    </resultMap> 
+    <select id="obtenerUltimo" parameterType="String" resultType="Integer">
+        SELECT isnull(max(idrecibosmora),0) FROM MT_RecibosMora WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+    </select>  
+    <select id="obtenerIdDocIngreso" parameterType="Integer" resultType="String">     
+        select concat(serieMora,' - ',right(replicate('0', 7) + rtrim(nroDocMora), 7))	 from MT_RecibosMora
+        where iddocingreso=#{idDocIngreso}
+    </select> 
+    <select id="obtenerId" parameterType="map" resultType="pe.marista.sigma.bean.RecibosMoraBean" >        
+        <include refid="consultaCampos"/> 
+        where r.nroDocMora = #{nroDocMora} and uni.unineg=#{uniNeg} and r.serieMora=#{serieMora} and d.iddocingreso=#{idDocIngreso}
+    </select> 
+    <insert id="insertarRecibosMora" parameterType="pe.marista.sigma.bean.RecibosMoraBean">
+        INSERT INTO MT_RecibosMora(unineg,idestudiante,seriemora,nrodocmora,mes,anio,creaPor,creaFecha,flgimpresionmora,fechaimpresionmora,iddocingreso) 
+        VALUES(
+        #{unidadNegocioBean.uniNeg},
+        #{estudianteBean.idEstudiante},
+        #{serieMora},
+        #{nroDocMora},
+        #{mes},
+        #{anio}, 
+        #{creaPor},
+        getDate(),
+        #{flgImpresionMora},
+        getDate(),
+        #{docIngresoBean.idDocIngreso}
+        ) 
+    </insert>
+   
+</mapper>

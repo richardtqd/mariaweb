@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="pe.marista.sigma.dao.AsientoDAO"> 
+    <resultMap id="asientoResultado" type="pe.marista.sigma.bean.AsientoBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idAsiento" column="idAsiento"/> 
+        <result property="idObjeto" column="idObjeto"/>
+        <result property="objeto" column="objeto"/>
+        <result property="planContableCuentaDBean.cuenta" column="cuentaD"/>
+        <result property="planContableCuentaHBean.cuenta" column="cuentaH"/> 
+        <result property="centroResponsabilidadBean.cr" column="cr"/>
+        <result property="centroResponsabilidadBean.nombre" column="nombreCr"/>
+        <result property="monto" column="monto"/>
+        <result property="numeroComprobante" column="numeroComprobante"/>
+        <result property="ruc" column="ruc"/>
+        <result property="tc" column="tc"/>
+        <result property="monedaOrigen" column="monedaOrigen"/> 
+        <result property="tipoMoneda.idCodigo" column="idTipMon"/>
+        <result property="tipoOpe.idCodigo" column="idTipOpe"/>
+        <result property="fechaOpe" column="fechaOpe"/>
+        <result property="fechaDoc" column="fechaDoc"/>
+        <result property="anio" column="anio"/>
+        <result property="mes" column="mes"/>
+        <result property="tipoDoc" column="tipoDoc"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="codDistribucion" column="codDistribucion"/>
+        <result property="status" column="status"/>
+    </resultMap>    
+    <select id="obtenerCRLiquidacion" parameterType="pe.marista.sigma.bean.AsientoBean" resultMap="crResultado">
+        Select asi.cr,resp.nombre 
+        From MT_Asiento asi
+        Inner Join MT_CentroResponsabilidad resp On asi.cr=resp.cr
+        Where unineg = #{unidadNegocioBean.uniNeg} and objeto = #{objeto} and idObjeto = #{idObjeto}
+    </select> 
+    <select id="obtenerCRLiq" resultMap="asientoResultado" parameterType="map"> 
+        select
+        convert(varchar,asi.cr) as  cr,
+        convert(varchar,cr.nombre) as nombreCr, 
+        isnull(asi.monto,0)   as monto     
+        from MT_Asiento asi
+        inner join MT_CajaChicaLiquidacion liq on liq.idcajachicaliquidacion=asi.idobjeto and asi.unineg=liq.unineg
+        left join MT_SolicitudCajaCh sol on sol.idsolicitudcajach=liq.idsolicitudcajach and   liq.unineg=sol.unineg
+        left  join MT_DocEgreso doc on doc.idsolicitudcajach=sol.idsolicitudcajach and doc.unineg=sol.unineg 
+        left join MT_CentroResponsabilidad cr on cr.cr=asi.cr  
+        Where asi.unineg = #{uniNeg} and   asi.idObjeto = #{idObjeto} and asi.objeto='MT_CajaChicaLiquidacion'
+        AND (ASI.status IS NULL OR ASI.status = 1 )
+    </select>
+    <resultMap id="crResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr" />
+        <result property="nombre" column="nombre" />
+    </resultMap>
+    <insert id="insertarAsiento" parameterType="pe.marista.sigma.bean.AsientoBean">
+        Insert Into MT_Asiento(
+        unineg,
+        idObjeto,
+        objeto,
+        cuentad,
+        cuentah,
+        cr,
+        monto,
+        numeroComprobante,
+        ruc,
+        tc,
+        monedaOrigen,
+        idTipoMoneda,
+        idTipoOpe,
+        fechaOpe,
+        fechaDoc,
+        anio,
+        mes,
+        idTipoDoc,
+        creaPor,
+        creaFecha,
+        status)
+        Values(
+        #{unidadNegocioBean.uniNeg},
+        #{idObjeto},
+        #{objeto},
+        #{planContableCuentaDBean.cuenta},
+        #{planContableCuentaHBean.cuenta},
+        #{centroResponsabilidadBean.cr},
+        #{monto},
+        #{numeroComprobante},
+        #{ruc},
+        #{tc},
+        #{monedaOrigen},
+        #{tipoMoneda.idCodigo},
+        #{tipoOpe.idCodigo},
+        #{fechaOpe},
+        #{fechaDoc},
+        #{anio},
+        #{mes},
+        #{tipoDoc.idCodigo},
+        #{creaPor},
+        #{creaFecha},
+        #{status}
+        )
+    </insert>
+    <update id="cambiarEstadoAsiento" parameterType="pe.marista.sigma.bean.AsientoBean">
+        Update MT_Asiento Set
+        status=#{status},
+        modiPor = #{modiPor}
+        Where objeto=#{objeto} and idobjeto=#{idObjeto}	AND unineg=#{unidadNegocioBean.uniNeg}    
+        <!--Where objeto='MT_CajaChicaLiquidacion' and idobjeto=#{idObjeto}	AND unineg=#{unidadNegocioBean.uniNeg}    -->
+    </update>
+    <update id="modificarAsientoAnulacion"  parameterType="map">
+        Update MT_Asiento set
+        monto = 0,      
+        modiPor = #{modiPor}
+        Where uniNeg = #{uniNeg} and idobjeto = #{idObjeto}  and objeto=#{objeto}
+    </update>
+</mapper>

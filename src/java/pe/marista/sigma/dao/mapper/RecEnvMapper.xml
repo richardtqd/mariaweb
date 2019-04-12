@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.RecEnvDAO">  
+   
+    <resultMap id="recEnvMapper" type="pe.marista.sigma.bean.RecEnvBean" >
+        <id property="idRecEnv" column="idRecEnv" />
+        <result property="codigoCliente" column="codigoCliente" />
+        <result property="nombreAlumno" column="nombreAlumno" />
+        <result property="codigoCuota" column="codigoCuota" />
+        <result property="dato" column="dato" />
+        <result property="importe" column="importe" />
+        <result property="mora" column="mora" />
+        <result property="fechaPago" column="fechaPago" />
+        <result property="filler" column="filler" />
+        <result property="formaPago" column="formaPago" />
+        <result property="oficinaPago" column="oficinaPago" />
+        <result property="nroTerminal" column="nroTerminal" />
+        <result property="ctaAbono" column="ctaAbono" />
+        <result property="moneda" column="moneda" />
+        <result property="fechaVenc" column="fechaVenc" />
+        <result property="codReferencial" column="codReferencial" />
+        <result property="tipoServicio" column="tipoServicio" />
+    </resultMap>
+    
+    <select id="buscarProcesoRecEnv" resultMap="recEnvMapper" parameterType="map" >
+        select
+        doc.iddocingreso as idRecEnv,
+        CONCAT((ISNULL(EST.codigo,doc.iddiscente)),REPLICATE(' ',7-len(ISNULL(EST.codigo,doc.iddiscente)))) as CODIGOCLIENTE,
+        <!--CONCAT((REPLACE(SUBSTRING (upper(doc.discente),1,30),',','')),REPLICATE(' ',31-len(REPLACE(SUBSTRING (upper(doc.discente),1,30),',',''))))   AS nombreAlumno,-->
+        UPPER(CONCAT(REPLACE(SUBSTRING(doc.discente,1,28),',',' '),REPLICATE(' ',30-len(REPLACE(SUBSTRING(doc.discente,1,30),',',' '))))) AS nombreAlumno,
+        CONCAT(REPLICATE(' ',2-len('00')),'00') AS codigoCuota,											
+        CONCAT(REPLICATE(' ',12-len(cast( CONVERT(VARCHAR,det.monto) AS VARCHAR(10)))),(cast( CONVERT(VARCHAR,det.monto) AS VARCHAR(10)))) AS IMPORTE,
+        CONCAT(REPLICATE(' ',14-len(isnull(det.mora,0))),convert(money,(isnull(det.mora,0)-isnull(det.dscto,0)))) as mora,							
+        CONCAT(REPLICATE(' ',10-len(convert(varchar,doc.fechapago,112))),(convert(varchar,doc.fechapago,112))) AS FECHAPAGO,		
+        ' ' AS FILLER, 										    
+        CONCAT(REPLICATE('0',1-LEN('2')),'2')  AS FORMAPAGO, 											
+        ' ' AS FILLER, 										    
+        CONCAT(REPLICATE(' ',3-len('000')),'000') AS OFICINAPAGO,											
+        ' ' AS FILLER, 										    
+        CONCAT(REPLICATE(' ',3-len('000')),'000') AS NROTERMINAL, 											
+        ' ' AS FILLER, 										    						    
+        CONCAT(REPLICATE(' ',3-len('000')),'000') AS OFICINAABONO,										
+        ' ' AS FILLER, 										    							    
+        CONCAT(REPLICATE(' ',7-LEN('0177437')),'0177437') AS CTAABONO,										
+        ' ' AS FILLER, 										    						    
+        CONCAT(REPLICATE(' ',2-LEN(92)),92) AS moneda, 												
+        ' ' AS FILLER, 										    						    
+        CONCAT(REPLICATE(' ',8-LEN(convert(varchar,C.fechavenc,112))),convert(varchar,C.fechavenc,112)) AS FECHAVENC, 				   
+        <!--CONCAT(ISNULL(SUBSTRING(CONVERT(VARCHAR,DOC.nrodoc),1,8),' '),
+        REPLICATE(char(8),8-LEN(ISNULL(SUBSTRING(CONVERT(VARCHAR,DOC.nrodoc),1,8),' '))))  AS CODREFERENCIAL,
+        (case 
+        when len(CONCAT(ISNULL(SUBSTRING(CONVERT(VARCHAR,'02'),1,8),' '),
+                 REPLICATE(' ',8-LEN(ISNULL(SUBSTRING(CONVERT(VARCHAR,'02'),1,8),' '))))) = 0 then SPACE(8)
+        else CONCAT(ISNULL(SUBSTRING(CONVERT(VARCHAR,'02'),1,8),' '),
+                 REPLICATE(' ',8-LEN(ISNULL(SUBSTRING(CONVERT(VARCHAR,'02'),1,8),' '))))
+        end) as dato,
+        SPACE(10) AS FILLER, 					
+        CONCAT(REPLICATE(' ',2-LEN('01')),'01') AS TIPOSERVICIO -->
+        (Case
+        When (m.idgradoacademico=23) Then 'P3'
+        When (m.idgradoacademico=24) Then 'P4'
+        When (m.idgradoacademico=25) Then '00'
+        When (m.idgradoacademico=1) Then '01'
+        When (m.idgradoacademico=2) Then '02'
+        When (m.idgradoacademico=3) Then '03'
+        When (m.idgradoacademico=4) Then '04'
+        When (m.idgradoacademico=5) Then '05'
+        When (m.idgradoacademico=6) Then '06'
+        When (m.idgradoacademico=7) Then '07'
+        When (m.idgradoacademico=8) Then '08'
+        When (m.idgradoacademico=9) Then '09'
+        When (m.idgradoacademico IN (10,12))	Then '10'
+        When (m.idgradoacademico IN (11,13))	Then '11' 
+        ELSE '00'
+        End)    AS CODREFERENCIAL,
+        CONCAT(REPLICATE(' ',8-LEN('02')),'02')   as dato,
+        SPACE(10) AS FILLER, 					
+        CONCAT(REPLICATE(' ',2-LEN('01')),'01') AS TIPOSERVICIO 
+        from MT_DocIngreso doc	
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        INNER JOIN MT_Concepto CON ON CON.idconcepto =DET.idconcepto
+        INNER JOIN MT_TipoConcepto TC ON TC.idTipoConcepto=CON.idtipoconcepto
+        LEFT JOIN MT_CtasxCobrar C ON C.idctasxcobrar=DET.idctasxcobrar and det.unineg=C.unineg
+        left join MX_Matricula m on m.idmatricula=c.idmatricula and m.anio=c.anio and m.unineg=c.unineg
+        LEFT join MX_Estudiante EST ON EST.idestudiante=DOC.iddiscente AND EST.unineg=DOC.unineg
+        where doc.idtipostatusdocing=20601 and convert(date,doc.fechapago) = #{fecha}
+        and doc.unineg = #{uniNeg} AND TC.idTipoConcepto IN (100,101)
+    </select> 
+    <select id="buscarPensionesEnCajaPorFecha" resultType="pe.marista.sigma.bean.reporte.IngresoCajaPensionesRepBean" parameterType="map">
+        declare 
+        @fechaini date=#{fechaIni},
+        @fechafin date=#{fechaFin},
+        @unineg varchar(6)=#{uniNeg}
+        SELECT  
+        doc.iddocingreso as id,
+        doc.serie as serie,
+        doc.nrodoc as nrodoc,
+        doc.fechapago as fecha,
+        pc.nombre as concepto,
+        det.cuentad as cuenta,
+        doc.anio as anio, 
+        <!--det.montopagado as montopagado,-->
+        FORMATMESSAGE(format(det.montopagado, '#.#0')) as montopagado,
+        isnull(det.montopagado,0)-isnull(det.mora,0) + isnull(det.dscto,0) as monto,
+        det.mora,
+        cta.mes,
+        est.codigo,
+        doc.discente,
+        upper(det.referencia) AS referencia,
+        cod.codigo as estado
+        FROM MT_DocIngreso doc
+        left join  MX_Estudiante est on est.idestudiante=doc.iddiscente and est.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CtasxCobrar cta on cta.idctasxcobrar=det.idctasxcobrar and det.unineg=cta.unineg
+        inner join MT_PlanContable pc on pc.cuenta=det.cuentad
+        inner join MO_Codigo cod on cod.idcodigo=doc.idtipostatusdocing
+        where idcajagen is not null and doc.idtipostatusdocing=20601 
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini and convert(date,doc.fechapago)<![CDATA[ <= ]]> @fechafin
+        and doc.unineg=@unineg
+        union all
+        SELECT  
+        doc.iddocingreso,
+        doc.serie,
+        doc.nrodoc,
+        doc.creaFechaStatus as fecha, 
+        pc.nombre,
+        det.cuentad,
+        doc.anio,
+        '0' as montopagado,
+        isnull(det.montopagado,0)-isnull(det.mora,0) + isnull(det.dscto,0) as monto,
+        0,cta.mes,
+        est.codigo,doc.discente,
+        upper(det.referencia), 
+        'Anulado' as estado
+        FROM MT_DocIngreso doc
+        left join  MX_Estudiante est on est.idestudiante=doc.iddiscente and est.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CtasxCobrar cta on cta.idctasxcobrar=det.idctasxcobrar and det.unineg=cta.unineg
+        inner join MT_PlanContable pc on pc.cuenta=det.cuentad
+        inner join MO_Codigo cod on cod.idcodigo=doc.idtipostatusdocing
+        where idcajagenanulado is not null and creaFechaStatus is not null
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini and convert(date,doc.fechapago)<![CDATA[ <= ]]> @fechafin
+        and doc.unineg=@unineg
+        order by 4 desc 
+    </select>
+    
+    <select id="execProEnvioCol" parameterType="pe.marista.sigma.bean.ProcesoEnvioBean" resultType="Object" >
+        exec PRO_ENVIO_PRO_4
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idprocesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombres = #{nombres,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fechaInic = #{fechaIni,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fechaVenc = #{fechaFin,javaType=Date,jdbcType=DATE,mode=IN},
+        @@idtipoconcepto = #{idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idconcepto = #{idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+</mapper>

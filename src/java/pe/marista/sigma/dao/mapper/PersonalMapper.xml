@@ -1,0 +1,1134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.PersonalDAO">  
+    
+    <sql id="consultaCampos">
+        select p.idpersonal,p.apepat,p.apemat,p.nombre,concat(p.apepat+' ',p.apemat+' ',p.nombre) as nombreCompleto
+        ,org.nombreUniOrg,org.iduniorg,p.correoper,p.correoCor,codPer
+        from MO_Personal p
+        Left Join MO_UnidadOrganica org ON p.idUniOrg= org.idUniOrg
+    </sql>
+    
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="nombre" column="nombre"/>
+        <result property="correoPer" column="correoper"/>
+        <result property="correoCor" column="correoCor"/>
+        <result property="nombreCompleto" column="nombreCompleto"/>
+        <result property="codPer" column="codPer"/>
+        <result property="contadorDuplicados" column="contadorDuplicados"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="cantidadUsuarios" column="cantidadUsuarios"/>
+        <result property="status" column="status"/>
+        <association property="unidadOrganicaBean" column="idUniOrg" 
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadOrganicaResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="unidadOrganicaResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>
+    <select id="obtenerPersonalUsuarios" resultMap="personalResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        declare @unineg varchar(6)= #{unidadNegocioBean.uniNeg}
+        select concat(per.apepat,' '+per.apemat,', '+per.nombre) as nombreCompleto,
+        per.apepat,per.apemat,per.nombre,
+        isnull((select count(idpersonal) from MM_Usuario 
+        where idpersonal=per.idpersonal
+        group by idpersonal
+        having count(idpersonal) >=0
+        ),0) as cantidadUsuarios ,per.idpersonal as idPersonal ,per.status as status
+        from 
+        MO_Personal per
+        inner join MO_UnidadNegocio uni on uni.unineg=per.unineg 
+        where uni.unineg=@unineg and per.status=1
+    </select>
+    <select id="obtenerTodos" resultMap="personalResultado">
+        <include refid="consultaCampos" />
+        order by 5
+    </select>
+    
+    <select id="obtenerPorUnidadNegocio" parameterType="String" resultMap="personalResultado">
+        <include refid="consultaCampos" />
+        where unineg = #{uniNeg}
+    </select>
+    <!--Buscar por Id el personal para Movimientos de activosFijos-->
+    <select id="buscarPorId" parameterType="map" resultMap="personalResultado">
+        <include refid="consultaCampos" /> Where p.idpersonal = #{idPersonal}
+    </select>
+    <select id="buscarPorCodPer" parameterType="map" resultMap="personalResultado">
+        <include refid="consultaCampos" /> Where p.codPer = #{codPer}
+    </select>
+    <select id="validarDni" parameterType="map" resultType="String">
+        select nroDoc from mo_Personal
+        Where nroDoc = #{nroDoc} and unineg=#{uniNeg}
+    </select>
+    <select id="duplicadosPersonal" resultMap="personalResultado">
+        select nrodoc as nroDoc, count(nrodoc) as contadorDuplicados
+        from mo_personal
+        where status=1
+        group by nrodoc,unineg  
+        having count(nrodoc) > 1
+    </select>
+    <select id="buscarPorIdPersonalLogistico" resultMap="personalResultado" parameterType="map">
+        <include refid="consultaCampos" /> Where p.idpersonal = #{idPersonal} and org.nombreUniOrg = #{nombreUniOrg} 
+    </select> 
+    
+    <select id="obtenerPersonalCumpleanios" resultMap="personalResultado" parameterType="map" >
+        <include refid="consultaCampos" />   
+        where p.unineg = #{uniNeg} and DAY(p.fecnac) = DAY(GETDATE()) and MONTH(p.fecnac) = MONTH(GETDATE()) 
+    </select>
+    
+    <select id="filtrarPersonal" resultMap="personalResultado" parameterType="pe.marista.sigma.bean.PersonalBean" >
+        <include refid="consultaCampos" />
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="nombre != null and nombre != ''" >
+                and p.nombre like concat('%',#{nombre},'%')
+            </if>
+            <if test="apepat != null and apepat != ''" >
+                and p.apepat like concat('%',#{apepat},'%')
+            </if>
+            <if test="apemat != null and apemat != ''" >
+                and p.apemat like concat('%',#{apemat},'%')
+            </if>
+            <if test="nroDoc != null and nroDoc != ''" >
+                and p.nrodoc like concat('%',#{nroDoc},'%')
+            </if>
+            <if test="codPer != null and codPer != ''" >
+                and p.codPer like concat('%',#{codPer},'%')
+            </if>
+            <if test="unidadOrganicaBean.idUniOrg != null" >
+                and org.idUniOrg like concat('%',#{unidadOrganicaBean.idUniOrg},'%')
+            </if>
+            order by p.apepat,p.apemat,p.nombre
+        </where>   
+    </select>
+    
+    <select id="filtrarPersonalConCentros" resultType="Integer" parameterType="map" >
+        select distinct
+        (case when (cr1porc+cr2porc+cr3porc+cr4porc+cr5porc)=100 then 1
+        else 0 end) from MO_Personal where  unineg = #{uniNeg} and (case when (cr1porc+cr2porc+cr3porc+cr4porc+cr5porc)=100 then 1
+        else 0 end) =1
+    </select>
+     
+    <!-- Personal Para los Centros por Planilla -->
+    <sql id="consultaCentrosPlanilla">
+        select 
+        p.codper as codPer,
+        p.idpersonal idPersonal,
+        p.apepat as apePat,p.apemat as apeMat,p.nombre as nombre,
+        CONCAT(p.apepat,' '+p.apemat,', '+p.nombre)as nombreCompleto,
+        cr1.cr as centroResp1,
+        cr1.nombre as nombreResp1,
+        cr2.cr as centroResp2,
+        cr2.nombre as nombreResp2,
+        cr3.cr as centroResp3,
+        cr3.nombre as nombreResp3,
+        cr4.cr as centroResp4,
+        cr4.nombre as nombreResp4,
+        cr5.cr as centroResp5,
+        cr5.nombre as nombreResp5,
+        p.cr1porc as cr1Porc,
+        p.cr2porc as cr2Porc,
+        p.cr3porc as cr3Porc,
+        p.cr4porc as cr4Porc,
+        p.cr5porc as cr5Porc,
+        u.nombreUniNeg as nombreUniNeg,
+        uo.nombreuniorg as nombreUniOrg,
+        uo.idUniOrg as idUniOrg,
+        ocu.codigo as tipoOcupacion,
+        ocu.idcodigo as idTipoOcupacion,
+        niv.codigo as tipoNivelIns,
+        niv.idcodigo as idTipoNivelIns,
+        p.status as statusVista
+        from MO_Personal p
+        inner join MO_UnidadNegocio u on u.unineg =p.unineg
+        left join MT_CentroResponsabilidad cr1 on cr1.cr=p.cr1
+        left join MT_CentroResponsabilidad cr2 on cr2.cr=p.cr2
+        left join MT_CentroResponsabilidad cr3 on cr3.cr=p.cr3
+        left join MT_CentroResponsabilidad cr4 on cr4.cr=p.cr4
+        left join MT_CentroResponsabilidad cr5 on cr5.cr=p.cr5
+        left join MO_UnidadOrganica uo on uo.iduniorg=p.iduniorg
+        left join MO_Codigo ocu on ocu.idcodigo=p.idtipoocupacion
+        left join MO_Codigo niv on niv.idcodigo=p.idtiponivelins
+    </sql>
+    
+    <resultMap id="personalPlanillaResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="apepat" column="apePat"/>
+        <result property="apemat" column="apeMat"/>
+        <result property="nombre" column="nombre"/>  
+        <result property="nombreCompleto" column="nombreCompleto"/>
+        <result property="codPer" column="codPer"/>
+        <result property="cr1Porc" column="cr1Porc"/>
+        <result property="cr2Porc" column="cr2Porc"/>
+        <result property="cr3Porc" column="cr3Porc"/>
+        <result property="cr4Porc" column="cr4Porc"/>
+        <result property="cr5Porc" column="cr5Porc"/>
+        <result property="statusVista" column="statusVista"/>
+        <association property="unidadOrganicaBean" column="idUniOrg" 
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadOrganicaResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="tipoOcupacionBean" column="idCodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="ocupacionResultado"/>
+        <association property="tipoNivelInsBean" column="idCodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="nivelResultado"/>
+        <association property="cr1" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centro1Resultado"/>
+        <association property="cr2" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centro2Resultado"/>
+        <association property="cr3" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centro3Resultado"/>
+        <association property="cr4" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centro4Resultado"/>
+        <association property="cr5" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centro5Resultado"/>
+    </resultMap> 
+    <resultMap id="ocupacionResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoOcupacion"/>
+        <result property="codigo" column="idTipoOcupacion"/> 
+    </resultMap>
+    <resultMap id="nivelResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoNivelIns"/>
+        <result property="codigo" column="tipoNivelIns"/> 
+    </resultMap>
+    <resultMap id="centro1Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="centroResp1"/>
+        <result property="nombre" column="nombreResp1"/> 
+    </resultMap>
+    <resultMap id="centro2Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="centroResp2"/>
+        <result property="nombre" column="nombreResp2"/> 
+    </resultMap>
+    <resultMap id="centro3Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="centroResp3"/>
+        <result property="nombre" column="nombreResp3"/> 
+    </resultMap>
+    <resultMap id="centro4Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="centroResp4"/>
+        <result property="nombre" column="nombreResp4"/> 
+    </resultMap>
+    <resultMap id="centro5Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="centroResp5"/>
+        <result property="nombre" column="nombreResp5"/> 
+    </resultMap>
+    <select id="obtenerCentrosPlanilla" resultMap="personalPlanillaResultado" parameterType="map">
+        <include refid="consultaCentrosPlanilla" />
+        where u.unineg = #{uniNeg} and p.idpersonal=#{idPersonal}
+    </select>
+    <select id="obtenerPlanillaPersonalCR" resultType="pe.marista.sigma.bean.reporte.PlanillaPersonalCRRepBean" parameterType="map">
+        select  distinct
+        'LISTADO DEL PERSONAL '+(CASE WHEN status=1 THEN 'ACTIVO ' ELSE 'DADO DE BAJA ' END )+'DEL AÑO '+CONVERT(VARCHAR,YEAR(GETDATE())) as titulo,
+        (case when (isnull(cr1porc,0)+isnull(cr2porc,0)+isnull(cr3porc,0)+isnull(cr4porc,0)+isnull(cr5porc,0))= 100 then 'Lista Personal Activo con datos' end) as titulo2
+        ,UNI.nombreUniNeg, UNI.RUC AS rucColegio,
+        p.idtiponivelins as id,niv.codigo as tipoNivelesIns
+        from MO_Personal p
+        inner join MO_UnidadNegocio uni on uni.unineg=p.unineg 
+        left join MO_Codigo niv on niv.idCodigo=p.idTipoNivelIns
+        where uni.unineg=#{uniNeg} and status=#{status} and idtiponivelins in(#{idTipoNivelIns})
+    </select> 
+    <select id="obtenerPlanillaPersonalCRTotales" resultType="pe.marista.sigma.bean.reporte.PlanillaPersonalCRRepBean" parameterType="map">
+        select   
+        p.idtiponivelins as id,niv.codigo as tipoNivelesIns,count(*) as cantidad
+        from MO_Personal p
+        inner join MO_UnidadNegocio uni on uni.unineg=p.unineg 
+        left join MO_Codigo niv on niv.idCodigo=p.idTipoNivelIns 
+        where uni.unineg=#{uniNeg} and status=#{status} and idtiponivelins in(#{idTipoNivelIns})
+        group by UNI.nombreUniNeg, UNI.RUC,
+        p.idtiponivelins,niv.codigo ,status
+    </select> 
+    <select id="obtenerPlanillaPersonalCRDetalle" resultType="pe.marista.sigma.bean.reporte.PlanillaPersonalCRRepBean" parameterType="map">
+        select  
+        upper(concat(p.apepat,' '+p.apemat,', '+p.nombre)) as nombreCompleto,
+        isnull(convert(varchar,cr1.cr),'-') as cr1, isnull(convert(varchar,cr2.cr),'-') as cr2,isnull(convert(varchar,cr3.cr),'-') as cr3,isnull(convert(varchar,cr4.cr),'-') as cr4,
+        isnull(convert(varchar,cr5),'-') as cr5,
+        isnull(convert(varchar,p.cr1porc),'-') as cr1Porc, isnull(convert(varchar,p.cr2porc),'-') as cr2Porc, isnull(convert(varchar,p.cr3porc),'-') as cr3Porc, isnull(convert(varchar,p.cr4porc),'-') as cr4Porc,isnull(convert(varchar,p.cr5porc),'-') as cr5Porc
+        ,(isnull(cr1porc,0)+isnull(cr2porc,0)+isnull(cr3porc,0)+isnull(cr4porc,0)+isnull(cr5porc,0)) as sumaPorc ,p.codPer as codPer
+        from MO_Personal p
+        inner join MO_UnidadNegocio uni on uni.unineg=p.unineg
+        left join MT_CentroResponsabilidad cr1 on cr1.cr=p.cr1
+        left join MT_CentroResponsabilidad cr2 on cr2.cr=p.cr2
+        left join MT_CentroResponsabilidad cr3 on cr3.cr=p.cr3
+        left join MT_CentroResponsabilidad cr4 on cr4.cr=p.cr4
+        left join MT_CentroResponsabilidad cr5 on cr5.cr=p.cr5 
+        left join MO_Codigo niv on niv.idCodigo=p.idTipoNivelIns
+        where uni.unineg=#{uniNeg} and status=#{status} and idtiponivelins =#{idTipoNivelIns}
+        ORDER BY concat(p.apepat,' '+p.apemat,', '+p.nombre) desc
+    </select>
+    <select id="obtenerPlanillaPersonalCRDetalleSinNada" resultType="pe.marista.sigma.bean.reporte.PlanillaPersonalCRRepBean" parameterType="map">
+        select  
+        upper(concat(p.apepat,' '+p.apemat,', '+p.nombre)) as nombreCompleto,
+        (case when (isnull(cr1porc,0)+isnull(cr2porc,0)+isnull(cr3porc,0)+isnull(cr4porc,0)+isnull(cr5porc,0))<![CDATA[< ]]>100 then 'Lista Personal Activo sin datos' end) as titulo
+        ,isnull(convert(varchar,cr1.cr),'-') as cr1, isnull(convert(varchar,cr2.cr),'-') as cr2,isnull(convert(varchar,cr3.cr),'-') as cr3,isnull(convert(varchar,cr4.cr),'-') as cr4,
+        isnull(convert(varchar,cr5),'-') as cr5,
+        isnull(convert(varchar,p.cr1porc),'-') as cr1Porc, isnull(convert(varchar,p.cr2porc),'-') as cr2Porc, isnull(convert(varchar,p.cr3porc),'-') as cr3Porc, isnull(convert(varchar,p.cr4porc),'-') as cr4Porc,isnull(convert(varchar,p.cr5porc),'-') as cr5Porc
+        ,(isnull(cr1porc,0)+isnull(cr2porc,0)+isnull(cr3porc,0)+isnull(cr4porc,0)+isnull(cr5porc,0)) as sumaPorc ,p.codPer as codPer
+        from MO_Personal p
+        inner join MO_UnidadNegocio uni on uni.unineg=p.unineg
+        left join MT_CentroResponsabilidad cr1 on cr1.cr=p.cr1
+        left join MT_CentroResponsabilidad cr2 on cr2.cr=p.cr2
+        left join MT_CentroResponsabilidad cr3 on cr3.cr=p.cr3
+        left join MT_CentroResponsabilidad cr4 on cr4.cr=p.cr4
+        left join MT_CentroResponsabilidad cr5 on cr5.cr=p.cr5 
+        left join MO_Codigo niv on niv.idCodigo=p.idTipoNivelIns
+        where uni.unineg=#{uniNeg} and status=#{status} 
+        <if test="status == 1" >
+            and (isnull(cr1porc,0)+isnull(cr2porc,0)+isnull(cr3porc,0)+isnull(cr4porc,0)+isnull(cr5porc,0)) <![CDATA[< ]]>100
+        </if> 
+        ORDER BY concat(p.apepat,' '+p.apemat,', '+p.nombre) desc
+    </select>
+    <select id="obtenerPlanillaRemuneracionesCabecera" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+        declare @621111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621111 and mes=@mes and anio=@anio)
+        declare @621112 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621112 and mes=@mes and anio=@anio)
+        declare @621113 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621113 and mes=@mes and anio=@anio)
+        declare @621114 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621114 and mes=@mes and anio=@anio)
+        declare @621115 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621115 and mes=@mes and anio=@anio)
+        declare @621116 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621116 and mes=@mes and anio=@anio)
+        declare @621117 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621117 and mes=@mes and anio=@anio)
+        declare @621118 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621118 and mes=@mes and anio=@anio)
+        declare @621119 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621119 and mes=@mes and anio=@anio)
+        declare @621411 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621411 and mes=@mes and anio=@anio)
+        declare @621511 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621511 and mes=@mes and anio=@anio)
+        declare @622116 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=622116 and mes=@mes and anio=@anio)
+        declare @622119 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and mes=@mes and anio=@anio)
+        declare @noremu money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=622119 and cuentah= 0 and mes=@mes and anio=@anio)
+	  
+        declare @627111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and mes=@mes and anio=@anio)
+          
+        declare @141111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=141111 and mes=@mes and anio=@anio)
+        declare @141211 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=141211 and mes=@mes and anio=@anio)
+        declare @401731 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=401731 and mes=@mes and anio=@anio)
+        declare @403113 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=403113 and mes=@mes and anio=@anio)
+        declare @403211 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=403211 and mes=@mes and anio=@anio)
+        declare @407111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=407111 and mes=@mes and anio=@anio)
+        declare @407112 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=407112 and mes=@mes and anio=@anio)
+        declare @407113 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=407113 and mes=@mes and anio=@anio) 
+        declare @411111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=411111 and mes=@mes and anio=@anio)
+        declare @751919 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=751919 and mes=@mes and anio=@anio)
+  
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+        
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+        
+        select DISTINCT
+        'REPORTE DE PLANILLA POR CUENTAS DEL MES DE '+
+        (CASE WHEN p.mes=1 THEN 'ENERO'
+        WHEN p.mes=2 THEN 'FEBRERO'
+        WHEN p.mes=3 THEN 'MARZO'
+        WHEN p.mes=4 THEN 'ABRIL'
+        WHEN p.mes=5 THEN 'MAYO'
+        WHEN p.mes=6 THEN 'JUNIO'
+        WHEN p.mes=7 THEN 'JULIO'
+        WHEN p.mes=8 THEN 'AGOSTO'
+        WHEN p.mes=9 THEN 'SETIEMBRE'
+        WHEN p.mes=10 THEN 'OCTUBRE'
+        WHEN p.mes=11 THEN 'NOVIEMBRE'
+        WHEN p.mes=12 THEN 'DICIEMBRE' 
+        WHEN P.MES=13 THEN 'JULIO - GRATIFICACION' 
+        WHEN P.MES=14 THEN 'DICIEMBRE - GRATIFICACION' END)+' DEL AÑO '+CONVERT(VARCHAR,P.ANIO) as titulo ,
+        UNI.nombreUniNeg, UNI.RUC AS rucColegio,ins.idcodigo as idTipoNivel,
+        upper(ins.codigo) as codigoNivel, 
+        isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111
+	 
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion,isnull(@noremu,0) as noremu
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns
+        where uni.uniNeg=#{uniNeg} and p.mes=#{mes}  and p.anio=@anio and objeto='mo_planilla'
+    </select>
+    <select id="obtenerPlanillaRemuneracionesId" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map"> 
+        declare @idNivelIns Integer= #{idNivelIns}
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+      
+         
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+          
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio) 
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio) 
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+ 
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+        
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+        
+        select  DISTINCT UPPER (concat(per.apepat,' '+per.apemat,', '+nombre)) as nombreCompleto,
+        'REPORTE LPM POR CUENTAS Y TIPO DE PLANILLA' as titulo ,
+        UNI.nombreUniNeg, UNI.RUC AS rucColegio,ins.idcodigo as idTipoNivel,
+        upper(ins.codigo) as codigoNivel,idpersonal as idPersonal,idobjeto as idObjeto , 
+        isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111
+        
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion,isnull(@noremu,0) as noremu
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns 
+        where uni.uniNeg=#{uniNeg} and p.mes=@mes and ins.idcodigo =#{idNivelIns}  and p.anio=@anio and objeto='mo_planilla'
+    </select>
+    <select id="obtenerPlanillaRemuneracionesDetalle" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map"> 
+        declare @idObjeto Integer=#{idObjeto}
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+        declare @621111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621111 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621112 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621112 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621113 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621113 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621114 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621114 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621115 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621115 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621116 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621116 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621117 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621117 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621118 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621118 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621119 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621119 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621411 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621411 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @621511 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=621511 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @622116 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=622116 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @622119 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and idobjeto=@idObjeto and mes=@mes and anio=@anio) 
+        declare @noremu money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=622119 and cuentah= 0 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+ 
+        declare @627111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        
+        declare @141111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=141111 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @141211 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=141211 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @401731 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=401731 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @403113 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=403113 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @403211 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=403211 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @407111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=407111 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @407112 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=407112 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @407113 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=407113 and idobjeto=@idObjeto and mes=@mes and anio=@anio) 
+        declare @411111 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=411111 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+        declare @751919 money=(select sum(monto) from MT_Asiento where objeto='MO_Planilla' and cuentah=751919 and idobjeto=@idObjeto and mes=@mes and anio=@anio)
+
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+        
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+        
+        select distinct
+        UPPER (concat(per.apepat,' '+per.apemat,', '+nombre)) as nombreCompleto,
+        isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,per.codper as lpm ,isnull(@627111,0) as cuenta627111
+        
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion,isnull(@noremu,0) as noremu
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns
+        where ins.idcodigo =#{idNivelIns} and uni.uniNeg=#{uniNeg} and p.mes=@mes and idobjeto=@idObjeto and p.anio=@anio and objeto='mo_planilla'
+        
+    </select>
+    
+    <select id="obtenerPlanillaCuenta" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">  
+        declare @idNivelIns Integer= #{idNivelIns}
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        
+        
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio) 
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio) 
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+ 
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+        
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0)) 
+      
+        select DISTINCT
+        'REPORTE DE TOTALES DE CUENTA POR TIPO DE PLANILLA DEL MES DE '+
+        (CASE WHEN p.mes=1 THEN 'ENERO'
+        WHEN p.mes=2 THEN 'FEBRERO'
+        WHEN p.mes=3 THEN 'MARZO'
+        WHEN p.mes=4 THEN 'ABRIL'
+        WHEN p.mes=5 THEN 'MAYO'
+        WHEN p.mes=6 THEN 'JUNIO'
+        WHEN p.mes=7 THEN 'JULIO'
+        WHEN p.mes=8 THEN 'AGOSTO'
+        WHEN p.mes=9 THEN 'SETIEMBRE'
+        WHEN p.mes=10 THEN 'OCTUBRE'
+        WHEN p.mes=11 THEN 'NOVIEMBRE'
+        WHEN p.mes=12 THEN 'DICIEMBRE' 
+        WHEN P.MES=13 THEN 'JULIO - GRATIFICACION' 
+        WHEN P.MES=14 THEN 'DICIEMBRE - GRATIFICACION' END)+' DEL AÑO '+CONVERT(VARCHAR,P.ANIO) as titulo ,
+        UNI.nombreUniNeg, UNI.RUC AS rucColegio,ins.idcodigo as idTipoNivel,
+        upper(ins.codigo) as codigoNivel,
+        isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111,isnull(@noremu,0) as noremu
+        
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns
+        where uni.uniNeg=#{uniNeg} and p.mes=@mes AND INS.idcodigo=@idNivelIns and p.anio=@anio and objeto='mo_planilla'
+    </select>
+    <select id="obtenerPlanillaCRCabecera" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">  
+        declare @idNivelIns Integer= #{idNivelIns}
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+
+
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+
+        select distinct 'REPORTE TIPO DE PLANILLA POR CENTRO DE RESPONSABILIDAD' as titulo ,
+        UNI.nombreUniNeg, UNI.RUC AS rucColegio,ins.idcodigo as idTipoNivel,
+        upper(ins.codigo) as codigoNivel,isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111,isnull(@noremu,0) as noremu
+
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns
+        inner join MT_CentroResponsabilidad cr on cr.cr=a.cr
+        where uni.uniNeg=#{uniNeg} and p.mes=@mes AND INS.idcodigo=@idNivelIns and p.anio=@anio and objeto='mo_planilla'
+    </select>
+    <select id="obtenerPlanillaCRDetalle" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">  
+        declare @idNivelIns Integer= #{idNivelIns}
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio)
+
+
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio)
+
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+        
+        select distinct cr.cr as cr, CONCAT(CONVERT(VARCHAR,CR.CR),+' - ',+cr.nombre) as nombreCentroResp ,ins.idcodigo as idTipoNivel,
+        upper(ins.codigo) as codigoNivel,isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111,isnull(@noremu,0) as noremu
+
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns
+        inner join MT_CentroResponsabilidad cr on cr.cr=a.cr
+        where uni.uniNeg=#{uniNeg} and p.mes=@mes AND INS.idcodigo=@idNivelIns and p.anio=@anio and objeto='mo_planilla'
+    </select>
+    <select id="obtenerPlanillaCRSubDetalle" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">  
+        declare @idNivelIns Integer= #{idNivelIns}
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio} 
+        declare @cr integer =#{cr}
+
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes and p.anio=@anio and a.cr=@cr)
+
+
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and ins.idcodigo =@idNivelIns and p.mes=@mes  and p.anio=@anio and a.cr=@cr)
+
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+
+        select DISTINCT 
+        ins.idcodigo as idTipoNivel,
+        isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111,isnull(@noremu,0) as noremu
+
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns 
+        where uni.uniNeg=#{uniNeg} and p.mes=@mes AND INS.idcodigo =@idNivelIns and p.anio=@anio and objeto='mo_planilla'
+    </select>
+    <select id="obtenerTrabajadorCRCabecera" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">  
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111  and p.mes=@mes and p.anio=@anio)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and p.mes=@mes and p.anio=@anio)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and p.mes=@mes and p.anio=@anio)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and p.mes=@mes and p.anio=@anio)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and p.mes=@mes and p.anio=@anio)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and p.mes=@mes and p.anio=@anio)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and p.mes=@mes and p.anio=@anio)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and p.mes=@mes and p.anio=@anio)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and p.mes=@mes and p.anio=@anio)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and p.mes=@mes and p.anio=@anio)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and p.mes=@mes and p.anio=@anio)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and p.mes=@mes and p.anio=@anio)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and p.mes=@mes and p.anio=@anio)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and p.mes=@mes and p.anio=@anio)
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and p.mes=@mes and p.anio=@anio)
+ 
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and p.mes=@mes  and p.anio=@anio)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and p.mes=@mes  and p.anio=@anio)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and p.mes=@mes  and p.anio=@anio)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and p.mes=@mes  and p.anio=@anio)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and p.mes=@mes  and p.anio=@anio)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and p.mes=@mes  and p.anio=@anio)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and p.mes=@mes  and p.anio=@anio)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and p.mes=@mes  and p.anio=@anio)
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and p.mes=@mes  and p.anio=@anio)
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and p.mes=@mes  and p.anio=@anio)
+
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+        
+        select distinct 'REPORTE DE PLANILLA - TRABAJADORES Y CENTROS DE RESPONSABILIDAD' as titulo ,
+        UNI.nombreUniNeg, UNI.RUC AS rucColegio,
+        upper(concat(per.apepat,' '+per.apemat,' '+per.nombre)) as nombreCompleto,p.idPlanilla as idObjeto,isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111,isnull(@noremu,0) as noremu
+
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns
+        inner join MT_CentroResponsabilidad cr on cr.cr=a.cr
+        where uni.uniNeg=#{uniNeg} and p.mes=@mes and p.anio=@anio  and objeto='mo_planilla'
+    </select>
+    <select id="obtenerTrabajadorCRDetalle" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">   
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+        declare @personal integer=#{idObjeto}
+
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111  and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal)
+ 
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and p.mes=@mes  and p.anio=@anio and a.idobjeto=@personal)
+
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+
+        
+        select distinct
+        cr.cr as cr, cr.nombre as nombreCentroResp,a.idobjeto as idObjeto,isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111,isnull(@noremu,0) as noremu
+
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+        from MT_Asiento a
+        inner join MO_UnidadNegocio uni on uni.unineg=A.unineg
+        inner join MO_Planilla p on p.idPlanilla=a.idobjeto
+        inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns
+        inner join MT_CentroResponsabilidad cr on cr.cr=a.cr
+        where uni.uniNeg=#{uniNeg} and p.mes=@mes and p.anio=@anio and a.idobjeto=@personal and objeto='mo_planilla'
+    </select>
+    <select id="obtenerTrabajadorCRSubDetalle" resultType="pe.marista.sigma.bean.reporte.ConceptoPlanillaRepBean" parameterType="map">  
+        declare @mes Integer=#{mes}
+        declare @anio Integer=#{anio}
+        declare @personal integer=#{idObjeto}
+        declare @cr integer =#{cr}
+        
+        declare @621111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621111  and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621112 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621113 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621114 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621114 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621115 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621115 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621116 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621117 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621117 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621118 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621118 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621119 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621411 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621411 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @621511 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=621511 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @622116 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622116 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @622119 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah is null and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @noremu money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=622119 and cuentah=0 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @627111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentad=627111 and cuentah=403113 and p.mes=@mes and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+ 
+        declare @141111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141111 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @141211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=141211 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @401731 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=401731 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @403113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403113 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @403211 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=403211 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @407111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407111 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @407112 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407112 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @407113 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=407113 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @411111 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=411111 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+        declare @751919 money=(select sum(monto) from MT_Asiento a inner join MO_Planilla p on p.idPlanilla=a.idobjeto inner join MO_Personal per on per.codper=p.codigo
+        inner join MO_Codigo ins on ins.idcodigo=per.idtiponivelIns where objeto='MO_Planilla' and cuentah=751919 and p.mes=@mes  and p.anio=@anio and a.cr=@cr and a.idobjeto=@personal)
+
+        declare @remuneraciones money=(ISNULL(@621111,0)+ISNULL(@621112,0)+ISNULL(@621113,0)+ISNULL(@621114,0)+ISNULL(@621115,0)+ISNULL(@621116,0)+ISNULL(@621117,0)+ISNULL(@621118,0)
+        +ISNULL(@621119,0)+ISNULL(@621411,0)+ISNULL(@621511,0)+ISNULL(@622116,0)+ISNULL(@622119,0))
+
+        declare @totalDebe money=(isnull(@remuneraciones,0)+isnull(@627111,0)+ISNULL(@noremu,0))
+        declare @totalHaber money=(isnull(@141111,0)+isnull(@141211,0)+isnull(@401731,0)+isnull(@403113,0)+isnull(@403211,0)+isnull(@407111,0)+isnull(@407112,0)+isnull(@407113,0)
+        +isnull(@411111,0)+isnull(@751919,0))
+
+        select  
+        isnull(@621111,0) as cuenta621111,isnull(@621112,0) as cuenta621112
+        ,isnull(@621113,0) as cuenta621113,isnull(@621114,0) as cuenta621114,isnull(@621115,0) as cuenta621115,isnull(@621116,0) as cuenta621116,isnull(@621117,0) as cuenta621117
+        ,isnull(@621118,0) as cuenta621118,isnull(@621119,0) as cuenta621119,isnull(@621411,0) as cuenta621411,isnull(@621511,0) as cuenta621511,isnull(@622116,0) as cuenta622116
+        ,isnull(@622119,0) as cuenta622119,isnull(@627111,0) as cuenta627111,isnull(@noremu,0) as noremu
+
+        ,isnull(@141111,0) as cuenta141111,isnull(@141211,0) as cuenta141211,isnull(@401731,0) as cuenta401731,isnull(@403113,0) as cuenta403113,isnull(@403211,0) as cuenta403211,isnull(@407111,0) as cuenta407111
+        ,isnull(@407112,0) as cuenta407112,isnull(@407113,0) as cuenta407113,isnull(@411111,0) as cuenta411111,isnull(@751919,0) as cuenta751919,@remuneraciones as remuneracion
+        ,@totalDebe as totalDebe, @totalHaber as totalHaber
+    </select>
+    <update id="modificarPlanillaCentros" parameterType="pe.marista.sigma.bean.PersonalBean">
+        update MO_Personal
+        set 
+        idtipoocupacion = #{tipoOcupacionBean.idCodigo}, 
+        cr1 = #{cr1.cr}, 
+        cr2 = #{cr2.cr},
+        cr3 = #{cr3.cr},
+        cr4 = #{cr4.cr},
+        cr5 = #{cr5.cr},
+        iduniorg= #{unidadOrganicaBean.idUniOrg},
+        cr1porc=#{cr1Porc},
+        cr2porc=#{cr2Porc},
+        cr3porc=#{cr3Porc},
+        cr4porc=#{cr4Porc}, 
+        cr5porc=#{cr5Porc}, 
+        modiPor = #{modiPor},
+        codper=#{codPer},
+        idtiponivelins=#{tipoNivelInsBean.idCodigo},
+        status=#{status}modificarSueldoBasico
+        where idpersonal = #{idPersonal} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarSueldoBasico" parameterType="pe.marista.sigma.bean.PersonalBean">
+        update MO_Personal
+        set 
+        basico=#{basico},
+        idtipoplanillacolegio =#{tipoPlanillaColegio.idCodigo},
+        nrohoras=#{nroHoras},
+        bonicargototal=#{boniCargoTotal}   
+        where codPer = #{codPer} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarSueldoBasicoEstatal" parameterType="pe.marista.sigma.bean.PersonalBean">
+        update MO_Personal
+        set 
+        basicoestatal=#{basicoEstatal}  
+        where codPer = #{codPer} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+</mapper>

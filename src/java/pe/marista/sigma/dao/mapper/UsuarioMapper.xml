@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.UsuarioDAO">
+    <sql id="consultaCampos">
+        Select  
+        usu.usuario,
+        usu.usuario+
+        (case
+        when usu.unineg='CHAMPS' then '@champagnat.edu.pe' 
+        when usu.unineg='SANLUI' then '@sanluis.edu.pe' 
+        when usu.unineg='SANJOC' then '@sanjose.edu.pe'  
+        when usu.unineg='BARINA' then '@barinaga.edu.pe'  
+        ELSE '@maristas.edu.pe'
+        end) as usuarioUniNeg,
+        usu.clave,
+        usu.status,
+        usu.creaPor,
+        usu.creaFecha,
+        usu.idPersonal,
+        per.nombre,
+        per.apepat,
+        per.apemat,
+        per.fecNac,
+        per.nroDoc,
+        usu.uniNeg,
+        per.idUniOrg, 
+        uni.nombreUniNeg,
+        org.nombreUniOrg ,
+        per.status as status,
+        per.status as statusVista,
+        per.codPer
+        From MM_USUARIO usu
+        LEFT JOIN MO_PERSONAL per ON usu.idPersonal=per.idPersonal and usu.unineg = per.unineg
+        Left Join MO_UnidadNegocio uni On usu.uniNeg=uni.uniNeg  
+        Left Join MO_UnidadOrganica org ON per.idUniOrg= org.idUniOrg
+    </sql>
+    <resultMap id="usuarioResultado" type="pe.marista.sigma.bean.UsuarioBean">
+        <id property="usuario" column="usuario" />
+        <id property="usuarioUniNeg" column="usuarioUniNeg" />
+        <result property="clave" column="clave" />
+        <result property="claveAnterior" column="claveAnterior" />
+        <result property="clave2" column="clave2" />
+        <result property="modiPor" column="modiPor" />
+        <result property="status" column="status" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <association property="personalBean" column="idPersonal" 
+                     javaType="pe.marista.sigma.bean.PersonalBean" 
+                     resultMap="personalResultado"/>
+    </resultMap>
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+        <result property="fecNac" column="fecNac" />
+        <result property="nroDoc" column="nroDoc" />
+        <result property="status" column="statusVista" />
+        <result property="status" column="status" />
+        <result property="codPer" column="codPer" />        
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+        <association property="unidadOrganicaBean" column="idUniOrg" 
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadOrganicaResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <resultMap id="unidadOrganicaResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap>
+    <select id="obtenerTodos" resultMap="usuarioResultado">
+        <include refid="consultaCampos" />
+    </select>
+    
+    <select id="obtenerPorUnidadNegocio" parameterType="String" resultMap="usuarioResultado">
+        <include refid="consultaCampos" />
+        where per.unineg = #{uniNeg}
+        <!-- and usu.status = 1 -->
+    </select>
+    <select id="obtenerUsuariosActivos" parameterType="String" resultMap="usuarioResultado">
+        <include refid="consultaCampos" />
+        where per.unineg = #{uniNeg}
+        and usu.status = 1 
+    </select>
+    <select id="obtenerUsuarioIgual" parameterType="String" resultMap="usuarioResultado">
+        select top 1
+        usuario,idPersonal
+        from MM_Usuario
+        where idpersonal=#{usuario} 
+    </select>
+    <select id="obtenerPorPersonal" parameterType="pe.marista.sigma.bean.PersonalBean" resultMap="usuarioResultado">
+        <include refid="consultaCampos" />
+        where per.unineg = #{uniNeg}
+        per.uniNeg='CHAMPS' and per.idPersonal
+    </select>
+    
+    <select id="obtenerPorFiltro" resultMap="usuarioResultado" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        <include refid="consultaCampos"/>
+        <where>
+            <if test="usuario != null and usuario != '' " >
+                and upper(usu.usuario) like concat('%',#{usuario},'%')
+            </if>  
+            <if test="personalBean.nombre != null and personalBean.nombre != '' " >
+                and upper(per.nombre) like concat('%',#{personalBean.nombre},'%') 
+            </if>  
+            <if test="personalBean.apepat != null and personalBean.apepat != '' " >
+                and upper(per.apepat) like concat('%',#{personalBean.apepat},'%')
+            </if>    
+            <if test="personalBean.apemat != null and personalBean.apemat != '' " >
+                and upper(per.apemat) like concat('%',#{personalBean.apemat},'%') 
+            </if>    
+        </where>
+    </select>
+    <select id="buscarPorId" resultMap="usuarioResultado" parameterType="String">
+        <include refid="consultaCampos" /> Where usu.usuario = #{usuario}
+    </select>
+    <select id="autenticarUsuario" parameterType="pe.marista.sigma.bean.UsuarioBean" 
+            resultMap="usuarioResultado">
+        <include refid="consultaCampos" /> Where usu.usuario = #{usuario} and usu.clave = #{clave}
+        and usu.status = 1 and usu.uniNeg = #{personalBean.unidadNegocioBean.uniNeg}
+    </select>
+    <!--Persona--> 
+    <sql id="consultaPersonal">
+        Select
+        idPersonal,
+        nombre,
+        apepat,
+        apemat,
+        nroDoc,
+        uniNeg
+        From MO_Personal per
+    </sql>   
+    <select id="obtenerPersonalFiltro" resultMap="personalResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaPersonal"/>
+        <where>
+             
+            and  per.uniNeg = #{unidadNegocioBean.uniNeg} 
+            
+            <if test="apepat != null and apepat != '' " >
+                and upper(per.apepat) like concat('%',#{apepat},'%')
+            </if>    
+            <if test="apemat != null and apemat != '' " >
+                and upper(per.apemat) like concat('%',#{apemat},'%') 
+            </if>    
+            <if test="nombre != null and nombre != '' " >
+                and upper(per.nombre) like concat('%',#{nombre},'%') 
+            </if>    
+        </where>
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        Insert Into MM_Usuario (usuario,clave,status,creaPor,creaFecha,idPersonal,uniNeg)
+        Values (#{usuario},#{clave},#{status},#{creaPor},getDate(),#{personalBean.idPersonal},#{personalBean.unidadNegocioBean.uniNeg})
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        Update MM_Usuario set
+        idPersonal = #{personalBean.idPersonal},
+        clave=#{clave},
+        status=#{status}
+        Where usuario = #{usuario}   
+    </update>
+    <update id="actualizarContrasena" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        Update MM_Usuario set 
+        clave=#{clave},
+        modiPor=#{modiPor}
+        Where usuario = #{usuario}   
+    </update>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        Update MM_Usuario set
+        status=#{status}
+        Where usuario = #{usuario}   
+    </update>
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        Delete from MM_Usuario where usuario = #{usuario}
+    </delete>
+    <!--Vista-->
+    <insert id="insertarVista" parameterType="pe.marista.sigma.bean.VistaBean">
+        Insert Into MM_Vista (usuario,idPerfil,idModulo)
+        Values (#{usuarioBean.usuario},#{perfilModuloBean.idPerfil},#{perfilModuloBean.idModulo})
+    </insert> 
+    <insert id="eliminarVista" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        Delete from MM_Vista Where usuario=#{usuario}
+    </insert> 
+    <insert id="eliminarVistaModulo" parameterType="pe.marista.sigma.bean.PerfilModuloBean">
+        Delete from MM_Vista Where idPerfil=#{idPerfil} and idModulo=#{idModulo}
+    </insert> 
+    <select id="obtenerVistaPerfilPorUsuario" parameterType="pe.marista.sigma.bean.UsuarioBean" resultType="pe.marista.sigma.bean.PerfilBean">
+        Select distinct 
+        vis.idPerfil,
+        per.nombre,
+        per.status,
+        per.creaPor,
+        per.creaFecha
+        From MM_Vista vis
+        Inner Join MM_Perfil per ON vis.idPerfil=per.idPerfil
+        Where usuario = #{usuario}
+    </select>
+    <select id="obtenerVistaPorUsuario" parameterType="pe.marista.sigma.bean.UsuarioBean" resultMap="vistaResultado">
+        <!--
+        select distinct
+        vis.usuario,
+        vis.idperfil,
+        per.nombre,
+        pm.idModulo,
+        modu.idmodulopadre,
+        modu.idtiponodo,
+        modu.nodo,
+        modu.url
+        from MM_Vista vis
+        Inner Join MM_Perfil per ON per.idPerfil=vis.idPerfil
+        Inner Join MM_PerfilModulo pm ON pm.idperfil=vis.idperfil
+        Inner Join MM_Modulo modu ON modu.idmodulo=pm.idmodulo
+        Where usuario = #{usuario}
+        -->
+        select distinct
+        vis.usuario,
+        vis.idperfil,
+        per.nombre,
+        pm.idModulo,
+        modu.idmodulopadre,
+        modu.idtiponodo,
+        modu.nodo,
+        modu.url,modu.posicion
+        from MM_Vista vis
+        Inner Join MM_Perfil per ON per.idPerfil=vis.idPerfil
+        Inner Join MM_PerfilModulo pm ON pm.idperfil=vis.idperfil
+        Inner Join MM_Modulo modu ON modu.idmodulo=pm.idmodulo
+        Where usuario = #{usuario}
+        order by modu.idmodulopadre,modu.posicion
+        
+    </select>
+    <resultMap id="vistaResultado" type="pe.marista.sigma.bean.VistaBean">
+        <association property="usuarioBean" column="usuario" 
+                     javaType="pe.marista.sigma.bean.UsuarioBean" 
+                     resultMap="usuarioResultado"/>
+        <association property="perfilModuloBean" column="idPerfil" 
+                     javaType="pe.marista.sigma.bean.PerfilModuloBean" 
+                     resultMap="perfilModuloResultado"/>
+    </resultMap>
+    <resultMap id="perfilModuloResultado" type="pe.marista.sigma.bean.PerfilModuloBean">
+        <result property="idPerfil" column="idPerfil" />
+        <association property="moduloBean" column="idModulo" 
+                     javaType="pe.marista.sigma.bean.ModuloBean" 
+                     resultMap="moduloResultado"/>
+    </resultMap>
+    <resultMap id="moduloResultado" type="pe.marista.sigma.bean.ModuloBean">
+        <result property="idModulo" column="idModulo" />
+        <result property="idModuloPadre" column="idModuloPadre" />
+        <result property="idTipoNodo" column="idTipoNodo" />
+        <result property="nodo" column="nodo" />
+        <result property="url" column="url" />
+    </resultMap>
+    <!--Modulo-->
+    <select id="obtenerMenuPrincipal" resultType="pe.marista.sigma.bean.ModuloBean" parameterType="map">
+        WITH CTE 
+        AS (SELECT idmodulo , descrip  , idmodulopadre 
+        FROM MM_Modulo	
+        WHERE idmodulopadre = (select idmodulo from MM_Modulo where idmodulopadre is null)
+        UNION ALL 
+        SELECT mo.idmodulo , mo.descrip  , mo.idmodulopadre 
+        FROM MM_Modulo mo
+        INNER JOIN CTE m ON mo.idmodulopadre = m.idmodulo)
+        select * from MM_Modulo where descrip in (SELECT distinct n.descrip  FROM CTE 
+        inner join MM_Modulo u on  cte.idmodulo  in  (SELECT idmodulopadre
+        FROM MM_Modulo where idmodulo in (select v.idmodulo from MM_Vista v 
+        inner join MM_Usuario usu on usu.usuario=v.usuario 
+        where v.usuario=#{usuario} and usu.unineg=#{uniNeg})) 
+        inner join MM_Modulo n on  n.idmodulo=cte.idmodulopadre
+        where n.idmodulopadre = (select idmodulo from MM_Modulo where idmodulopadre is null))
+         
+    </select>
+    <select id="obtenerModulos" resultType="pe.marista.sigma.bean.ModuloBean"  >
+        select * from MM_Modulo where idmodulopadre in (  select idmodulo from MM_Modulo where idmodulopadre is null )
+        order by modiFecha desc
+    </select>
+    
+    <select id="obtenerUsuarioPorPerfil" parameterType="pe.marista.sigma.bean.VistaBean" resultMap="vistaResultado">
+        select distinct
+        vis.usuario,
+        usu.idpersonal,
+        pers.apepat,
+        pers.apemat,
+        pers.nombre,
+        vis.idperfil,
+        per.nombre
+        from MM_Vista vis
+        Inner Join MM_Perfil per ON per.idPerfil=vis.idPerfil
+        Inner Join MM_Usuario usu ON vis.usuario = usu.usuario
+        Inner Join MO_Personal pers ON pers.idpersonal =  usu.idpersonal and usu.unineg=pers.unineg
+        where per.nombre like concat('%',#{perfilModuloBean.perfilBean.nombre},'%')  and pers.unineg = #{usuarioBean.personalBean.unidadNegocioBean.uniNeg}
+    </select>
+    <insert id="insertarUsuarioTipoAcceso" parameterType="map">
+        Insert Into MM_UsuarioTipoAcceso (uniNeg,usuario,idtipoacceso,creafecha,creaPor)
+        Values (#{uniNeg},#{usuario},#{idTipoAcceso},getDate(),#{creaPor})
+    </insert>
+    <delete id="eliminarUsuarioTipoAcceso" parameterType="map">
+        Delete from MM_UsuarioTipoAcceso where usuario = #{usuario} and unineg=#{uniNeg}
+    </delete>
+    <select id="obtenerTipoNivelAccesoPorUsuario" resultType="Integer"  parameterType="map">
+        select distinct idtipoacceso from MM_UsuarioTipoAcceso where usuario = #{usuario} and unineg=#{uniNeg}
+    </select>
+</mapper>

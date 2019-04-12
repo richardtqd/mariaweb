@@ -1,0 +1,192 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cajaMB.obtenerTodos()}">
+            <h:form id="frmDatosCaja">
+                <h:outputText value="#{msgs.tituloMantCaja}" class="tituloPantalla"/>
+                <br/>
+                <p:panel>
+                    <f:facet name="header">
+                        <h:outputText value="#{msgs.tituloBusFiltro}"/>
+                    </f:facet>
+                    <h:panelGrid columns="10">      
+                        <h:outputLabel value="#{msgs.etiquetaCodigo}"/>
+                        <p:inputText value="#{cajaMB.cajaBean.nombre}"/>
+                        <h:outputLabel value="#{msgs.etiquetaHostIP}"/>
+                        <p:inputText value="#{cajaMB.cajaBean.hosTip}"/>
+                        <h:outputLabel value="#{msgs.etiquetaHostName}"/>
+                        <h:inputText value="#{cajaMB.cajaBean.hostName}"/>
+                        <h:outputLabel value="#{msgs.etiquetaPeriodo}"/>
+                        <h:outputLabel value="#{msgs.etiquetaStatus}"/>
+                        <p:selectOneMenu value="#{cajeroMB.cajeroBean.status}">
+                            <f:selectItem itemValue="1" itemLabel="Activo"/>
+                            <f:selectItem itemValue="2" itemLabel="Inactivo"/>
+                        </p:selectOneMenu>
+                        <p:commandButton value="#{msgs.botonBuscar}" action="#{cajaMB.obtenerPorFiltro()}" update=":frmDatosCaja:pnlTablaCaja"/>
+                    </h:panelGrid>
+                    <h:panelGrid columns="1" class="centrado">         
+                        <p:commandButton value="#{msgs.botonNuevo}" action="#{cajaMB.limpiarCajabean()}" 
+                                         update=":frmMantCaja:pnlDatosCaja" oncomplete="PF('popNewCaja').show();"/>
+                    </h:panelGrid>
+                </p:panel>
+                <br/>
+                <h:panelGrid styleClass="centrado" id="pnlTablaCaja" >
+                    <p:dataTable value="#{cajaMB.listaCajaBean}" paginator="true" 
+                                 var="caja" id="tblCaja"
+                                 rows="#{cajaMB.numRegistrosTablas}" 
+                                 rendered="#{not empty cajaMB.listaCajaBean}" 
+                                 style="width: #{cajaMB.anchoTablasBig}; font-size: 12px">
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaCajas}" />  
+                        </f:facet>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCodigo}" />
+                            </f:facet>
+                            <h:outputText value="#{caja.codigo}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaHostIP}" />
+                            </f:facet>
+                            <center>
+                                <h:outputText value="#{caja.hosTip}"/>
+                            </center>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaHostName}" />
+                            </f:facet>
+                            <center>
+                                <h:outputText value="#{caja.hostName}"/>
+                            </center>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCreadoPor}" />
+                            </f:facet>
+                            <center>
+                                <h:outputText value="#{caja.creadoPor}"/>
+                            </center>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCambiarEstado}" />
+                            </f:facet>
+                            <center>
+                                <p:inputSwitch id="swCambio" value="#{caja.status}">
+                                    <p:ajax listener="#{usuarioMB.ponerUsuario(usuario)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </center>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCreaFecha}" />
+                            </f:facet>
+                            <center>
+                                <h:outputText value="#{caja.fechacrea}">
+                                    <f:convertDateTime pattern="dd/mm/yyyy"/>
+                                </h:outputText>
+                            </center>
+                        </p:column>
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEditar" actionListener="#{cajaMB.obtenerPorId(caja)}" 
+                                           update=":frmMantCaja:pnlDatosCaja"
+                                           oncomplete="PF('popNewCaja').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                            <p:tooltip id="toolTipEdit" for="cmdEditar" value="#{msgs.mensajeEditCatCon}" />
+                            &nbsp;&nbsp;&nbsp;
+                            <p:commandLink id="cmdEliminar" action="#{cajaMB.obtenerPorId(caja)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelCatCon}" />
+                        </p:column>
+                    </p:dataTable>
+                    <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmMantCaja">
+                <p:dialog header="#{msgs.tituloMantCaja}" widgetVar="popNewCaja" width="850" resizable="false" modal="true">
+                    <p:fieldset legend="#{msgs.etiquetaDatosCaja}" style="margin-bottom:20px ; margin-top: 20px ; padding-left: 50px">
+                        <h:panelGrid columns="2" id="pnlDatosCaja" cellpadding="5">
+                            <h:outputLabel value="#{msgs.etiquetaCodigo}"/>
+                            <p:inputText value="#{cajaMB.cajaBean.nombre}"/>
+                            <h:outputLabel value="#{msgs.etiquetaHostIP}"/>
+                            <p:inputMask  value="#{cajaMB.cajaBean.hosTip}" mask="999.999.999.999"/>
+                            <h:outputLabel value="#{msgs.etiquetaHostName}"/>
+                            <h:inputText value="#{cajaMB.cajaBean.hostName}"/>
+                            <h:outputLabel value="#{msgs.etiquetaStatus}"/>
+                            <p:selectOneRadio value="#{cajeroMB.cajeroBean.status}">
+                                <f:selectItem itemValue="1" itemLabel="Activo"/>
+                                <f:selectItem itemValue="2" itemLabel="Inactivo"/>
+                            </p:selectOneRadio>
+                            <h:inputHidden value="#{cajaMB.cajaBean.idCaja}"/><h:inputHidden/>
+                        </h:panelGrid>
+                    </p:fieldset>
+
+                    <br/>
+                    <br/>
+                    <h:panelGrid class="centrado">
+                        <p:commandButton actionListener="#{cajaMB.guardarCaja()}" update=":frmDatosCaja:pnlTablaCaja,msgsAdd"
+                                         oncomplete="if(args.operacionCorrecta){PF('popNewCaja').hide();PF('popDone').show();}"
+                                         value="#{msgs.botonGrabar}">
+                        </p:commandButton>
+                    </h:panelGrid>
+                    <p:growl id="msgsAdd" showDetail="true" showSummary="true"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCaja}: #{cajaMB.cajaBean.idCaja}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cajaMB.eliminarCaja()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCaja:pnlTablaCaja,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCaja}: #{usuarioMB.usuarioBean.usuario}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{usuarioMB.cambiarEstado()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update="msgsCon"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update="msgsCon"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsCon" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,363 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body>
+            <h:form id="frmPlanilla" >
+                <center>
+                    <h:panelGrid columns="3" class="center">  <p:panel header="#{msgs.etiquetaFilPlanilla}" style="margin: 0 auto;width: 700px;" >
+                            <h:panelGrid id="pnlPlanilla" columns="1" styleClass="centrado" >
+                                <h:panelGrid columns="2" styleClass="centrado" >
+                                    <h:panelGrid columns="2" styleClass="centrado" >
+                                        <p:outputLabel value="#{msgs.etiquetaPeriodo}:" /> 
+                                        <p:spinner id="txtAnio" value="#{planillaMB.planillaFiltroBean.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="8"/>
+                                        <p:outputLabel value="#{msgs.etiquetaMes}: " />
+                                        <p:selectOneMenu id="cboMes" value="#{planillaMB.planillaFiltroBean.mes}" required="false"  >                                
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{planillaMB.listaMesAll}" var="mes" itemLabel="#{mes.descripcion}" itemValue="#{mes.valor}" />
+                                        </p:selectOneMenu>
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="2" styleClass="centrado" > 
+                                        <p:outputLabel value="#{msgs.etiquetaCodigoPersonal}: " />
+                                        <p:inputText value="#{planillaMB.planillaFiltroBean.codigo}" />
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                                <h:panelGrid styleClass="centrado" >
+                                    <p:inputTextarea value="#{planillaMB.planillaFiltroBean.empleado}" cols="60" rows="3" placeholder="#{msgs.etiquetaPersonal}" />
+                                </h:panelGrid>
+                            </h:panelGrid>
+                            <h:panelGrid columns="4" styleClass="centrado" >
+                                <p:commandButton value="#{msgs.botonBuscar}" action="#{planillaMB.filtrarPlanilla()}" 
+                                                 update=":frmTblPlanilla:pnlTblPlanilla,:frmTblPlanillaCts:pnlTblPlanillaCts,:frmPlanilla,msg"/>  
+                                <p:commandButton value="#{msgs.botonLimpiar}" action="#{planillaMB.limpiarPlanilla()}" 
+                                                 update=":frmPlanilla:pnlPlanilla" process="@this"/>
+                                <p:commandButton value="#{msgs.botonSubirPlanilla}" oncomplete="PF('popPlanilla').show();" />
+                                <p:commandButton value="#{msgs.botonSubirCTS}" oncomplete="PF('popCTS').show();" />
+                            </h:panelGrid> 
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel> 
+
+                        <p:panel header="#{msgs.etiquetaCantRegistros}" style="margin: 0 auto;width: 300px;" >
+                            <h:panelGrid columns="2" rendered="#{planillaMB.planillaFiltroBean.mes!=15 and planillaMB.planillaFiltroBean.mes!=16}">
+                                <p:outputLabel value="#{msgs.etiquetaProcesados}:" style="font-weight:bold"/>
+                                <p:outputLabel value="#{planillaMB.listaPlanillaBean.size()}"  />
+                                <p:outputLabel value="#{msgs.etiquetaCantidadTrabaj}:" style="font-weight:bold"/>
+                                <p:outputLabel value="#{planillaMB.listaPlanillaNoProcesadoBean.size()}"  />
+                                <h:panelGrid columns="6">
+                                    <p:outputLabel value="#{msgs.etiquetaCantidadSinProcesar}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.cantidadSinPro}"  /> 
+                                    <p:commandButton value="#{msgs.botonVer}" action="#{planillaMB.noProcesados()}" 
+                                                     update=":frmNoProcesados" oncomplete="PF('popNoProcesados').show();" rendered="#{planillaMB.cantidadSinPro>0}" />  
+                                </h:panelGrid>
+                            </h:panelGrid>
+                            <h:panelGrid columns="2" rendered="#{planillaMB.planillaFiltroBean.mes==15 || planillaMB.planillaFiltroBean.mes==16}">
+                                <p:outputLabel value="#{msgs.etiquetaProcesados}:" style="font-weight:bold"/>
+                                <p:outputLabel value="#{planillaMB.listaPlanillaCtsBean.size()}"  />
+                                <p:outputLabel value="#{msgs.etiquetaCantidadTrabaj}:" style="font-weight:bold"/>
+                                <p:outputLabel value="#{planillaMB.listaPlanillaCtsNoProcesadoBean.size()}"  />
+                                <h:panelGrid columns="6">
+                                    <p:outputLabel value="#{msgs.etiquetaCantidadSinProcesar}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.cantidadSinPro}"  /> 
+                                    <p:commandButton value="#{msgs.botonVer}" action="#{planillaMB.noProcesados()}" 
+                                                     update=":frmNoProcesadosCTS" oncomplete="PF('popNoProcesadosCTS').show();" rendered="#{planillaMB.cantidadSinPro>0}" />  
+                                </h:panelGrid> 
+                            </h:panelGrid>
+                        </p:panel> 
+                        <p:panel header="#{msgs.etiquetaMonPag}" style="margin: 0 auto;width: 150px;" >
+                            <h:panelGrid columns="2">
+                                <p:outputLabel value="#{msgs.etiquetaMonto}:" style="font-weight:bold"/>
+                                <p:outputLabel value="#{planillaMB.cantidadPlanillaDinero}"  >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </p:outputLabel>
+                            </h:panelGrid>
+                        </p:panel>
+                    </h:panelGrid></center>
+            </h:form>
+
+            <h:form id="frmTblPlanilla" >
+                <h:panelGrid id="pnlTblPlanilla" columns="2" styleClass="centrado" style="margin: 0 auto;width: 700px;">
+                    <p:dataTable id="tblPlanilla" value="#{planillaMB.listaPlanillaBean}" widgetVar="tblPlanilla"
+                                 var="planilla" rendered="#{not empty planillaMB.listaPlanillaBean}" 
+                                 scrollable="true" scrollHeight="600" >
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                        </f:facet> 
+                        <p:column headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="1%" >
+                            <h:outputText value="#{planilla.codigo}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPersonal}" filterMatchMode="contains" width="6%">
+                            <h:outputText value="#{planilla.empleado}" />
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaMontoPag}" filterMatchMode="contains" width="4%">
+                            <h:outputText value="#{planilla.totalPersonal}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column> 
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmTblPlanillaCts" >
+                <h:panelGrid id="pnlTblPlanillaCts" columns="2" styleClass="centrado" style="margin: 0 auto;width: 700px;">
+                    <p:dataTable id="tblPlanillaCts" value="#{planillaMB.listaPlanillaCtsBean}" widgetVar="tblPlanilla"
+                                 var="planillacts" rendered="#{not empty planillaMB.listaPlanillaCtsBean}" 
+                                 scrollable="true" scrollHeight="600" >
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                        </f:facet> 
+                        <p:column headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="1%" >
+                            <h:outputText value="#{planillacts.codigo}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaPersonal}" filterMatchMode="contains" width="6%">
+                            <h:outputText value="#{planillacts.empleado}" />
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaMontoPag}" filterMatchMode="contains" width="4%">
+                            <h:outputText value="#{planillacts.col12}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column> 
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+
+            <!-- POP PLANILLA -->
+            <p:dialog id="popCargaPlanilla" header="#{msgs.etiquetaCarPlanilla}"  widgetVar="popPlanilla" modal="true" width="600px" showEffect="explode" >
+                <h:form id="frmCarga"> 
+                    <p:accordionPanel style="margin-top:20px">
+                        <p:tab title="Selecionar Archivo">
+                            <h:panelGrid columns="5" styleClass="centrado-izq" >
+                                <p:outputLabel value="#{msgs.etiquetaPeriodo}:" /> 
+                                <p:spinner id="txtAnio" value="#{planillaMB.planillaBean.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="1">
+                                    <p:ajax event="change" listener="#{planillaMB.cargarAnio()}" />
+                                </p:spinner>
+                                &nbsp;&nbsp;&nbsp;
+                                <p:outputLabel value="#{msgs.etiquetaMes}: " />
+                                <p:selectOneMenu id="cboMes" value="#{planillaMB.planillaBean.mes}" required="true"  >                                
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{planillaMB.listaMesAllPlanilla}" var="mes" itemLabel="#{mes.descripcion}" itemValue="#{mes.valor}" />
+                                    <p:ajax event="change" listener="#{planillaMB.cargarMes()}" />
+                                </p:selectOneMenu>
+                                <h:outputLabel value="#{msgs.etiquetaFecha}:" styleClass="negrita"/>
+                                <p:calendar value="#{planillaMB.planillaBean.fechaSubida}"
+                                            effect="fold" mask="true" size="10" pattern="#{msgs.etiquetaFormatoFecha}" >
+                                    <p:ajax event="dateSelect" listener="#{planillaMB.cargarFecha()}" />
+                                </p:calendar>
+                            </h:panelGrid>
+                            <p:panelGrid columns="1" columnClasses="ui-grid-col-12" layout="grid" styleClass="ui-panelgrid-blank">
+                                <p:fileUpload fileUploadListener="#{planillaMB.filtroAlSubirExcel}" mode="advanced" dragDropSupport="true"
+                                              sizeLimit="100000000" fileLimit="3" allowTypes="/(\.|\/)(xlsx|xls)$/"
+                                              oncomplete="if(args.operacionCorrecta){PF('popCatalogo').show();PF('popPlanilla').hide();}"
+                                              update ="@this,:frmCarga,msgPopPlanilla,:frmCatalogo"/> 
+                                <p:messages id="msgPopPlanilla" autoUpdate="false" showDetail="false" />
+                            </p:panelGrid>
+                        </p:tab>
+                    </p:accordionPanel>  
+                </h:form>
+            </p:dialog> 
+            <!-- POP CTS -->
+            <p:dialog id="popCargaCTS" header="#{msgs.etiquetaCarPlanilla}"  widgetVar="popCTS" modal="true" width="600px" showEffect="explode" >
+                <h:form id="frmCTS"> 
+                    <p:accordionPanel style="margin-top:20px">
+                        <p:tab title="Selecionar Archivo">
+                            <h:panelGrid columns="9" styleClass="centrado-izq" >
+                                <p:outputLabel value="#{msgs.etiquetaPeriodo}:" /> 
+                                <p:spinner id="txtAnio" value="#{planillaMB.planillaCtsBean.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="1">
+                                    <p:ajax event="change" listener="#{planillaMB.cargarAnio()}" />
+                                </p:spinner>
+                                <h:outputLabel value="#{msgs.etiquetaMes}: " class="negrita"  />
+                                <h:outputText value=" " class="requerido" />
+                                <p:selectOneRadio  value="#{planillaMB.planillaCtsBean.parte}" label="#{msgs.etiquetaMes}" >      
+                                    <f:selectItem itemValue="5" itemLabel="#{msgs.etiquetaMayo}" />
+                                    <f:selectItem itemValue="11" itemLabel="#{msgs.etiquetaNoviembre}" />
+                                    <p:ajax event="change" listener="#{planillaMB.cargarAnio()}" />
+                                </p:selectOneRadio>      
+                            </h:panelGrid>
+                            <p:panelGrid columns="1" columnClasses="ui-grid-col-12" layout="grid" styleClass="ui-panelgrid-blank">
+                                <p:fileUpload fileUploadListener="#{planillaMB.cargarCTSXlsx}" mode="advanced" dragDropSupport="true"
+                                              sizeLimit="100000000" fileLimit="3" allowTypes="/(\.|\/)(xlsx|xls)$/"
+                                              oncomplete="if(args.operacionCorrecta){PF('popDone').show();PF('popCTS').hide();}"
+                                              update ="@this,:frmCTS,msgPopCTS"/> 
+                                <p:messages id="msgPopCTS" autoUpdate="false" showDetail="false" />
+                            </p:panelGrid>
+                        </p:tab>
+                    </p:accordionPanel>  
+                </h:form>
+            </p:dialog> 
+
+            <h:form id="frmCatalogo">
+                <p:dialog header="#{msgs.appPlanilla}" widgetVar="popCatalogo" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+                    <center>
+                        <h:panelGrid columns="3" class="center">
+                            <p:panel header="#{msgs.etiquetaCantRegistros}" style="margin: 0 auto;width: 300px;" >
+                                <h:panelGrid columns="2">
+                                    <p:outputLabel value="#{msgs.etiquetaProcesados}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.cantidadProsesado}"  />
+                                    <p:outputLabel value="#{msgs.etiquetaCantidadTrabaj}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.cantidadTotalExcel}"  />
+                                    <p:outputLabel value="#{msgs.etiquetaCantidadSinProcesar}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.cantidadSinPro}"  /> 
+                                </h:panelGrid>
+                            </p:panel>
+                            <p:panel header="#{msgs.etiquetaPeriodo}" style="margin: 0 auto;width: 100px;" >
+                                <h:panelGrid columns="2">
+                                    <p:outputLabel value="#{msgs.etiquetaMes}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.planillaBean.mes}"  />
+                                    <p:outputLabel value="#{msgs.etiquetaAnio}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.planillaBean.anio}"  />
+                                </h:panelGrid>
+                            </p:panel>
+                            <p:panel header="#{msgs.etiquetaMonPag}" style="margin: 0 auto;width: 150px;" >
+                                <h:panelGrid columns="2">
+                                    <p:outputLabel value="#{msgs.etiquetaMonto}:" style="font-weight:bold"/>
+                                    <p:outputLabel value="#{planillaMB.cantidadPlanillaDinero}"  >
+                                        <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                    </p:outputLabel>
+                                </h:panelGrid>
+                            </p:panel>
+                        </h:panelGrid>
+                    </center>
+                    <br></br>  
+                    <h:panelGrid columns="1" styleClass="centrado" id="pnlCata">
+                        <p:dataTable value="#{planillaMB.listaPlanillaBean}" paginator="true"
+                                     var="catalogo" id="tblCatalogo" widgetVar="tblCatalogo"
+                                     rowKey="#{catalogo.idPlanilla}" rows="5" 
+                                     rendered="#{not empty planillaMB.listaPlanillaBean}" 
+                                     style="width:800px; font-size: 10px" >  
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaProcesados}" /> 
+                                <h:commandLink>
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xlsx" target="tblCatalogo" fileName="Procesados"/>
+                                </h:commandLink>
+                            </f:facet> 
+                            <p:column filterBy="#{catalogo.personalBean.nroDoc}" styleClass="nombre5Filtro"  headerText="#{msgs.etiquetaNDoc}" filterMatchMode="contains" width="8">
+                                <h:outputText value="#{catalogo.personalBean.nroDoc}"  style=" font-size: 12px"/> 
+                            </p:column>
+                            <p:column filterBy="#{catalogo.codigo}" styleClass="nombre5Filtro"  headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="8" sortBy="#{catalogo.codigo}">
+                                <h:outputText value="#{catalogo.codigo}"  style=" font-size: 12px"/>
+                            </p:column> 
+                            <p:column filterBy="#{catalogo.empleado}" styleClass="nombre2Filtro" headerText="#{msgs.etiquetaPersonal}" filterMatchMode="contains" width="50">
+                                <h:outputText value="#{catalogo.empleado}" style=" font-size: 12px" />
+                            </p:column>  
+                            <p:column   styleClass="nombre5Filtro" headerText="#{msgs.etiquetaMonPag}" filterMatchMode="contains" width="10">
+                                <h:outputText value="#{catalogo.totalPersonal}" style=" font-size: 13px" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                        </p:dataTable>
+                    </h:panelGrid> 
+                    <br></br>
+                    <br></br>
+                    <h:panelGrid columns="1" styleClass="centrado" id="pnlNoPro">
+                        <p:dataTable value="#{planillaMB.listaPlanillaNoProcesadoBean}" paginator="true"
+                                     var="NoProce" id="tblNoProce" widgetVar="tblNoProce"
+                                     rowKey="#{NoProce.idPlanilla}" rows="5" 
+                                     rendered="#{not empty planillaMB.listaPlanillaNoProcesadoBean}" 
+                                     style="width:700px; font-size: 10px" > 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaCantidadSinProcesar}" />  
+                                <h:commandLink>
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xlsx" target="tblNoProce" fileName="NoProcesados" />
+                                </h:commandLink>
+                            </f:facet> 
+                            <p:column filterBy="#{NoProce.codigo}" styleClass="nombre5Filtro"  headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="2" sortBy="#{NoProce.codigo}">
+                                <h:outputText value="#{NoProce.codigo}"  style=" font-size: 12px"/>
+                            </p:column> 
+                            <p:column filterBy="#{NoProce.empleado}" styleClass="nombre2Filtro" headerText="#{msgs.etiquetaPersonal}" filterMatchMode="contains" width="50">
+                                <h:outputText value="#{NoProce.empleado}" style=" font-size: 12px" />
+                            </p:column> 
+                            <p:column  styleClass="nombre5Filtro" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="40">
+                                <h:outputText value="#{NoProce.estado}" style=" font-size: 13px" />
+                            </p:column>  
+                        </p:dataTable>
+                    </h:panelGrid>
+                </p:dialog> 
+
+            </h:form>  
+            <h:form id="frmNoProcesados"> 
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popNoProcesados" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+
+                    <h:panelGrid columns="1" styleClass="centrado" id="pnlNoProcesados2">
+                        <p:dataTable value="#{planillaMB.listaPlanillaNoProcesadoBean}" paginator="true"
+                                     var="NoProce" id="tblNoProce" widgetVar="tblNoProce"
+                                     rowKey="#{NoProce.idPlanilla}" rows="5" 
+                                     rendered="#{not empty planillaMB.listaPlanillaNoProcesadoBean}" 
+                                     style="width:700px; font-size: 10px" > 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaCantidadSinProcesar}" />  
+                                <h:commandLink>
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xlsx" target="tblNoProce" fileName="NoProcesados"/>
+                                </h:commandLink>
+                            </f:facet>
+
+                            <p:column filterBy="#{NoProce.codigo}" styleClass="nombre5Filtro"  headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="2" sortBy="#{NoProce.codigo}">
+                                <h:outputText value="#{NoProce.codigo}"  style=" font-size: 12px"/>
+                            </p:column> 
+                            <p:column filterBy="#{NoProce.empleado}" styleClass="nombre2Filtro" headerText="#{msgs.etiquetaPersonal}" filterMatchMode="contains" width="50">
+                                <h:outputText value="#{NoProce.empleado}" style=" font-size: 12px" />
+                            </p:column> 
+                            <p:column  styleClass="nombre5Filtro" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="40">
+                                <h:outputText value="#{NoProce.estado}" style="    font-size: 13px" />
+                            </p:column>  
+                        </p:dataTable>
+                    </h:panelGrid> 
+                    <br/>
+                    <p:separator/>
+                    <h:panelGrid columns="4" styleClass="centrado">
+                        <p:commandButton id="btnCerrar" oncomplete="PF('popNoProcesados').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>  
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmNoProcesadosCTS"> 
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popNoProcesadosCTS" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+
+                    <h:panelGrid columns="1" styleClass="centrado" id="pnlNoProcesados2CTS">
+                        <p:dataTable value="#{planillaMB.listaPlanillaCtsNoProcesadoBean2}" paginator="true"
+                                     var="NoProce" id="tblNoProce" widgetVar="tblNoProce"
+                                     rowKey="#{NoProce.idPlanillaCts}" rows="5" 
+                                     rendered="#{not empty planillaMB.listaPlanillaCtsNoProcesadoBean2}" 
+                                     style="width:700px; font-size: 10px" > 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaCantidadSinProcesar}" />  
+                                <h:commandLink>
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xlsx" target="tblNoProce" fileName="NoProcesados"/>
+                                </h:commandLink>
+                            </f:facet>
+
+                            <p:column filterBy="#{NoProce.codigo}" styleClass="nombre5Filtro"  headerText="#{msgs.EtiquetaCodigo}" filterMatchMode="contains" width="2" sortBy="#{NoProce.codigo}">
+                                <h:outputText value="#{NoProce.codigo}"  style=" font-size: 12px"/>
+                            </p:column> 
+                            <p:column filterBy="#{NoProce.empleado}" styleClass="nombre2Filtro" headerText="#{msgs.etiquetaPersonal}" filterMatchMode="contains" width="50">
+                                <h:outputText value="#{NoProce.empleado}" style=" font-size: 12px" />
+                            </p:column> 
+                            <p:column  styleClass="nombre5Filtro" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="40">
+                                <h:outputText value="#{NoProce.estado}" style="    font-size: 13px" />
+                            </p:column>  
+                        </p:dataTable>
+                    </h:panelGrid> 
+                    <br/>
+                    <p:separator/>
+                    <h:panelGrid columns="4" styleClass="centrado">
+                        <p:commandButton id="btnCerrar" oncomplete="PF('popNoProcesadosCTS').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>  
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form> 
+        </h:body>
+    </ui:define>
+</ui:composition>
+

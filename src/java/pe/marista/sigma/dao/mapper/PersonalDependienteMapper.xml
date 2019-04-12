@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PersonalDependienteDAO">
+    
+    <sql id="consultaCampos">
+        select
+        pd.idpersonaldependiente,
+        pd.uniNeg as uniNegP,
+        pd.idPersonal,
+        pd.nombre,
+        pd.apepat,
+        pd.apemat,
+        pd.fecnac,
+        pd.sexo,
+        pd.idtipoestadocivil,
+        pd.idtipodocper,
+        pd.nrodoc,
+        pd.idtipoparentesco,
+        co.codigo as nombreParentesco,
+        pd.idnacionalidad,
+        pd.idcarrera,
+        pd.idgradoacademico, 
+        pd.centrolaboral, 
+        pd.cargo,
+        pd.area,
+        pd.especialidad,
+        pd.telefono,
+        pd.creaPor,
+        pd.creaFecha,
+        pd.flgvive
+        ,CAR.idCarrera as idCAR
+        ,CAR.carrera as nombreCarrera
+        , car.idCarreraSubArea
+        
+        ,csa.idCarreraSubArea as idCSA
+        ,csa.subArea as nombreSA
+        ,csa.idCarreraArea
+        
+        ,ca.idCarreraArea as idCA
+        ,ca.idGradoAcademico
+        <!--,ca.idNivelAcademico-->
+        , ca.area as nombreArea
+       
+        ,GA.idGradoAcademico as  idGA
+        ,GA.nombre as nombreGA
+        ,ga.idNivelAcademico
+        
+        ,na.idNivelAcademico as idNA
+        ,na.nombre as nomNA
+        ,na.idTipoFormacion
+
+        ,tf.idTipoFormacion as idTF
+        ,tf.nombre as nomTF
+        ,pe.idPersonal  as idPer
+        ,pd.nombrecarrera as nombreCarrera
+        ,pd.flgasignacionfamiliar as flgAsignacionFamiliar
+        ,pd.flgbecas as flgBecas
+        
+        from MO_PersonalDependiente  pd
+        INNER JOIN MO_Personal PE              on pd.idPersonal = PE.idPersonal and pe.unineg=pd.unineg
+        LEFT JOIN MO_Carrera            CAR    on pd.idCarrera=CAR.idCarrera
+        LEFT Join MO_CarreraSubArea     csa    ON csa.idCarreraSubArea=CAR.idCarreraSubArea
+        LEFT Join MO_CarreraArea        ca     ON ca.idCarreraArea=csa.idCarreraArea
+        
+        LEFT Join MX_GradoAcademico     GA     on pd.idGradoAcademico=GA.idGradoAcademico
+        LEFT join MX_NivelAcademico     NA     on ga.idNivelAcademico=na.idNivelAcademico
+        LEFT join MX_TipoFormacion      TF     on tf.idTipoFormacion =na.idTipoFormacion
+         
+        Inner Join MO_Codigo co on co.idcodigo = pd.idtipoparentesco
+    </sql>
+    <resultMap id="personalDependienteResultado" type="pe.marista.sigma.bean.PersonalDependienteBean">
+        <id property="idPersonalDependiente" column="idPersonalDependiente" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+        <result property="fecNac" column="fecNac" />
+        <result property="sexo" column="sexo" />
+        <result property="nroDoc" column="nroDoc" />
+        <result property="centroLaboral" column="centroLaboral" />
+        <result property="cargo" column="cargo" />
+        <result property="area" column="area" />
+        <result property="especialidad" column="especialidad" />
+        <result property="telefono" column="telefono" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="flgVive" column="flgVive" />
+        <result property="nombreCarrera" column="nombreCarrera" /> 
+        <result property="flgAsignacionFamiliar" column="flgAsignacionFamiliar" /> 
+        <result property="flgBecas" column="flgBecas" /> 
+        <association property="unidadNegocioBean" column="uniNegP"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <!--2 idTipoEstadoCivil-->
+        <association property="tipoEstadoCivilBean" column="idTipoEstadoCivil"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoEstadoCivilResultado"/>
+        
+        <!--3 idTipoDocPer-->                
+        <association property="tipoDocPerBean" column="idTipoDocPer"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocPerResultado"/>
+        
+        <!--4 idTipoParentesco-->
+        <association property="tipoParentescoBean" column="idTipoParentesco"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoParentescoResultado"/>
+                
+        <!--5 idNacionalidad-->     
+        <association property="paisNacionalidadBean" column="idNacionalidad"
+                     javaType="pe.marista.sigma.bean.PaisBean"
+                     resultMap="nacionalidadResultado"/>
+        
+        <!--6 idCarrera-->
+        <association property="carreraBean" column="idCarrera" 
+                     javaType="pe.marista.sigma.bean.CarreraBean" 
+                     resultMap="carreraResultado"/>
+               
+        <!--7 idGradoAcademico-->
+        <association property="gradoAcademicoBean" column="idGradoAcademico" 
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean" 
+                     resultMap="gradoAcademicoResultado"/>
+    </resultMap>
+   
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegP"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>
+    <!--1 idPersonal-->         
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPer"/>
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+    </resultMap>
+    
+    <!--2 idTipoEstadoCivil-->
+    <resultMap id="tipoEstadoCivilResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoEstadoCivil"/>
+        <result property="codigo" column="tipoEstadoCivil"/>  
+    </resultMap>
+    
+    <!--3 idTipoDocPer--> 
+    <resultMap id="tipoDocPerResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDocPer"/>
+        <result property="codigo" column="tipoDocPer"/>  
+    </resultMap>
+    
+    <!--4 idTipoParentesco-->
+    <resultMap id="tipoParentescoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoParentesco"/>
+        <result property="codigo" column="nombreParentesco"/>  
+    </resultMap>
+    
+    <!--5 idNacionalidad-->     
+    <resultMap id="nacionalidadResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idNacionalidad"/>
+        <result property="nacionalidad" column="nacionalidad"/>
+    </resultMap>
+    <!--6 idCarrera-->
+    <resultMap id="carreraResultado" type="pe.marista.sigma.bean.CarreraBean">
+        <id property="idCarrera" column="idCarrera"/>
+        <result property="carrera" column="nombreCarrera"/>
+        <association property="carreraSubAreaBean" column="idCSA"
+                     javaType="pe.marista.sigma.bean.CarreraSubAreaBean"
+                     resultMap="carreraSubAreaResultado"/>
+    </resultMap>
+    <!-- Carrera SubArea -->
+    <resultMap id="carreraSubAreaResultado" type="pe.marista.sigma.bean.CarreraSubAreaBean">
+        <id property="idCarreraSubArea" column="idCSA"/>
+        <result property="subArea" column="nombreSA"/>  
+        <association property="carreraAreaBean" column="idCA"
+                     javaType="pe.marista.sigma.bean.CarreraAreaBean"
+                     resultMap="carreraAreaResultado"/>
+    </resultMap>
+    <!-- Carrera Area -->
+    <resultMap id="carreraAreaResultado" type="pe.marista.sigma.bean.CarreraAreaBean">
+        <id property="idCarreraArea" column="idCA"/>
+        <result property="area" column="nombreArea"/>  
+        <result property="idNivelAcademico" column="idNivelAcademico"/>  
+        <association property="gradoAcademicoBean" column="idGA"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>
+    </resultMap>
+    
+    <!--7 idGradoAcademico-->
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGradoAcademico"/>
+        <result property="nombre" column="nombreGA"/>
+        <association property="nivelAcademicoBean" column="idNA"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultado"/>
+    </resultMap>
+    <resultMap id="nivelResultado" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNA"/>
+        <result property="nombre" column="nomNA"/>
+        <association property="tipoFormacionBean" column="idTF"
+                     javaType="pe.marista.sigma.bean.TipoFormacionBean"
+                     resultMap="tipoResultado"/>
+    </resultMap>
+    <resultMap id="tipoResultado" type="pe.marista.sigma.bean.TipoFormacionBean">
+        <id property="idTipoFormacion" column="idTF"/>
+        <result property="nombre" column="nomTF"/>
+    </resultMap> 
+    
+    <select id="obtenerPersonalDependientePorPersonal" resultMap="personalDependienteResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />
+        where pd.idPersonal=#{idPersonal} and pd.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonalDependientePorId" resultMap="personalDependienteResultado" parameterType="pe.marista.sigma.bean.PersonalDependienteBean">
+        <include refid="consultaCampos" />
+        where pd.idPersonalDependiente=#{idPersonalDependiente} and pd.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+     
+    <insert id="insertarPersonalDependiente" parameterType="pe.marista.sigma.bean.PersonalDependienteBean">
+        INSERT INTO  MO_PersonalDependiente
+        (unineg,idPersonal,nombre,apepat,apemat,fecnac,sexo,
+        idtipoestadocivil,idtipodocper,nrodoc,
+        idtipoparentesco,idnacionalidad,
+        idcarrera,idgradoacademico,centrolaboral,
+        cargo,area,especialidad,telefono,creaFecha,creaPor,flgvive,nombrecarrera,flgAsignacionFamiliar,flgbecas)
+        
+        Values (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{nombre},#{apepat},#{apemat},#{fecNac},#{sexo},
+        #{tipoEstadoCivilBean.idCodigo}, #{tipoDocPerBean.idCodigo},#{nroDoc},
+        #{tipoParentescoBean.idCodigo},#{paisNacionalidadBean.idPais},
+        #{carreraBean.idCarrera},#{gradoAcademicoBean.idGradoAcademico},#{centroLaboral},
+        #{cargo},#{area},#{especialidad},#{telefono},getDate(),#{creaPor},#{flgVive},#{nombreCarrera},
+        #{flgAsignacionFamiliar},#{flgBecas})
+    </insert>                                                                                                       
+     
+    <update id="modificarPersonalDependiente" parameterType="pe.marista.sigma.bean.PersonalDependienteBean">
+        Update MO_PersonalDependiente set
+        nombre=#{nombre},
+        apepat=#{apepat},
+        apemat=#{apemat},
+        fecnac=#{fecNac}, 
+        sexo=#{sexo},
+        idtipoestadocivil=#{tipoEstadoCivilBean.idCodigo},
+        idtipodocper=#{tipoDocPerBean.idCodigo},
+        nrodoc=#{nroDoc},
+        idtipoparentesco=#{tipoParentescoBean.idCodigo},
+        idnacionalidad=#{paisNacionalidadBean.idPais},
+        idcarrera= #{carreraBean.idCarrera},
+        idgradoacademico=#{gradoAcademicoBean.idGradoAcademico},
+        centrolaboral=#{centroLaboral},
+        cargo=#{cargo},
+        area=#{area},
+        especialidad=#{especialidad},
+        telefono=#{telefono},
+        creaFecha=#{creaFecha},
+        creaPor=#{creaPor},
+        flgvive=#{flgVive},
+        modiPor=#{modiPor},
+        nombrecarrera=#{nombreCarrera},
+        flgAsignacionFamiliar =#{flgAsignacionFamiliar},
+        flgbecas =#{flgBecas}
+        Where idPersonalDependiente=#{idPersonalDependiente} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+     
+    <delete id="eliminarPersonalDependiente" parameterType="pe.marista.sigma.bean.PersonalDependienteBean">
+        Delete From MO_PersonalDependiente Where idPersonalDependiente = #{idPersonalDependiente} and unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+     
+    <!-- ¿ vive ?-->
+    <update id="cambiarEstadoDependiente" parameterType="pe.marista.sigma.bean.PersonalDependienteBean">
+        UPDATE MO_PersonalDependiente
+        SET flgVive = #{flgVive}
+        Where idPersonalDependiente = #{idPersonalDependiente} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+     
+    <select  id="obtenerDependientePorPersonalRep" parameterType="map" resultType="pe.marista.sigma.bean.reporte.PersonalDependienteRepBean">
+        SELECT  
+        CONCAT(UPPER(ISNULL(PD.apepat,'')),' ',UPPER(ISNULL(pd.apemat,'')),', ',UPPER(ISNULL(pd.nombre,''))) as nombreDependiente, 
+        <!--UPPER(ISNULL(tipPar.codigo,'')) as parentesco,  -->
+        ISNULL(tipPar.codigo,'') as parentesco,
+        concat((case when cod.codigo='Carnet de Extranjeria' then 'C.E.' when cod.codigo='Pasaporte' then 'PAS.'   else ((case when pd.nrodoc is not null and pd.nrodoc!='' then isnull(cod.codigo,'')+': ' end)) end) ,isnull(pD.nrodoc,'')) as nroDoc,
+        pd.telefono, 
+        (case when pd.fecnac is null then '  /  / ' else (CONVERT(VARCHAR(10), pd.fecnac, 103))  end) as fecNac, 
+        (case when pd.fecnac is null then '' else floor((cast(convert(varchar(8),getdate(),112) as int)-cast(convert(varchar(8),pd.fecnac,112) as int) ) / 10000)  end) as edad
+        FROM MO_PersonalDependiente PD
+        left join MO_Codigo tipPar on tipPar.idcodigo=pd.idtipoparentesco 
+        left join MO_Codigo cod on cod.idcodigo=pd.idtipodocper  
+        where pd.idpersonal=#{idPersonal} and pd.unineg=#{uniNeg}
+    </select>
+    <select  id="obtenerDependienteFechaNacimiento" parameterType="map" resultType="String">
+        DECLARE @FechaNacimiento as date = #{fechaNacimiento}
+        select (cast(datediff(dd,@FechaNacimiento,DATEADD(day,1, GETDATE())) / 365.25 as int))
+    </select> 
+</mapper>

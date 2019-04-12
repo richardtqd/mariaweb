@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+
+        <h:body onload="#{estudianteMB.cargarListaCodigoColegio()}">
+            <h:form id="frmDatosCheque">
+                <h:panelGrid styleClass="centrado" id="pnlDatosImpresora" style="text-align: center !important ; font-weight: bold; font-size: 0.9em ; width: 400px" >
+                    <p:panel header="#{msgs.tituloMantCodCole}" style="text-align: center !important">
+                        <h:panelGrid columns="6" id="DatosImpresora" class="siseFontGrid4" cellpadding="3">
+                            <h:outputLabel  value="#{msgs.EtiquetaCodigo}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputText   value="#{estudianteMB.codigoColegioBean.codigo}" required="true" label="#{msgs.etiquetaCodigo}"/>  
+                            <h:outputLabel  value="#{msgs.etiquetaActual}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputText   value="#{estudianteMB.codigoColegioBean.codigoActual}" required="true" label="#{msgs.etiquetaActual}"/>  
+                            <h:outputLabel  value="#{msgs.etiquetaAnio}" class="negrita"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:inputText   value="#{estudianteMB.codigoColegioBean.anio}" required="true" label="#{msgs.etiquetaAnio}"/>  
+
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2"  style="font-size: 0.9em" >
+                            <p:commandButton actionListener="#{estudianteMB.guardarCodigoColegio()}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             update=":frmDatosCheque:pnlDatosImpresora,msgsAddProc,:frmTablaCheque:pnlTblImpresora"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{estudianteMB.limpiarCodigoColegio()}" 
+                                             update=":frmDatosCheque:pnlDatosImpresora,msgsAddProc,:frmTablaCheque:tblCheque"                                                                 
+                                             value="#{msgs.botonNuevo}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages id="msgsAddProc" autoUpdate="false"/>
+                    </p:panel>
+
+                </h:panelGrid>
+            </h:form>  
+            <h:form id="frmTablaCheque">
+                <h:panelGrid styleClass="centrado" id="pnlTblImpresora" style="text-align: center !important ; font-weight: bold; font-size: 0.9em" >
+                    <p:dataTable id="tblCheque" value="#{estudianteMB.listaCodigoColeBean}" widgetVar="tblCheque"
+                                 paginator="true" selectionMode="single" 
+                                 selection="#{estudianteMB.codigoColegioBean}"
+                                 var="cheque" rowKey="#{cheque}"
+                                 rows="#{estudianteMB.numRegistrosTablas}" 
+                                 rendered="#{not empty estudianteMB.listaCodigoColeBean}" 
+                                 style="width: 500px; font-size: 0.9em">
+                        <p:ajax event="rowSelect" listener="#{estudianteMB.rowSelectCodigoCole}" update=":frmDatosCheque:pnlDatosImpresora"/>
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaCodCole}" />  
+                        </f:facet>
+                        <p:column filterBy="#{cheque.codigo}" headerText="#{msgs.etiquetaInicio}" filterMatchMode="exact" width="10%" class="nombre1Filtro">
+                            <h:outputText value="#{cheque.codigo}" />
+                        </p:column>  
+                        <p:column filterBy="#{cheque.codigoActual}" headerText="#{msgs.etiquetaActual}" filterMatchMode="contains" width="10%" >
+                            <h:outputText value="#{cheque.codigoActual}" />
+                        </p:column>
+                        <p:column style="text-align:center;width:8px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEliminar" action="#{estudianteMB.ObtenerCodigoColegio(cheque)}" update=":frmCodigoColegioEliminar:pnlBorrar"
+                                           oncomplete="PF('popEliminarCodigo').show();"  >
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.toolTipQuitarItem}" />
+                        </p:column>  
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form> 
+            <h:form id="frmCodigoColegioEliminar">
+                            <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarCodigo" resizable="false" modal="true">
+                                <h:panelGrid columns="2" id="pnlDesAutoRegCom" styleClass="centrado">  
+                                    <h:panelGrid columns="2" id="pnlDatosDesAutoRegCom" class="centrado" > 
+                                        <h:outputLabel value="#{msgs.panelEliminarCodigoColegio}"/>
+                                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                                    </h:panelGrid> 
+                                </h:panelGrid> 
+                                <h:panelGrid columns="2" class="centrado" id="pnlBorrar">
+                                    <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{estudianteMB.quitarItem(estudianteMB.codigoColegioBean)}" 
+                                                     styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                                     update=":frmTablaCheque:pnlTblImpresora" 
+                                                     oncomplete="if(args.operacionCorrecta){PF('popEliminarCodigo').hide();PF('popDone').show();}else if(args.operacionNoModi){PF('popEliminarCodigo').hide();PF('popError').show();}"/>
+                                    <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                                     icon="ui-icon-close" oncomplete="PF('popEliminarCodigo').hide();"/>
+                                </h:panelGrid>
+                                <p:growl id="msgsAutoCajaCh" showDetail="true" showSummary="false" autoUpdate="false"/>
+                            </p:dialog>
+                        </h:form> 
+          </h:body>
+    </ui:define>
+</ui:composition>
+

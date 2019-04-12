@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportePrueba" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="bcb709cc-cebe-4eca-80f8-74d9939d775b">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[declare @valor Integer = 1
+declare @tableCuenta as table(nombreUniNeg varchar(100),
+rucUniNeg varchar(100),
+fecha date,
+cuenta varchar(100),
+nomCuenta varchar(100),
+nombreCr varchar(100),
+precuentad varchar(100),
+monto varchar(100),
+saldo varchar(100),
+dato varchar(20),
+cr varchar(20),
+porcentajeSald varchar(100),
+porcentajeExec varchar(100),
+montoPresVista varchar(100),
+montoExecVista varchar(100),
+montoSaldoVista varchar(100))
+insert into @tableCuenta(nombreUniNeg,rucUniNeg,fecha,cuenta,nomCuenta,nombreCr,precuentad,monto,saldo,dato,
+cr,porcentajeSald,porcentajeExec,montoPresVista,montoExecVista,montoSaldoVista)
+select upper(ENTU.nombre) as nombreUniNeg,
+convert(varchar,uni.ruc) as rucUniNeg,
+GETDATE() as fecha,
+ISNULL(pld.cuenta,0) as cuenta,
+pld.nombre as nomCuenta,
+cr.nombre as nombreCr,
+CONVERT(varchar, CAST(isnull((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta),0) AS money), 1) as precuentad,
+CONVERT(varchar, CAST(isnull(sum(a.monto),0) AS money), 1) as monto,
+CONVERT(varchar, CAST(isnull(((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)-sum(a.monto)),0) AS money), 1) as saldo,
+(case
+	when (select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta) is null then 'NO PPTO'
+	when (select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta) is not null then 'PPTO'
+end) as dato,
+(case
+	when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1) + ' - ' + convert(varchar,a.cr)
+	when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1) + ' - ' + convert(varchar,a.cr)
+	when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2) + ' - ' + convert(varchar,a.cr)
+end) as cr,
+convert(varchar,(((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)-sum(a.monto))/(select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)) * 100) as porcentajeSald,
+convert(varchar,(sum(a.monto)/(select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)) * 100) as porcentajeExec,
+ISNULL(CONVERT(varchar(100),(select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta)),0) as montoPresVista,
+CONVERT(varchar(100),isnull(sum(a.monto),0)) as montoExecVista,
+CONVERT(varchar(100),(isnull((select pre.presupuestoprog from ME_Presupuesto pre where pre.unineg = a.unineg and pre.cuenta = pld.cuenta),0)) - ISNULL(sum(a.monto),0)) as montoSaldoVista
+from ME_Presupuesto p
+inner join MT_PlanContable pld on p.cuenta = pld.cuenta
+left join MT_Asiento a on a.cuentad = p.cuenta and a.unineg = p.unineg
+inner join MT_CentroResponsabilidad cr on a.cr = cr.cr
+inner join MO_UnidadNegocio uni on a.unineg = uni.unineg
+inner join MO_Entidad ENTU on uni.RUC = ENTU.ruc and uni.unineg = ENTU.unineg
+where a.unineg = 'SANLUI'
+and a.idtipoope = 0
+and a.cuentad = pld.cuenta
+and (case
+		when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1)
+		when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1)
+		when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2)
+	end) >= 1
+and (case
+		when @valor = 1 then SUBSTRING(CONVERT(varchar,a.cr),1,1)
+		when @valor = 2 then SUBSTRING(CONVERT(varchar,a.cr),2,1)
+		when @valor = 3 then SUBSTRING(CONVERT(varchar,a.cr),1,2)
+end) <= 4
+and a.cuentad >= 603202
+and a.cuentad <= 659319
+group by a.unineg,a.cuentad,a.cuentah,pld.nombre,pld.cuenta,a.cr,cr.nombre,ENTU.nombre,uni.ruc
+
+select
+l.nombreUniNeg,
+l.rucUniNeg,
+l.fecha,
+l.cuenta,
+l.nomCuenta,
+l.nombreCr,
+l.precuentad,
+l.monto,
+l.saldo,
+l.dato,
+l.cr,
+(case
+	when l.porcentajeSald < 0 then 0
+	else l.porcentajeSald
+end) as porcentajeSald,
+l.porcentajeExec,
+l.montoPresVista,
+l.montoExecVista,
+l.montoSaldoVista
+from(
+select
+tb.nombreUniNeg,
+tb.rucUniNeg,
+tb.fecha,
+tb.cuenta,
+tb.nomCuenta,
+tb.nombreCr,
+tb.precuentad,
+tb.monto,
+tb.saldo,
+tb.dato,
+tb.cr,
+tb.porcentajeSald,
+tb.porcentajeExec,
+tb.montoPresVista,
+tb.montoExecVista,
+tb.montoSaldoVista
+from @tableCuenta tb
+union all
+select
+tc.nombreUniNeg,
+tc.rucUniNeg,
+tc.fecha,
+'' as cuenta,
+'' as nomCuenta,
+tc.nombreCr as nombreCr,
+sum(CONVERT(money,tc.precuentad)) as precuentad,
+sum(CONVERT(money,tc.monto)) as monto,
+sum(CONVERT(money,tc.saldo)) as saldo,
+tc.dato as dato,
+tc.cr as cr,
+sum(CONVERT(money,tc.porcentajeSald))  as porcentajeSald,
+sum(CONVERT(money,tc.porcentajeExec))  as porcentajeExec,
+sum(CONVERT(money,tc.montoPresVista)) as montoPresVista,
+sum(CONVERT(money,tc.montoExecVista)) as montoExecVista,
+sum(CONVERT(money,tc.montoSaldoVista)) as montoSaldoVista
+from @tableCuenta tc
+group by tc.cr,tc.nombreCr,tc.nombreUniNeg,tc.rucUniNeg,tc.fecha,tc.dato) as l
+order by l.cr,l.cuenta desc,l.monto ]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="79" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="61" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="125" splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

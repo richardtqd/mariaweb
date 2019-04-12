@@ -1,0 +1,198 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cuentasPorCobrarMB.cargarDatosReporteResumenIng()}"> 
+            <center>
+                <h:outputText value="#{msgs.etiquetaResIngPorMes}" class="tituloPantalla" style="margin: auto !important;font-size: 16px"/>
+            </center>
+            <h:form id="frmDatosSoliCCH"> 
+                <h:panelGrid columns="1" style="padding-top: 30px " styleClass="centrado">                   
+                    <h:panelGrid columns="1" cellpadding="3" styleClass="centrado">
+                        <p:panel id="pnlSol"   toggleable="true" toggleSpeed="500" closeSpeed="500" >
+                            <h:panelGrid columns="3" cellpadding="3"  class="negrita" id="pnlSolCajaCh" >
+                                <h:outputLabel value="#{msgs.etiquetaAnio}:" styleClass="negrita"/>  
+                                <h:outputLabel value=" " class="requerido" />
+                                <p:spinner id="minMax" value="#{cuentasPorCobrarMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="5">
+                                </p:spinner>
+                                <h:outputText value="#{msgs.etiquetaLugarPag}:" class="negrita"  />
+                                <h:outputLabel value=" " class="requerido" />
+                                <p:selectOneRadio value="#{cuentasPorCobrarMB.idTipoLugarPago}" required="false"  label="#{msgs.etiquetaLugarPag}" id="cmbTipLug">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboAmbos}" noSelectionOption="false"/>
+                                    <f:selectItems value="#{cuentasPorCobrarMB.listaTipoLugarPago}" var="lugPag" itemLabel="#{lugPag.codigo}" itemValue="#{lugPag.idCodigo}"/>
+                                </p:selectOneRadio>
+
+                                <h:outputLabel value="#{msgs.etiquetaMes}" class="negrita" />
+                                <h:outputLabel value="*" class="requerido" />
+                                <p:selectOneMenu effect="fold" value="#{cuentasPorCobrarMB.mesSelect}"  class="resetSelect" style="width:125px" panelStyle="width:125px" required="true" label="#{msgs.etiquetaMes}">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}"/>
+                                    <f:selectItems value="#{cuentasPorCobrarMB.listaMeses}"/>
+                                    <p:ajax update=":frmDatosSoliCCH:pnlFiltr0" listener="#{cuentasPorCobrarMB.flgDisable()}" process="@this"></p:ajax>
+                                </p:selectOneMenu>
+                            </h:panelGrid>
+                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                            <br></br> 
+                            <h:panelGrid class="centrado" columns="2"> 
+                                <p:commandButton value="#{msgs.botonBuscar}" action="#{cuentasPorCobrarMB.obtenerFiltroResumenIngresos()}"
+                                                 update="msg,pnlSolicitudes"/> 
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                            <h:panelGrid styleClass="centrado" columns="5" id="pnlFiltr0" >
+                                <h:commandLink  action="#{cuentasPorCobrarMB.imprimirResumenIngresos()}" target="_blank" id="imprimir2" 
+                                                disabled="#{cuentasPorCobrarMB.disabled}" > 
+                                    <h:graphicImage value="/resources/images/icons/pdf.png" width="80%" />
+                                </h:commandLink>
+                                <p:tooltip id="toolTip2" for="imprimir2" value="#{msgs.etiquetaImprimir}" /> 
+                            </h:panelGrid> 
+                            <p:messages id="msgsAddSol"  autoUpdate="false"/>
+                        </p:panel>
+                    </h:panelGrid> 
+                </h:panelGrid>
+                <h:panelGrid id="pnlSolicitudes">
+                    <p:dataTable id="cuenta" value="#{cuentasPorCobrarMB.listaDetResumenIngRep}" paginator="true" 
+                                 widgetVar="cuenta"  selectionMode="single" 
+                                 var="cuenta"   rowIndexVar="n" paginatorPosition="bottom"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                 rows="15"  rowKey="#{cuenta}"
+                                 rendered="#{not empty cuentasPorCobrarMB.listaDetResumenIngRep}" 
+                                 style="width: 2100px; font-size: 10px">
+
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.tituloSolicitudes}" />  
+                        </f:facet>
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                <p:dataExporter type="xls" target="cuenta" fileName="ResuemenIngresos" />
+                            </h:commandLink> 
+                        </f:facet> 
+                        <p:column  headerText="#{msgs.etiquetaDia}" class="nombre11Filtro" filterMatchMode="contains" style="width: 4px">
+                            <h:outputText value="#{cuenta.dia}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMatr} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.matricula}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMarzo} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.marzo}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaAbril} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.abril}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMayo} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.mayo}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaJunio} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.junio}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaJulio} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.julio}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaAgosto} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.agosto}" />
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaSetiembre} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.septiembre}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaOctubre} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.octubre}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaNoviembre} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.noviembre}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaDiciembre} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.diciembre}" /> 
+                        </p:column>     
+                        <p:column  headerText="#{msgs.etiquetaMora} #{cuentasPorCobrarMB.anio}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.mora}" /> 
+                        </p:column>   
+                        
+                        <p:column headerText="#{msgs.etiquetaMarzo} #{cuentasPorCobrarMB.anio-1}"   class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.marzoAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaAbril} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.abrilAnt}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMayo} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.mayoAnt}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaJunio} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.junioAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaJulio} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.julioAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaAgosto} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.agostoAnt}" />
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaSetiembre} #{cuentasPorCobrarMB.anio-1}"  class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.septiembreAnt}"/> 
+                        </p:column>   
+                        <p:column headerText="#{msgs.etiquetaOctubre} #{cuentasPorCobrarMB.anio-1}"  class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.octubreAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaNoviembre} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.noviembreAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaDiciembre} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.diciembreAnt}" /> 
+                        </p:column>     
+                        <p:column  headerText="#{msgs.etiquetaMora} #{cuentasPorCobrarMB.anio-1}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.moraAnt}" /> 
+                        </p:column>   
+                        
+                        <p:column  headerText="#{msgs.etiquetaMarzo} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.marzoAntAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaAbril} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.abrilAntAnt}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMayo} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.mayoAntAnt}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaJunio} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.junioAntAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaJulio} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.julioAntAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaAgosto} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.agostoAntAnt}" />
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaSetiembre} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.septiembreAntAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaOctubre} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.octubreAntAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaNoviembre} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.noviembreAntAnt}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaDiciembre} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.diciembreAntAnt}" /> 
+                        </p:column>     
+                        <p:column  headerText="#{msgs.etiquetaMora} #{cuentasPorCobrarMB.anio-2}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.moraAntAnt}" /> 
+                        </p:column>   
+                        
+                        
+                        
+                        
+                        <p:column  headerText="#{msgs.etiquetaAbonado}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.abonado}" /> 
+                        </p:column>   
+                    </p:dataTable>
+                </h:panelGrid> 
+            </h:form>
+            <h:form id="frmTablaArqueo">
+                <h:panelGrid id="pnlTablaArqueo" styleClass="centrado"> 
+
+                </h:panelGrid>   
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

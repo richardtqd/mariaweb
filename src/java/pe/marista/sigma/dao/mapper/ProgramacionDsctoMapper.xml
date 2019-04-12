@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.marista.sigma.dao.ProgramacionDsctoDAO">   
+
+    <sql id="consultaCampos"> 
+        SELECT  
+        P.uniNeg
+        ,P.idProgramacionDscto
+        ,P.idTipoDsctoProgramacion
+        ,P.descripcion
+        ,P.anio
+        ,P.cantProgramaciones
+        ,P.idTipoValor
+        ,P.valor
+        ,P.valorUnitario
+        ,P.status
+        ,P.creapor
+        ,P.creafecha
+        ,P.modipor 
+        ,p.flgestudiante as flgEstudiante
+        ,co.codigo as codTipoValor
+        ,co.idcodigo as idTipoValor
+        FROM MX_ProgramacionDscto P
+        inner join MO_Codigo co on co.idcodigo=p.idtipovalor
+    </sql>
+    <resultMap id="programacionDsctoResultado" type="pe.marista.sigma.bean.ProgramacionDsctoBean">
+        <id property="idProgramacionDscto" column="idProgramacionDscto"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>   
+        <result property="descripcion" column="descripcion"/> 
+        <result property="anio" column="anio"/> 
+        <result property="cantProgramaciones" column="cantProgramaciones"/> 
+        <result property="valor" column="valor"/> 
+        <result property="valorUnitario" column="valorUnitario"/>   
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="flgEstudiante" column="flgEstudiante"/>
+        <result property="creaFecha" column="creaFecha"  jdbcType="DATE"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="tipoDsctoProgramacionBean" column="idTipoDsctoProgramacion"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDsctoProgramacionResultado"/>
+        <association property="tipoValorBean" column="idTipoValor"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoValorResultado"/>
+    </resultMap>  
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="idUniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <resultMap id="tipoDsctoProgramacionResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDsctoProgramacion"/>
+        <result property="codigo" column="codTipoDsctoProg"/> 
+    </resultMap>
+    <resultMap id="tipoValorResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoValor"/>
+        <result property="codigo" column="codTipoValor"/> 
+    </resultMap>
+    
+    <select id="obtenerTodosPorUniNeg" resultMap="programacionDsctoResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        where p.unineg=#{uniNeg}
+        order by P.descripcion
+    </select>  
+    <select id="obtenerProgramacionDsctoPorId" resultMap="programacionDsctoResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        where p.unineg=#{uniNeg} and p.idProgramacionDscto=#{idProgramacionDscto} 
+    </select> 
+    <select id="obtenerProgDsctoPorProgramacionesFor" resultMap="programacionDsctoResultado" parameterType="map">
+        DECLARE @CANT INT = #{cant},@unineg varchar(6)=#{uniNeg}
+        SELECT DISTINCT 
+        TOP 1
+        PD.uniNeg,
+        PD.idProgramacionDscto,
+        PD.descripcion,
+        PD.cantProgramaciones,
+        PD.valor,
+        pd.valorUnitario 
+        FROM MX_ProgramacionDSCTO PD
+        INNER JOIN MX_DETProgramacionDSCTO DPD ON DPD.idprogramaciondscto=PD.idprogramaciondscto and pd.unineg=DPD.unineg
+        WHERE 
+        pd.unineg=@unineg and 
+        PD.IDPROGRAMACIONDSCTO IN (select distinct idprogramaciondscto from MX_DetProgramacionDscto 
+        where idprogramacion IN  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  and unineg=@unineg) AND 
+        DPD.IDPROGRAMACION IN   
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>   AND 
+        PD.CANTPROGRAMACIONES<![CDATA[ = ]]>@CANT  
+        
+        GROUP BY PD.uniNeg,PD.idprogramaciondscto,PD.descripcion,PD.cantprogramaciones,PD.valor,pd.valorunitario 
+        HAVING COUNT(*) <![CDATA[  = ]]> @CANT
+        ORDER BY VALOR DESC  
+    </select> 
+    <select id="obtenerProgDsctoPorProgramacionesForSan" resultMap="programacionDsctoResultado" parameterType="map">
+        DECLARE @CANT INT = #{cant},@unineg varchar(6)=#{uniNeg},@flgest int = #{flgEst}, @mes int =#{mes}
+        SELECT DISTINCT 
+        TOP 1
+        PD.uniNeg,
+        PD.idProgramacionDscto,
+        PD.descripcion,
+        PD.cantProgramaciones,
+        PD.valor,
+        pd.valorUnitario 
+        FROM MX_ProgramacionDSCTO PD
+        INNER JOIN MX_DETProgramacionDSCTO DPD ON DPD.idprogramaciondscto=PD.idprogramaciondscto and pd.unineg=DPD.unineg
+        WHERE 
+        pd.unineg=@unineg and 
+        PD.IDPROGRAMACIONDSCTO IN (select distinct idprogramaciondscto from MX_DetProgramacionDscto 
+        where idprogramacion IN  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  and unineg=@unineg) AND 
+        DPD.IDPROGRAMACION IN   
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>   AND 
+        PD.CANTPROGRAMACIONES<![CDATA[ = ]]>@CANT    and (case when isnull(pd.flgestudiante,0)=1 then @flgest else flgestudiante end) = 1
+        and pd.mes=@mes
+        GROUP BY PD.uniNeg,PD.idprogramaciondscto,PD.descripcion,PD.cantprogramaciones,PD.valor,pd.valorunitario 
+        HAVING COUNT(*) <![CDATA[  = ]]> @CANT
+        ORDER BY VALOR DESC  
+    </select> 
+    <select id="obtenerProgDsctoPorProgramacionesForVer2" resultMap="programacionDsctoResultado" parameterType="map">
+        DECLARE @CANT INT = #{cant},@unineg varchar(6)=#{uniNeg},@montoTotCursos decimal(8,2),@flgest int = #{flgEst}
+        set @montoTotCursos=#{montoTotal}
+        SELECT DISTINCT 
+        TOP 1
+        PD.uniNeg,
+        PD.idProgramacionDscto,
+        PD.descripcion, 
+        PD.cantProgramaciones,     
+        (case when cod.codigo='Porcentual' then pd.valor   else  PD.valor end ) as valor ,              
+        (case when cod.codigo='Porcentual' then pd.valor/100   else  PD.valorUnitario end ) as valorUnitario,  				
+        cod.codigo as codTipoValor,
+        @montoTotCursos as  montoTotCursos
+        FROM MX_ProgramacionDSCTO PD
+        INNER JOIN MX_DETProgramacionDSCTO DPD ON DPD.idprogramaciondscto=PD.idprogramaciondscto and pd.unineg=DPD.unineg
+        left join MO_Codigo cod on cod.idcodigo=pd.idtipovalor 
+        WHERE         
+        pd.unineg=@unineg and 
+        PD.IDPROGRAMACIONDSCTO IN (select distinct idprogramaciondscto from MX_DetProgramacionDscto 
+        where idprogramacion IN  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  and unineg=@unineg) AND  
+        DPD.IDPROGRAMACION IN   
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>    AND 
+        PD.CANTPROGRAMACIONES <![CDATA[  = ]]>   @CANT   
+        and (case when isnull(pd.flgestudiante,0)=1 then @flgest else 1 end) = 1 
+        GROUP BY PD.uniNeg,PD.idprogramaciondscto,PD.descripcion,PD.cantprogramaciones,PD.valor,pd.valorunitario,cod.codigo 
+        HAVING COUNT(*)  <![CDATA[  = ]]>  @CANT
+        ORDER BY VALOR DESC  
+ 
+    </select> 
+    <select id="obtenerProgDsctoPorProgramacionesCantidadFor" resultMap="programacionDsctoResultado" parameterType="map">
+        select distinct
+        <!--p.idProgramacionDscto ,-->
+        p.cantProgramaciones 
+        from MX_DetProgramacionDscto  d 
+        inner join MX_ProgramacionDscto p on p.idprogramaciondscto=d.idprogramaciondscto and p.unineg=d.unineg
+        where d.idprogramacion IN         
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>            
+        and p.unineg=#{uniNeg} and p.cantprogramaciones<![CDATA[ <= ]]>#{cant}
+    </select> 
+    <select id="validarProgEnDetDscto" resultType="Integer" parameterType="map"> 
+        select (case when count(*) <![CDATA[  >= ]]> 1 then 1 else 0 end) as estado from MX_ProgramacionDscto p
+        inner join MX_DetProgramacionDscto dpd on p.idprogramaciondscto=dpd.idprogramaciondscto and p.unineg=dpd.unineg
+        where dpd.idprogramacion=#{idProgramacion} and p.idprogramaciondscto=#{idProgramacionDscto} and dpd.unineg=#{uniNeg}
+        and dpd.status=1         
+    </select> 
+    <select id="validarProg1En2" resultType="Integer" parameterType="map"> 
+        DECLARE @id INT ,@unineg varchar(6)
+        set @id =  #{idProgramacionDscto}
+        set @unineg=#{uniNeg}     
+        declare @cant int = #{cant}
+        SELECT   
+        case when count(*)=p.cantprogramaciones then 1 else 0 end    
+        from MX_DetProgramacionDscto de
+        inner join MX_ProgramacionDscto p on p.idprogramaciondscto=de.idprogramaciondscto and de.unineg=p.unineg
+        where de.idprogramaciondscto=@id and p.unineg=@unineg and   de.idprogramacion in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  and p.cantprogramaciones <![CDATA[ <  ]]>@cant
+        group by p.cantprogramaciones 
+    </select> 
+     
+    <insert id="insertarProgramacionDscto" parameterType="pe.marista.sigma.bean.ProgramacionDsctoBean"  >
+        INSERT INTO MX_ProgramacionDSCTO (
+        uniNeg 
+        ,idTipoDsctoProgramacion
+        ,descripcion
+        ,anio
+        ,cantProgramaciones
+        ,idTipoValor
+        ,valor
+        ,valorUnitario
+        ,status
+        ,creapor
+        ,creafecha 
+        ,flgestudiante
+        )
+        Values (
+        #{unidadNegocioBean.uniNeg} 
+        ,#{tipoDsctoProgramacionBean.idCodigo}
+        ,#{descripcion}
+        ,#{anio}
+        ,#{cantProgramaciones}
+        ,#{tipoValorBean.idCodigo}
+        ,#{valor}
+        ,#{valorUnitario} 
+        ,#{status}
+        ,#{creaPor}
+        ,getDate()
+        ,#{flgEstudiante})
+        <selectKey keyProperty="idProgramacionDscto" order="AFTER" resultType="Integer">
+            SELECT max(idProgramacionDscto) FROM MX_ProgramacionDSCTO WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    <update id="modificarProgramacionDscto" parameterType="pe.marista.sigma.bean.ProgramacionDsctoBean">
+        UPDATE MX_ProgramacionDSCTO set 
+        idTipoDsctoProgramacion=#{tipoDsctoProgramacionBean.idCodigo}
+        ,descripcion=#{descripcion}
+        ,anio=#{anio}
+        ,cantProgramaciones=#{cantProgramaciones}
+        ,idTipoValor=#{tipoValorBean.idCodigo}
+        ,valor=#{valor}
+        ,valorUnitario=#{valorUnitario} 
+        ,status=#{status}
+        ,modipor= #{modiPor}
+        ,flgestudiante=#{flgEstudiante}
+        where unineg=#{unidadNegocioBean.uniNeg} and idProgramacionDscto=#{idProgramacionDscto}  
+    </update>
+    <delete id="eliminarProgramacionDscto" parameterType="map">
+        delete from MX_ProgramacionDSCTO 
+        where unineg=#{uniNeg} and idProgramacionDscto=#{idProgramacionDscto}  
+    </delete> 
+    
+    <!--detalle -->  
+    <resultMap id="detProgramacionDsctoResultado" type="pe.marista.sigma.bean.DetProgramacionDsctoBean"> 
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/> 
+        <id property="programacionDsctoBean.idProgramacionDscto" column="idProgramacionDscto"/> 
+        <id property="programacionBean.idProgramacion" column="idProgramacion"/> 
+         
+        <result property="valor" column="valor"/>  
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="creaFecha" column="creaFecha"  jdbcType="DATE"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/> 
+        <association property="programacionDsctoBean" column="idProgramacionDscto"
+                     javaType="pe.marista.sigma.bean.ProgramacionDsctoBean"
+                     resultMap="programacionDsctoResultado"/> 
+        <association property="programacionBean" column="idProgramacionDscto"
+                     javaType="pe.marista.sigma.bean.ProgramacionBean"
+                     resultMap="programacionResultado"/> 
+        <association property="tipoValorBean" column="idTipoValor"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoValorResultado"/>
+    </resultMap>  
+    
+    <resultMap id="programacionResultado" type="pe.marista.sigma.bean.ProgramacionBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idProgramacion" column="idProgramacion"/>
+        <result property="anio" column="anio"/>
+        <result property="precio" column="precio"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="max" column="max"/>
+        <result property="min" column="min"/>
+        <result property="horario" column="horario"/>
+        <result property="status" column="status"/>
+        <result property="seccion" column="seccion"/>
+        <result property="grupo" column="grupo"/>
+         
+        <result property="ocupados" column="ocupados"/>
+        <result property="disponibles" column="disponibles"/>
+        <result property="ocupadosCT" column="ocupadosCT"/>
+        <result property="disponiblesCT" column="disponiblesCT"/>
+        <result property="ocupadosAdm" column="ocupadosAdm"/>
+        <result property="disponiblesAdm" column="disponiblesAdm"/>
+        <result property="mesProg" column="mesProg"/>
+        <result property="descripProgramacion" column="descripProgramacion"/>
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniNegBeanResultado"/>
+        <association property="procesoBean" column="idProceso"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="procesoResultado"/>
+        <association property="ambienteBean" column="idAmbiente"
+                     javaType="pe.marista.sigma.bean.AmbienteBean"
+                     resultMap="ambienteResultado"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/> 
+        
+    </resultMap>
+    <resultMap id="conceptoUniNegBeanResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean">
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <!--Concepto-->
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <result property="descrip" column="descrip"/> 
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultado"/>
+    </resultMap>
+     
+    <resultMap id="tipoConceptoResultado" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+    </resultMap>
+    <!--Proceso-->
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBean">
+        <id property="idProceso" column="idProceso"/>
+        <result property="descripcion" column="descripcionPro"/>
+        <result property="anio" column="anioProceso"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="status" column="status"/>
+         
+        <association property="codigoBean" column="idTipoProceso"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoProcesoResultado"/>
+        
+    </resultMap>
+    <resultMap id="tipoProcesoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoProceso"/>
+        <result property="codigo" column="codigo"/> 
+    </resultMap>
+    <resultMap id="ambienteResultado" type="pe.marista.sigma.bean.AmbienteBean">
+        <id property="idAmbiente" column="idAmbiente"/>
+        <result property="nombre" column="nombreAmbiente"/>
+        <result property="aforo" column="aforo"/>
+    </resultMap>
+    
+    <select id="obtenerDetallePorProgramacionDscto" resultMap="detProgramacionDsctoResultado" parameterType="map"> 
+        SELECT  
+        DP.uniNeg
+        ,DP.idProgramacionDscto
+        ,DP.idProgramacion
+        ,DP.idTipoValor
+        ,DP.valor
+        ,DP.status
+        ,DP.creapor
+        ,DP.creafecha
+        ,DP.modipor 
+        FROM  MX_DetProgramacionDscto DP
+        where DP.unineg=#{uniNeg} and DP.idProgramacionDscto in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> 
+    </select> 
+    <insert id="insertarDetProgramacionDscto" parameterType="pe.marista.sigma.bean.DetProgramacionDsctoBean"  >
+        INSERT INTO MX_DetProgramacionDSCTO (
+        uniNeg
+        ,idProgramacionDscto
+        ,idProgramacion 
+        ,idTipoValor
+        ,valor 
+        ,status
+        ,creapor
+        ,creafecha 
+        )
+        Values (
+        #{unidadNegocioBean.uniNeg}
+        ,#{programacionDsctoBean.idProgramacionDscto} 
+        ,#{programacionBean.idProgramacion} 
+        ,#{tipoValorBean.idCodigo}
+        ,#{valor} 
+        ,#{status}
+        ,#{creaPor}
+        ,getDate())
+    </insert>  
+    <delete id="eliminarDetallePorProgramacionDscto" parameterType="map">
+        delete from MX_DetProgramacionDSCTO 
+        where unineg=#{uniNeg} and idProgramacionDscto=#{idProgramacionDscto}  
+    </delete> 
+    <update id="modificarDetProgramacionDscto" parameterType="pe.marista.sigma.bean.DetProgramacionDsctoBean">
+        UPDATE MX_DetProgramacionDSCTO set 
+        status=#{status}
+        ,modipor= #{modiPor}
+        where 
+        unineg=#{unidadNegocioBean.uniNeg} and idProgramacionDscto=#{programacionDsctoBean.idProgramacionDscto} 
+        and idProgramacion=#{programacionBean.idProgramacion}
+    </update>
+    <select id="obtenerTodosPorUniNegDetalle" resultMap="detProgramacionDsctoResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        where p.unineg=#{uniNeg}
+        order by p.idProgramacionDscto
+    </select>  
+</mapper>

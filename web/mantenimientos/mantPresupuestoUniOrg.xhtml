@@ -1,0 +1,150 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>  
+            <h:form id="frmAnios" >
+                <h:panelGrid columns="1" style="margin: 0 auto;" >
+                    <p:panel id="toggleable" header="#{msgs.etiquetaFiltro} #{msgs.etiquetaPresu} #{msgs.etiquetaUniOrg}" toggleable="true" toggleSpeed="500" closeSpeed="500" widgetVar="panel" style="margin-bottom:20px;width: 1000px;">
+                        <h:panelGrid columns="4" >
+                            <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaAnio}: " />
+                            <p:selectOneMenu value="#{presupuestoUniOrgMB.anio}" style="width: 250px;" >
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.etiquetaSeleccionar}" />
+                                <f:selectItems value="#{presupuestoUniOrgMB.listaAnios}" var="anio" itemValue="#{anio}" itemLabel="#{anio}" />
+                            </p:selectOneMenu>
+                            <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{presupuestoUniOrgMB.obtenerPorAnio()}" update=":frmPie:pie,:frmAnios"
+                                             oncomplete="if(args.openDialog){PF('popResponse').show();}"/>
+                            <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{presupuestoUniOrgMB.limpiar()}" update=":frmAnios" />
+                        </h:panelGrid>
+                        <p:messages id="msg" showDetail="true" closable="true" />
+                    </p:panel>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmPie"> 
+                <h:panelGrid columns="1" style="margin: 0 auto;" > 
+                    <p:chart id="pie" type="pie" model="#{presupuestoUniOrgMB.pieModel}"  style="width:1000px;height:600px" >
+                        <p:ajax event="itemSelect" listener="#{presupuestoUniOrgMB.obtenerGrafo}" process="@this" 
+                                oncomplete="PF('openModal').show();" update=":frmDetaPres,:popCR"></p:ajax>
+                    </p:chart>
+                    <br/><br/>
+                    <!--p:chart type="donut" model="#{presupuestoUniOrgMB.donutModel}" style="width:1000px;height:600px"  /-->
+                    <!--p:chart type="bar" model="#{presupuestoUniOrgMB.barModel}" style="height:300px;"/-->
+                </h:panelGrid> 
+                <h:panelGroup rendered="#{not empty presupuestoUniOrgMB.pieModel}">
+                    <div align="center"> 
+                        <h:commandLink id="pdfPres2" action="#{presupuestoUniOrgMB.imprimirPresupuestoUniOrg()}" target="_blank">
+                            <h:graphicImage value="/resources/images/icons/pdf.png" />
+                        </h:commandLink>
+                    </div>
+                    <p:tooltip for="pdfPres2" value="#{msgs.etiquetaImprimir}" />
+                </h:panelGroup>
+            </h:form>
+
+            <p:dialog id="popCR" header="#{presupuestoUniOrgMB.nombre}" widgetVar="openModal"  modal="true" closeOnEscape="true" >     
+                <h:form id="frmDetaPres"> 
+                    <h:panelGrid>
+                        <p:dataTable value="#{presupuestoUniOrgMB.listaDetActividadBean}" var="uo" 
+                                     rendered="#{not empty presupuestoUniOrgMB.listaDetActividadBean}"
+                                     paginator="true" paginatorPosition="bottom" 
+                                     style="width: 1100px;" rows="10"> 
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaPresupuesto} #{msgs.etiquetaUnidOrg}" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetaCuenta}" filterBy="#{uo.planContableBean.cuenta}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{uo.planContableBean.cuenta}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCuenta}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{uo.planContableBean.nombre}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaSubAct}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{uo.descripcion}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaPresExec}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{uo.presExec}" >
+                                    <f:convertNumber pattern="#0.00" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPresProg}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{uo.presProg}" >
+                                    <f:convertNumber pattern="#0.00" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaImpor}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{uo.importe}" >
+                                    <f:convertNumber pattern="#0.00" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaSaldo}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{uo.importe - uo.ejecutado}" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPorcentaje}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{uo.ejecutado / uo.importe} %" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:columnGroup type="footer">
+                                <p:row>
+                                    <p:column colspan="5" style="text-align:right" footerText="Total:" />
+                                    <p:column footerText="#{presupuestoUniOrgMB.importe} #{msgs.etiquetaSoles}" />
+                                </p:row>
+                            </p:columnGroup>
+                        </p:dataTable>  
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popDone').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmStatus">
+                <p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()" />
+                <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+                    <h:graphicImage value="/resources/images/ajaxloader.gif"/>
+                </p:dialog>
+            </h:form> 
+
+            <p:dialog id="popResponse" widgetVar="popResponse" width="400" height="150" showEffect="fade" hideEffect="explode"
+                      modal="true" >
+                <h:form>
+                    <h:graphicImage value="/resources/images/icons/warning.png" />
+                    <h:outputText value="#{msgs.notificacionPresupuestoUo}" style="text-align: right;"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popResponse').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </h:form>
+            </p:dialog>
+            <script type="text/javascript">
+                function pieExtender() {
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltipLocation: 'n',
+                        useAxesFormatters: false,
+                        formatString: '%s = %d'
+                    };
+                }
+            </script>
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+

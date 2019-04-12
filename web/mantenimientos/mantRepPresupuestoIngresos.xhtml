@@ -1,0 +1,273 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body   onload="#{presupuestoRepMB.cargaFormularioReporte()}">
+            <h:form id="frmNivelTipoAcceso"> 
+                <h:panelGrid styleClass="centrado" id="pnlNivelTipoAcceso" style="text-align: center !important ; font-weight: bold; font-size: 0.9em ; width: 995px" >
+                    <p:panel header="#{msgs.tituloRepCentroRespCC}" style="text-align: center !important; width: 995px" toggleable="true" >
+                        <h:panelGrid columns="1" id="pnlFiltroRep"  > 
+                            <h:panelGrid columns="6"> 
+                                <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="titulo"  style="font-weight: bold"/> 
+                                <h:outputLabel value=" " class="requerido" />
+                                <p:spinner id="minMaxPeriodo" value="#{presupuestoRepMB.periodo}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="5" required="true">
+                                </p:spinner>
+                                <h:outputLabel value="#{msgs.etiquetaTipRep}" class="titulo" style="font-weight: bold" /> 
+                                <h:outputLabel value=" " class="requerido" />
+                                <p:selectOneRadio id="tipoReporte" disabled="#{presupuestoRepMB.flgDisable==true}" value="#{presupuestoRepMB.tipoReporte}" required="true"  label="Tipo de Reporte"   >
+                                    <f:selectItem itemValue="1" itemLabel="Detalle"/>
+                                    <f:selectItem itemValue="2" itemLabel="Resumen"/>  
+                                    <f:selectItem itemValue="8" itemLabel="Detalle Ejecutado por Meses"/>  
+                                    <p:ajax event="change" listener="#{presupuestoRepMB.obtenerTigo(presupuestoRepMB.tipoReporte)}" update=":frmDatosCR,pnlPick"/>
+                                </p:selectOneRadio> 
+                                <h:outputLabel value="#{msgs.etiquetaRangoFecha}:" class="titulo" style="font-weight: bold"/>  
+                                <h:outputLabel value="" class="requerido" />
+                                <h:panelGrid columns="3">
+                                    <p:calendar  value="#{presupuestoRepMB.fechaInicio}"  label="#{msgs.etiquetaRangoFecha}" mode="popup" size="7"
+                                                 pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn"  readonlyInput="true" yearRange="c-90:c+30">
+                                        <p:ajax event="dateSelect" update="fecha2" />
+                                    </p:calendar> 
+                                    <h:outputLabel value="-" class="titulo" style="font-weight: bold"  /> 
+                                    <p:calendar id="fecha2" value="#{presupuestoRepMB.fechaFin}" mindate="#{presupuestoRepMB.fechaInicio}"  label="#{msgs.etiquetaRangoFecha}" mode="popup" size="7"
+                                                pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn"   readonlyInput="true" yearRange="c-90:c+30">
+                                    </p:calendar>
+                                </h:panelGrid>   
+                                <h:panelGrid columns="4">
+                                <h:panelGrid columns="1">
+                                    <h:outputLabel value="REP. GENERALES" class="titulo" style="font-weight: bold"/>
+                                    <div align="center">  
+                                        <h:commandLink action="#{presupuestoRepMB.imprimirPresupuestoPorCuentasIngresos()}" target="_blank">
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" width="15%"/>
+                                        </h:commandLink>
+                                        <h:commandLink id="ss" action="#{presupuestoRepMB.exportXlsAll()}" target="_blank" > 
+                                            <h:graphicImage value="/resources/images/excel_1.png" width="15%" /> 
+                                        </h:commandLink> 
+                                    </div>
+                                </h:panelGrid> 
+                                <h:panelGrid columns="1">
+                                    <div align="center"> 
+                                        <h:outputLabel value="REP. MES A MES" class="titulo" style="font-weight: bold"/>  
+                                        <h:commandLink action="#{presupuestoRepMB.imprimirPresupuestoPorCuentasIngresosMesMes()}" target="_blank">
+                                            <h:graphicImage value="/resources/images/icons/pdf.png" width="15%"/>
+                                        </h:commandLink>
+                                        <h:commandLink action="#{presupuestoRepMB.exportXlsAllMesaMes()}" target="_blank" > 
+                                            <h:graphicImage value="/resources/images/excel_1.png" width="15%" /> 
+                                        </h:commandLink> 
+                                    </div>
+                                </h:panelGrid> 
+                                </h:panelGrid> 
+                            </h:panelGrid> 
+                            <h:panelGrid columns="3" id="pnlPick" >  
+                                <h:panelGrid columns="1" styleClass="centrado"  rendered="#{presupuestoRepMB.pickCC}"> 
+                                    <h:panelGrid columns="1"  class="siseFontGrid3" cellpadding="3"> 
+                                        <h:outputLabel value="#{msgs.etiquetaAsigCta}" class="negrita"/> 
+                                        <p:pickList  id="pickListCta" value="#{presupuestoRepMB.dualCuentaIngresos}"  
+                                                     required="false" var="cta"  filterMatchMode="startsWith" showSourceFilter="true" showTargetFilter="true"
+                                                     itemLabel="#{cta.cuenta} - #{cta.nombre}" itemValue="#{cta.cuenta}" 
+                                                     label="#{msgs.etiquetaAsigCta}"   >
+                                            <f:facet name="sourceCaption">#{msgs.etiquetaDisponibles} </f:facet>
+                                            <f:facet name="targetCaption">#{msgs.etiquetaSeleccionados}</f:facet>
+                                        </p:pickList>
+                                    </h:panelGrid> 
+                                </h:panelGrid> 
+                            </h:panelGrid>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="3" style="font-size: 0.9em"> 
+                            <p:commandButton value="#{msgs.botonBuscar}" 
+                                             action="#{presupuestoRepMB.obtenerReporteIngresosPresupuesto(presupuestoRepMB.tipoReporte)}" 
+                                             update=":frmDatosCR,msgsAddProc,:frmNivelTipoAcceso:tipoReporte"/>
+                            <p:commandButton actionListener="#{presupuestoRepMB.limpiar()}"
+                                             update=":frmDatosCR,:frmNivelTipoAcceso,msgsAddProc"
+                                             value="#{msgs.botonLimpiar}" process="@this">
+                            </p:commandButton>      
+                        </h:panelGrid>
+                        <p:messages id="msgsAddProc" showDetail="false" showSummary="true"/>
+                    </p:panel>
+                </h:panelGrid>
+            </h:form>  
+            <h:panelGrid styleClass="centrado" >
+                <h:form id="frmDatosCR">
+                    <h:panelGrid  id="pnlTablaMov">
+                        <p:dataTable id="tblMov3" value="#{presupuestoRepMB.listaDetallePresupuestoNewBean}" widgetVar="tblMov3"
+                                     scrollHeight="500" scrollable="true"
+                                     sortBy="#{presu2.cuenta}" 
+                                     paginatorTemplate="{Exporters}"
+                                     var="presu2" rowKey="#{presu2}" rowIndexVar="n"  
+                                     rendered="#{not empty presupuestoRepMB.listaDetallePresupuestoNewBean}" 
+                                     style="width: #{presupuestoRepMB.anchoTablasExtraGrande}; font-size: 10px;font-size:14px !important;">
+                            <f:facet name="header">
+                                #{msgs.etiquetaPresupuesto} 
+                            </f:facet>    
+                            <p:column exportable="true" colspan="3"  headerText="#{msgs.etiquetaCuentaConAbb}">
+                                <h:outputText value="#{presu2.cuenta} - #{presu2.nombreCuenta}" />
+                            </p:column>
+                            <p:column exportable="true" style="text-align:right" headerText="#{msgs.etiquetaPresuProg}">
+                                <h:outputText value="#{presu2.presupuestoProgramado}" styleClass="siseFontTable3 centrado-derecha" >
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>  
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="text-align:right" headerText="#{msgs.etiquetaPresuEjec}">
+                                <h:outputText value="#{presu2.presupuestoEje}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="text-align:right" headerText="#{msgs.etiquetaPorcPresuEjec}">
+                                <h:outputText value="#{presu2.porcEje}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="text-align:right" headerText="#{msgs.etiquetaSaldo}">
+                                <h:outputText value="#{presu2.saldo}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="text-align:right" headerText="#{msgs.etiquetaPorcSaldo}">
+                                <h:outputText value="#{presu2.porcSaldo}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                        </p:dataTable>  
+                    </h:panelGrid> 
+                    <h:panelGrid  id="pnlTablaMovMes">
+                        <p:dataTable id="tblMov3Mes" value="#{presupuestoRepMB.listaDetallePresupuestoNewBeanMes}" widgetVar="tblMov3Mes"
+                                      style="width: 1950px; overflow-x: auto;font-size:14px !important;"
+                                     sortBy="#{presu2.cuenta}" 
+                                     paginatorTemplate="{Exporters}"
+                                     var="presu2" rowKey="#{presu2}" rowIndexVar="n"  
+                                     rendered="#{not empty presupuestoRepMB.listaDetallePresupuestoNewBeanMes}" >
+                            <f:facet name="header">
+                                #{msgs.etiquetaPresupuesto} 
+                            </f:facet>    
+                            <p:columnGroup type="header">
+                                <p:row>
+                                    <p:column rowspan="2" headerText="#{msgs.etiquetaCuentaConAbb}"  width="24%" />
+                                    <p:column rowspan="2" headerText="#{msgs.etiquetaPresuProg}" width="5%"/>
+                                    <p:column colspan="12" headerText="#{msgs.etiquetaPresuEjec}" />
+                                    <p:column rowspan="2" headerText="#{msgs.etiquetaPorcPresuEjec}"/>
+                                    <p:column rowspan="2" headerText="#{msgs.etiquetaSaldo}"/>
+                                    <p:column rowspan="2" headerText="#{msgs.etiquetaPorcSaldo}"/>
+                                </p:row>
+                                <p:row>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaEnero}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaFebrero}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaMarzo}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaAbril}" />
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaMayo}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaJunio}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaJulio}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaAgosto}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaSetiembre}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaOctubre}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaNoviembre}"/>
+                                    <p:column colspan="1" headerText="#{msgs.etiquetaDiciembre}"/>
+                                </p:row>
+                            </p:columnGroup>
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.cuenta} - #{presu2.nombreCuenta}" />
+                            </p:column>
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.presupuestoProgramado}" styleClass="siseFontTable3 centrado-derecha" >
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>  
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.enero}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.febrero}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.marzo}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.abril}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.mayo}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.junio}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.julio}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.agosto}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.setiembre}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.octubre}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.noviembre}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right">
+                                <h:outputText value="#{presu2.diciembre}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column style="text-align:right" >
+                                <h:outputText value="#{presu2.porcEje}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="text-align:right" >
+                                <h:outputText value="#{presu2.saldo}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="text-align:right" >
+                                <h:outputText value="#{presu2.porcSaldo}" styleClass="siseFontTable3 centrado-derecha">
+                                    <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                        </p:dataTable>  
+                    </h:panelGrid> 
+                </h:form> 
+            </h:panelGrid> 
+            <h:form>
+                <p:dialog id="popDone2" header="#{msgs.appSiglas}" widgetVar="popDone2" width="370" height="120" showEffect="fade" hideEffect="explode" resizable="false"
+                          closable="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton  oncomplete="PF('popDone2').hide();PF('popPantallaDocIng').hide();"
+                                          value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>  
+
+        </h:body>
+    </ui:define>
+</ui:composition>

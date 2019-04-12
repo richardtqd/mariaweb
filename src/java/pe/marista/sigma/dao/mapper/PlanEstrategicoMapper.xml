@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PlanEstrategicoDAO">
+    <sql id="consultaCampos">
+        select
+        distinct
+        ple.uniNeg                  as idUniNeg,
+        ple.idPlanEstrategico       as idPlanEstrategico,
+        ple.nombre                  as nombrePlanEstrategico,
+        ple.descripcion             as descripcion,
+        SUBSTRING(ple.nombre,0,30)      as nombrePlanEstrategicoSub,
+        SUBSTRING(ple.descripcion,0,50)	as descripcionSub,
+        ple.fecInicio               as fecVigencia,
+        Year(ple.fecInicio)         as anioIni,
+        Month(ple.fecInicio)        as mesIni,
+        ple.fecTermino              as fecTermino,
+        Year(ple.fecTermino)        as anioFin,
+        Month(ple.fecTermino)       as mesFin,
+        ple.anioInicio              as anioInicio ,
+        ple.anioTermino             as anioTermino,
+        ple.status                  as statusPlanEstrategico,
+        ple.creaPor                 as creaPor,
+        ple.creaFecha               as creaFecha,
+        ple.modipor                 as modiPor,  
+        ple.modiVer                 as modiVer,      
+        ple.uniNeg                  as uniNeg,
+        une.unineg                  as uniNegocio,
+        une.nombreUniNeg            as nombreUniNeg
+        from ME_PlanEstrategico ple 
+        inner join MO_UnidadNegocio une on ple.uniNeg = une.uniNeg
+    </sql>
+    
+    <resultMap id="planEstrategicoResultado" type="pe.marista.sigma.bean.PlanEstrategicoBean">
+        <id property="idPlanEstrategico" column="idPlanEstrategico" />
+        <result property="nombre" column="nombrePlanEstrategico" />
+        <result property="fecInicio" column="fecVigencia" />
+        <result property="fecTermino" column="fecTermino" />
+        <result property="anioInicio" column="anioInicio" />
+        <result property="anioTermino" column="anioTermino" />
+        <result property="descripcion" column="descripcion" />  
+        <result property="nombrePlanEstrategicoSub" column="nombrePlanEstrategicoSub" /> 
+        <result property="descripcionSub" column="descripcionSub" />  
+        <result property="anioIni" column="anioIni" />
+        <result property="mesIni" column="mesIni" />
+        <result property="anioFin" column="anioFin" />
+        <result property="mesFin" column="mesFin" /> 
+        <result property="status" column="statusPlanEstrategico" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <select id="obtenerPorId" parameterType="pe.marista.sigma.bean.PlanEstrategicoBean" resultMap="planEstrategicoResultado" >
+        <include refid="consultaCampos" />
+        Where idPlanEstrategico = #{idPlanEstrategico} 
+    </select>
+    
+    <select id="obtenerPlanId" parameterType="Integer" resultMap="planEstrategicoResultado" >
+        <include refid="consultaCampos" />
+        Where idPlanEstrategico = #{idPlanEstrategico} 
+    </select>
+   
+    <select id="obtenerTodos" resultMap="planEstrategicoResultado">
+        <include refid="consultaCampos" />
+    </select>  
+    
+    <select id="obtenerTodosUniNeg" resultMap="planEstrategicoResultado">
+        <include refid="consultaCampos" /> where ple.uniNeg = #{uniNeg}
+    </select>  
+    
+    <select id="obtenerPorFiltro" resultMap="planEstrategicoResultado" parameterType="pe.marista.sigma.bean.PlanEstrategicoBean">
+        <include refid="consultaCampos"/>
+        <where>
+            ple.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="nombre != null and nombre != '' " >
+                and upper(ple.nombre) like concat('%',#{nombre},'%')
+            </if> 
+            <if test="anioIni != null and anioIni != '' " >
+                and upper(Year(ple.fecInicio)) like concat('%',#{anioIni},'%')
+            </if> 
+            <if test="anioFin != null and anioFin != '' " >
+                and upper(Year(ple.fecTermino)) like concat('%',#{anioFin},'%')
+            </if> 
+        </where>
+    </select>
+    
+    <select id="buscarPorId" resultMap="planEstrategicoResultado" parameterType="int">
+        <include refid="consultaCampos" /> Where ple.idPlanEstrategico = #{id} order by lie.idLinea
+    </select>    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.PlanEstrategicoBean">
+        INSERT INTO  ME_PlanEstrategico(idplanestrategico,uniNeg,nombre,fecInicio,fecTermino,anioInicio,anioTermino,descripcion,status,creaPor,creaFecha)
+        Values (0,#{unidadNegocioBean.uniNeg},#{nombre},#{fecInicio},#{fecTermino},#{anioInicio},#{anioTermino},#{descripcion},#{status},#{creaPor},getDate())
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.PlanEstrategicoBean">
+        UPDATE ME_PlanEstrategico
+        SET 
+        uniNeg = #{unidadNegocioBean.uniNeg},
+        nombre = #{nombre},
+        fecInicio = #{fecInicio},
+        fecTermino = #{fecTermino},
+        anioInicio = #{anioInicio},
+        anioTermino = #{anioTermino},
+        descripcion = #{descripcion},
+        status = #{status},
+        modiPor = #{modiPor}
+        Where idPlanEstrategico = #{idPlanEstrategico}
+    </update>
+    <delete id="eliminar" parameterType="Integer">
+        Delete From ME_PlanEstrategico Where idPlanEstrategico = #{idPlanEstrategico}
+    </delete>
+    
+    <select id="obtenerUnidadOrg" resultType="pe.marista.sigma.bean.UnidadOrganicaBean">
+        select idUniOrg, nombreUniOrg, codigoUniOrg from MO_UnidadOrganica
+    </select>   
+    
+    
+    <select id="obtenerUltimoCodigo" resultType="String" parameterType="pe.marista.sigma.bean.PlanEstrategicoBean">     
+        <!--select max(substring(codigoPlanEstrategico,6,9)) as codigoPlanEstrategico
+        from ME_PlanEstrategico where uniNeg = #{unidadNegocioBean.uniNeg}-->
+    </select>
+    
+    
+</mapper>

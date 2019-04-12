@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PersonalAlergiaDAO">
+     
+    <sql id="consultaCampos">
+        SELECT
+        PALE.idPersonalAlergia
+        ,PALE.uniNeg as uniNegP
+        ,PALE.idPersonal 
+        ,PALE.idTipoAlergia
+        ,PALE.alergia
+        ,PALE.obs
+        ,PALE.creaFecha
+        ,PALE.creaPor
+        ,CO.idCodigo as codAle
+        ,CO.codigo as nombreAlergia,
+        pale.flgMedicamentos as flgMedicamentos
+        ,pale.medicamento1,pale.medicamento2,pale.medicamento3
+        FROM MO_PersonalAlergia PALE
+        left Join  MO_Personal PE on PALE.idPersonal = PE.idPersonal and pale.unineg=pe.unineg
+        left Join  MO_Codigo CO on PALE.idTipoAlergia = CO.idCodigo                
+    </sql>
+    <resultMap id="personalAlergiaResultado" type="pe.marista.sigma.bean.PersonalAlergiaBean">
+        <id property="idPersonalAlergia" column="idPersonalAlergia" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="alergia" column="alergia" />
+        <result property="obs" column="obs" />
+        <result property="creaPor" column="creaPor" />
+        <result property="modiPor" column="modiPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="flgMedicamentos" column="flgMedicamentos" />
+        <result property="medicamento1" column="medicamento1" />
+        <result property="medicamento2" column="medicamento2" />
+        <result property="medicamento3" column="medicamento3" />
+        <association property="unidadNegocioBean" column="uniNegP"
+                       javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                       resultMap="unidadNegocioResultado"/>    
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>        
+              
+        <!--2 idTipoAlergia-->
+        <association property="tipoAlergiaBean" column="codAle"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoAlergiaResultado"/>       
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegP"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>
+   
+    <!--1 idPersonal-->         
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+    </resultMap>   
+    
+     
+    <!--2 idTipoAlergia-->
+    <resultMap id="tipoAlergiaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codAle"/>
+        <result property="codigo" column="nombreAlergia"/>
+    </resultMap> 
+       
+    <select id="obtenerPersonalAlergiaPorPersonal" resultMap="personalAlergiaResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />
+        where PALE.idPersonal=#{idPersonal} and pale.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonalAlergiaPorId" resultMap="personalAlergiaResultado" parameterType="pe.marista.sigma.bean.PersonalAlergiaBean">
+        <include refid="consultaCampos" />
+        where PALE.idPersonalAlergia=#{idPersonalAlergia} and pale.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+     
+    <insert id="insertarPersonalAlergia" parameterType="pe.marista.sigma.bean.PersonalAlergiaBean">
+        INSERT INTO  MO_PersonalAlergia
+        (unineg,idPersonal,idTipoAlergia,alergia,obs,creaPor,flgmedicamentos,medicamento1,medicamento2,medicamento3)
+        VALUES (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{tipoAlergiaBean.idCodigo},#{alergia},#{obs},#{creaPor},
+        #{flgMedicamentos},#{medicamento1},#{medicamento2},#{medicamento3})
+    </insert>                                                                                                       
+     
+    <update id="modificarPersonalAlergia" parameterType="pe.marista.sigma.bean.PersonalAlergiaBean">
+        Update MO_PersonalAlergia set
+        idTipoAlergia = #{tipoAlergiaBean.idCodigo}
+        ,alergia = #{alergia}
+        ,obs = #{obs}
+        ,modiPor = #{modiPor},
+        flgmedicamentos =#{flgMedicamentos},
+        medicamento1 =#{medicamento1},
+        medicamento2 =#{medicamento2},
+        medicamento3 =#{medicamento3}
+        Where idPersonalAlergia=#{idPersonalAlergia} and  unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+     
+    <delete id="eliminarPersonalAlergia" parameterType="pe.marista.sigma.bean.PersonalAlergiaBean">
+        Delete From MO_PersonalAlergia Where idPersonalAlergia = #{idPersonalAlergia} and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>     
+    
+    <sql id="consultaCamposDescansoMedico">
+        SELECT  
+        uni.unineg as uniNegP,
+        per.idpersonal as idPersonal,
+        desme.idpersonaldescansomedico as idPersonalDescansoMedico,
+        desme.fechaini as fechaIni,
+        desme.fechafin as fechaFin,
+        desme.motivo as motivo,
+        desme.diagnostico as diagnostico,
+        desme.nombreentidadsalud as nombreEntidadSalud,
+        desme.creapor as creaPor,
+        desme.creafecha as creaFecha,
+        desme.modipor as modiPor  ,
+        isnull(desme.nrodias,'') as nroDias, 
+        tipMe.idCodigo as idTipoDescanso,
+        tipMe.codigo as tipoDescanso
+        FROM MO_PersonalDescansoMedico DESME
+        INNER JOIN MO_UnidadNegocio UNI ON UNI.unineg=DESME.unineg
+        INNER JOIN MO_Personal PER ON PER.idpersonal=DESME.idpersonal
+        inner join MO_Codigo tipMe on tipMe.idcodigo=desme.idtipodescanso
+    </sql>
+    <resultMap id="personalDescansoMedicoResultado" type="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        <id property="idPersonalDescansoMedico" column="idPersonalDescansoMedico" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="fechaIni" column="fechaIni" />
+        <result property="fechaFin" column="fechaFin" />
+        <result property="motivo" column="motivo" />
+        <result property="modiPor" column="modiPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="diagnostico" column="diagnostico" />
+        <result property="nombreEntidadSalud" column="nombreEntidadSalud" />
+        <result property="creaPor" column="creaPor" /> 
+        <result property="nroDias" column="nroDias" /> 
+        <association property="unidadNegocioBean" column="uniNegP"
+                       javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                       resultMap="unidadNegocioResultado"/>    
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>        
+        <association property="tipoDescansoBean" column="idTipoDescanso"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDescansoResultado"/>        
+    </resultMap>
+    
+    <resultMap id="tipoDescansoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDescanso"/>
+        <result property="codigo" column="tipoDescanso"/>
+    </resultMap> 
+    
+    <insert id="insertarPersonalDescansoMedico" parameterType="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        INSERT INTO  MO_PersonalDescansoMedico
+        (unineg,idPersonal,fechaIni,fechaFin,motivo,diagnostico,creaPor,nombreEntidadSalud,idtipodescanso,nrodias)
+        VALUES (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{fechaIni},#{fechaFin},#{motivo},#{diagnostico},
+        #{creaPor},#{nombreEntidadSalud},#{tipoDescansoBean.idCodigo},#{nroDias})
+    </insert>      
+    <update id="modificarPersonalDescansoMedico" parameterType="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        Update MO_PersonalDescansoMedico set
+        fechaIni = #{fechaIni}
+        ,fechaFin = #{fechaFin}
+        ,motivo = #{motivo}
+        ,diagnostico = #{diagnostico}
+        ,modiPor = #{modiPor},
+        nombreEntidadSalud =#{nombreEntidadSalud} 
+        ,nrodias=#{nroDias}
+        Where idPersonalDescansoMedico=#{idPersonalDescansoMedico} and  unineg=#{unidadNegocioBean.uniNeg}
+    </update> 
+    <delete id="eliminarPersonalDescansoMedico" parameterType="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        Delete From MO_PersonalDescansoMedico Where idPersonalDescansoMedico = #{idPersonalDescansoMedico} and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>   
+    <select id="obtenerPersonalDescansoMedico" resultMap="personalDescansoMedicoResultado" parameterType="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        <include refid="consultaCamposDescansoMedico" />
+        where per.idPersonal=#{personalBean.idPersonal} and uni.unineg=#{unidadNegocioBean.uniNeg} and tipMe.idcodigo=31301
+    </select>
+    <select id="obtenerPersonalInasistencia" resultMap="personalDescansoMedicoResultado" parameterType="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        <include refid="consultaCamposDescansoMedico" />
+        where per.idPersonal=#{personalBean.idPersonal} and uni.unineg=#{unidadNegocioBean.uniNeg} and tipMe.idcodigo=31302
+    </select>
+    <select id="obtenerPersonalAccidente" resultMap="personalDescansoMedicoResultado" parameterType="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        <include refid="consultaCamposDescansoMedico" />
+        where per.idPersonal=#{personalBean.idPersonal} and uni.unineg=#{unidadNegocioBean.uniNeg} and tipMe.idcodigo=31303
+    </select>
+    <select id="obtenerPersonalDescansoMedicoPorId" resultMap="personalDescansoMedicoResultado" parameterType="pe.marista.sigma.bean.PersonalDescansoMedicoBean">
+        <include refid="consultaCamposDescansoMedico" />
+        where desme.idPersonalDescansoMedico=#{idPersonalDescansoMedico} and uni.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <sql id="consultaCamposEvaPsicologica">
+        select  
+        uni.unineg as uniNegP,
+        per.idpersonal as idPersonal,
+        eva.idpersonalevapsicologica as idPersonalEvaPsicologica,
+        eva.fechaini as fechaIni,
+        eva.fechafin as fechaFin,
+        eva.descripcion as descripcion,
+        eva.nombreterapeuta as nombreTerapeuta,
+        eva.numcolegiaturaterapeuta as numColegiaturaTerapeuta,
+        eva.nombrecentro as nombreCentro,
+        eva.ruccentro as rucCentro,
+        eva.telefonocentro as telefonoCentro,
+        eva.creapor as creaPor,
+        eva.creafecha as creaFecha,
+        eva.modipor as modiPor
+        from MO_PersonalEvaPsicologica eva
+        inner join MO_UnidadNegocio uni on uni.unineg=eva.unineg
+        inner join MO_Personal per on per.idpersonal=eva.idpersonal
+    </sql>
+    <resultMap id="personalEvaPsicologicaResultado" type="pe.marista.sigma.bean.PersonalEvaPsicologicaBean">
+        <id property="idPersonalEvaPsicologica" column="idPersonalEvaPsicologica" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="fechaIni" column="fechaIni" />
+        <result property="fechaFin" column="fechaFin" />
+        <result property="descripcion" column="descripcion" />
+        <result property="nombreTerapeuta" column="nombreTerapeuta" />
+        <result property="numColegiaturaTerapeuta" column="numColegiaturaTerapeuta" />
+        <result property="nombreCentro" column="nombreCentro" />
+        <result property="rucCentro" column="rucCentro" />
+        <result property="telefonoCentro" column="telefonoCentro" /> 
+        <result property="modiPor" column="modiPor" />
+        <result property="creaFecha" column="creaFecha" />  
+        <result property="creaPor" column="creaPor" /> 
+        <association property="unidadNegocioBean" column="uniNegP"
+                       javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                       resultMap="unidadNegocioResultado"/>    
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>        
+    </resultMap>
+    
+    <insert id="insertarPersonalEvaPsicologica" parameterType="pe.marista.sigma.bean.PersonalEvaPsicologicaBean">
+        INSERT INTO  MO_PersonalEvaPsicologica
+        (unineg,idPersonal,fechaIni,fechaFin,descripcion,nombreTerapeuta,numColegiaturaTerapeuta,nombreCentro,rucCentro,
+        telefonoCentro,creaPor)
+        VALUES (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{fechaIni},#{fechaFin},#{descripcion},#{nombreTerapeuta}
+        ,#{numColegiaturaTerapeuta},#{nombreCentro},#{rucCentro},#{telefonoCentro},#{creaPor})
+    </insert>      
+    <update id="modificarPersonalEvaPsicologica" parameterType="pe.marista.sigma.bean.PersonalEvaPsicologicaBean">
+        Update MO_PersonalEvaPsicologica set
+        fechaIni = #{fechaIni}
+        ,fechaFin = #{fechaFin}
+        ,descripcion = #{descripcion}
+        ,nombreTerapeuta =#{nombreTerapeuta}
+        ,numColegiaturaTerapeuta =#{numColegiaturaTerapeuta}
+        ,nombreCentro =#{nombreCentro}
+        ,rucCentro = #{rucCentro}
+        ,telefonoCentro = #{telefonoCentro}
+        ,modiPor = #{modiPor} 
+        Where idPersonalEvaPsicologica=#{idPersonalEvaPsicologica} and  unineg=#{unidadNegocioBean.uniNeg}
+    </update> 
+    <delete id="eliminarPersonalEvaPsicologica" parameterType="pe.marista.sigma.bean.PersonalEvaPsicologicaBean">
+        Delete From MO_PersonalEvaPsicologica Where idPersonalEvaPsicologica = #{idPersonalEvaPsicologica} and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>   
+    <select id="obtenerPersonalEvaPsicologica" resultMap="personalEvaPsicologicaResultado" parameterType="pe.marista.sigma.bean.PersonalEvaPsicologicaBean">
+        <include refid="consultaCamposEvaPsicologica" />
+        where per.idPersonal=#{personalBean.idPersonal} and uni.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonalEvaPsicologicaPorId" resultMap="personalEvaPsicologicaResultado" parameterType="pe.marista.sigma.bean.PersonalEvaPsicologicaBean">
+        <include refid="consultaCamposEvaPsicologica" />
+        where eva.idPersonalEvaPsicologica=#{idPersonalEvaPsicologica} and uni.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+</mapper>

@@ -1,0 +1,692 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body onload="#{actividadMB.cargarDatos()}" >
+            <p:layout style="width:1600px;height:750px" fullPage="false" styleClass="centrado">
+                <p:layoutUnit id="pnlBuscadorPost" position="west" size="500" header="#{msgs.etiquetaFiltro}" resizable="false" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500" >
+                    <h:form id="frmPres" >
+                        <p:panel header="#{msgs.etiquetaFiltro}-#{msgs.etiquetaPresupuesto}" >
+                            <h:panelGrid id="pnlPres" styleClass="centrado" columns="2" >
+                                <p:outputLabel value="#{msgs.etiquetaNroCuenta}:" />
+                                <p:selectOneMenu id="advanced" value="#{actividadMB.presupuestoFiltroBean.planContableBean.cuenta}" filter="true"
+                                                 effect="fade" label="#{msgs.etiquetaNroCuenta}" style='width: 300px' panelStyle="width:300px">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{actividadMB.listaPlanContableBean}" var="plan" itemLabel="#{plan.cuenta}-#{plan.nombre}" itemValue="#{plan.cuenta}" />
+                                </p:selectOneMenu>
+                                <p:outputLabel value="#{msgs.etiquetaAnio}: " />
+                                <p:spinner id="minMax" value="#{actividadMB.presupuestoFiltroBean.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="5" required="true">
+                                </p:spinner>
+                            </h:panelGrid>
+                            <br/>
+                            <h:panelGrid columns="3" styleClass="centrado" >
+                                <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{actividadMB.buscarPresupuesto()}" 
+                                                 update="msgPres,:frmTblPres:pnlTblPres">
+                                </p:commandButton>
+                                <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{actividadMB.limpiarPresupuesto()}" 
+                                                 update=":frmPres:pnlPres,:frmTblPres:pnlTblPres" process="@this">
+                                </p:commandButton>
+                                <p:commandButton value="#{msgs.botonNuevo} #{msgs.etiquetaPresu}" oncomplete="PF('popPresupuesto').show();" >
+                                </p:commandButton>
+                            </h:panelGrid>
+                            <p:messages id="msgPres" autoUpdate="false" showDetail="false" />
+                        </p:panel> 
+                    </h:form>
+                    <h:form id="frmTblPres" >
+                        <h:panelGrid id="pnlTblPres" styleClass="centrado" >
+                            <p:dataTable value="#{actividadMB.listaPresupuestoBean}" var="pres" widgetVar="pres" id="tblPresupuesto"
+                                         rendered="#{not empty actividadMB.listaPresupuestoBean}" rowKey="#{pres}"
+                                         paginator="true" paginatorPosition="bottom" style="font-size:11px !important;margin-bottom:0"
+                                         selectionMode="single" selection="#{actividadMB.presupuestoBean}">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaDatosGenerales} #{msgs.etiquetaPresupuesto}" />
+                                </f:facet>
+                                <p:column headerText="#{msgs.etiquetaNroCue}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{pres.planContableBean.cuenta}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaPlanContable}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{pres.planContableBean.nombre}" />
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaProgamado}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{pres.presupuestoProg}" >
+                                        <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaEjecutado}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{pres.presupuestoEjec}" >
+                                        <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAcciones}" colspan="3" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto"> 
+                                    <p:commandLink id="cmdEditPres"  actionListener="#{actividadMB.obtenerPresupuestoId(pres,2)}" 
+                                                   process="@this" oncomplete="PF('popPresupuesto').show();" update=":frmPopPresupuesto:pnlPopPresupuesto" 
+                                                   rendered="false">
+                                        <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipPres" for="cmdEditPres" value="#{msgs.mensajeEdit}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdVerPres"  actionListener="#{actividadMB.obtenerPresupuestoId(pres,1)}" 
+                                                   process="@this" update=":frmActividad:pnlActividad,:frmTblActividad:pnlTblActividad,:frmAct:pnlDetAct">
+                                        <h:graphicImage value="/resources/images/icons/ver_detalle.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolVerPres" for="cmdVerPres" value="#{msgs.etiquetaVerDeta}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdEliminarPres"  actionListener="#{actividadMB.obtenerPresupuestoId(pres,0)}"
+                                                   oncomplete="PF('popEliminar5').show();" process="@this" 
+                                                   update=":frmElimina5:pnlElimina5">
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolDelPres" for="cmdEliminarPres" value="#{msgs.mensajeEliminar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                    </h:form>
+                </p:layoutUnit>
+                <p:layoutUnit position="center" >
+                    <h:form id="frmActividad" >
+                        <p:panel header="#{msgs.etiquetaDetActividades}" style="width: 500px;margin: 0 auto;">
+                            <h:panelGrid id="pnlActividad" columns="1" style="margin: 0 auto;">
+                                <h:panelGrid style="margin: 0 auto;" columns="3">
+                                    <p:outputLabel value="#{msgs.EtiquetaNombre} de #{msgs.etiquetaAct}: " />
+                                    <p:outputLabel value="(*)" class="requerido"/>
+                                    <p:inputText id="txtNomAct" label="#{msgs.EtiquetaNombre}" value="#{actividadMB.actividadBean.nombre}" /> 
+                                    <h:panelGrid columns="3" >
+                                        <p:outputLabel value="#{msgs.etiquetaAnio}: " />
+                                        <p:outputLabel value="(*)" class="requerido"/>
+                                        <p:inputText value="#{actividadMB.actividadBean.anio}" readonly="true" size="5" />
+                                    </h:panelGrid>
+                                    <h:panelGrid></h:panelGrid>
+                                    <h:panelGrid columns="3" >
+                                        <p:outputLabel value="#{msgs.etiquetaTipo}: " />
+                                        <p:outputLabel value="(*)" class="requerido"/>
+                                        <p:selectOneRadio value="#{actividadMB.actividadBean.tipoImporte}" label="#{msgs.etiquetaTipo}" >
+                                            <f:selectItem itemLabel="#{msgs.etiquetaIngreso}" itemValue="1" />
+                                            <f:selectItem itemLabel="#{msgs.etiquetaEgreso}" itemValue="2" />
+                                        </p:selectOneRadio>
+                                    </h:panelGrid>
+                                    <p:outputLabel value="#{msgs.etiquetaImpor} de #{msgs.etiquetaAct}: " />
+                                    <p:outputLabel value="(*)" class="requerido"/>
+                                    <p:inputText id="txtIngAct" label="#{msgs.etiquetaIngreso}" value="#{actividadMB.actividadBean.ingreso}" >
+                                        <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                                    </p:inputText>
+                                    <p:outputLabel value="#{msgs.etiquetaUniOrg}: " />
+                                    <p:outputLabel value="(*)" class="requerido"/>
+                                    <p:selectOneMenu id="cboUniOrgAct" value="#{actividadMB.actividadBean.unidadOrganicaBean.idUniOrg}" effect="fold" style="width: 200px;" >
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                        <f:selectItems value="#{actividadMB.listaUnidadOrganica}" var="uo" itemValue="#{uo.idUniOrg}" itemLabel="#{uo.nombreUniOrg}" />
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="Resp. de #{msgs.etiquetaAct}: " />
+                                    <p:outputLabel value="(*)" class="requerido"/>
+                                    <p:inputText id="txtResAct" value="#{actividadMB.actividadBean.responsable}" label="#{msgs.etiquetaAct}" /> 
+                                    <p:outputLabel value="#{msgs.etiquetaIndicador} de Actividad: " />
+                                    <p:outputLabel value="(*)" class="requerido"/>
+                                    <p:inputText id="txtIndicador" value="#{actividadMB.actividadBean.indicadorBean.nombre}" required="true" readonly="true" /> 
+                                </h:panelGrid> 
+                            </h:panelGrid>
+                            <h:panelGrid columns="3" styleClass="centrado" > 
+                                <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{actividadMB.guardarActividad()}" 
+                                                 update=":frmActividad:pnlActividad,:frmTblActividad:pnlTblActividad"  oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"/>
+                                <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{actividadMB.nuevaActividad()}" 
+                                                 update=":frmActividad:pnlActividad" />
+                                <p:commandButton value="#{msgs.etiquetaAgregar} #{msgs.etiquetaIndicador}" oncomplete="PF('popBuscar2').show()" />
+                            </h:panelGrid>
+                        </p:panel>
+                    </h:form>
+                    <h:form id="frmTblActividad" >
+                        <h:panelGrid id="pnlTblActividad"  styleClass="centrado" >
+                            <p:dataTable value="#{actividadMB.listaActividadBean}" var="actividad" widgetVar="actividad" 
+                                         rendered="#{not empty actividadMB.listaActividadBean}" rows="10" rowKey="#{actividad}"
+                                         style="width:1200px; font-size: 12px" paginatorPosition="bottom" paginator="true" 
+                                         selectionMode="single" selection="#{actividadMB.actividadBean}">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                </f:facet>
+                                <p:column headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{actividad.anio}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaActividad}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{actividad.nombre}" />
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaUniOrg}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{actividad.unidadOrganicaBean.nombreUniOrg}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaResponsable}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{actividad.responsable}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaIngreso}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{actividad.ingreso}" >
+                                        <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaIndicador}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{actividad.indicadorBean.nombre}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaMeta}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{actividad.indicadorBean.meta}" />
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaTipoValor}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{actividad.indicadorBean.codigoTipoValor.codigo}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAcciones}" colspan="3" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto"> 
+                                    <p:commandLink id="cmdEditAct"  actionListener="#{actividadMB.obtenerActividadId(actividad,0)}" 
+                                                   process="@this" update=":frmActividad:pnlActividad" >
+                                        <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipEdit" for="cmdEditAct" value="#{msgs.mensajeEdit}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdVerDAct"  actionListener="#{actividadMB.obtenerActividadId(actividad,1)}" 
+                                                   process="@this" oncomplete="PF('popDetActividad').show();" update=":frmAct:pnlAct,:frmTableAct:pnlFrmAct" >
+                                        <h:graphicImage value="/resources/images/icons/ver_detalle.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolVerDAct" for="cmdVerDAct" value="#{msgs.etiquetaVerDeta}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdEliminarAct"  actionListener="#{actividadMB.obtenerActividadId(actividad,0)}"
+                                                   oncomplete="PF('popEliminar3').show();" process="@this" update=":frmElimina3:pnlElimina3">
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolDelAct" for="cmdEliminarAct" value="#{msgs.mensajeEliminar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                    </h:form>
+                </p:layoutUnit>
+            </p:layout> 
+
+            <!--POP SELECCIONAR INDICADOR-->
+            <h:form id="frmBuscar2" >
+                <p:dialog id="popBuscar2" widgetVar="popBuscar2" showEffect="explode" modal="true" closeOnEscape="true" >
+                    <p:growl id="msgIndicador" showDetail="true" autoUpdate="false" />
+                    <p:panel header="#{msgs.etiquetaBuscarIndicador}" > 
+                        <h:panelGrid id="pnlBuscar" styleClass="centrado" >
+                            <p:dataTable value="#{actividadMB.listaIndicadorBean}" paginator="true" paginatorPosition="bottom"
+                                         var="indicadorFiltro" id="tblBuscarIndicador"  widgetVar="ind"
+                                         rows="#{actividadMB.numRegistrosTablas}" rowKey="#{indicadorFiltro}"
+                                         rendered="#{not empty actividadMB.listaIndicadorBean}" editable="true"
+                                         style=" font-size: 12px;width: 1200px;" selection="#{actividadMB.indicadorFiltroBean}">  
+                                <p:ajax event="rowEdit" listener="#{actividadMB.onRowEditIndicador}" update=":frmBuscar2:msgIndicador" process="@this,:frmBuscar2:tblBuscarIndicador"/>
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaDatosIndicador}" /> 
+                                </f:facet> 
+                                <p:column>
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.etiquetaCodigo}" />
+                                    </f:facet>
+                                    <center>
+                                        <h:outputText value="#{indicadorFiltro.codigo}"/>
+                                    </center>
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaIndicador}">
+                                    <p:cellEditor>
+                                        <f:facet name="output">
+                                            <h:outputText value="#{indicadorFiltro.nombre}"/>
+                                        </f:facet>
+                                        <f:facet name="input">
+                                            <p:inputText value="#{indicadorFiltro.nombre}" style="width:100%"/>
+                                        </f:facet>
+                                    </p:cellEditor>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaMeta}">
+                                    <p:cellEditor>
+                                        <f:facet name="output">
+                                            <h:outputText value="#{indicadorFiltro.meta}"/>
+                                        </f:facet>
+                                        <f:facet name="input">
+                                            <p:inputText value="#{indicadorFiltro.meta}" style="width:100%"/>
+                                        </f:facet>
+                                    </p:cellEditor>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaTipoUso}" filterBy="#{indicadorFiltro.codigoTiPoUso.codigo}">
+                                    <f:facet name="filter">
+                                        <p:selectOneMenu value="#{actividadMB.indicadorBean.codigoTiPoUso.idCodigo}"> 
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{actividadMB.listaTipoUsoIndicador}" var="uso" itemLabel="#{uso.codigo}" itemValue="#{uso.idCodigo}" />
+                                            <p:ajax event="change" listener="#{actividadMB.filtrarIndicador()}" update=":frmBuscar2:pnlBuscar" />
+                                        </p:selectOneMenu>
+                                    </f:facet>
+                                    <p:cellEditor>
+                                        <f:facet name="output">
+                                            <h:outputText value="#{indicadorFiltro.codigoTiPoUso.codigo}" />
+                                        </f:facet>
+                                        <f:facet name="input">
+                                            <h:selectOneMenu value="#{actividadMB.indicadorBean.codigoTiPoUso.idCodigo}" label="#{msgs.etiquetaTipoUso}">
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{actividadMB.listaTipoUsoIndicador}" var="tipoUso" itemLabel="#{tipoUso.codigo}" itemValue="#{tipoUso.idCodigo}"/>
+                                            </h:selectOneMenu>
+                                        </f:facet>
+                                    </p:cellEditor>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaTipoValor}"> 
+                                    <p:cellEditor>
+                                        <f:facet name="output">
+                                            <h:outputText value="#{indicadorFiltro.codigoTipoValor.codigo}" />
+                                        </f:facet>
+                                        <f:facet name="input">
+                                            <h:selectOneMenu id="cboTipVal" value="#{indicadorFiltro.codigoTipoValor.idCodigo}" label="#{msgs.etiquetaTipoValor}" > 
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{actividadMB.listaTipoValor}" var="val" itemLabel="#{val.codigo}" itemValue="#{val.idCodigo}"/>
+                                            </h:selectOneMenu>
+                                        </f:facet>
+                                    </p:cellEditor>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaFormula}">
+                                    <p:cellEditor>
+                                        <f:facet name="output">
+                                            <h:outputText value="#{indicadorFiltro.formula}" />
+                                        </f:facet>
+                                        <f:facet name="input">
+                                            <p:inputText value="#{indicadorFiltro.formula}" style="width:100%" label="#{msgs.etiquetaFormula}"/>
+                                        </f:facet>
+                                    </p:cellEditor>
+                                </p:column> 
+                                <p:column style="width: 30px;text-align: center;"> 
+                                    <p:rowEditor style="text-align: center;"/> 
+                                </p:column>
+                                <p:column style="text-align:center;width:80px" colspan="2"> 
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                    </f:facet> 
+                                    <p:commandLink id="cmdSelInd" actionListener="#{actividadMB.ponerIndicador(indicadorFiltro)}"
+                                                   update=":frmActividad:pnlActividad" 
+                                                   oncomplete="PF('popBuscar2').hide();">
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipAdd" for="cmdSelInd" value="#{msgs.toolTipSeleccionar}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdDelInd" actionListener="#{actividadMB.obtenerIndicador(indicadorFiltro)}" 
+                                                   update=":frmDelInd:pnlDelInd" 
+                                                   oncomplete="PF('popDelIndicador').show()">
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipEdit" for="cmdDelInd" value="#{msgs.mensajeEliminar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:commandButton value="#{msgs.botonNuevo} #{msgs.etiquetaIndicador}" oncomplete="PF('popBuscarIndicador').show(),PF('popBuscar2').hide()" />
+                            <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popBuscar2').hide();" />
+                        </h:panelGrid>
+                    </p:panel>
+                </p:dialog>
+            </h:form>
+
+            <!-- POP REGISTRAR INDICADOR -->
+            <h:form id="frmDatosIndicador"> 
+                <p:dialog id="popBuscarIndicador" header="#{msgs.EtiquetaCodigo} #{msgs.etiquetaIndicador}: #{actividadMB.indicadorBean.codigo}" widgetVar="popBuscarIndicador" showEffect="explode" modal="true" closeOnEscape="true" >
+                    <p:panel id="pnlGeneral" header="#{msgs.etiquetaMantIndicador}" style="margin: 0 auto;width: 500px;">
+                        <h:panelGrid id="pnlDatosIndicadores" style="margin: 0 auto"> 
+                            <h:panelGrid columns="3" styleClass="centrado"> 
+                                <p:outputLabel value="#{msgs.etiquetaIndicador}: " />
+                                <p:outputLabel value="(*)" class="requerido" />
+                                <p:inputText value="#{actividadMB.indicadorBean.nombre}" required="true" /> 
+                                <p:outputLabel value="#{msgs.etiquetaMeta}: " />
+                                <p:outputLabel value="(*)" class="requerido"/>
+                                <p:inputText value="#{actividadMB.indicadorBean.meta}" required="true" label="#{msgs.etiquetaMeta}"/> 
+                                <p:outputLabel value="#{msgs.etiquetaUso}: " />
+                                <p:outputLabel value="(*)" class="requerido"/>
+                                <p:selectOneMenu effect="fold" value="#{actividadMB.indicadorBean.codigoTiPoUso.idCodigo}" required="true" style="width: 190px;">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{actividadMB.listaTipoUsoIndicador}" var="tipoUso" itemLabel="#{tipoUso.codigo}" itemValue="#{tipoUso.idCodigo}"/>
+                                </p:selectOneMenu>
+                                <p:outputLabel value="#{msgs.etiquetaValor}: " />
+                                <p:outputLabel value="(*)" class="requerido"/>
+                                <p:selectOneMenu effect="fold" value="#{actividadMB.indicadorBean.codigoTipoValor.idCodigo}" required="true" style="width: 190px;">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{actividadMB.listaTipoValor}" var="tipoValor" itemLabel="#{tipoValor.codigo}" itemValue="#{tipoValor.idCodigo}"/>
+                                </p:selectOneMenu>
+                            </h:panelGrid>
+                            <h:panelGrid styleClass="centrado">
+                                <p:inputTextarea value="#{actividadMB.indicadorBean.formula}" required="true" rows="6" cols="50" placeholder="#{msgs.etiquetaingresar} #{msgs.etiquetaFormula}" />
+                            </h:panelGrid>
+                            <h:panelGrid styleClass="centrado" columns="1" > 
+                                <h:panelGrid columns="3" style="margin: 0 auto;padding: 5px;">
+                                    <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{actividadMB.guardarIndicador()}"
+                                                     oncomplete="if(args.operacionCorrecta){PF('popBuscarIndicador').hide();PF('popBuscar2').show();PF('popDone').show()}"
+                                                     update=":frmBuscar2:pnlBuscar,:frmDatosIndicador" />
+                                    <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{actividadMB.limpiarIndicadorBean()}"
+                                                     update=":frmDatosIndicador:pnlDatosIndicadores" process="@this" />
+                                    <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popBuscarIndicador').hide();" />
+                                </h:panelGrid>
+                            </h:panelGrid> 
+                        </h:panelGrid> 
+                    </p:panel>  
+                </p:dialog>
+            </h:form>
+
+            <!-- POP ELIMINAR INDICADOR -->
+            <h:form id="frmDelInd">
+                <p:dialog id="popDelInd" header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popDelIndicador" resizable="false" modal="true">
+                    <h:panelGrid id="pnlDelInd" columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina6">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaIndicador}: #{actividadMB.indicadorFiltroBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>   
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{actividadMB.eliminarIndicador()}"
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmBuscar2:pnlBuscar,:frmDatosIndicador"
+                                         oncomplete="if(args.operacionCorrecta){PF('popDelIndicador').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popDelIndicador').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelObj" showDetail="true" showSummary="false"/>
+                </p:dialog> 
+            </h:form>
+
+            <!-- ELIMINAR ACTIVIDAD -->
+            <h:form id="frmElimina3">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade"  hideEffect="explode" widgetVar="popEliminar3" resizable="false" modal="true">
+                    <h:panelGrid id="pnlElimina3" columns="2"> 
+                        <h:graphicImage 
+                            value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina3">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaActividad} : #{actividadMB.actividadBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" styleClass="ui-confirmdialog-yes" icon="ui-icon-check"  
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar3').hide();PF('popDone').show();}"
+                                         update=":frmTblActividad:pnlTblActividad"
+                                         actionListener="#{actividadMB.eliminarActividad()}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar3').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+
+            <!-- ELIMINA DET ACTIVIDAD -->
+            <h:form id="frmElimina4"> 
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade"  hideEffect="explode" widgetVar="popEliminar4" resizable="false" modal="true">
+                    <h:panelGrid id="pnlElimina4" columns="2"> 
+                        <h:graphicImage 
+                            value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina4">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre} : #{actividadMB.detActividadBean.descripcion}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" styleClass="ui-confirmdialog-yes" icon="ui-icon-check"  
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar4').hide();PF('popDone').show();}"
+                                         update=":frmTableAct:pnlFrmAct,:frmTableAct:pnlFrmAct" process="@this"
+                                         actionListener="#{actividadMB.eliminarDetActividad()}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar4').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+
+            <!-- ELIMINA PRESUPUESTO -->
+            <h:form id="frmElimina5">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade"  hideEffect="explode" widgetVar="popEliminar5" resizable="false" modal="true">
+                    <h:panelGrid id="pnlElimina5" columns="2"> 
+                        <h:graphicImage 
+                            value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina4">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre} : #{actividadMB.presupuestoBean.anio} - #{actividadMB.presupuestoBean.planContableBean.cuenta}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" styleClass="ui-confirmdialog-yes" icon="ui-icon-check"  
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar5').hide();PF('popDone').show();}"
+                                         update=":frmTblPres:pnlTblPres" process="@this"
+                                         actionListener="#{actividadMB.eliminarPresupuesto()}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar5').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+
+            <p:dialog id="popDetActividad" header="#{msgs.etiquetaRegistrar} #{msgs.etiquetaSubAct}" widgetVar="popDetActividad" showEffect="fade" resizable="false" modal="true" closeOnEscape="true" > 
+                <h:panelGrid columns="1" styleClass="centrado">
+                    <h:form id="frmAct">
+                        <p:panel header="#{msgs.etiquetaSubAct}" style="width: 1000px;" >
+                            <h:panelGrid styleClass="centrado" columns="2" >
+                                <h:panelGrid id="pnlDetAct" styleClass="centrado" columns="3" >
+                                    <p:outputLabel value="#{msgs.EtiquetaNombre}: " />
+                                    <p:outputLabel value="(*)" class="requerido" />
+                                    <p:inputText value="#{actividadMB.detActividadBean.descripcion}" style='width: 300px' required="true" label="#{msgs.EtiquetaNombre}" />
+                                    <p:outputLabel value="#{msgs.etiquetaNroCuenta}:" />
+                                    <p:outputLabel value="(*)" class="requerido" />
+                                    <p:selectOneMenu id="advanced" value="#{actividadMB.detActividadBean.planContableBean.cuenta}" filter="true"
+                                                     effect="fade" label="#{msgs.etiquetaNroCuenta}" style='width: 300px' panelStyle="width:300px"
+                                                     required="true" disabled="true" >
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{actividadMB.listaPlanContableBean}" var="plan" itemLabel="#{plan.cuenta}-#{plan.nombre}" itemValue="#{plan.cuenta}" />
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="#{msgs.etiquetaImpor}" />
+                                    <p:outputLabel value="(*)" class="requerido" />
+                                    <p:inputText value="#{actividadMB.detActividadBean.importe}" style='width: 300px' label="#{msgs.etiquetaImpor}" required="true" />
+                                    <p:outputLabel value="#{msgs.etiquetaPeriodo}: " />
+                                    <p:outputLabel value="(*)" class="requerido" />
+                                    <p:selectOneMenu value="#{actividadMB.detActividadBean.tipoPeriodo.codigo}" required="true" label="#{msgs.etiquetaPeriodo}" rendered="false" >
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{actividadMB.listaTipoPeriodo}" var="per" itemLabel="#{per.codigo}" itemValue="#{per.codigo}" />
+                                        <p:ajax event="change" listener="#{actividadMB.obtenerFiltroPeriodo()}"  />
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="#{msgs.etiquetaMes}" rendered="#{actividadMB.flgPeriodo}" />
+                                    <p:outputLabel value="(*)" class="requerido" rendered="#{actividadMB.flgPeriodo}" />
+                                    <p:selectOneMenu value="#{actividadMB.detActividadBean.mes}" effect="fade" label="#{msgs.etiquetaNroCuenta}" style='width: 300px' required="true" rendered="#{actividadMB.flgPeriodo}" >
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{actividadMB.listaMesesExpMap}" var="mes" itemValue="#{mes}" /> 
+                                    </p:selectOneMenu>
+                                </h:panelGrid>
+                                <p:panelGrid  id="pnlAct"  columns="2" style="width: 500px;" styleClass="centrado">
+                                    <f:facet name="header" >
+                                        <p:outputLabel value="#{msgs.etiquetaActividad}" />
+                                    </f:facet>
+                                    <h:outputText value="#{msgs.etiquetaActividad}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.nombre}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaUnidOrg}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.unidadOrganicaBean.nombreUniOrg}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaResponsable}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.responsable}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaTipo}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.labelTipoImporte}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaMonto}: " style="padding: 5px;" class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.ingreso}" styleClass="text-justify" >
+                                        <f:convertNumber pattern="#0.00" />
+                                    </h:outputText> 
+                                    <h:outputText value="#{msgs.etiquetaMontoSub}: " style="padding: 5px;" class="negrita" />
+                                    <h:outputText value="#{actividadMB.montoDetActividad}" styleClass="text-justify" >
+                                        <f:convertNumber pattern="#0.00" />
+                                    </h:outputText>
+                                </p:panelGrid> 
+                            </h:panelGrid> 
+                            <br/>
+                            <h:panelGrid columns="3" styleClass="centrado" >
+                                <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{actividadMB.guardarDetActividad()}" 
+                                                 update=":frmAct:pnlAct,msgDetAct,:frmTableAct:pnlFrmAct,:frmTableAct:pnlFrmAct,:frmAct:pnlDetAct" 
+                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show()};" />
+                                <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{actividadMB.limpiarDetActividad()}" 
+                                                 update=":frmAct:pnlDetAct" 
+                                                 process="@this"/>
+                                <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popDetActividad').hide();" actionListener="#{actividadMB.nuevaActividad()}" 
+                                                 update=":frmActividad:pnlActividad" process="@this" />
+                            </h:panelGrid>
+                            <p:messages id="msgDetAct" showDetail="false" autoUpdate="false" />
+                        </p:panel>
+                    </h:form>
+                    <h:form id="frmTableAct">  
+                        <h:panelGrid id="pnlFrmAct" columns="2" styleClass="centrado" >
+                            <p:dataTable value="#{actividadMB.listaDetActividadBean}" var="det" widgetVar="det" 
+                                         rendered="#{not empty actividadMB.listaDetActividadBean}" rows="10" rowKey="#{det}"
+                                         style="width:1100px; font-size: 12px" paginatorPosition="bottom" paginator="true" 
+                                         selection="#{actividadMB.detActividadBean}">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                                </f:facet>
+                                <p:column headerText="#{msgs.EtiquetaNombre}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{det.descripcion}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaNroCue}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{det.planContableBean.cuenta}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCuenta}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{det.planContableBean.nombre}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaImpor}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{det.importe}" >
+                                        <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAcciones}" colspan="2" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdEdiDeltAct"  actionListener="#{actividadMB.obtenerDetActividadId(det,0)}" 
+                                                   process="@this" update=":frmAct:pnlDetAct" >
+                                        <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipDetEdit" for="cmdEdiDeltAct" value="#{msgs.mensajeEdit}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdVerDelDAct"  actionListener="#{actividadMB.obtenerDetActividadId(det,1)}" 
+                                                   process="@this" oncomplete="PF('popDetActividadCr').show();" 
+                                                   update=":frmDetActCr:pnlDetActCr,:frmDetActCr:pnlDetVista,:frmDetActCr:pnlDistribucion" >
+                                        <h:graphicImage value="/resources/images/icons/ver_detalle.png" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolVerDetDAct" for="cmdVerDelDAct" value="#{msgs.etiquetaVerDeta}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdEliminarDelAct"  actionListener="#{actividadMB.obtenerDetActividadId(det,0)}"
+                                                   oncomplete="PF('popEliminar4').show();" process="@this" update=":frmElimina4:pnlElimina4">
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolDelDetAct" for="cmdEliminarDelAct" value="#{msgs.mensajeEliminar}" />
+                                </p:column> 
+                            </p:dataTable>
+                        </h:panelGrid>
+                    </h:form>
+                </h:panelGrid>  
+            </p:dialog>  
+
+            <!-- MODAL DE ACTIVIDAD CR -->
+            <p:dialog id="popDetActividadCr" header="#{msgs.etiquetaAsignar} #{msgs.etiquetaCenCos}" widgetVar="popDetActividadCr" showEffect="fade" resizable="false" modal="true" closeOnEscape="true" >
+                <h:panelGrid columns="1" styleClass="centrado">
+                    <h:form id="frmDetActCr" >
+                        <p:panel header="#{msgs.etiquetaSubActividad} - #{msgs.etiquetaCenCos}" style="width: 1200px;" >
+                            <h:panelGrid columns="2" styleClass="centrado" >
+                                <p:panelGrid  id="pnlDetVista"  columns="2" style="width: 500px;" styleClass="centrado">
+                                    <f:facet name="header" >
+                                        <p:outputLabel value="#{msgs.etiquetaActividad}" />
+                                    </f:facet>
+                                    <h:outputText value="#{msgs.etiquetaActividad}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.nombre}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaUnidOrg}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.unidadOrganicaBean.nombreUniOrg}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaResponsable}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.responsable}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaTipo}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.labelTipoImporte}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaCuentaContable}: " class="negrita" />
+                                    <h:outputText value="#{actividadMB.detActividadBean.planContableBean.cuenta}-#{actividadMB.detActividadBean.planContableBean.nombre}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaImporteAct}: " style="padding: 5px;" class="negrita" />
+                                    <h:outputText value="#{actividadMB.actividadBean.ingreso}" styleClass="text-justify" >
+                                        <f:convertNumber pattern="#0.00" />
+                                    </h:outputText>
+                                    <h:outputText value="#{msgs.etiquetaSubActividad}: " style="padding: 5px;" class="negrita" />
+                                    <h:outputText value="#{actividadMB.detActividadBean.descripcion}"  styleClass="text-justify" />
+                                    <h:outputText value="#{msgs.etiquetaMontoSub}: " style="padding: 5px;" class="negrita" />
+                                    <h:outputText value="#{actividadMB.detActividadBean.importe}" styleClass="text-justify" >
+                                        <f:convertNumber pattern="#0.00" />
+                                    </h:outputText>
+                                </p:panelGrid> 
+                                <h:panelGrid id="pnlDetActCr" styleClass="centrado" >
+                                    <p:fieldset legend="#{msgs.etiquetaAsignar}" > 
+                                        <h:panelGrid columns="1" styleClass="centrado"> 
+                                            <h:panelGrid columns="3" styleClass="siseFontGrid4" id="pnlDist">
+                                                <h:outputLabel value="#{msgs.etiquetaDistribucion}" styleClass="negrita"/>
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:selectOneMenu id="cmbTipoDist" value="#{actividadMB.actividadCrBean.codDistribucion}"
+                                                                 style="width: 200px" required="true" label="#{msgs.etiquetaDistribucion}">
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{actividadMB.listaTipoDistribucionCRBean}" var="dist" itemLabel="#{dist.codigo}" itemValue="#{dist.idCodigo}"/>
+                                                    <p:ajax listener="#{actividadMB.ponerDistribucion()}" />
+                                                </p:selectOneMenu>
+                                            </h:panelGrid>
+                                            <hr/> 
+                                            <p:pickList id="pickCentroResponsabilidad" value="#{actividadMB.dualDetActCr}" var="cr" itemLabel="#{cr.cr}-#{cr.nombre}" itemValue="#{cr}"
+                                                        showSourceFilter="true" showTargetFilter="true" filterMatchMode="contains" converter="crConverter" >
+                                                <f:facet name="sourceCaption">#{msgs.etiquetaDisponibles}</f:facet>
+                                                <f:facet name="targetCaption">#{msgs.etiquetaSeleccionados}</f:facet>
+                                            </p:pickList>
+                                        </h:panelGrid> 
+                                        <h:panelGrid columns="3" styleClass="centrado" >
+                                            <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{actividadMB.insertarActCr()}" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" 
+                                                             update=":frmDetActCr:pnlDetActCr,:frmDetActCr:msgs" >
+                                            </p:commandButton> 
+                                            <p:commandButton id="btnDist" actionListener="#{actividadMB.distribuir()}" update=":frmDetActCr:pnlDetActCr,:frmDetActCr:msgs" 
+                                                             process="btnDist,pickCentroResponsabilidad"
+                                                             value="#{msgs.botonDist}">
+                                            </p:commandButton>
+                                            <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popDetActividadCr').hide();" actionListener="#{actividadMB.limpiarDetActividad()}" 
+                                                             update=":frmAct:pnlDetAct" process="@this" />
+                                        </h:panelGrid>
+                                        <h:panelGrid id="pnlDistribucion">
+                                            <p:dataTable id="tblDetCR" value="#{actividadMB.listaActividadCrBean}" widgetVar="tblDetCR" 
+                                                         rowIndexVar="n" rendered="#{not empty actividadMB.listaActividadCrBean}" var="detCR" scrollable="true" scrollHeight="125" 
+                                                         style="font-size:14px !important;margin-bottom:0;width: #{solicitudCajaCHMB.anchoTablasShort}"> 
+                                                <f:facet name="header" >
+                                                    <h:outputText value="#{msgs.tituloCentrosRes}" />  
+                                                </f:facet>
+                                                <p:column  headerText="#{msgs.numero}" width="8%" styleClass="siseFontTable3 centrado-texto">
+                                                    <center>
+                                                        <h:outputText value="#{n+1}" />
+                                                    </center>
+                                                </p:column>
+                                                <p:column headerText="#{msgs.etiquetaCentRes}" styleClass="siseFontTable3" >
+                                                    <h:outputText value="#{detCR.centroResponsabilidadBean.nombre}"/>
+                                                </p:column>  
+                                                <p:column headerText="#{msgs.etiquetaValor}" styleClass="siseFontTable3 centrado-texto" width="25%">
+                                                    <h:inputText value="#{detCR.valorD}" size="8">
+                                                        <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                    </h:inputText>
+                                                </p:column> 
+                                            </p:dataTable>
+                                        </h:panelGrid>
+                                    </p:fieldset>
+                                </h:panelGrid>
+                            </h:panelGrid>
+                            <p:growl id="msgs" showDetail="true" />
+                        </p:panel>
+                    </h:form>
+                </h:panelGrid>
+            </p:dialog>
+
+            <!-- MODAL NUEVO PRESUPUESTO -->
+            <p:dialog id="popPresupuesto" header="#{msgs.appSiglas}" widgetVar="popPresupuesto" showEffect="fade" resizable="false" modal="true" closeOnEscape="true" >
+                <h:form id="frmPopPresupuesto" > 
+                    <p:panel header="#{msgs.etiquetaRegistrar} y #{msgs.etiquetaEdit} #{msgs.etiquetaPresu}" >
+                        <h:panelGrid id="pnlPopPresupuesto" styleClass="centrado" columns="2" >
+                            <p:outputLabel value="#{msgs.etiquetaNroCuenta}:" />
+                            <p:selectOneMenu value="#{actividadMB.presupuesto.planContableBean.cuenta}" filter="true"
+                                             effect="fade" label="#{msgs.etiquetaNroCuenta}" style='width: 300px' panelStyle="width:300px"
+                                             required="true">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                <f:selectItems value="#{actividadMB.listaPlanContableBean}" var="plan" itemLabel="#{plan.cuenta}-#{plan.nombre}" itemValue="#{plan.cuenta}" />
+                            </p:selectOneMenu>
+                            <p:outputLabel value="#{msgs.etiquetaAnio}: " />
+                            <p:spinner value="#{actividadMB.presupuesto.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="5" required="true">
+                            </p:spinner>
+                        </h:panelGrid>
+                        <h:panelGrid styleClass="centrado" columns="3" >
+                            <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{actividadMB.grabarPresupuesto()}" 
+                                             update="msgPresInsert"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show()};"/>
+                            <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{actividadMB.limpiarPresupuestoInsert()}" />
+                            <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popPresupuesto').hide();" />
+                        </h:panelGrid>
+                        <p:messages id="msgPresInsert" showDetail="false" autoUpdate="false" />
+                    </p:panel>
+                </h:form>
+            </p:dialog>
+
+        </h:body>
+    </ui:define>
+</ui:composition>
+

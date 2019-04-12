@@ -1,0 +1,1120 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{docEgresoMB.autenticarCajero()}">
+            <div>
+                <p:layout id="layEst" fullPage="false"  style="width:1300px;height:850px" styleClass="centrado">
+                    <p:layoutUnit id="pnlBuscadorDocEgre" position="west" size="800" header="#{msgs.etiquetaBusDocEgre}" resizable="false" closable="false" collapsible="true" effect="drop" collapsed="#{docEgresoMB.collapse}" effectSpeed="500" >
+                        <div>
+                            <h:form id="frmDatosDocEgreso">
+                                <h:panelGrid   style="width: 770px;padding: 0px"  styleClass="centrado">
+                                    <p:panel style="width: 770px" header="#{msgs.etiquetaFiltros}"> 
+                                        <h:panelGrid columns="4" id="pnlFiltro">   
+                                            <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" class="negrita siseFontGrid5"/>  
+                                            <p:calendar  value="#{docEgresoMB.docEgresoFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                            </p:calendar>
+                                            <h:outputLabel value="#{msgs.etiquetaFechaFin}:" class="negrita siseFontGrid5"/>  
+                                            <p:calendar  value="#{docEgresoMB.docEgresoFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                                         pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                            </p:calendar>  
+                                            <h:outputLabel value="#{msgs.etiquetaRucProveedor}" /> 
+                                            <p:inputText value="#{docEgresoMB.docEgresoFiltroBean.entidadBean.ruc}" size="20" maxlength="30"/> 
+                                            <h:outputLabel value="#{msgs.etiquetaGlosa}"/>
+                                            <p:inputText value="#{docEgresoMB.docEgresoFiltroBean.glosa}" size="20" maxlength="30"/>
+                                            <h:outputLabel value="#{msgs.etiquetaTipPago}"/> 
+                                            <p:selectOneMenu  panelStyle="width:200px" value="#{docEgresoMB.docEgresoFiltroBean.tipoPagoBean.idCodigo}" class="resetSelect" label="#{msgs.etiquetaTipPago}"
+                                                              effect="fade" style="width:200px" filter="true" filterMatchMode="contains">
+                                                <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{docEgresoMB.listaTipoPagoBean}" var="tipPago" itemLabel="#{tipPago.codigo}" itemValue="#{tipPago.idCodigo}"/>
+                                            </p:selectOneMenu> 
+                                            <h:outputLabel value="#{msgs.etiquetaNumCta}" class="negrita siseFontGrid5"/> 
+                                            <p:selectOneMenu  value="#{docEgresoMB.docEgresoFiltroBean.cuentaBancoBean.numCuenta}" label="#{msgs.etiquetaNumCta}" filter="true" style="width: 275px" panelStyle="width:275px">
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{docEgresoMB.listaCuentaBancoFiltroBean}" var="ctaBFil" itemLabel="#{ctaBFil.numCuenta} - #{ctaBFil.tipoMonedaBean.codigo} - #{ctaBFil.entidadBancoBean.nombre}" itemValue="#{ctaBFil.numCuenta}"/> 
+                                            </p:selectOneMenu>
+                                            <h:outputLabel value="#{msgs.etiquetaDetRet}" class="negrita siseFontGrid5"/> 
+                                            <p:selectOneMenu required="false" value="#{docEgresoMB.docEgresoFiltroBean.detraccionBean.idDetraccion}" style="width:100%" label="#{msgs.etiquetaDetRet}" > 
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                                <f:selectItems value="#{docEgresoMB.listaDetraccionFiltroBean}" var="detra" itemLabel="#{detra.descripcion}"
+                                                               itemValue="#{detra.idDetraccion}" /> 
+                                            </p:selectOneMenu>  
+                                            <h:outputLabel value="#{msgs.etiquetaNumeroCheque}"/>
+                                            <p:inputText value="#{docEgresoMB.docEgresoFiltroBean.numCheque}" size="20" maxlength="30"/>              
+                                        </h:panelGrid>
+                                        <p:separator/>
+                                        <h:panelGrid  columns="2" class="centrado">
+                                            <p:commandButton value="#{msgs.botonBuscar}" action="#{docEgresoMB.obtenerFiltroDocEgreso('noCheque')}"
+                                                             update="pnlDocEgre,msg,:frmDatosDocEgre:pnlDoc,:frmDatosDocEgre:pnlDoc,:frmDoc:pnlDoc" > 
+                                            </p:commandButton>
+                                            <p:commandButton  actionListener="#{docEgresoMB.limpiarDocEgresoFiltro()}" 
+                                                              update="pnlFiltro,pnlDocEgre,msg"  
+                                                              value="#{msgs.botonLimpiar}" process="@this">
+                                            </p:commandButton> 
+                                        </h:panelGrid>
+                                        <p:messages autoUpdate="false" id="msg" />
+                                    </p:panel>
+                                </h:panelGrid>
+                                <br></br>
+                                <h:panelGrid  id="pnlDocEgre" styleClass="centrado"> 
+                                    <p:dataTable id="docEgre" value="#{docEgresoMB.listaDocEgresoBean}" widgetVar="docEgre"
+                                                 selectionMode="single" 
+                                                 paginator="true"
+                                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                                 rowsPerPageTemplate="5,10,15,20"
+                                                 paginatorPosition="bottom" rowIndexVar="n" 
+                                                 var="docEgre" rowKey="#{docEgre}"  rows="12" 
+                                                 rendered="#{not empty docEgresoMB.listaDocEgresoBean}" 
+                                                 style="width: 770px;font-size:14px !important;margin-bottom:0"> 
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.tituloDocEgreso}" /> 
+                                        </f:facet> 
+                                        <f:facet name="{Exporters}">
+                                            <h:commandLink> 
+                                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                                <p:dataExporter type="xls" target="docEgre" fileName="egresos" />
+                                            </h:commandLink> 
+                                        </f:facet>
+                                        <p:column exportable="false"  styleClass="siseFontTable3 centrado-texto" width="2%" headerText="#{msgs.numero}">
+                                            <h:outputText value="#{n+1}" /> 
+                                        </p:column>   
+                                        <p:column styleClass="siseFontTable3 centrado-izq" headerText="#{msgs.etiquetaFecha}" width="4%" sortBy="#{docEgre.nroDocEgreso}">
+                                            <h:outputText value="#{docEgre.fecha}"> 
+                                            </h:outputText>
+                                        </p:column>  
+                                        <p:column styleClass="siseFontTable3 centrado-izq" headerText="#{msgs.etiquetaProveedor}" width="10%" sortBy="#{docEgre.nombreVista}"> 
+                                            <h:outputText value="#{docEgre.nombreVista}"/>
+                                        </p:column>  
+                                        <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaTipPago}" width="4%" sortBy="#{docEgre.tipoPagoBean.codigo}">
+                                            <h:outputText value="#{docEgre.tipoPagoBean.codigo}"/>
+                                        </p:column>  
+                                        <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaNumeroDe}" width="6%" sortBy="#{docEgre.numCheque}">
+                                            <h:outputText value="#{docEgre.numChequeVista}" styleClass="black"/>
+                                        </p:column>  
+                                        <p:column styleClass="siseFontTable3 centrado-derecha" headerText="#{msgs.etiquetaMontoPagado}" width="5%" sortBy="#{docEgre.montoTotal}">
+                                            <h:outputText value="#{docEgre.montoTotal}" styleClass="black">
+                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                            </h:outputText>
+                                        </p:column>  
+                                        <p:column styleClass="siseFontTable2 centrado-texto" headerText="#{msgs.etiquetaMoneda}" width="3%">
+                                            <h:outputText value="#{docEgre.tipoMonedaBean.codigo}"/>
+                                        </p:column>  
+                                        <p:column exportable="false" class="centrado" width="3%" styleClass="siseFontTable2 centrado-texto" headerText="#{msgs.etiquetaVerDeta}">
+                                            <h:commandLink action="#{docEgresoMB.obtenerDocEgresoPorId222(docEgre)}" target="_blank" id="imprimir"  >
+                                                <h:graphicImage value="/resources/images/icons/iconpdf.png" width="25"/>
+                                            </h:commandLink> 
+                                        </p:column> 
+                                        <p:column exportable="false" class="centrado" width="4%" styleClass="siseFontTable2 centrado-texto" headerText="#{msgs.etiquetaModiFecha}">
+                                            <p:commandLink  actionListener="#{docEgresoMB.cargarDocEgreso(docEgre)}" oncomplete="PF('popDocEgreso').show();" process="@this" update=":frmDoc">
+                                                <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                            </p:commandLink>     
+                                        </p:column> 
+                                    </p:dataTable> 
+                                </h:panelGrid> 
+                            </h:form>
+                        </div> 
+                    </p:layoutUnit>
+                    <p:layoutUnit position="center" styleClass="centrado">
+                        <div>    
+                            <h:form id="frmDatosDocEgre"> 
+                                <br></br>
+                                <h:panelGrid columns="1" styleClass="centrado">                   
+                                    <h:panelGrid columns="1" cellpadding="3" styleClass="centrado">
+                                        <p:panel id="pnlDoc" header="#{msgs.etiquetaDocEgre}"  toggleable="true" toggleSpeed="500" closeSpeed="500" style="width: 1100px" >
+                                            <h:panelGrid columns="1" cellpadding="1"  styleClass="centrado"  id="pnlDocEgre">
+                                                <h:panelGrid styleClass="centrado" columns="3">
+                                                    <h:outputLabel value="#{msgs.etiquetaImpr}" class="negrita"  />
+                                                    <h:outputText value="*" class="requerido"/>
+                                                    <p:selectOneMenu value="#{docEgresoMB.chequeBean.impresora}" required="true"  label="#{msgs.etiquetaImpr}"  style="width: 275px" panelStyle="width:275px">
+                                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                                        <f:selectItems value="#{docEgresoMB.listaImpresora}" var="impr" itemLabel="#{impr.impresora}" itemValue="#{impr.impresora}"/> 
+                                                        <p:ajax event="change" listener="#{docEgresoMB.mostarTipoPago()}" update="txtCheque1,txtCheque2,txtCheque3,msgsAddSol"/>
+                                                    </p:selectOneMenu>
+                                                    <h:outputText value="" class="requerido"/> 
+                                                    <h:outputText value="" class="requerido"/>
+                                                    <p:inputSwitch value="#{docEgresoMB.flgIdTipoDoc}" onLabel="Caja General" offLabel="#{msgs.etiquetaFactCompra}" disabled="#{docEgresoMB.flgCajaAperturada==false}" >
+                                                        <p:ajax event="change" update=":frmDatosDocEgre" listener="#{docEgresoMB.limpiarDocEgreso()}"/>
+                                                    </p:inputSwitch> 
+                                                </h:panelGrid>
+                                                <br></br>
+                                                <h:panelGrid columns="1" cellpadding="1" id="pnlGeneral">
+                                                    <h:panelGrid columns="3" cellpadding="1" id="pnlDocEgreRegCom" rendered="#{docEgresoMB.flgIdTipoDoc==false}" >
+                                                        <h:outputLabel value="#{msgs.etiquetaBusFacturas}" class="negrita"  rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText value=" " class="requerido" rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:panelGrid columns="3" class="siseFontGrid5" > 
+                                                            <p:commandLink disabled="#{docEgresoMB.flgCajaAperturada==false}" actionListener="#{registroCompraMB.limpiarRecepcionFiltro()}" oncomplete="PF('popRegistro').show();" process="@this" update=":frmBuscarRegistro" rendered="#{docEgresoMB.flgIdTipoDoc==false}">
+                                                                <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                                            </p:commandLink>   
+                                                        </h:panelGrid> 
+                                                        <h:outputLabel value="#{msgs.etiquetaProveedor}:" class="negrita" rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText  class="requerido" value="" rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText value="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.nombre}" rendered="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.ruc!=null and docEgresoMB.flgIdTipoDoc==false}" />
+                                                        <h:outputText value="____________________________" rendered="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.ruc==null and docEgresoMB.flgIdTipoDoc==false}" />
+
+                                                        <h:outputLabel value="#{msgs.etiquetaRucProveedor}:" class="negrita" rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText  class="requerido" value="" rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText value="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.ruc}" rendered="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.ruc!=null and docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText value="____________________" rendered="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.ruc==null and docEgresoMB.flgIdTipoDoc==false}" />
+                                                        <!--
+                                                        <h:outputText value="#{msgs.etiquetaGlosa}:" class="negrita" rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText value="" class="requerido" rendered="#{docEgresoMB.flgIdTipoDoc==false}"/>
+                                                        <h:outputText  value="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.glosa}"  rendered="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.ruc!=null and docEgresoMBpopRegistro.flgIdTipoDoc==false}"/>
+                                                        <h:outputText value="____________________________" rendered="#{docEgresoMB.docEgresoBean.facturaCompraBean.registroCompraBean.entidadBean.ruc==null and docEgresoMB.flgIdTipoDoc==false}" />  
+                                                        -->
+                                                    </h:panelGrid>
+                                                    <h:panelGrid columns="3" cellpadding="1" id="pnlDocEgreSolAren" rendered="#{docEgresoMB.flgIdTipoDoc==true}"  >
+                                                        <h:outputLabel value="#{msgs.etiquetaBuscarSoli}" class="negrita" rendered="#{docEgresoMB.flgIdTipoDoc==true}" />
+                                                        <h:outputText value="*" class="requerido" rendered="#{docEgresoMB.flgIdTipoDoc==true}"/>
+                                                        <h:panelGrid columns="3" class="siseFontGrid5" rendered="#{docEgresoMB.flgIdTipoDoc==true}">
+                                                            <p:commandLink  actionListener="#{solicitudCajaCHMB.limpiarFiltroSolicitudCajaCH2()}" oncomplete="PF('popSolCajaCh').show();" process="@this" update=":frmDatosSolCajaCh:pnlFiltro,:frmDatosSolCajaCh:pnlSolCajaCh2">
+                                                                <h:graphicImage value="/resources/images/icons/search2.png"   style="border:0; cursor:pointer;"/>
+                                                            </p:commandLink>  
+                                                        </h:panelGrid>
+                                                        <h:outputLabel value="#{msgs.etiquetaSolicitante}:" class="negrita" rendered="#{docEgresoMB.flgIdTipoDoc==true}"/>
+                                                        <h:outputText  class="requerido" value="" rendered="#{docEgresoMB.flgIdTipoDoc==true}"/>
+                                                        <h:outputText value="#{docEgresoMB.docEgresoBean.solicitudCajaCHBean.nombreSolicitante}" rendered="#{docEgresoMB.docEgresoBean.solicitudCajaCHBean.idPersonalSol!=null and docEgresoMB.flgIdTipoDoc==true}" />
+                                                        <h:outputText value="____________________________" rendered="#{docEgresoMB.docEgresoBean.solicitudCajaCHBean.idPersonalSol==null and docEgresoMB.flgIdTipoDoc==true}" />
+
+                                                        <h:outputLabel value="#{msgs.etiquetaResponsable}:" class="negrita" rendered="#{docEgresoMB.flgIdTipoDoc==true}"/>
+                                                        <h:outputText  class="requerido" value="" rendered="#{docEgresoMB.flgIdTipoDoc==true}"/>
+                                                        <h:outputText value="#{docEgresoMB.docEgresoBean.solicitudCajaCHBean.nomRespCheque}" rendered="#{docEgresoMB.docEgresoBean.solicitudCajaCHBean.idRespCheque!=null and docEgresoMB.flgIdTipoDoc==true}" />
+                                                        <h:outputText value="____________________________" rendered="#{docEgresoMB.docEgresoBean.solicitudCajaCHBean.idRespCheque==null and docEgresoMB.flgIdTipoDoc==true}" />
+                                                    </h:panelGrid> 
+                                                </h:panelGrid> 
+                                                <h:panelGrid columns="3" cellpadding="1" id="pnlDocEgreGen"  >
+                                                    <h:outputLabel value="#{msgs.etiquetaTipMon}" class="negrita"/> 
+                                                    <h:outputText value="" class="requerido"/>
+                                                    <p:selectOneRadio value="#{docEgresoMB.docEgresoBean.tipoMonedaBean.idCodigo}" required="true"  label="#{msgs.etiquetaTipMon}" >
+                                                        <f:selectItems value="#{docEgresoMB.listaTipoMonedaBean}" var="moneda" itemLabel="#{moneda.codigo}" itemValue="#{moneda.idCodigo}"/> 
+                                                        <p:ajax event="change" update="pnlDetDocE" listener="#{docEgresoMB.obtenerCambio()}"/>
+                                                        <p:ajax event="change" update="cmboCtaBco" listener="#{docEgresoMB.obtenerCuentaBancoPorTipMoneda()}"/>
+                                                        <p:ajax event="change" listener="#{docEgresoMB.mostarTipoPago()}" update="txtCheque1,txtCheque2,txtCheque3,txtCheque7,msgsAddSol"/> 
+                                                    </p:selectOneRadio>  
+                                                    <h:outputLabel value="#{msgs.etiquetaNumCta} - #{msgs.etiquetaBanco}" class="negrita"/>
+                                                    <h:outputText value="*" class="requerido"/>
+                                                    <p:selectOneMenu id="cmboCtaBco" value="#{docEgresoMB.docEgresoBean.cuentaBancoBean.numCuenta}" required="true"  label="#{msgs.etiquetaBanco}" style="width: 300px" panelStyle="width:300px">
+                                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                                        <f:selectItems value="#{docEgresoMB.listaCuentaBancoBean}" var="ctaB" itemLabel="#{ctaB.numCuenta} - #{ctaB.descripcion}" itemValue="#{ctaB.numCuenta}"/>
+                                                        <p:ajax event="change" listener="#{docEgresoMB.obtenerRuc()}"  />
+                                                    </p:selectOneMenu>   
+
+                                                    <h:outputLabel value="#{msgs.etiquetaModali}" class="negrita"/>
+                                                    <h:outputText value="*" class="requerido"/>
+                                                    <p:selectOneRadio value="#{docEgresoMB.docEgresoBean.tipoPagoBean.idCodigo}" required="true"  label="#{msgs.etiquetaModali}" > 
+                                                        <f:selectItems value="#{docEgresoMB.listaTipoPagoBean}" var="tipP" itemLabel="#{tipP.codigo}" itemValue="#{tipP.idCodigo}"/>  
+                                                        <p:ajax event="change" listener="#{docEgresoMB.mostarTipoPago()}" update="txtCheque1,txtCheque2,txtCheque3,txtCheque7,msgsAddSol"/>
+                                                        <p:ajax event="change" update="cmboCtaBco" listener="#{docEgresoMB.obtenerCuentaBancoPorTipMoneda()}"/>
+                                                    </p:selectOneRadio>
+
+                                                    <h:panelGrid id="txtCheque1" class="siseFontGrid4" >
+                                                        <h:outputText  value="#{msgs.etiquetaNumeroCheque}" class="negrita" rendered="#{docEgresoMB.flgCheque==true}"/> 
+                                                        <h:outputText  value="#{msgs.etiquetaNumeroDe}" class="negrita" rendered="#{docEgresoMB.flgCheque==false}"/> 
+                                                    </h:panelGrid>
+                                                    <h:panelGrid id="txtCheque2" class="siseFontGrid4">
+                                                        <h:outputText  value="*" class="requerido" rendered="#{docEgresoMB.flgCheque==true}"/> 
+                                                        <h:outputText  value="*" class="requerido" rendered="#{docEgresoMB.flgCheque==false}"/> 
+                                                    </h:panelGrid>
+                                                    <h:panelGrid  id="txtCheque3" class="siseFontGrid4">
+                                                        <h:outputLabel value="#{docEgresoMB.docEgresoBean.numCheque}"  class="black" rendered="#{docEgresoMB.flgCheque==true}"   style="font-size: 1.4em; text-align: left;"/> 
+                                                        <h:outputLabel value="#{docEgresoMB.docEgresoBean.numCheque}"  class="black" rendered="#{docEgresoMB.flgCheque==false}"   style="font-size: 1.4em; text-align: left;"/> 
+                                                    </h:panelGrid>  
+                                                    <h:outputLabel value="#{docEgresoMB.docEgresoBean.idDocEgreso}"/>
+                                                </h:panelGrid> 
+                                            </h:panelGrid>
+                                            <h:panelGrid  id="txtCheque7" class="siseFontGrid4">
+                                                <h:outputLabel value="#{docEgresoMB.docEgresoBean.descripTransfCta}" rendered="#{docEgresoMB.flgCheque==false}" class="black"   style="font-size: 1.4em; text-align: left;width: 100px"/> 
+                                            </h:panelGrid> 
+                                            <h:panelGrid  id="pnlDetDocE" styleClass="centrado"> 
+                                                <p:dataTable id="tblDetDocE" value="#{docEgresoMB.listaDocEgresoFacturaBean}" widgetVar="tblDetDocE"
+                                                             paginator="true" 
+                                                             editMode="cell" editable="true"
+                                                             paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                                             rowsPerPageTemplate="5,10" 
+                                                             paginatorPosition="bottom" rowIndexVar="n" 
+                                                             var="detDocE" rowKey="#{detDocE.idFacturaCompra}"  rows="10" 
+                                                             rendered="#{not empty docEgresoMB.listaDocEgresoFacturaBean }" 
+                                                             style="width: 550px;font-size:14px !important;margin-bottom:0">   
+
+                                                    <p:column headerText="#{msgs.etiquetaGlosa}" filterMatchMode="contains" width="50%" styleClass="siseFontTable3 centrado-texto"  >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText value="#{detDocE.glosa}" /></f:facet>
+                                                            <f:facet name="input"><p:inputTextarea value="#{detDocE.glosa}" style="width:96%" label="#{msgs.etiquetaGlosa}" required="true" maxlength="99" cols="30" rows="3"/></f:facet>
+                                                        </p:cellEditor>
+                                                    </p:column>
+                                                    <p:column headerText="#{msgs.etiquetaSerieDoc}" filterMatchMode="contains" width="30%" styleClass="siseFontTable3 centrado-texto" sortBy="#{fact.serieNroDoc}" >
+                                                        <h:outputText value="#{detDocE.serieNroDoc}"/>
+                                                    </p:column>   
+                                                    <p:column headerText="#{msgs.etiquetaMonto}" filterMatchMode="contains" width="20%" styleClass="siseFontTable3 centrado-texto" sortBy="#{fact.montoPago}" >
+                                                        <h:outputText value="#{detDocE.montoPago}">
+                                                            <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                        </h:outputText>
+                                                    </p:column>  
+                                                    <p:column headerText="#{msgs.etiquetaNotaCred}" filterMatchMode="contains" width="35%" styleClass="siseFontTable3 centrado-texto" >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText value="#{detDocE.dsctoNotCred}" /></f:facet>
+                                                            <f:facet name="input">
+                                                                <h:panelGrid columns="2" >
+                                                                    <p:inputText value="#{detDocE.dsctoNotCred}" label="#{msgs.etiquetaNotaCred}" required="true" maxlength="15" size="2">
+                                                                        <p:ajax event="blur" listener="#{docEgresoMB.obtenerDsctoNotaCred(detDocE)}" 
+                                                                                update=":frmDatosDocEgre:pnlDetDocE" process="@this" 
+                                                                                />
+                                                                    </p:inputText> 
+                                                                </h:panelGrid> 
+                                                            </f:facet>
+                                                        </p:cellEditor>
+                                                    </p:column> 
+                                                    <p:column headerText="#{msgs.etiquetaNroNotaCre}" filterMatchMode="contains" width="35%" styleClass="siseFontTable3 centrado-texto" >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText value="#{detDocE.nroNotaCredito}" /></f:facet>
+                                                            <f:facet name="input"> 
+                                                                <p:inputText value="#{detDocE.nroNotaCredito}" label="#{msgs.etiquetaNroNotaCre}" required="true" maxlength="15" size="2"/>
+                                                            </f:facet>
+                                                        </p:cellEditor>
+                                                    </p:column>  
+                                                    <p:columnGroup type="footer" >
+                                                        <p:column colspan="4"  style="font-size: 1em; text-align: right;" footerText="#{msgs.etiquetaMontoPagar}:" styleClass="siseFontTable3 centrado-texto" />
+                                                        <p:column footerText="#{docEgresoMB.montoTotal}" style="font-size: 1em; text-align: right;" id="prueba">
+
+                                                        </p:column>
+                                                    </p:columnGroup> 
+                                                </p:dataTable> 
+                                            </h:panelGrid>
+                                            <h:panelGrid id="pnlDetDocCaja" styleClass="centrado">
+                                                <p:dataTable id="tblDetDocCaja" value="#{docEgresoMB.listaSolicitudCajaChBean}" widgetVar="tblDetDocCaja"
+                                                             paginator="true" editable="true" editMode="cell" 
+                                                             paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                                             rowsPerPageTemplate="5,10"  
+                                                             paginatorPosition="bottom" rowIndexVar="n" 
+                                                             var="detDocCaja" rowKey="#{detDocCaja.idSolicitudCajaCh}"  
+                                                             rendered="#{not empty docEgresoMB.listaSolicitudCajaChBean}" 
+                                                             style="width: 1000px;font-size:14px !important;margin-bottom:0">  
+                                                    <p:column headerText="#{msgs.etiquetaGlosa}" filterMatchMode="contains" width="30%" styleClass="siseFontTable3 centrado-texto" sortBy="#{detDocCaja.motivo}" >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText value="#{detDocCaja.motivo}" /></f:facet>
+                                                            <f:facet name="input"><p:inputTextarea value="#{detDocCaja.motivo}" style="width:96%" label="#{msgs.etiquetaGlosa}" required="true" maxlength="99" cols="30" rows="3"/></f:facet>
+                                                        </p:cellEditor>
+                                                    </p:column>    
+                                                    <p:column visible="#{docEgresoMB.flgSolGeneral}" headerText="#{msgs.etiquetaTipoDoc}" filterMatchMode="contains" width="15%" styleClass="siseFontTable3 centrado-texto"  >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText  value="#{detDocCaja.tipoDocBean.codigo}" /></f:facet>
+                                                            <f:facet name="input">
+                                                                <h:selectOneMenu required="true" value="#{detDocCaja.tipoDocBean.idCodigo}" style="width:100%" label="#{msgs.etiquetaTipoDoc}" > 
+                                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                                                    <f:selectItems value="#{docEgresoMB.listaTipoDocBean}" var="tDoc" itemLabel="#{tDoc.codigo}"
+                                                                                   itemValue="#{tDoc.idCodigo}" />
+                                                                    <p:ajax event="change" listener="#{docEgresoMB.obtenerTipoDoc(detDocCaja)}" update=":frmDatosDocEgre:pnlDetDocCaja"/>
+                                                                </h:selectOneMenu>  
+                                                            </f:facet>
+                                                        </p:cellEditor>     
+                                                    </p:column>
+                                                    <p:column headerText="#{msgs.etiquetaRefAbb}" filterMatchMode="contains" width="35%" styleClass="siseFontTable3 centrado-texto" sortBy="#{detDocCaja.docRefAyuda}" >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText value="#{detDocCaja.serie} - #{detDocCaja.docRefAyuda}" /></f:facet>
+                                                            <f:facet name="input">
+                                                                <h:panelGrid columns="2" rendered="#{docEgresoMB.flgSolGeneral==true}">
+                                                                    <p:inputText value="#{detDocCaja.serie}" label="#{msgs.etiquetaSerie}" required="true" maxlength="15" size="2"/>
+                                                                    <p:inputTextarea value="#{detDocCaja.docRefAyuda}"  label="#{msgs.etiquetaRefAbb}" required="true" maxlength="75"  
+                                                                                     rows="3" cols="8"/>
+                                                                </h:panelGrid>
+                                                                <h:panelGrid columns="1" rendered="#{docEgresoMB.flgSolGeneral==false}" >
+                                                                    <p:inputTextarea value="#{detDocCaja.docRefAyuda}"  label="#{msgs.etiquetaRefAbb}" required="true" maxlength="75" 
+                                                                                     rows="4" cols="20"/>
+                                                                </h:panelGrid>
+                                                            </f:facet>
+                                                        </p:cellEditor>
+                                                    </p:column>   
+                                                    <p:column headerText="#{msgs.etiquetaMonto}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{detDocCaja.montoAprobado}" >
+                                                        <h:outputText value="#{detDocCaja.montoAprobado}">
+                                                            <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                        </h:outputText>
+                                                    </p:column>   
+                                                    <p:column headerText="#{msgs.etiquetaDetRet}" filterMatchMode="contains" width="15%" styleClass="siseFontTable3 centrado-texto"  >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText  value="#{detDocCaja.detraccionBean.descripcion}" /></f:facet>
+                                                            <f:facet name="input">
+                                                                <h:selectOneMenu required="true" value="#{detDocCaja.detraccionBean.idDetraccion}" style="width:100%" label="#{msgs.etiquetaDetRet}" > 
+                                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                                                    <f:selectItems value="#{docEgresoMB.listaDetraccionBean}" var="detracc" itemLabel="#{detracc.descripcion}"
+                                                                                   itemValue="#{detracc.idDetraccion}" />
+                                                                    <p:ajax event="change" listener="#{docEgresoMB.obtenerDetracionDet(detDocCaja)}" update=":frmDatosDocEgre:pnlDetDocCaja"/>
+                                                                </h:selectOneMenu>  
+                                                            </f:facet>
+                                                        </p:cellEditor>     
+                                                    </p:column>  
+                                                    <p:column headerText="#{msgs.etiquetaMontoDetRet}"   filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{detDocCaja.montoDetraccion}" >
+                                                        <h:outputText value="#{detDocCaja.montoDetraccion}" > 
+                                                            <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                        </h:outputText>
+                                                    </p:column>  
+                                                    <p:column headerText="#{msgs.etiquetaGarantia}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto"  >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText  value="#{detDocCaja.garantia}" /></f:facet>
+                                                            <f:facet name="input">
+                                                                <p:inputText value="#{detDocCaja.garantia}" label="#{msgs.etiquetaGarantia}" required="true" maxlength="8" size="2">
+                                                                    <p:ajax event="blur" listener="#{docEgresoMB.obtenerGarantia(detDocCaja)}" update=":frmDatosDocEgre:pnlDetDocCaja"/>
+                                                                </p:inputText>
+                                                            </f:facet>
+                                                        </p:cellEditor>     
+                                                    </p:column> 
+                                                    <p:column headerText="#{msgs.etiquetaNotaCred}" filterMatchMode="contains" width="18%" styleClass="siseFontTable3 centrado-texto" >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText value="#{detDocCaja.dsctoNotCred}" /></f:facet>
+                                                            <f:facet name="input">
+                                                                <h:panelGrid columns="2" >
+                                                                    <p:inputText value="#{detDocCaja.dsctoNotCred}" label="#{msgs.etiquetaNotaCred}" required="true" maxlength="18" size="2">
+                                                                        <p:ajax event="blur" listener="#{docEgresoMB.obtenerDsctoNotaCredSolicitu(detDocCaja)}" 
+                                                                                update=":frmDatosDocEgre:pnlDetDocCaja" process="@this" 
+                                                                                />
+                                                                    </p:inputText> 
+                                                                </h:panelGrid> 
+                                                            </f:facet>
+                                                        </p:cellEditor>
+                                                    </p:column> 
+                                                    <p:column headerText="#{msgs.etiquetaNroNotaCre}" filterMatchMode="contains" width="18%" styleClass="siseFontTable3 centrado-texto" >
+                                                        <p:cellEditor>
+                                                            <f:facet name="output"><h:outputText value="#{detDocCaja.nroNotaCredito}" /></f:facet>
+                                                            <f:facet name="input"> 
+                                                                <p:inputText value="#{detDocCaja.nroNotaCredito}" label="#{msgs.etiquetaNroNotaCre}" required="true" maxlength="15" size="2"/>
+                                                            </f:facet>
+                                                        </p:cellEditor>
+                                                    </p:column>  
+                                                    <p:column headerText="#{msgs.etiquetaMontoPagar}"  style="font-size: 0.9em; text-align: right;"  filterMatchMode="contains" width="18%" styleClass="siseFontTable3 centrado-texto" sortBy="#{detDocCaja.montoPago}" >
+                                                        <h:outputText value="#{detDocCaja.montoPagado}" > 
+                                                            <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                        </h:outputText>
+                                                    </p:column>    
+                                                    <p:columnGroup type="footer" >
+                                                        <p:column colspan="9" visible="#{docEgresoMB.flgSolGeneral==true}" style="font-size: 1em; text-align: right;" footerText="#{msgs.etiquetaTotal}:" styleClass="siseFontTable3" />
+                                                        <p:column colspan="8" visible="#{docEgresoMB.flgSolGeneral==false}" style="font-size: 1em; text-align: right;" footerText="#{msgs.etiquetaTotal}:" styleClass="siseFontTable3" />
+                                                        <p:column footerText="#{docEgresoMB.montoTotal}" id="prueba">
+                                                        </p:column>
+                                                    </p:columnGroup>
+                                                </p:dataTable>
+                                            </h:panelGrid>
+                                            <br></br> 
+                                            <h:panelGrid class="centrado" columns="3" >
+                                                <p:commandButton actionListener="#{docEgresoMB.insertarDocEgreso()}" disabled="#{docEgresoMB.flgCajaAperturada==false || docEgresoMB.mostrarImpresora==true}"
+                                                                 update="pnlDocEgre,:frmDatosDocEgreso:pnlDocEgre,:frmDatosDocEgreso:pnlFiltro,msgsAddSol,btnImp" 
+                                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show();}if(args.montoApagarSuperior){PF('popError').show()}"
+                                                                 value="#{msgs.botonGrabar}">
+                                                </p:commandButton>
+                                                <p:commandButton actionListener="#{docEgresoMB.limpiarDocEgresoGrabar()}" 
+                                                                 update="pnlDocEgre,btnImp,:frmDatosDocEgre"
+                                                                 value="#{msgs.botonNuevo}" process="@this">
+                                                </p:commandButton> 
+
+                                            </h:panelGrid> 
+                                            <h:panelGrid columns="1" id="btnImp" class="centrado" >
+                                                <h:commandLink action="#{docEgresoMB.imprimirPdf()}" target="_blank" id="imprimir"  >
+                                                    <h:graphicImage value="/resources/images/impresora.png" />
+                                                </h:commandLink>
+                                                <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" />
+                                            </h:panelGrid>
+                                        </p:panel>
+                                    </h:panelGrid>  
+                                    <p:messages id="msgsAddSol"  autoUpdate="false"/>
+                                </h:panelGrid>   
+                            </h:form>
+                        </div>
+                    </p:layoutUnit>
+                </p:layout> 
+            </div> 
+            <h:form id="frmBuscarRegistro">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popRegistro" closeOnEscape="true" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro"  >
+                        <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                            <h:panelGrid columns="2" styleClass="centrado" id="pnlFiltroReg">
+                                <h:outputLabel value="#{msgs.etiquetaFecIni}"/>
+                                <p:calendar  value="#{registroCompraMB.facturaCompraFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFecIni}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar> 
+
+                                <h:outputLabel value="#{msgs.etiquetaFecFin}"/>
+                                <p:calendar  value="#{registroCompraMB.facturaCompraFiltroBean.fechaFin}"  label="#{msgs.etiquetaFecFin}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar> 
+
+                                <h:outputLabel value="#{msgs.etiquetaRegistroCompra} " />
+                                <p:inputText value="#{registroCompraMB.facturaCompraFiltroBean.registroCompraBean.idRegistroCompra}" size="15" maxlength="15">
+                                </p:inputText>
+
+                                <h:outputLabel value="#{msgs.etiquetaSerieDoc}"/>
+                                <p:inputText value="#{registroCompraMB.facturaCompraFiltroBean.serieDoc}" size="15" maxlength="15"> 
+                                </p:inputText>   
+
+                                <h:outputLabel value="#{msgs.etiquetaNumDoc}"/>
+                                <p:inputText value="#{registroCompraMB.facturaCompraFiltroBean.nroDoc}" size="15" maxlength="15"> 
+                                </p:inputText>   
+
+                            </h:panelGrid> 
+                            <h:panelGrid styleClass="centrado" columns="3">
+                                <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{registroCompraMB.obtenerFacturaAutorizadoPorFiltro()}" update="pnlFiltro,pnlRegistro,msg" />
+                                <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{registroCompraMB.limpiarRecepcionFiltro()}" update="pnlFiltro,pnlRegistro,msg"/>
+                                <p:commandButton id="btnNuevo4"  value="#{msgs.botonCerrar}"  oncomplete="PF('popRegistro').hide();" />
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid  id="pnlRegistro" styleClass="centrado"> 
+                        <p:dataTable id="tblRegistro" value="#{registroCompraMB.listaFacturaCompraBean}" widgetVar="tblRegistro"
+                                     selectionMode="single" 
+                                     scrollable="true" scrollHeight="290"   
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10"
+                                     selection="#{registroCompraMB.facturaCompraBean}" paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="fact" rowKey="#{fact.idFacturaCompra}"   
+                                     rendered="#{not empty registroCompraMB.listaFacturaCompraBean }" 
+                                     style="width: 850px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloRegistros}" />  
+                            </f:facet>
+                            <p:column style="white-space: nowrap" headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>  
+                            <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaSerie}" filterMatchMode="contains" width="6%" styleClass="siseFontTable3" sortBy="#{fact.serieDoc}" >
+                                <h:outputText value="#{fact.serieDoc}" />
+                            </p:column>
+                            <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{fact.nroDoc}" >
+                                <h:outputText value="#{fact.nroDoc}" />
+                            </p:column>
+                            <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaProveedor}" filterMatchMode="contains" width="40%" styleClass="siseFontTable3" sortBy="#{fact.registroCompraBean.entidadBean.nombre}" >
+                                <h:outputText value="#{fact.entidadCompra}" />
+                            </p:column> 
+                            <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaTipoCategoria}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{fact.registroCompraBean.tipoCategoriaBean.codigo}" >
+                                <h:outputText value="#{fact.tipoCompra}" />
+                            </p:column>
+                            <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaMoneda}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3" sortBy="#{fact.tipoMonedaBean.codigo}" >
+                                <h:outputText value="#{fact.tipoMonedaBean.codigo}" />
+                            </p:column> 
+                            <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaTotal}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 " sortBy="#{fact.registroCompraBean.registro.total}" >
+                                <h:outputText value="#{fact.montoPago}" />
+                            </p:column>
+                            <p:column  style="white-space: nowrap" sortBy="#{fact.codModoPago}" headerText="#{msgs.etiquetaModali}" width="10%"  styleClass="nombreFiltro centrado-texto siseFont1">
+                                <h:outputText value="#{fact.codModoPago}"/>
+                            </p:column>  
+                            <p:column  style="text-align:center;width:60px;white-space: nowrap" width="6%">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.toolTipSeleccionar}"  styleClass="siseFontTable2 centrado-texto" />
+                                </f:facet>
+                                <p:commandLink id="cmdSelReg" actionListener="#{registroCompraMB.ponerRegistroCompraEnDocEgreso(fact)}"
+                                               update=":frmDatosDocEgre:pnlDocEgre,:frmDatosDocEgre:pnlDetDocE,:frmBuscarRegistro:pnlRegistro,:frmDatosDocEgre:pnlDocEgreGen"
+                                               oncomplete="if(args.operacionCorrecta)">
+                                    <h:graphicImage value="/resources/images/icons/agregar.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink> 
+                                <p:tooltip id="toolTipAdd" for="cmdSelReg" value="#{msgs.toolTipAgregar}" />
+                            </p:column>
+                            <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaVerDeta}" width="7%" styleClass="nombreFiltro centrado-texto siseFont1">
+                                <p:commandLink  action="#{registroCompraMB.obtenerPorIdFacturaVer2(fact)}"  
+                                                oncomplete="if(args.operacionCorrecta){PF('popFactCom').show();}" 
+                                                process="@this" update=":frmFactCom:pnlDatosFactCom">
+                                    <h:graphicImage value="/resources/images/icons/ver_detalle.png"   style="border:0; cursor:pointer;white-space: nowrap;"/>
+                                </p:commandLink> 
+                            </p:column> 
+                        </p:dataTable>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmDatosSolCajaCh">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popSolCajaCh" closeOnEscape="false" closable="false" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid   style="width: 750px;padding: 0px"  styleClass="centrado">
+                        <p:panel style="width: 745px" header="#{msgs.etiquetaFiltros}"> 
+                            <h:panelGrid columns="4" id="pnlFiltro">   
+                                <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" class="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar>
+                                <h:outputLabel value="#{msgs.etiquetaFechaFin}:" class="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar>
+                                <h:outputLabel value="#{msgs.etiquetaTipMon}" class="negrita siseFontGrid5"/> 
+                                <p:selectOneRadio value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.tipoMonedaBean.idCodigo}" required="false"  label="#{msgs.etiquetaTipMon}" class="negrita siseFontGrid5" >
+                                    <f:selectItems value="#{solicitudCajaCHMB.listTipoMoneda}" var="moneda" itemLabel="#{moneda.codigo}" itemValue="#{moneda.idCodigo}"/> 
+                                </p:selectOneRadio>
+                                <h:outputLabel value="#{msgs.etiquetaCodigoSol} "/>
+                                <p:inputText value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.idSolicitudCajaCh}" size="20" maxlength="30"/>
+
+                                <h:outputLabel value="#{msgs.etiquetaCodigoSolicitante}" class="negrita siseFontGrid5"/> 
+                                <p:inputText value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.idPersonalSol}" size="10" maxlength="30"/> 
+                                <h:outputLabel value="#{msgs.etiquetaSolicitante}" class="negrita siseFontGrid5"/> 
+                                <p:inputText value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.nombreSolicitante}" size="20" maxlength="30"/> 
+                                <h:outputLabel value="#{msgs.etiquetaCodigoRespCheque}" class="negrita siseFontGrid5"/>
+                                <p:inputText value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.idRespCheque}" size="10" maxlength="30"/>
+                                <h:outputLabel value="#{msgs.etiquetaResCheque}" class="negrita siseFontGrid5"/>
+                                <p:inputText value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.nomRespCheque}" size="20" maxlength="30"/> 
+
+                                <h:outputLabel value="#{msgs.etiquetaTipoSolicitud}" class="negrita siseFontGrid5"/>
+                                <p:selectOneMenu value="#{cajaChicaMovMB.solicitudCajaCHFiltroBean.tipoSolicitudBean.idTipoSolicitud}" style="width: 200px" panelStyle="width:200px" >
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>  
+                                    <f:selectItems value="#{solicitudCajaCHMB.listaTipoSolicitudBean}" var="ts" itemLabel="#{ts.nombre}" itemValue="#{ts.idTipoSolicitud}"/> 
+                                </p:selectOneMenu>
+
+                                <h:outputLabel value="#{msgs.etiqeutaConLim}" class="negrita siseFontGrid5"/> 
+                                <p:selectBooleanCheckbox value="#{solicitudCajaCHMB.flgLimiteMin}" >
+                                    <p:ajax event="change" update="label1,label2"/>
+                                </p:selectBooleanCheckbox>
+                                <h:panelGrid id="label1" columns="1">
+                                    <h:outputLabel value="#{msgs.etiquetaTipCH}" rendered="#{solicitudCajaCHMB.flgLimiteMin}"/>
+                                    <p:selectOneMenu value="#{solicitudCajaCHMB.cajaChicaBean.tipoCajaChica.idCodigo}" label="#{msgs.etiquetaTipCH}" 
+                                                     required="#{solicitudCajaCHMB.flgLimiteMin}" rendered="#{solicitudCajaCHMB.flgLimiteMin}"
+                                                     styleClass="resetSelect">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{solicitudCajaCHMB.listaTipoCajaChica}" var="tipoCH" 
+                                                       itemLabel="#{tipoCH.codigo}"
+                                                       itemValue="#{tipoCH.idCodigo}"/> 
+                                        <p:ajax event="change" update="label2"/>  
+                                    </p:selectOneMenu>
+                                </h:panelGrid>
+                                <h:panelGrid id="label2" columns="2">
+                                    <h:outputText value="#{msgs.etiquetaSoles}" rendered="#{solicitudCajaCHMB.flgLimiteMin}"/>
+                                    <h:outputText  value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.montoMaxMovSol}" rendered="#{solicitudCajaCHMB.flgLimiteMin}"/>
+                                    <h:outputText value="#{msgs.etiquetaDolares}" rendered="#{solicitudCajaCHMB.flgLimiteMin}"/>
+                                    <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHFiltroBean.montoMaxMovDol}" rendered="#{solicitudCajaCHMB.flgLimiteMin}"/>
+                                </h:panelGrid>
+                            </h:panelGrid>
+                            <p:separator/>
+                            <h:panelGrid  columns="3" class="centrado">
+                                <p:commandButton value="#{msgs.botonBuscar}" action="#{solicitudCajaCHMB.obtenerSolicitudPorFiltro()}"
+                                                 update="pnlSolCajaCh2,msg,label2" >  
+                                </p:commandButton>
+                                <p:commandButton  actionListener="#{solicitudCajaCHMB.limpiarFiltroSolicitudCajaCH()}" 
+                                                  update="pnlFiltro,pnlSolCajaCh2,msg"  
+                                                  value="#{msgs.botonLimpiar}" process="@this">
+                                </p:commandButton> 
+                                <p:commandButton id="btnNuevo4"  value="#{msgs.botonCerrar}"  oncomplete="PF('popSolCajaCh').hide();" />
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />
+                        </p:panel>
+                    </h:panelGrid>
+                    <br></br>
+                    <h:panelGrid  id="pnlSolCajaCh2" styleClass="centrado"> 
+                        <p:dataTable id="solCajaCh" value="#{solicitudCajaCHMB.listaSolicitudCajaCHFiltroBean}" widgetVar="solCajaCh"
+                                     selectionMode="single" 
+                                     scrollable="true" scrollHeight="290"   
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     paginatorPosition="bottom" rowIndexVar="n" 
+                                     var="solCajaCh" rowKey="#{solCajaCh}"   
+                                     rendered="#{not empty solicitudCajaCHMB.listaSolicitudCajaCHFiltroBean}" 
+                                     style="width: 900px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloSolicitudesAutorizadas}" />  
+                            </f:facet> 
+                            <p:column style="white-space: nowrap" headerText="#{msgs.numero}" width="6%" styleClass="nombre2Filtro centrado-texto siseFont1">
+                                <h:outputText value="#{n+1}" />
+                            </p:column> 
+                            <p:column style="white-space: nowrap" sortBy="#{solCajaCh.idSolCaja}" headerText="#{msgs.etiquetaCodigo}" width="9%" styleClass="nombre0Filtro centrado-texto siseFont1">
+                                <h:outputText value="#{solCajaCh.idSolCaja}" />
+                            </p:column>  
+                            <p:column style="white-space: nowrap"   sortBy="#{solCajaCh.nomRespCheque}"  headerText="#{msgs.etiquetaResCheque}" width="40%" styleClass="nombre3Filtro siseFont1">
+                                <p:outputLabel value="#{solCajaCh.nomRespCheque}"/>
+                            </p:column>
+                            <p:column style="white-space: nowrap" sortBy="#{solCajaCh.tipoSolicitudBean.nombre}" headerText="#{msgs.etiquetaTipoSolicitud}" width="12%"  styleClass="nombreFiltro centrado-texto siseFont1">
+                                <h:outputText value="#{solCajaCh.tipoSolicitudBean.nombre}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap" sortBy="#{solCajaCh.fechaSol}" headerText="#{msgs.etiquetaFecSol}" width="12%"  styleClass="nombreFiltro centrado-texto siseFont1">
+                                <h:outputText value="#{solCajaCh.fechaSol}" >
+                                    <f:convertDateTime  pattern="dd/MM/yyyy" />
+                                </h:outputText>
+                            </p:column> 
+                            <p:column   sortBy="#{solCajaCh.montoAprobado}" headerText="#{msgs.etiquetaMonto}" style="font-size: 0.9em ;text-align: right !important;font-weight: bold;white-space: nowrap" width="10%"  styleClass="nombreFiltro  siseFont1">
+                                <h:outputText value="#{solCajaCh.montoAprobado}">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column  style="white-space: nowrap"  sortBy="#{solCajaCh.tipoMonedaBean.codigo}" headerText="#{msgs.etiquetaMoneda}" width="10%"  styleClass="nombreFiltro centrado-texto siseFont1">
+                                <h:outputText value="#{solCajaCh.tipoMonedaBean.codigo}"/>
+                            </p:column>  
+                            <p:column  style="white-space: nowrap" sortBy="#{solCajaCh.codModoPago}" headerText="#{msgs.etiquetaModali}" width="13%"  styleClass="nombreFiltro centrado-texto siseFont1">
+                                <h:outputText value="#{solCajaCh.codModoPago}"/>
+                            </p:column>  
+                            <p:column  headerText="#{msgs.tolTipSel}" width="7%" styleClass="centrado-texto siseFont1">
+                                <p:commandLink id="aaa" action="#{solicitudCajaCHMB.ponerSoliCajaEnDocEgreso(solCajaCh)}"
+                                               update=":frmDatosDocEgre,:frmDatosSolCajaCh:pnlSolCajaCh2,:frmDatosDocEgre:pnlDocEgreGen" process="@this"> 
+                                    <h:graphicImage value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;white-space: nowrap;" />
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd2" for="aaa" value="#{msgs.tolTipSel}" />
+                            </p:column>
+                            <p:column  headerText="#{msgs.etiquetaVerDeta}" width="7%" styleClass="nombreFiltro centrado-texto siseFont1">
+                                <p:commandLink  action="#{solicitudCajaCHMB.obtenerSolicitudCajaChPorId(solCajaCh)}"
+                                                oncomplete="if(args.operacionCorrectaVista){PF('popDetSolCajaCh').show();}" 
+                                                process="@this" update=":frmSolCajaCh:pnlDatosSolCajaCh">
+                                    <h:graphicImage value="/resources/images/icons/ver_detalle.png"   style="border:0; cursor:pointer;white-space: nowrap;"/>
+                                </p:commandLink> 
+                            </p:column> 
+                        </p:dataTable> 
+                    </h:panelGrid>  
+                </p:dialog>
+            </h:form>
+            <h:form id="frmSolCajaCh">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popDetSolCajaCh" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <center> <h:outputText value="#{msgs.etiquetaSolGeneral}" class="siseFontGrid5 black" /> </center> 
+                    <br></br>
+                    <h:panelGrid columns="1" id="pnlDatosSolCajaCh"> 
+                        <h:panelGrid columns="2" class="siseFontGrid5"> 
+                            <h:outputText value="#{msgs.etiquetaFechaSol} " /> 
+                            <h:outputText  value="#{solicitudCajaCHMB.solicitudCajaCHBean.fechaSolView}"  >                                 
+                            </h:outputText>    
+                            <h:outputLabel value="#{msgs.etiquetaCodigoSol}:" /> 
+                            <h:outputLabel value="#{solicitudCajaCHMB.solicitudCajaCHBean.idSolicitudCajaCh}"/>    
+                            <h:outputLabel value="#{msgs.etiquetaEstadoSolicitud}:" /> 
+                            <h:outputLabel value="#{solicitudCajaCHMB.solicitudCajaCHBean.tipoStatusSolCajaChBean.codigo}"/>    
+                            <h:outputLabel value="#{msgs.etiquetaSolicitante}:" /> 
+                            <h:outputLabel value="#{solicitudCajaCHMB.solicitudCajaCHBean.nombreSolicitante}"/>    
+                            <h:outputLabel value="#{msgs.etiquetaUnidOrg}:"/>
+                            <h:outputLabel value="#{solicitudCajaCHMB.solicitudCajaCHBean.personalBean.unidadOrganicaBean.nombreUniOrg==null ?'-' :solicitudCajaCHMB.solicitudCajaCHBean.personalBean.unidadOrganicaBean.nombreUniOrg}" /> 
+                            <h:outputLabel value="#{msgs.etiquetaTipoSolicitud}:" />
+                            <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.tipoSolicitudBean.nombre}" /> 
+                            <h:outputLabel value="#{msgs.etiquetaPrioridad}:"/>
+                            <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.tipoPrioridadBean.codigo}" /> 
+                            <h:outputLabel value="#{msgs.etiquetaTipoConcepto}:"/>
+                            <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.conceptoUniNegBean.conceptoBean.tipoConceptoBean.nombre}" /> 
+                            <h:outputLabel value="#{msgs.etiquetaConcepto}:"/>
+                            <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.conceptoUniNegBean.conceptoBean.nombreConceptoVista}"  /> 
+                            <h:outputLabel value="#{msgs.etiquetaModali}:"/>
+                            <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.codModoPago}"  /> 
+
+                            <h:outputText value="#{msgs.etiquetaMontoSoli}:"/>
+                            <h:panelGrid columns="5" class="siseFontGrid4">
+                                <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.monto}"  >  
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                                <p:spacer width="10"/>
+                                <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.tipoMonedaBean.codigo}" />
+                            </h:panelGrid>
+                            <h:outputText value="#{msgs.etiquetaMontoApro}:"/>
+                            <h:panelGrid columns="5" class="siseFontGrid4">
+                                <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.montoAprobado}" >   
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                                <p:spacer width="10"/>
+                                <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.tipoMonedaBean.codigo}" />
+                            </h:panelGrid>
+                            <h:outputText value="#{msgs.etiquetaResCheque}:" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idRespCheque!=null}" /> 
+                            <h:outputText value="#{solicitudCajaCHMB.solicitudCajaCHBean.nomRespCheque}" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idRespCheque !=null}"/> 
+
+                            <h:inputHidden     value="#{solicitudCajaCHMB.solicitudCajaCHBean.idSolicitudCajaCh}"/>
+                            <h:inputHidden value="#{solicitudCajaCHMB.solicitudCajaCHBean.idPersonalSol}"/>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" class="siseFontGrid5">
+                            <h:outputText value="#{msgs.etiquetaMotivo}"/>
+                            <p:outputPanel  > 
+                                <p>#{solicitudCajaCHMB.solicitudCajaCHBean.motivo}</p> 
+                            </p:outputPanel> 
+                            <h:outputLabel value="#{msgs.etiquetaObs}:" />
+                            <p:outputPanel  > 
+                                <p>#{solicitudCajaCHMB.solicitudCajaCHBean.obs}</p> 
+                            </p:outputPanel>
+                        </h:panelGrid>
+                        <br></br>
+                        <h:panelGrid columns="3" class="siseFontGrid5">
+                            <h:outputText  value="#{msgs.etiquetaAutorizador} 1: " rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer1Bean.idPersonal!=null}"/>  
+                            <h:outputText  value="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutoriza1Vista}" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer1Bean.idPersonal!=null}"/> 
+                            <h:outputText  value="-  #{solicitudCajaCHMB.solicitudCajaCHBean.flgAutorizado1Vista}" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer1Bean.idPersonal!=null}"/>
+
+                            <h:outputText  value="#{msgs.etiquetaAutorizador} 2: " rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer2Bean.idPersonal!=null}"/>
+                            <h:outputText  value="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutoriza2Vista}" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer2Bean.idPersonal!=null}"/>
+                            <h:outputText  value="- #{solicitudCajaCHMB.solicitudCajaCHBean.flgAutorizado2Vista}" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer2Bean.idPersonal!=null}"/>
+
+                            <h:outputText  value="#{msgs.etiquetaAutorizador} 3: " rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer3Bean.idPersonal!=null}"/>
+                            <h:outputText  value="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutoriza3Vista}" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer3Bean.idPersonal!=null}" />
+                            <h:outputText  value="-  #{solicitudCajaCHMB.solicitudCajaCHBean.flgAutorizado3Vista}" rendered="#{solicitudCajaCHMB.solicitudCajaCHBean.idAutorizaPer3Bean.idPersonal!=null}" />
+                        </h:panelGrid>
+                        <h:panelGrid id="pnlDistribucion">
+                            <p:dataTable id="tblDetCR" value="#{solicitudCajaCHMB.solicitudCajaCHBean.listaDetSolicitudCajaChCRBean}" widgetVar="tblDetCR" 
+                                         rowIndexVar="n" rendered="#{not empty solicitudCajaCHMB.solicitudCajaCHBean.listaDetSolicitudCajaChCRBean}" var="detCR" scrollable="true" scrollHeight="125" 
+                                         style="font-size:14px !important;margin-bottom:0;width: #{solicitudCajaCHMB.anchoTablasShort}"> 
+                                <p:column  headerText="#{msgs.numero}" width="8%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCentRes}" styleClass="siseFontTable3" >
+                                    <h:outputText value="#{detCR.centroResponsabilidadBean.nombre}"/>
+                                </p:column>  
+                                <p:column headerText="#{msgs.etiquetaValor}" styleClass="siseFontTable3 centrado-texto" width="25%">
+                                    <h:outputLabel value="#{detCR.valorD}"  >
+                                        <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputLabel>
+                                </p:column> 
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <br></br>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton
+                                oncomplete="PF('popDetSolCajaCh').hide();" 
+                                value="#{msgs.botonCerrar}">
+                            </p:commandButton> 
+                        </h:panelGrid>
+                        <p:messages id="msgsAuto" showSummary="true"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmDocEgre">
+                <p:dialog  header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popDocEgre" resizable="false" modal="true" styleClass="autoWidthDialog" >
+                    <h:panelGrid  columns="1" id="pnlDatosDocEgre" styleClass="centrado"> 
+                        <h:panelGrid styleClass="centrado">
+                            <h:outputText value="#{msgs.etiquetaComprobantePago}" class="siseFontGrid7 black centrado" /> 
+                        </h:panelGrid> 
+                        <p:separator/>
+                        <h:outputLabel value="#{msgs.etiquetaRuc}: 20-12345678-0" />   
+                        <br></br>
+                        <h:panelGrid columns="30" class="siseFontGrid5"> 
+                            <h:outputText value="#{msgs.etiquetaBanco}: " class="black"/> 
+                            <h:outputText  value="#{docEgresoMB.docEgresoBean.cuentaBancoBean.entidadBancoBean.nombre}" />
+                            <p:spacer width="30"/>
+                            <h:outputLabel value="#{msgs.etiquetaChequeN}:" class="black"/> 
+                            <h:outputLabel value="#{docEgresoMB.docEgresoBean.numCheque}"/>   
+                            <p:spacer width="30"/>
+                            <h:outputLabel value="#{msgs.etiquetaNVoucher}:" class="black"/> 
+                            <h:outputLabel value="#{docEgresoMB.docEgresoBean.idDocEgreso}"/>     
+                        </h:panelGrid>  
+                        <h:panelGrid columns="7" class="siseFontGrid5">
+                            <h:panelGrid columns="1" class="siseFontGrid5"> 
+                                <h:outputText value="#{msgs.etiquetaNumCta}" class="black"/>
+                                <h:outputLabel value="#{docEgresoMB.docEgresoBean.cuentaBancoBean.numCuenta}" />
+                            </h:panelGrid>
+                            <p:spacer width="30"/>
+                            <h:panelGrid columns="1" class="siseFontGrid5"> 
+                                <h:outputText value="#{msgs.EtiquetaNombre} #{msgs.etiquetaProveedor}" class="black"/>
+                                <h:outputLabel value="#{docEgresoMB.docEgresoBean.nombreVista}" />   
+                            </h:panelGrid>  
+                            <p:spacer width="30"/>
+                            <h:panelGrid columns="1" class="siseFontGrid5">  
+                                <h:outputText value="#{msgs.etiquetaConcepto}" class="black"/> 
+                                <h:outputLabel value="#{docEgresoMB.docEgresoBean.glosa}"  /> 
+                            </h:panelGrid> 
+                            <p:spacer width="30"/>
+                            <h:panelGrid columns="1" class="siseFontGrid5"> 
+                                <h:outputText value="#{msgs.etiquetaTotal}" class="black"/>
+                                <h:outputLabel value="#{docEgresoMB.docEgresoBean.montoTotal}" > 
+                                    <f:convertNumber pattern="#0.00" />
+                                </h:outputLabel>
+                            </h:panelGrid> 
+                        </h:panelGrid> 
+                        <h:panelGrid id="pnlDetDocEgreso"> 
+                            <p:dataTable id="detDocEgre" value="#{docEgresoMB.listaDetDocEgresoBean}" widgetVar="detDocEgre"
+                                         paginator="true" 
+                                         paginatorPosition="bottom" rowIndexVar="n" 
+                                         var="detDocEgre" rowKey="#{detDocEgre.idDocEgreso}"  rows="10" 
+                                         rendered="#{not empty docEgresoMB.listaDetDocEgresoBean}" 
+                                         style="width: 785px;font-size:14px !important;margin-bottom:0"> 
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.tituloDocEgreso}" />  
+                                </f:facet>  
+                                <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaCodDocEgreso}" width="5%">
+                                    <h:outputText  value="#{detDocEgre.registroCompraBean.idRegistroCompra}"/>
+                                </p:column>  
+                                <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaNumCta}" width="5%">
+                                    <h:outputText  value="#{detDocEgre.cuentaBancoBean.numCuenta}"/>
+                                </p:column>  
+                                <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaProveedor}" width="10%">
+                                    <h:outputText value="#{detDocEgre.nombreVista}"/>
+                                </p:column> 
+                                <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaDesc}" width="8%">
+                                    <h:outputText value="#{detDocEgre.glosa}"/>
+                                </p:column>    
+                                <p:column styleClass="siseFontTable3 centrado-texto" headerText="#{msgs.etiquetaMontoPagado}" width="5%">
+                                    <h:outputText value="#{detDocEgre.montoPagado}">
+                                        <f:convertNumber pattern="#0.00" />
+                                    </h:outputText>
+                                </p:column>
+                                <p:columnGroup type="footer" >
+                                    <p:column colspan="4"  style="font-size: 1em; text-align: right;" footerText="#{msgs.etiquetaTotal}:" />
+                                    <p:column footerText="#{detDocEgre.montoTotal}" style="font-size: 1em; text-align: right;"/>
+                                </p:columnGroup>
+                            </p:dataTable>
+                        </h:panelGrid>  
+                        <br></br><br></br><br></br><br></br>
+                        <p:separator/>
+                        <br></br>
+                        <h:panelGrid columns="6">
+                            <p:panel style="width: 120px;height: 120px" header="PREPARADO" class="siseFont1"/>
+                            <p:panel style="width: 120px;height: 120px" header="REVISADO"  class="siseFont1"/>
+                            <p:panel style="width: 120px;height: 120px" header="APROBADO"  class="siseFont1"/>
+                            <p:spacer width="125"/>
+                            <h:outputText value="#{msgs.etiquetaTipoCambio}:" class="black siseFont2"/>
+                            <h:outputLabel value="#{docEgresoMB.tipoCambio.tcCompra}" /> 
+                        </h:panelGrid>
+                        <p:separator/>
+                        <h:panelGrid columns="7" class="siseFontGrid5">
+                            <h:outputText value="Conforme" class="black"/>
+                            <h:panelGrid columns="4" class="siseFontGrid5"> 
+                                <h:outputLabel value="............................................" />
+                                <h:outputLabel value="DNI" />
+                                <h:outputLabel value="....................." />
+                                <p:spacer height="100"/>
+                                <h:outputLabel value="............................................" />
+                                <h:outputLabel value="FECHA" />
+                                <h:outputLabel value="..............................................." /> 
+                            </h:panelGrid>
+                        </h:panelGrid>
+                        <p:separator/>
+                        <h:panelGrid columns="4" class="siseFontGrid5" rendered="#{docEgresoMB.mostrarCheque==true}"> 
+                            <h:panelGrid columns="1" class="siseFontGrid5"> 
+                                <h:outputText value="#{docEgresoMB.docEgresoBean.creaFecha}" class="black">
+                                    <f:convertDateTime type="date" dateStyle="short"/>
+                                </h:outputText>
+                                <h:outputLabel value="#{docEgresoMB.docEgresoBean.entidadBean.nombre}" /> 
+                                <h:outputLabel value="#{docEgresoMB.docEgresoBean.montoPagado}" />  
+                            </h:panelGrid>
+                            <p:separator style="height: 150px"/>
+                            <p:spacer width="30"/>
+                            <h:panelGrid columns="2">
+                                <h:panelGrid columns="6" class="siseFontGrid5"> 
+                                    <h:outputText value="Colegios maristas"/>
+                                    <p:spacer width="40"/>
+                                    <h:outputLabel value="No:" class="black"/> 
+                                    <h:outputLabel value="#{docEgresoMB.docEgresoBean.numCheque}"/>   
+                                    <p:spacer width="40"/>
+                                    <h:outputLabel value="s. #{docEgresoMB.docEgresoBean.montoPagado}" >  
+                                        <f:convertNumber pattern="#0.00" />
+                                    </h:outputLabel>
+                                </h:panelGrid>
+                                <br></br>
+                                <h:panelGrid columns="1" class="siseFontGrid5">
+                                    <h:panelGrid columns="2" class="siseFontGrid5">
+                                        <h:outputText value="Pague a orden de:" class="black"/>
+                                        <h:outputLabel value="#{docEgresoMB.docEgresoBean.entidadBean.nombre}" />
+                                    </h:panelGrid>
+                                    <p:spacer height="10"/>
+                                    <h:panelGrid columns="4" class="siseFontGrid5">
+                                        <h:outputText value="La suma de:" class="black"/>
+                                        <h:outputLabel value="..............................................." /> 
+                                        <br></br> 
+                                        <h:inputHidden></h:inputHidden>
+
+                                        <h:outputText  value="#{docEgresoMB.docEgresoBean.cuentaBancoBean.entidadBancoBean.nombre}" /> 
+                                        <h:outputText value="cta. cte. 0212345-0-0"  />
+                                        <p:spacer width="45"/>
+                                        <h:panelGrid columns="1" class="siseFontGrid5">
+                                            <h:outputText value="Firma"  />
+                                            <h:outputLabel value="......................." /> 
+                                        </h:panelGrid> 
+                                    </h:panelGrid> 
+                                </h:panelGrid>
+                            </h:panelGrid>  
+                            <!--<h:panelGrid columns="1" class="siseFontGrid5"> 
+                                 <h:graphicImage value="/resources/images/icons/cheque.jpg" style="border:0; cursor:pointer;" rendered="#{docEgresoMB.mostrarCheque==true}"/>
+                            </h:panelGrid>   
+                            -->
+                        </h:panelGrid>  
+                        <p:separator/>
+                    </h:panelGrid>
+                    <h:panelGrid class="centrado" columns="2">
+                        <p:commandButton
+                            oncomplete="PF('popDocEgre').hide();" 
+                            value="#{msgs.botonCerrar}">
+                        </p:commandButton> 
+                        <p:commandButton value="Imprimir" type="button" icon="ui-icon-print" >
+                            <p:printer target="pnlDatosDocEgre" />
+                        </p:commandButton>
+                    </h:panelGrid>
+                    <p:messages id="msgsAuto" showSummary="true"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCodDocEgreso}: #{docEgresoMB.docEgresoBean.idDocEgreso}"/>
+                            <h:outputLabel value="#{msgs.etiquetaTipPago}: #{docEgresoMB.docEgresoBean.tipoPagoBean.codigo}"/>
+                            <h:outputLabel value="#{msgs.etiquetaMontoPagado}: #{docEgresoMB.docEgresoBean.montoPagado}"/>
+                            <h:outputLabel value="#{msgs.etiquetaTipMon}: #{docEgresoMB.docEgresoBean.tipoMonedaBean.codigo}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{docEgresoMB.eliminarDocEgreso()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosDocEgreso:pnlDocEgre,msgsDelDocE"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelDocE" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popError"  styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.msgsMontoSuperaAcaja}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popError').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmFactCom"> 
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popFactCom" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <center> <h:outputText value="#{msgs.etiquetaRegistroCompra}" class="siseFontGrid5 black" /> </center> 
+                    <h:panelGrid columns="2" id="pnlDatosFactCom">  
+                        <h:panelGrid columns="1"  >
+                            <p:panel  header="#{msgs.etiquetaInfoFact}">
+                                <h:panelGrid columns="2" class="siseFontGrid5"> 
+                                    <h:outputText value="#{msgs.etiquetaFechaSol} " /> 
+                                    <h:outputText  value="#{registroCompraMB.facturaCompraBean.registroCompraBean.fechaEmision}"  >
+                                        <f:convertDateTime pattern="dd/MM/YYYY"/>
+                                    </h:outputText>
+                                    <h:outputLabel value="#{msgs.etiquetaCodigoSol}:" /> 
+                                    <h:outputLabel value="#{registroCompraMB.facturaCompraBean.registroCompraBean.nroRegistro}"/>  
+                                    <h:outputLabel value="#{msgs.etiquetaSolicitante}:" /> 
+                                    <h:outputLabel value="#{registroCompraMB.facturaCompraBean.solicitante}"/> 
+                                    <h:outputLabel value="#{msgs.etiquetaEstadoSolicitud}"  /> 
+                                    <h:outputLabel value="#{registroCompraMB.facturaCompraBean.tipoStatusFacturaBean.codigo}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaTipoDocumento}"  /> 
+                                    <h:outputLabel value="#{registroCompraMB.facturaCompraBean.registroCompraBean.tipoDocBean.codigo}"/> 
+                                    <h:outputLabel value="#{msgs.etiquetaNroDocAbb}:" /> 
+                                    <h:outputLabel value="#{registroCompraMB.facturaCompraBean.serieNroDoc}"/>    
+                                    <h:outputLabel value="#{msgs.etiquetaRuc}:"/>
+                                    <h:outputText value="#{registroCompraMB.facturaCompraBean.rucCompra}" /> 
+                                    <h:outputLabel value="#{msgs.etiquetaProveedor}:"/>
+                                    <h:outputText value="#{registroCompraMB.facturaCompraBean.entidadCompra}" /> 
+
+                                    <h:outputLabel value="#{msgs.etiquetaGlosa}:" /> 
+                                    <h:outputLabel value="#{registroCompraMB.facturaCompraBean.glosaCompra}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaModali}"  />
+                                    <h:outputLabel value="#{registroCompraMB.facturaCompraBean.codModoPago}"  /> 
+                                </h:panelGrid> 
+                                <br></br>
+                                <h:panelGrid id="pnlDetalleRegistro" columns="1" styleClass="centrado" >
+                                    <p:growl id="msgss" showDetail="true"/>
+                                    <p:dataTable value="#{registroCompraMB.listaDetalleRegistroCompraBean}" scrollable="true" scrollHeight="250"  
+                                                 var="detalle" id="tblDetReg" rows="6" editable="true" widgetVar="tblDetReg"
+                                                 rendered="#{not empty registroCompraMB.listaDetalleRegistroCompraBean}" 
+                                                 style="width:500px; font-size: 10px;margin-bottom:20px"
+                                                 selection="single" rowKey="#{detalle}"> 
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.etiquetaDetFact}" />  
+                                        </f:facet> 
+                                        <p:column style="white-space: nowrap" class="nombre2Filtro"  headerText="#{msgs.etiquetaCantAbb}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3">
+                                            <h:outputText value="#{detalle.cantidadRecibida}"  style=" font-size: 12px"/>
+                                        </p:column> 
+                                        <p:column style="white-space: nowrap" class="nombre2Filtro"  headerText="#{msgs.etiquetaDesc}" filterMatchMode="contains" width="20%" styleClass="siseFontTable3 ">
+                                            <h:outputText value="#{detalle.catalogoBean.item}"  style=" font-size: 12px"/>
+                                        </p:column>
+                                        <p:column style="white-space: nowrap" class="nombre2Filtro"  headerText="#{msgs.etiquetaPrecio}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto">
+                                            <h:outputText value="#{detalle.catalogoBean.precioRef}"  style=" font-size: 12px">
+                                                <f:convertNumber pattern="#0.00" locale="en_US"/>
+                                            </h:outputText>
+                                        </p:column>
+                                        <p:column style="white-space: nowrap" class="nombre2Filtro"  headerText="#{msgs.etiquetaImporte}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto">
+                                            <h:outputText value="#{detalle.montoCadaUnoMate}"  style=" font-size: 12px">
+                                                <f:convertNumber pattern="#0.00" locale="en_US"/>
+                                            </h:outputText>
+                                        </p:column>
+                                    </p:dataTable>   
+                                </h:panelGrid>
+                                <br></br>
+                            </p:panel>
+                        </h:panelGrid>
+                        <h:panelGrid columns="1" id="pnlDatCr" > 
+                            <p:panel  header="#{msgs.etiquetaFiltroCuentas}"> 
+                                <h:panelGrid columns="1"  >  
+                                    <p:dataTable value="#{registroCompraMB.listaCuentaFacturaBean}" scrollable="true" scrollHeight="90"
+                                                 var="cuentasView" id="tblDet"  editable="true"  editMode="cell"  lazy="true" 
+                                                 rendered="#{not empty registroCompraMB.listaCuentaFacturaBean}" 
+                                                 style="width:500px; font-size: 10px;margin-bottom:20px" rowIndexVar="n" >  
+                                        <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaCuentaConAbb}" filterMatchMode="exact" width="2%" styleClass="nombre2Filtro siseFontTable3 resetSelect">
+                                            <center><h:outputText value="#{cuentasView.planContableDBean.cuenta}" /></center>
+                                        </p:column>  
+                                        <p:column style="white-space: nowrap" id="listaFac" headerText="#{msgs.etiquetaCentRes}" filterMatchMode="contains" width="6%" styleClass="nombre2Filtro siseFontTable3 resetSelect">
+                                            <h:outputText value="#{cuentasView.centroResponsabilidadBean.cr} - #{cuentasView.centroResponsabilidadBean.nombre}"  />
+                                        </p:column>
+                                        <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaForDistribucion}" filterMatchMode="contains" width="5%" styleClass="nombre2Filtro siseFontTable3 centrado-texto resetSelect">
+                                            <h:outputText value="#{cuentasView.tipoDistribucion.codigo}"  />
+                                        </p:column> 
+                                        <p:column style="white-space: nowrap" headerText="#{msgs.etiquetaValor}" filterMatchMode="contains" width="5%" styleClass="nombre2Filtro siseFontTable3 centrado-texto resetSelect">
+                                            <h:outputText value="#{cuentasView.valor}"  >
+                                                <f:convertNumber pattern="#0.00" locale="en_US"/>
+                                            </h:outputText>
+                                        </p:column> 
+                                    </p:dataTable> 
+                                </h:panelGrid>
+
+                                <h:panelGrid columns="2" cellspacing="0">
+                                    <p:spacer width="150"/>
+                                    <h:panelGrid columns="2">
+                                        <h:outputLabel value="#{msgs.etiquetaImporte}:"  /> 
+                                        <h:outputText value="#{registroCompraMB.facturaCompraBean.importeSinIgv}">
+                                            <f:convertNumber pattern="#0.00" locale="en_US"/>
+                                        </h:outputText>
+                                        <h:outputLabel value="#{msgs.etiquetaAbbIGV} (#{registroCompraMB.facturaCompraBean.igv}%) :"  />  
+                                        <h:outputText value="#{registroCompraMB.facturaCompraBean.impuesto}">
+                                            <f:convertNumber pattern="#0.00" locale="en_US"/>
+                                        </h:outputText>    
+                                        <h:outputLabel value="#{msgs.etiquetaTotal}:"  /> 
+                                        <h:outputLabel value="#{registroCompraMB.facturaCompraBean.importe}"/> 
+                                        <h:outputText value="#{msgs.etiquetaDetraccion}:"   /> 
+                                        <h:panelGrid id="txtMontoD" columns="5" >
+                                            <h:outputText value="#{registroCompraMB.facturaCompraBean.valorDetraccion}"    > 
+                                                <f:convertNumber pattern="#0.00" locale="en_US"/>
+                                            </h:outputText>                                                     
+                                        </h:panelGrid> 
+                                        <h:outputLabel value="___________" /> 
+                                        <h:outputLabel value="___________"/> 
+                                        <h:outputText value="#{msgs.etiquetaMonPagar}:" style="font-size: 0.9em ;text-align: right !important;font-weight: bold"/> 
+                                        <h:panelGrid columns="5" class="siseFontGrid4">
+                                            <h:outputText value="#{registroCompraMB.facturaCompraBean.montoPago}" style="font-size: 1em ;text-align: right !important;font-weight: bold"  >  
+                                                <f:convertNumber pattern="#0.00" locale="en_US"/>
+                                            </h:outputText>
+                                            <p:spacer width="7"/>
+                                            <h:outputText value="#{registroCompraMB.facturaCompraBean.tipoMonedaBean.codigo}" style="font-size: 1em ;text-align: right !important;font-weight: bold"/>
+                                        </h:panelGrid>   
+                                    </h:panelGrid> 
+                                </h:panelGrid>
+                            </p:panel> 
+                        </h:panelGrid>
+                        <p:messages id="msgsAuto" showSummary="true"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmDoc"> 
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popDocEgreso" resizable="false" modal="true" styleClass="autoWidthDialog" position="top"> 
+                    <h:panelGrid columns="3" id="pnlDoc">    
+                        <h:outputLabel value="#{msgs.etiquetaDocEgre}: " styleClass="black" />
+                        <h:outputText value=" " class="requerido"/>
+                        <h:outputLabel value="#{docEgresoMB.docEgresoBean.nroDocEgreso}"/> 
+                        <h:outputLabel value="#{msgs.etiquetaChequeN}: " styleClass="black" />
+                        <h:outputText value=" " class="requerido"/>
+                        <h:outputLabel value="#{docEgresoMB.docEgresoBean.numCheque}"/> 
+                        <h:outputLabel value="#{msgs.etiquetaProvee}: " styleClass="black"/>
+                        <h:outputText value=" " class="requerido"/>
+                        <h:outputLabel value="#{docEgresoMB.docEgresoBean.nombreVista}"/>     
+                        <h:outputLabel value="#{msgs.etiquetaMonto}: " styleClass="black"/>
+                        <h:outputText value=" " class="requerido"/>
+                        <h:outputLabel value="#{docEgresoMB.docEgresoBean.montoTotal}"/>    
+                        <h:outputLabel value="#{msgs.etiquetaFecEmisionCheque}: " styleClass="black"/>
+                        <h:outputText value="*" class="requerido"/>
+                        <p:calendar  disabled="false" value="#{docEgresoMB.docEgresoBean.creaFecha}"  label="#{msgs.etiquetaFecEmisionCheque}" mode="popup" size="13"
+                                     pattern="dd/MM/yyyy HH:mm" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="false" yearRange="c-90:c+30"/>
+                        <h:panelGrid class="centrado" columns="3" >
+                            <p:commandButton actionListener="#{docEgresoMB.modificarFechaDocEgreso()}"  
+                                             update=":frmDoc:pnlDoc" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}if(args.montoApagarSuperior){PF('popError').show()}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <h:commandLink action="#{docEgresoMB.obtenerDocEgresoPorIdFecha(docEgresoMB.docEgresoBean.numCheque)}" target="_blank" id="imprimir" rendered="#{docEgresoMB.flgImpresionFecha==true}" >
+                                <h:graphicImage value="/resources/images/icons/iconpdf.png" width="25"/>
+                            </h:commandLink> 
+                        </h:panelGrid> 
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form> 
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+
+

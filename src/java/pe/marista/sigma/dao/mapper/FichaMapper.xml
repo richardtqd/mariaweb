@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.FichaDAO">
+    <sql id="consultaCampos" > 
+        select 
+        f.unineg,
+        f.idficha,
+        f.serie,
+        f.nroficha,
+        f.monto,
+        f.montoPagado as montoPagado,
+        f.fechapago,
+        f.idtipodoc,
+        f.idtipomodopago,
+        f.idtipomoneda,
+        f.idtipostatusficha,
+        f.idcaja,
+        f.idcajagen,
+        f.referencia,
+        CONVERT(varchar,f.fechapago,110) as fechaPagoVista,
+        p.idpagante as idPaganteObj,
+        p.nompagante,
+        td.idcodigo as idTipoDoc,
+        td.codigo as tipoDoc,
+        tp.idcodigo as idTipoPago,
+        tp.codigo as tipoPago,
+        tm.idcodigo as idTipoMoneda,
+        tm.codigo as tipoMoneda,
+        ts.idcodigo as idTipoStatus,
+        ts.codigo as tipoStatus,
+        uni.unineg,
+        uni.nombreUniNeg,
+        uni.RUC,
+        uni.fecfundacion,
+        cu.idconcepto as idCon,
+        cu.uniNeg as uniNegCon,
+        cu.importe as montoConcepto,
+        c.idconcepto as idconcepto,
+        c.nombre as nombreConcepto,
+        (case
+        when f.idtipostatusficha = 26102 then 'true'
+        else 'false'
+        end) as disabled
+        from mt_ficha f
+        inner join MT_Pagante p on f.idpagante = p.idpagante and f.unineg = p.unineg and p.idtipopagante = f.idtipopagante
+        inner join MO_Codigo td on f.idtipodoc = td.idcodigo
+        left join MO_Codigo tp on f.idtipomodopago = tp.idcodigo
+        left join MO_Codigo tm on f.idtipomoneda = tm.idcodigo
+        left join MO_Codigo ts on f.idtipostatusficha = ts.idcodigo
+        inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+        inner join MT_ConceptoUniNeg cu on f.idconcepto = cu.idconcepto and f.unineg = cu.unineg
+        inner join MT_Concepto c on cu.idconcepto = c.idconcepto
+    </sql>
+    
+    <sql id="consultaImpresoraCaja" >
+        Select 
+        distinct 
+        imCa.uniNeg			as uniNeg,
+        imCa.impresora                  as impresora,
+        cjCaja.idCaja			as idCaja,
+        imp.actual			as actual,
+        cjCaja.usuario                  as usuario,
+        isnull(imp.idcheque,0)          as idCheque  
+        From MT_ImpresoraCaja imCa
+        Inner Join MT_Impresora imp on imp.impresora = imCa.impresora and imCa.unineg=imp.unineg
+        Inner Join MO_Codigo cod on cod.idcodigo = imp.idtipodoc
+        Inner Join MT_CajeroCaja cjCaja on cjCaja.idcaja= imCa.idcaja and  cjCaja.unineg=imCa.unineg
+        Inner Join MT_Caja caj	on caj.idcaja = cjCaja.idcaja and  caj.unineg=imCa.unineg
+    </sql>
+    
+    <sql id="consultaDocumentoPorImpresora">    
+        Select 
+        distinct 
+        imCa.uniNeg			as uniNeg,
+        imCa.impresora                  as impresora,
+        cjCaja.idCaja			as idCaja,
+        imp.serie			as serie,
+        imp.inicio			as inicio,
+        imp.fin				as fin,
+        imp.actual			as actual,
+        imp.idtipodoc                   as idTipoDoc,
+        cod.codigo			as tipoDoc,
+        cjCaja.usuario                  as usuario,
+        imCa.status                     as statusIC
+        From MT_ImpresoraCaja imCa
+        Inner Join MT_Impresora imp on imp.impresora = imCa.impresora and imp.unineg=imCa.unineg
+        Inner Join MO_Codigo cod on cod.idcodigo = imp.idtipodoc
+        Inner Join MT_CajeroCaja cjCaja on cjCaja.idcaja= imCa.idcaja
+    </sql>   
+    
+    <resultMap id="fichaResultado" type="pe.marista.sigma.bean.FichaBean" >
+        <id property="idFicha" column="idficha" />
+        <result property="serie" column="serie" />
+        <result property="nroficha" column="nroficha" />
+        <result property="monto" column="monto" />
+        <result property="montoPagado" column="montoPagado" />
+        <result property="fechaPago" column="fechapago" />
+        <result property="flgAnulado" column="flgAnulado" />
+        <result property="fechaPagoVista" column="fechaPagoVista" />
+        <result property="referencia" column="referencia" />
+        <result property="totalPro" column="totalPro" />
+        <result property="contador" column="contador" />
+        <result property="disabled" column="disabled" />
+        <result property="nomFile" column="nomFile" />
+        <result property="totalFa" column="totalFa" />
+        <result property="totalPagFa" column="totalPagFa" />
+        <result property="nomFamilia" column="nomFamilia" />
+        <result property="nombreGrado" column="nombreGrado" />
+        <result property="seccion" column="seccion" />
+        <result property="grado" column="grado" />
+        <result property="nivel" column="nivel" />
+        <result property="data" column="data" />
+        <result property="codigo" column="codigo" />
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="tipoStatusFicha" column="idtipostatusficha"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusResultado"/>
+        <association property="tipoDoc" column="idtipodoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>
+        <association property="tipoModoPago" column="idtipomodopago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPagoResultado"/>
+        <association property="tipoMoneda" column="idtipomoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/>
+        <association property="paganteBean" column="idpagante"
+                     javaType="pe.marista.sigma.bean.PaganteBean"
+                     resultMap="paganteResultado"/>
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniResultado"/> 
+        <!--
+        <association property="cajaGenBean" column="idcajagen"
+                     javaType="pe.marista.sigma.bean.CajaGenBean"
+                     resultMap="cajaGenResultado"/>
+        <association property="cajaBean" column="idcaja"
+                     javaType="pe.marista.sigma.bean.CajaBean"
+                     resultMap="cajaResultado"/>
+        -->
+    </resultMap>
+    
+    <!-- UNIDAD DE NEGOCIO -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="idUniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+        <result property="fecfundacion" column="fecfundacion"/>
+    </resultMap>
+    
+    <!-- STATUS FICHA -->
+    <resultMap id="tipoStatusResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoStatus" />
+        <result property="codigo" column="tipoStatus" />
+    </resultMap>
+    
+    <!-- TIPO DOC -->
+    <resultMap id="tipoDocResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoDoc" />
+        <result property="codigo" column="tipoDoc" />
+    </resultMap>
+    
+    <!-- TIPO MODO PAGO -->
+    <resultMap id="tipoPagoResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoPago" />
+        <result property="codigo" column="tipoPago" />
+    </resultMap>
+    
+    <!-- TIPO MODO MONEDA -->
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean" >
+        <id property="idCodigo" column="idTipoMoneda" />
+        <result property="codigo" column="tipoMoneda" />
+    </resultMap>
+    
+    <!-- PAGANTE -->
+    <resultMap id="paganteResultado" type="pe.marista.sigma.bean.PaganteBean" >
+        <id property="idPagante" column="idPaganteObj" />
+        <result property="nomPagante" column="nompagante" />
+        <result property="nroDoc" column="nroDoc" />
+        <association property="matriculaBean" column="idpagante"
+                     javaType="pe.marista.sigma.bean.MatriculaBean"
+                     resultMap="matriculaResultado"/>
+        <association property="tipoPaganteBean" column="idtipopagante"
+                     javaType="pe.marista.sigma.bean.TipoPaganteBean"
+                     resultMap="tipoPaganteResultado"/>
+    </resultMap>
+    <!-- TIPO PAGANTE -->
+    <resultMap id="tipoPaganteResultado" type="pe.marista.sigma.bean.TipoPaganteBean" >
+        <id property="idtipoPagante" column="idtipopagante" />
+        <result property="nomPagante" column="nompagante" />
+        <result property="nroAsignaciones" column="nroasignaciones" />
+    </resultMap>
+    <!-- MATRICULA -->
+    <resultMap id="matriculaResultado" type="pe.marista.sigma.bean.MatriculaBean">
+        <id property="idMatricula" column="idMatricula"/>
+        <result property="anio" column="anio"/>    
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/> 
+    </resultMap>
+    <!-- ESTUDIANTE -->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante"/> 
+        <result property="codigo" column="codigo"/> 
+        <result property="motivoStatusEst" column="motivoStatusEst"/>  
+    </resultMap>
+    
+    <!-- CONCEPTO-UNI -->
+    <resultMap id="conceptoUniResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean" >
+        <id property="conceptoBean.idConcepto" column="idConcepto"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNegCon"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    
+    <!-- CONCEPTO -->
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean"  >
+        <id property="idConcepto" column="idconcepto" />
+        <result property="nombre" column="nombreConcepto" />
+    </resultMap>
+    
+    <!-- CAJAGEN -->
+    <!-- CAJA -->
+    
+    <!-- IMPRESORA CAJA -->
+    <resultMap id="impresoraCajaResultado" type="pe.marista.sigma.bean.ImpresoraCajaBean">        
+        <id property="cajaBean.idCaja" column="idCaja"/>
+        <id property="impresora.impresora" column="impresora"/>
+        <id property="uniNeg.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idTipoDoc.idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <result property="status" column="statusIC"/> 
+        <association property="impresora" column="impresora" 
+                     javaType="pe.marista.sigma.bean.ImpresoraBean" 
+                     resultMap="impresoraResultado"/> 
+    </resultMap>
+    
+    <!-- CAJA -->
+    <resultMap id="impresoraResultado" type="pe.marista.sigma.bean.ImpresoraBean">
+        <id property="impresora" column="impresora"/>
+        <id property="idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/> 
+        <result property="serie" column="serie"/>    
+        <result property="inicio" column="inicio"/>
+        <result property="fin" column="fin"/>
+        <result property="actual" column="actual"/>
+        <association property="idTipoDoc" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>  
+    </resultMap>
+    
+    <select id="obtener" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        WHERE p.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerPorId" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        WHERE p.unineg = #{unidadNegocioBean.uniNeg} and f.idficha = #{idFicha}
+    </select>
+    
+    <select id="obtenerPorIdFicha" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        WHERE p.unineg = #{unidadNegocioBean.uniNeg} and f.idficha = #{idFicha}
+    </select>
+    
+    <select id="obtenerFichaPorPaganteEst" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        inner join MX_Matricula m on CONVERT(Integer,p.idpagante) = m.idmatricula and m.unineg = p.unineg and p.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante}
+        where f.unineg = #{unidadNegocioBean.uniNeg} and m.idmatricula = #{paganteBean.matriculaBean.idMatricula} and f.idtipopagante = p.idtipopagante
+        and f.idtipostatusficha not in (26103)
+    </select>
+    
+    <select id="obtenerFichaPorPagantePer" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        inner join MO_Personal per on CONVERT(Integer,p.idpagante) = per.idpersonal and p.unineg = per.unineg and p.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante}
+        where f.unineg = #{unidadNegocioBean.uniNeg} and per.idpersonal = #{paganteBean.personalBean.idPersonal} and f.idtipopagante = p.idtipopagante
+        and f.idtipostatusficha not in (26103)
+    </select>
+    
+    <select id="obtenerFichaPorPaganteExt" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        inner join MX_Persona per on f.idpagante = per.idpersona and f.unineg = per.unineg and p.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante}
+        where f.unineg = #{unidadNegocioBean.uniNeg} and per.idpersona = #{paganteBean.personaBean.idPersona} and f.idtipopagante = p.idtipopagante
+        and f.idtipostatusficha not in (26103)
+    </select>
+    
+    <select id="obtenerFichaPorPaganteEnt" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        inner join MO_Entidad en on f.idpagante = en.ruc and f.unineg = en.unineg and p.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante}
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.idpagante = #{paganteBean.idPagante} and f.idtipopagante = p.idtipopagante
+        and f.idtipostatusficha not in (26103)
+    </select>
+    
+    <select id="obtenerFichaPorPaganteObj" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.idpagante = #{paganteBean.idPagante} and f.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante}
+        and f.idtipostatusficha not in (26103)
+    </select>
+    
+    <select id="obtenerPorNroFicha" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.nroficha = #{nroficha}
+    </select>
+    
+    <select id="obtenerPorNroFichaEspecial" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.nroficha = #{nroficha}
+    </select>
+    
+    <select id="obtenerMaxNro" parameterType="pe.marista.sigma.bean.FichaBean" resultType="Integer" >
+        select ISNULL(max(f.nroficha),0) from [MT_Ficha] f
+        inner join MT_Pagante p on f.idpagante = p.idpagante and f.unineg = p.unineg
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.serie = #{serie} and p.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante} 
+    </select>
+    
+    <select id="obtenerNroFicha" parameterType="pe.marista.sigma.bean.FichaBean" resultType="Integer" >
+        select ISNULL(f.nroficha,0) from [MT_Ficha] f
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.nroficha = #{nroficha} and idtipostatusficha not in (26103)
+        <!--and f.nroficha not in (select fa.nroficha from [MT_Ficha] fa where fa.unineg = #{unidadNegocioBean.uniNeg} and fa.idtipostatusficha not in (26103))-->
+    </select>
+    
+    <select id="obtenerNroDocFicha" parameterType="pe.marista.sigma.bean.FichaBean" resultType="Integer" >
+        select ISNULL(f.nrodoc,0) from [MT_Ficha] f
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.nrodoc = #{nroDoc} and idtipostatusficha not in (26103)
+        <!--and f.nroficha not in (select fa.nroficha from [MT_Ficha] fa where fa.unineg = #{unidadNegocioBean.uniNeg} and fa.idtipostatusficha not in (26103))-->
+    </select>
+    
+    <select id="obtenerMaxNroDocFicha" parameterType="pe.marista.sigma.bean.FichaBean" resultType="Integer" >
+        select max(ISNULL(f.nrodoc,0)) from [MT_Ficha] f
+        where f.unineg = #{unidadNegocioBean.uniNeg} and idtipostatusficha not in (26103)
+        <!--and f.nroficha not in (select fa.nroficha from [MT_Ficha] fa where fa.unineg = #{unidadNegocioBean.uniNeg} and fa.idtipostatusficha not in (26103))-->
+    </select>
+    
+    <select id="obtenerPorTipoEstado" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        where f.unineg = #{unidadNegocioBean.uniNeg} 
+        and f.idpagante = #{paganteBean.idPagante} 
+        and f.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante} 
+        and f.idtipostatusficha = #{tipoStatusFicha.idCodigo}
+    </select> 
+    
+    <select id="obtenerFichaPorPagantePagado" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        inner join MX_Matricula m on CONVERT(Integer,p.idpagante) = m.idmatricula and m.unineg = p.unineg
+        where f.unineg = #{unidadNegocioBean.uniNeg} and p.idpagante = #{paganteBean.idPagante} and f.idtipopagante = p.idtipopagante
+        and f.idtipostatusficha not in (26103) and 
+        f.idtipostatusficha = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFicha.codigo} and 
+        idTipoCodigo=#{tipoStatusFicha.tipoCodigoBean.idTipoCodigo})
+    </select>
+    
+    <select id="obtenerFichaPorObjPagado" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        <include refid="consultaCampos" />
+        where f.unineg = #{unidadNegocioBean.uniNeg} and p.idpagante = #{paganteBean.idPagante} and f.idtipopagante = p.idtipopagante
+        and f.idtipostatusficha not in (26103) and 
+        f.idtipostatusficha = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFicha.codigo} and 
+        idTipoCodigo=#{tipoStatusFicha.tipoCodigoBean.idTipoCodigo})
+    </select>
+    
+    <select id="obtenerNumFichaDon" parameterType="pe.marista.sigma.bean.FichaBean" resultType="Integer" >
+        select count(*) from mt_ficha 
+        where unineg = #{unidadNegocioBean.uniNeg} and idpagante = #{paganteBean.idPagante} and 
+        idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante}  and 
+        idtipostatusficha = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFicha.codigo} and 
+        idTipoCodigo=#{tipoStatusFicha.tipoCodigoBean.idTipoCodigo})
+    </select>
+    
+    <select id="filtrarFichasPagadas" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        select 
+        f.unineg,
+        f.idficha,
+        f.serie,
+        f.nroficha,
+        f.monto,
+        f.montoPagado as montoPagado,
+        f.fechapago,
+        f.idtipodoc,
+        f.idtipomodopago,
+        f.idtipomoneda,
+        f.idtipostatusficha,
+        f.idcaja,
+        f.idcajagen,
+        CONVERT(varchar,f.fechapago,110) as fechaPagoVista,
+        p.idpagante as idPaganteObj,
+        p.nompagante,
+        td.idcodigo as idTipoDoc,
+        td.codigo as tipoDoc,
+        tp.idcodigo as idTipoPago,
+        tp.codigo as tipoPago,
+        tm.idcodigo as idTipoMoneda,
+        tm.codigo as tipoMoneda,
+        ts.idcodigo as idTipoStatus,
+        ts.codigo as tipoStatus,
+        uni.unineg,
+        uni.nombreUniNeg,
+        uni.RUC,
+        uni.fecfundacion,
+        m.idestudiante as nroDoc
+        from mt_ficha f
+        inner join MT_Pagante p on f.idpagante = p.idpagante and f.unineg = p.unineg and p.idtipopagante = f.idtipopagante
+        inner join MO_Codigo td on f.idtipodoc = td.idcodigo
+        left join MO_Codigo tp on f.idtipomodopago = tp.idcodigo
+        left join MO_Codigo tm on f.idtipomoneda = tm.idcodigo
+        left join MO_Codigo ts on f.idtipostatusficha = ts.idcodigo
+        inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+        inner join MX_Matricula m on CONVERT(Integer,p.idpagante) = m.idmatricula and m.unineg = p.unineg
+        inner join mx_estudiante e on m.idestudiante = e.idestudiante and m.unineg = e.unineg
+        <where>
+            f.unineg = #{unidadNegocioBean.uniNeg} and f.idtipopagante = 1
+            <if test="fechaIni != null" >
+                and convert(date,f.fechapago) <![CDATA[ >= ]]> convert(date,#{fechaIni})
+            </if> 
+            <if test="fechaFin != null" >
+                and convert(date,f.fechapago) <![CDATA[ <= ]]> convert(date,#{fechaFin})
+            </if> 
+            <if test="paganteBean.nomPagante != null and paganteBean.nomPagante != '' " >
+                and p.nompagante like concat('%',#{paganteBean.nomPagante},'%')
+            </if>
+            <if test="paganteBean.nroDoc != null and paganteBean.nroDoc != '' " >
+                and m.idestudiante like concat('%',paganteBean.nroDoc,'%')
+            </if>
+            <if test="tipoModoPago.idCodigo != null" >
+                and f.idtipomodopago = #{tipoModoPago.idCodigo}
+            </if>
+            order by f.fechapago desc
+        </where>
+    </select>
+    
+    <select id="filtrarFichasPagadasFamilia" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        select 
+        distinct
+        f.idpagante as idPaganteObj,
+        f.unineg as idUniNeg,
+        convert(varchar,f.fechapago,110) as fechaPagoVista,
+        e.codigo,
+        upper(fa.nombre) as nomFamilia,
+        upper(p.nompagante) as nomPagante,
+        (select count(*) from MT_Ficha ff where ff.unineg = f.unineg and ff.idpagante = f.idpagante and ff.idtipostatusficha = f.idtipostatusficha and ff.idtipomodopago = f.idtipomodopago and f.idtipopagante = ff.idtipopagante and f.idpagante = ff.idpagante) as totalPagFa,
+        (select sum(isnull(ff.montopagado,0)) from MT_Ficha ff where ff.unineg = f.unineg and ff.idpagante = f.idpagante and ff.idtipostatusficha = f.idtipostatusficha and ff.idtipomodopago = f.idtipomodopago and f.idtipopagante = ff.idtipopagante and f.idpagante = ff.idpagante) as totalFa,
+        (case
+        when m.idgradoacademico = 1 then CONCAT('P','1',m.seccion)
+        when m.idgradoacademico = 2 then CONCAT('P','2',m.seccion)
+        when m.idgradoacademico = 3 then CONCAT('P','3',m.seccion)
+        when m.idgradoacademico = 4 then CONCAT('P','4',m.seccion)
+        when m.idgradoacademico = 5 then CONCAT('P','5',m.seccion)
+        when m.idgradoacademico = 6 then CONCAT('P','6',m.seccion)
+
+        when m.idgradoacademico = 7 then CONCAT('S','1',m.seccion)
+        when m.idgradoacademico = 8 then CONCAT('S','2',m.seccion)
+        when m.idgradoacademico = 9 then CONCAT('S','3',m.seccion)
+        when m.idgradoacademico = 10 then CONCAT('S','4',m.seccion)
+        when m.idgradoacademico = 11 then CONCAT('S','5',m.seccion)
+
+        when m.idgradoacademico = 23 then CONCAT('I','3',m.seccion)
+        when m.idgradoacademico = 24 then CONCAT('I','4',m.seccion)
+        when m.idgradoacademico = 25 then CONCAT('I','5',m.seccion)
+        end) as nombreGrado,
+        m.seccion,ga.nombre as grado,ni.nombre as nivel
+        from mt_ficha f
+        inner join MT_Pagante p on f.idpagante = p.idpagante and f.unineg = p.unineg and p.idtipopagante = f.idtipopagante
+        inner join MO_Codigo td on f.idtipodoc = td.idcodigo
+        left join MO_Codigo tp on f.idtipomodopago = tp.idcodigo
+        left join MO_Codigo tm on f.idtipomoneda = tm.idcodigo
+        left join MO_Codigo ts on f.idtipostatusficha = ts.idcodigo
+        inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+        inner join MX_Matricula m on CONVERT(Integer,p.idpagante) = m.idmatricula and m.unineg = p.unineg
+        inner join mx_estudiante e on m.idestudiante = e.idestudiante and m.unineg = e.unineg
+        inner join MX_GradoAcademico ga on m.idgradoacademico = ga.idgradoacademico
+        inner join MX_NivelAcademico ni on ga.idnivelacademico = ni.idnivelacademico
+        inner join MX_Familia fa on e.idfamilia = fa.idfamilia and e.unineg = fa.unineg
+        <where>
+            f.unineg = #{unidadNegocioBean.uniNeg} and f.idtipopagante = 1 and f.idtipostatusficha <![CDATA[ <> ]]> 26103
+            <if test="fechaIni != null" >
+                and convert(date,f.fechapago) <![CDATA[ >= ]]> convert(date,#{fechaIni})
+            </if> 
+            <if test="fechaFin != null" >
+                and convert(date,f.fechapago) <![CDATA[ <= ]]> convert(date,#{fechaFin})
+            </if> 
+            <if test="paganteBean.nomPagante != null and paganteBean.nomPagante != '' " >
+                and p.nompagante like concat('%',#{paganteBean.nomPagante},'%')
+            </if>
+            <if test="paganteBean.nroDoc != null and paganteBean.nroDoc != '' " >
+                and m.idestudiante like concat('%',paganteBean.nroDoc,'%')
+            </if>
+            <if test="tipoModoPago.idCodigo != null" >
+                and f.idtipomodopago = #{tipoModoPago.idCodigo}
+            </if>
+        </where>
+    </select>
+    
+    <!-- CONSULTA POR OBJETO -->
+    <select id="filtrarFichasPagadasObj" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        select 
+        distinct
+        f.idpagante as idPaganteObj,
+        f.idtipopagante as idtipoPagante,
+        f.unineg as idUniNeg,
+        convert(varchar,f.fechapago,110) as fechaPagoVista,
+        upper(p.nompagante) as nomPagante,
+        (select count(*) from MT_Ficha ff where ff.unineg = f.unineg and ff.idpagante = f.idpagante and ff.idtipostatusficha = f.idtipostatusficha and ff.idtipomodopago = f.idtipomodopago and f.idtipopagante = ff.idtipopagante and f.idpagante = ff.idpagante) as totalPagFa,
+        (select sum(isnull(ff.montopagado,0)) from MT_Ficha ff where ff.unineg = f.unineg and ff.idpagante = f.idpagante and ff.idtipostatusficha = f.idtipostatusficha and ff.idtipomodopago = f.idtipomodopago and f.idtipopagante = ff.idtipopagante and f.idpagante = ff.idpagante) as totalFa,
+        (select CAST(f.nroficha AS varchar(1000)) + ':' AS 'data()' from MT_Ficha f 
+        where f.unineg = p.unineg and f.idpagante = p.idpagante 
+        and f.idtipopagante = p.idtipopagante and f.idtipostatusficha not in (26103) 
+        and f.idtipostatusficha = 26102
+        FOR XML PATH('')) as data,
+        (case
+        when f.idtipopagante = 1 then (select est.codigo from MX_Matricula m 
+        inner join MX_Estudiante est on m.idestudiante = est.idestudiante and m.unineg = est.unineg and m.idmatricula = CONVERT(Integer,f.idpagante))
+        when f.idtipopagante = 2 then (select per.codper from MO_Personal per where per.unineg = f.unineg and per.idpersonal = CONVERT(Integer,f.idpagante))
+        else '----'
+        end) as codigo
+        from mt_ficha f
+        inner join MT_Pagante p on f.idpagante = p.idpagante and f.unineg = p.unineg and p.idtipopagante = f.idtipopagante
+        inner join MO_Codigo td on f.idtipodoc = td.idcodigo
+        left join MO_Codigo tp on f.idtipomodopago = tp.idcodigo
+        left join MO_Codigo tm on f.idtipomoneda = tm.idcodigo
+        left join MO_Codigo ts on f.idtipostatusficha = ts.idcodigo
+        inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+        <where>
+            f.unineg = #{unidadNegocioBean.uniNeg} 
+            and f.idtipostatusficha <![CDATA[ <> ]]> 26103
+            and f.idtipostatusficha <![CDATA[ <> ]]> 26104
+            <if test="fechaIni != null" >
+                and convert(date,f.fechapago) <![CDATA[ >= ]]> convert(date,#{fechaIni})
+            </if> 
+            <if test="fechaFin != null" >
+                and convert(date,f.fechapago) <![CDATA[ <= ]]> convert(date,#{fechaFin})
+            </if> 
+            <if test="paganteBean.nomPagante != null and paganteBean.nomPagante != '' " >
+                and p.nompagante like concat('%',#{paganteBean.nomPagante},'%')
+            </if>
+            <if test="paganteBean.nroDoc != null and paganteBean.nroDoc != '' " >
+                and m.idestudiante like concat('%',paganteBean.nroDoc,'%')
+            </if>
+            <if test="tipoModoPago.idCodigo != null" >
+                and f.idtipomodopago = #{tipoModoPago.idCodigo}
+            </if>
+            <if test="paganteBean.tipoPaganteBean.idtipoPagante!= null" >
+                and p.idtipopagante = #{paganteBean.tipoPaganteBean.idtipoPagante}
+            </if>
+        </where>
+    </select>
+    
+    <!-- CONSULTA DE IMPRESORA -->
+    <select id="obtenerImpresoraCajero" resultMap="impresoraResultado" parameterType="pe.marista.sigma.bean.CajeroCajaBean">
+        <include refid="consultaImpresoraCaja"/> 
+        Where cjCaja.usuario = #{usuarioBean.usuario} and imCa.uniNeg=#{unidadNegocioBean.uniNeg} and caj.hostip=#{cajaBean.hostIp}
+        and imp.status=1 and imp.impresora = 'EPSON / BINGOS'
+    </select>
+    
+    <select id="obtenerTipDocumentoPorImpresora" resultMap="tipoDocResultado" parameterType="map">
+        <include refid="consultaDocumentoPorImpresora"/> 
+        Where imCa.impresora = #{impresora} and cjCaja.usuario = #{usuario} and imCa.uniNeg=#{uniNeg} and imp.status=1 and  imCa.idCaja=#{idCaja} 
+        order by cod.codigo desc
+    </select>  
+    
+    <select id="obtenerTipDocumentoPorImpresoraComprobante" resultMap="tipoDocResultado" parameterType="map">
+        <include refid="consultaDocumentoPorImpresora"/> 
+        Where imCa.impresora = #{impresora} and cjCaja.usuario = #{usuario} and imCa.uniNeg=#{uniNeg} and imp.status=1 and  imCa.idCaja=#{idCaja} 
+        <!-- and cod.codigo='Comprobante'-->
+        order by cod.codigo  
+    </select>  
+    
+    <select id="obtenerDetalleTipoDoc" resultMap="impresoraCajaResultado" parameterType="map">
+        <include refid="consultaDocumentoPorImpresora"/> 
+        Where imCa.impresora = #{impresora} and cjCaja.usuario = #{usuario} and imCa.uniNeg=#{uniNeg} and imp.idtipodoc=#{idTipoDoc} 
+        and imCa.idCaja=#{idCaja}
+    </select>  
+    
+    <select id="obtenerMaxIdFicha" parameterType="String" resultType="Integer" >
+        select max(idficha) as idficha from mt_ficha where unineg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerIdNroFicha" parameterType="pe.marista.sigma.bean.FichaBean" resultType="Integer" >
+        select f.idficha from [MT_Ficha] f
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.nroficha = #{nroficha} and idtipostatusficha not in (26103)
+        <!--and f.nroficha not in (select fa.nroficha from [MT_Ficha] fa where fa.unineg = #{unidadNegocioBean.uniNeg} and fa.idtipostatusficha not in (26103))-->
+    </select>
+    
+    <!-- HISTORIAL DE FICHAS PAGADAS BANCO -->
+    <select id="obtenerHistorialCarga" parameterType="pe.marista.sigma.bean.FichaBean" resultMap="fichaResultado" >
+        select distinct f.unineg,convert(varchar,fechapago,110) as fechaPagoVista,idtipopagante,
+        (select count(*) from mt_ficha fi where fi.unineg = #{unidadNegocioBean.uniNeg} and fi.idtipopagante = 1 and fi.idtipomodopago =15807 and fi.fechapago = f.fechapago) as contador,
+        (select sum(montopagado) from mt_ficha fi where fi.unineg = #{unidadNegocioBean.uniNeg} and fi.idtipopagante = 1 and fi.idtipomodopago =15807 and fi.fechapago = f.fechapago) as totalPro,
+        f.idprocesobanco as idFicha,pb.nombre as nomFile
+        from mt_ficha f 
+        inner join MT_ProcesoBanco pb on f.idprocesobanco = pb.idprocesobanco and f.unineg = pb.unineg
+        where f.unineg = #{unidadNegocioBean.uniNeg} and f.idtipopagante = 1 and f.idtipomodopago = 15807
+        <if test="fechaIni != null" >
+            and f.fechapago <![CDATA[ >= ]]> #{fechaIni}
+        </if> 
+        <if test="fechaFin != null" >
+            and f.fechapago <![CDATA[ <= ]]> #{fechaFin}
+        </if>
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.FichaBean" >
+        INSERT INTO [dbo].[MT_Ficha]
+        ([unineg]
+        ,[serie]
+        ,[nroficha]
+        ,[idpagante]
+        ,[idcajagen]
+        ,[idtipostatusficha]
+        ,[idtipodoc]
+        ,[idcaja]
+        ,[idtipomodopago]
+        ,[monto]
+        ,[fechapago]
+        ,[idtipomoneda]
+        ,idtipopagante
+        ,idconcepto 
+        ,referencia       
+        ,[creapor]
+        ,[creafecha]
+        ,flgAdicional)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{serie},
+        #{nroficha},
+        #{paganteBean.idPagante},
+        #{cajaGenBean.idCajaGen},
+        #{tipoStatusFicha.idCodigo},
+        #{tipoDoc.idCodigo},
+        #{cajaBean.idCaja},
+        #{tipoModoPago.idCodigo},
+        #{monto},
+        #{fechaPago},
+        #{tipoMoneda.idCodigo},
+        #{idTipoPagante},
+        #{conceptoBean.idConcepto},
+        #{referencia},
+        #{creaPor},
+        getdate(),
+        #{flgAdicional})
+    </insert> 
+    
+    <update id="modificarEstado" parameterType="pe.marista.sigma.bean.FichaBean" >
+        update MT_Ficha 
+        set 
+        modipor = #{modiPor},
+        idtipostatusficha = #{tipoStatusFicha.idCodigo},
+        modifecha = getdate()
+        where 
+        unineg = #{unidadNegocioBean.uniNeg} and idficha = #{idFicha}
+    </update>
+    
+    <update id="modificarImpresoraActual" parameterType="pe.marista.sigma.bean.ImpresoraBean">
+        UPDATE MT_Impresora
+        SET 
+        actual = #{actual}
+        WHERE  
+        impresora = #{impresora}
+        and unineg = #{unidadNegocioBean.uniNeg}
+        and idTipoDoc = #{idTipoDoc.idCodigo}
+    </update>
+    
+    <select id="execProCtaCteBingo" parameterType="map" resultType="Object" >
+        exec PRO_RECUPERACION_CTACTE_BINGO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@modiPor = #{modiPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <update id="modificarFichaPagada" parameterType="pe.marista.sigma.bean.FichaBean" >
+        update mt_ficha
+        set
+        idcajagen = #{cajaGenBean.idCajaGen},
+        idtipostatusficha = #{tipoStatusFicha.idCodigo},
+        idtipodoc = #{tipoDoc.idCodigo},
+        idcaja = #{cajaBean.idCaja},
+        idtipomodopago = #{tipoModoPago.idCodigo},
+        idtipomoneda = #{tipoMoneda.idCodigo},
+        fechapago = #{fechaPago},
+        montopagado = #{montoPagado},
+        nroDoc = #{nroDoc},  
+        serie = #{serie},      
+        modipor = #{modiPor},
+        modifecha = getdate()
+        WHERE unineg = #{unidadNegocioBean.uniNeg} and idficha = #{idFicha}
+    </update>
+    
+    <select id="generarReciboValorado" parameterType="map" resultType="pe.marista.sigma.bean.reporte.CobranzaValoradoRepBean" >
+        select 
+        f.idficha as idficha,
+        uni.nombreUniNeg as nombre,
+        uni.ruc as ruc,
+        en.direccion,
+        dis.nombre as nomDistrito,
+        en.telefono as telefono,
+        en.correo as correo,
+        td.codigo as codigo,
+        CONCAT(f.serie,'-',convert(varchar(100),ISNULL(right(replicate('0', 7) + rtrim(f.nrodoc), 7),'-----'))) as serieNroDoc,
+        UPPER(p.nompagante) as pagante,
+        <!--convert(varchar(20),f.montopagado) as montoTotal,-->
+        c.nombre as concepto,
+        concat('COLABORACIÓN NRO. ',f.nroficha) as referencia,
+        convert(varchar(20),f.monto) as monto,
+        convert(varchar,f.fechapago,105) as fechaPago,
+        convert(varchar(20),f.montopagado) as montoPago,
+        td.codigo as tipoDoc,
+        tpp.nompagante as tipPagante,
+        (select convert(varchar(20),sum(ff.montopagado)) as montopagado from mt_ficha ff where ff.unineg = f.unineg and ff.idficha in 
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>) as montoTotal
+        from mt_ficha f
+        inner join MT_Pagante p on f.idpagante = p.idpagante and f.unineg = p.unineg and p.idtipopagante = f.idtipopagante
+        inner join MO_TipoPagante tpp on tpp.idtipopagante = f.idtipopagante and tpp.unineg = f.unineg and p.idtipopagante = tpp.idtipopagante and p.unineg = tpp.unineg
+        inner join MO_Codigo td on f.idtipodoc = td.idcodigo
+        left join MO_Codigo tp on f.idtipomodopago = tp.idcodigo
+        left join MO_Codigo tm on f.idtipomoneda = tm.idcodigo
+        left join MO_Codigo ts on f.idtipostatusficha = ts.idcodigo
+        inner join MO_UnidadNegocio uni on p.unineg = uni.unineg
+        inner join MT_ConceptoUniNeg cu on f.idconcepto = cu.idconcepto and f.unineg = cu.unineg
+        inner join MT_Concepto c on cu.idconcepto = c.idconcepto
+        inner join MO_Entidad en on uni.RUC = en.ruc and uni.unineg = en.unineg
+        inner join MO_Distrito dis on uni.iddistrito = dis.iddistrito
+        where f.unineg = #{uniNeg} 
+        and f.idficha in 
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+     
+    <delete id="eliminarFicha" parameterType="pe.marista.sigma.bean.FichaBean" >
+        DELETE FROM mt_ficha
+        WHERE unineg = #{unidadNegocioBean.uniNeg} and idficha = #{idFicha}
+    </delete>
+     
+</mapper> 

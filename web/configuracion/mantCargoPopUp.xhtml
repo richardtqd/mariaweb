@@ -1,0 +1,254 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cargoMB.obtenerCargoPorUniNeg()}">
+            <h:form id="frmDatosCargo">
+                <p:panel>
+                    <h:panelGrid columns="1" class="centrado">         
+                        <p:commandButton value="#{msgs.botonNuevo}" action="#{cargoMB.limpiarCargo()}" update=":frmMantCargo:pnlDatosCargo" 
+                                         oncomplete="PF('popNewCargo').show();"/>
+                    </h:panelGrid>
+                </p:panel>
+                <h:panelGrid styleClass="centrado" id="pnlTablaCargo" >
+                    <p:dataTable id="tblCargo" value="#{cargoMB.listaCargoUniNegBean}" widgetVar="tblCargos"
+                                 paginator="true"  scrollable="true" 
+                                 paginatorPosition="bottom"
+                                 var="cargUniNeg" rowKey="#{cargUniNeg}" rows="10" 
+                                 rendered="#{not empty cargoMB.listaCargoUniNegBean}" 
+                                 style="width: 1000px; overflow-x: auto;font-size:14px !important;"  >
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.tituloCargos}" />  
+                        </f:facet>
+                        <p:column filterBy="#{cargUniNeg.cargoBean.nombre}" sortBy="#{cargUniNeg.cargoBean.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="200" styleClass="nombre2Filtro siseFontTable3 centrado-texto">
+                            <h:outputText value="#{cargUniNeg.cargoBean.nombre}"/>
+                        </p:column>
+                        <p:column filterBy="#{cargUniNeg.cargoBean.codigo}" sortBy="#{cargUniNeg.cargoBean.codigo}" headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="150" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                            <h:outputText value="#{cargUniNeg.cargoBean.codigo}"/>
+                        </p:column>                             
+                        <p:column filterBy="#{cargUniNeg.cargoBean.tipoCategoriaCargoBean.codigo}" sortBy="#{cargUniNeg.cargoBean.tipoCategoriaCargoBean.codigo}" filterMatchMode="in" headerText="#{msgs.etiquetaTipoCargo}" width="150" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="filter">
+                                <p:selectCheckboxMenu label="#{msgs.comboSeleccionarLabel}" onchange="PF('tblCargos').filter()" style="width: 150px" panelStyle="width:200px" scrollHeight="200">
+                                    <f:selectItems value="#{cargoMB.listaTipoCategoriaCargoBean}" var="cate" itemLabel="#{cate.codigo}" itemValue="#{cate.codigo}"/>
+                                </p:selectCheckboxMenu>
+                            </f:facet>
+                            <h:outputText value="#{cargUniNeg.cargoBean.tipoCategoriaCargoBean.codigo}" />
+                        </p:column>
+                        <p:column filterBy="#{cargUniNeg.cargoBean.status}" headerText="#{msgs.etiquetaStatus}" filterMatchMode="exact" width="100" styleClass="siseFontTable3 centrado-texto">
+                            <f:facet name="filter">
+                                <p:selectOneMenu onchange="PF('tblCargos').filter()" style="width: 100px" >
+                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.comboActivo}"/>
+                                    <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.comboInactivo}"/>
+                                </p:selectOneMenu>
+                            </f:facet> 
+                            <h:outputText value="#{cargUniNeg.cargoBean.statusVista}" />
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCambiarEstado}" />
+                            </f:facet>
+                            <center>
+                                <p:inputSwitch id="swCambio" value="#{cargUniNeg.cargoBean.status}">
+                                    <p:ajax listener="#{cargoMB.ponerCargoUniNeg(cargUniNeg)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </center>
+                        </p:column>
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEditar" actionListener="#{cargoMB.obtenerCargoPorId(cargUniNeg.cargoBean.idCargo)}" update=":frmMantCargo"
+                                           oncomplete="PF('popNewCargo').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                            <p:tooltip id="toolTipEdit" for="cmdEditar" value="#{msgs.mensajeModCargo}" />
+                            &nbsp;&nbsp;&nbsp;
+                            <p:commandLink id="cmdEliminar" action="#{cargoMB.obtenerCargoPorId(cargUniNeg.cargoBean.idCargo)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelCargo}" />
+                        </p:column>
+                    </p:dataTable>
+                    <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmMantCargo">
+                <p:dialog header="#{msgs.tituloInserModCargos}" widgetVar="popNewCargo" resizable="false" modal="true" styleClass="autoWidthDialog" position="center" closeOnEscape="true" > 
+                    <p:panel header="#{msgs.tituloInserModCargos}" style="margin-bottom:1px;width: 750px" toggleable="true" toggleSpeed="500" closeSpeed="500" collapsed="true" styleClass="centrado">
+                        <h:panelGrid columns="1" id="pnlDatosCargo" cellpadding="1" styleClass="siseFont1 centrado">
+                            <h:panelGrid columns="3" style="font-size: 1em">
+                                <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <h:panelGrid columns="6" cellpadding="1" style="font-size: 1em">
+                                    <p:inputText  value="#{cargoMB.cargoBean.nombre}" required="true"  label="#{msgs.etiquetaNombre}" size="40" maxlength="29"/> 
+                                    <p:spacer width="10" height="2" />
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo}" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:inputText  value="#{cargoMB.cargoBean.codigo}" required="true"  label="#{msgs.etiquetaCodigo}" size="20" maxlength="20"/> 
+                                </h:panelGrid>
+                                <h:outputLabel value="#{msgs.etiquetaCategoria}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <h:panelGrid columns="6" cellpadding="1" style="font-size: 1em">
+                                    <p:selectOneMenu  value="#{cargoMB.cargoBean.tipoCategoriaCargoBean.idCodigo}" required="true"  label="#{msgs.etiquetaDocPer}" >
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{cargoMB.listaTipoCategoriaCargoBean}" var="cat" itemLabel="#{cat.codigo}" itemValue="#{cat.idCodigo}"/>
+                                    </p:selectOneMenu >
+                                    <p:spacer width="150" height="2" />    
+                                    <h:outputLabel value="#{msgs.etiquetaStatus}" class="negrita"/>
+                                    <h:outputText value="*"  class="requerido"/>
+                                    <p:selectOneRadio value="#{cargoMB.cargoBean.status}"    label="#{msgs.etiquetaStatus}">
+                                        <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.etiquetaActivo}"/>
+                                        <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.etiquetaInactivo}"/>
+                                    </p:selectOneRadio> 
+                                </h:panelGrid>
+                                <h:outputLabel value="#{msgs.etiquetaAsignacion}" class="negrita"/>
+                                    <h:outputText value="*"  class="requerido"/>
+                                    <p:selectOneRadio value="#{cargoMB.cargoBean.flgAsignacion}"    label="#{msgs.etiquetaStatus}">
+                                        <f:selectItem itemValue="#{msgs.comboTrue}" itemLabel="#{msgs.etiquetaSi}"/>
+                                        <f:selectItem itemValue="#{msgs.comboFalse}" itemLabel="#{msgs.etiquetaNo}"/>
+                                    </p:selectOneRadio>
+                            </h:panelGrid>
+                            <p:panel header="#{msgs.etiquetaDocumento}" style="margin-bottom:1px;width: 615px" toggleable="false" toggleSpeed="500" closeSpeed="500" collapsed="false" >
+                                <h:panelGrid columns="1" styleClass="centrado siseFont3"> 
+                                    <p:pickList id="pickListCargo" value="#{cargoMB.dualListaDocumentoBean}" var="doc" itemLabel="#{doc.nombre}" itemValue="#{doc.idDocumento}"
+                                                showTargetFilter="true" showCheckbox="true" styleClass="ui-picklist ui-picklist-list"   
+                                                showSourceFilter="true"  filterMatchMode="contains" >
+                                        <f:facet name="sourceCaption" class="siseFont4" >#{msgs.etiquetaDisponibles}</f:facet>
+                                        <f:facet name="targetCaption">#{msgs.etiquetaSeleccionados}</f:facet>
+                                    </p:pickList> 
+                                </h:panelGrid>
+                            </p:panel> 
+                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                            <h:inputHidden value="#{cargoMB.cargoBean.idCargo}"/><h:inputHidden/>
+                        </h:panelGrid> 
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{cargoMB.guardarCargo()}" update=":frmDatosCargo:pnlTablaCargo,:frmMantCargo:tblDocumentos,msgsAdd,:frmMantCargo:pnlDatosCargo"
+                                             oncomplete="if(args.operacionCorrecta){PF('popNewCargo').show();PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton  
+                                oncomplete="{PF('popNewCargo').hide();}"
+                                value="#{msgs.botonCerrar}">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAdd" showDetail="true" showSummary="true"/>
+                    </p:panel>
+                    <br></br> 
+                    <h:panelGrid>
+                        <p:dataTable id="tblDocumentos" value="#{cargoMB.listaDocumentoCargoBean}" widgetVar="tblDocumentos"
+                                     paginator="true" selectionMode="single" scrollable="true"  rowIndexVar="n"
+                                     paginatorPosition="bottom" editable="true"
+                                     var="documento" rowKey="#{documento}" rows="5" 
+                                     rendered="#{not empty cargoMB.listaDocumentoCargoBean}" 
+                                     style="width: 1150px;overflow-x: auto;font-size:14px !important;">
+                            <p:ajax  event="rowEdit" listener="#{cargoMB.onRowEdit}" update=":frmMantCargo:tblDocumentos" />
+                            <p:ajax  event="rowEditCancel" listener="#{cargoMB.onRowCancel}" update=":frmMantCargo:tblDocumentos" />
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloConfDocxCar}"/>  
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="5%">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column>
+                            <p:column filterBy="#{documento.documentoBean.nombre}" headerText="#{msgs.etiquetaDocumento}" filterMatchMode="contains" width="35%" styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{documento.documentoBean.nombre}"/>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaCaduca}" filterMatchMode="contains" width="10%" styleClass="nombre1Filtro siseFontTable3 centrado-texto">
+                                <h:outputText value="#{documento.documentoBean.flgCaducaVista}"/>
+                            </p:column>
+                            <!---->
+                            <p:column sortBy="#{documento.tipoCopiaBean.codigo}" headerText="#{msgs.etiquetaTipoCopia}" filterMatchMode="contains" width="20%" styleClass="nombre2Filtro siseFontTable3 centrado-texto resetSelect">
+                                <p:cellEditor>
+                                    <f:facet name="output">
+                                        <h:outputText value="#{documento.tipoCopiaBean.codigo}"  />
+                                    </f:facet>
+                                    <f:facet name="input">
+                                        <p:selectOneMenu  value="#{documento.tipoCopiaBean.idCodigo}" required="true"  label="#{msgs.etiquetaTipoCopia}" style="width: 200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{cargoMB.listaTipoCopiaBean}" var="copia" itemValue="#{copia.idCodigo}" itemLabel="#{copia.codigo}"/>
+                                        </p:selectOneMenu >
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column sortBy="#{documento.flgObligatorio}" headerText="#{msgs.etiquetaObligatorio}" filterMatchMode="contains" width="15%" styleClass="nombre2Filtro siseFontTable3 centrado-texto ">
+                                <p:cellEditor>
+                                    <f:facet name="output">
+                                        <p:outputLabel value="#{documento.flgObligatorioVista}"/>
+                                    </f:facet>
+                                    <f:facet name="input">
+                                        <p:selectBooleanCheckbox value="#{documento.flgObligatorio}"  class="titulo">
+                                        </p:selectBooleanCheckbox>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column sortBy="#{documento.status}" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="15%" styleClass="nombre2Filtro siseFontTable3 centrado-texto ">
+                                <p:cellEditor>
+                                    <f:facet name="output">
+                                        <p:outputLabel value="#{documento.statusVista}"/>
+                                    </f:facet>
+                                    <f:facet name="input">
+                                        <p:selectBooleanCheckbox value="#{documento.status}"  class="titulo">
+                                        </p:selectBooleanCheckbox>
+                                    </f:facet>
+                                </p:cellEditor>
+                            </p:column>
+                            <p:column  headerText="#{msgs.etiquetaConfigurar}"  styleClass="ui-editable-column-options centrado-texto siseFontTable3" width="10%" >    
+                                <p:rowEditor /> 
+                            </p:column>
+                        </p:dataTable>
+                        <p:growl id="msgs1" showDetail="true"/>
+                    </h:panelGrid> 
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCargo}: #{cargoMB.cargoBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cargoMB.eliminarCargo()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCargo:pnlTablaCargo,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCargo}: #{cargoMB.cargoUniNegBean.cargoBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cargoMB.cambiarEstadoCargouniNeg()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCargo:pnlTablaCargo,msgsCon"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update=":frmDatosCargo:pnlTablaCargo,msgsCon"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsCon" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

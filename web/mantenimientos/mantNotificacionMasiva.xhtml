@@ -1,0 +1,155 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body> 
+            <h:form id="frmEsquela">
+                <p:panel header="Configuracion de Mensaje" style="width: 780px;margin: 0 auto;">
+                    <h:panelGrid id="pnlEsquela" columns="1" style="margin: 0 auto;"> 
+                        <p:inputText value="#{esquelaMB.esquelaBean.titulo}" placeholder="Ingrese un Titulo para el mensaje" style="width: 750px;" /> 
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid id="pnlEsquela2" columns="3" styleClass="centrado-izq" >
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:outputLabel value="#{msgs.etiquetaMes}: " />
+                            <p:selectOneMenu value="#{esquelaMB.esquelaBean.mes}" label="#{msgs.etiquetaMes}">
+                                <f:selectItem itemLabel="#{msgs.etiquetaSeleccionar}" noSelectionOption="true" itemValue="#{null}" />
+                                <f:selectItems value="#{esquelaMB.listaMeses}"/>
+                            </p:selectOneMenu>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:outputLabel value="#{msgs.etiquetaTipoEsq}: " />
+                            <p:selectOneMenu value="#{esquelaMB.esquelaBean.tipoEsquelaBean.idCodigo}" label="#{msgs.etiquetaTipoEsq}" >
+                                <f:selectItem itemLabel="#{msgs.etiquetaSeleccionar}" noSelectionOption="true" itemValue="#{null}" />
+                                <f:selectItems value="#{esquelaMB.listaTipoEsquelaBean}" var="tip" itemValue="#{tip.idCodigo}" itemLabel="#{tip.codigo}" />
+                            </p:selectOneMenu>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" styleClass="centrado">
+                            <p:outputLabel value="#{msgs.etiquetaDestino}" />
+                            <p:selectOneRadio value="#{esquelaMB.esquelaBean.flgRecEnvio}" label="#{msgs.etiquetaDestino}" >
+                                <f:selectItem itemLabel="#{msgs.etiquetaPad}" itemValue="1" />
+                                <f:selectItem itemLabel="#{msgs.etiquetaMad}" itemValue="2" />
+                                <f:selectItem itemLabel="#{msgs.etiquetaApoderado}" itemValue="3" />
+                                <f:selectItem itemLabel="#{msgs.etiquetaResPago}" itemValue="4" />
+                            </p:selectOneRadio> 
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid id="pnlEditor" columns="1" style="margin: 0 auto;" >
+                        <p:editor value="#{esquelaMB.esquelaBean.mensaje}" widgetVar="editorWidget" onchange="saveHtml();" height="350" /> 
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" style="margin: 0 auto;" >
+                        <p:commandButton value="#{msgs.botonGrabar}" actionListener="#{esquelaMB.guardar()}" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                         update=":frmEsquela,:frmTblEsquela:pnlTblEsquela"/>
+                        <p:commandButton value="#{msgs.botonNuevo}" actionListener="#{esquelaMB.limpiarEsquela()}" update=":frmEsquela" />
+                    </h:panelGrid>
+                </p:panel>  
+            </h:form>
+            <h:form id="frmTblEsquela">
+                <h:panelGrid id="pnlTblEsquela" style="margin: 0 auto;" >
+                    <p:growl id="msgTableEsq" showDetail="true" />
+                    <p:dataTable value="#{esquelaMB.listaEsquelaBean}" var="esquela" rendered="#{not empty esquelaMB.listaEsquelaBean}"
+                                 paginator="true" paginatorPosition="bottom" rowKey="#{esquela}" 
+                                 style="width: 800px;font-size: 12px;" editable="true">  
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                        </f:facet>
+                        <p:column headerText="#{msgs.etiquetaTitulo}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" > 
+                            <h:outputText value="#{esquela.titulo}"/>
+                        </p:column> 
+                        <p:column rendered="false" headerText="#{msgs.etiquetaTipoEsq}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" > 
+                            <h:outputText value="#{esquela.tipoEsquelaBean.codigo}"/>
+                        </p:column>
+                        <p:column style="width: 150px;text-align: center;" headerText="#{msgs.etiquetaMes}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{esquela.datoMes}"/> 
+                        </p:column> 
+                        <p:column style="width: 150px;text-align: center;" headerText="#{msgs.etiquetaTipoEsq}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{esquela.tipoEsquelaBean.codigo}"/> 
+                        </p:column> 
+                        <p:column style="width: 150px;text-align: center;" headerText="#{msgs.etiquetaTipoEsq}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{esquela.destino}"/> 
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                            <center>
+                                <p:commandLink  actionListener="#{esquelaMB.rowSelect(esquela)}" update=":frmEsquela" process="@this" >
+                                    <h:graphicImage  value="/resources/images/icons/select3.png" style="border:0;cursor:pointer;width: 15px;" />
+                                </p:commandLink>
+                                &nbsp;&nbsp;&nbsp;
+                                <p:commandLink id="btnMsgEsqOb" actionListener="#{esquelaMB.obtenerPorId(esquela)}" update=":frmMsgEsquela:pnlMsgEsquela,:popMsgEsquela"
+                                               process="@this" oncomplete="PF('popMsgEsquela').show()">
+                                    <h:graphicImage  value="/resources/images/icons/search.png" style="border:0;cursor:pointer;width: 15px;" />
+                                </p:commandLink>
+                                <p:tooltip for="btnMsgEsqOb" value="Ver Mensaje" /> 
+                                &nbsp;&nbsp;&nbsp;
+                                <p:commandLink id="btnMsgEsqOb2" actionListener="#{esquelaMB.obtenerPorId(esquela)}" update=":frmElimina"
+                                               process="@this" oncomplete="PF('popEliminar').show()">
+                                    <h:graphicImage  value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip for="btnMsgEsqOb2" value="#{msgs.etiquetaEliminar}" />
+                            </center>
+                        </p:column> 
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+
+
+            <p:dialog id="popMsgEsquela" header="#{msgs.etiquetaMensaje}" widgetVar="popMsgEsquela" showEffect="fade" hideEffect="explode"  resizable="false" modal="true" width="800px" closeOnEscape="true">
+                <h:form id="frmMsgEsquela" >
+                    <h:panelGrid id="pnlMsgEsquela" style="margin: 0 auto;">
+                        <left><b><span><h:outputText value="#{esquelaMB.esquelaBean.titulo}" style="font-weight: bold;" /></span></b></left>
+                        <br/>
+                        <h:outputText value="#{esquelaMB.esquelaBean.mensaje}" escape="false"/>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+
+
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaTitulo}: #{esquelaMB.esquelaBean.titulo}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{esquelaMB.eliminarEsquela()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTblEsquela:pnlTblEsquela"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+
+
+            <!--<h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCaja}: #{cajaMB.cajaBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cajaMB.cambiarEstadoCaja()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCaja"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>-->
+        </h:body>
+    </ui:define>
+</ui:composition>

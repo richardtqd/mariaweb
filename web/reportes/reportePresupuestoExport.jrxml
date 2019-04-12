@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportePresupuestoExport" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c0dc051d-0452-479d-b879-35e70c365fac">
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="136"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[declare @unineg varchar(6) ,@anio int,@idtipomoneda int,@tipoCuenta varchar(1)
+        set @unineg='sanjoc'
+        set @anio=2017
+        set @tipoCuenta='E'
+        set @idtipomoneda=14901
+        declare @fechaini date
+        declare @fechafin date
+
+        declare @idtiposolarendir int
+        declare @idtiposolcontrapago int
+        declare @idtiposolgeneral int
+        set @idtiposolarendir=(select idtiposolicitud from MM_TipoSolicitud where nombre='A rendir')
+        set @idtiposolgeneral=(select idtiposolicitud from MM_TipoSolicitud where nombre='General')
+        set @idtiposolcontrapago=(select idtiposolicitud from MM_TipoSolicitud where nombre='Contra Pago')
+
+        set @fechaini =
+        (select convert(date,(select '01-01-'+convert(varchar(4),2017))))
+        set @fechafin =
+       getdate()
+
+        ;WITH PRESU (uniNeg,cr,nombreCr,tipocuenta,anio,idipomoneda,cuenta,nombreCuenta,presupuestoEje)
+        AS
+        (
+        select
+        @unineg as uniNeg,
+        cr.cr,
+        cr.nombre as nombreCr,
+        @tipoCuenta as tipocuenta,
+        @anio AS anio ,
+        @idtipomoneda as idtipomoneda,
+        pc.cuenta,
+        pc.nombre as nombreCuenta ,
+        SUM(ROUND(convert(money,(
+        (
+        (case
+        when (
+        case
+        when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach	is not null then  isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra		is not null then isnull(docLog.idtipomoneda,14901)
+        else 0
+        end) = 14901
+        then
+        (case
+        when ch.idsolicitudcajach     is not null then isnull(asi.monto,0)
+        when cajach.idsolicitudcajach is not null then isnull(solcrCP.valor,0)
+        when doc.idsolicitudcajach	is not null then isnull(solcrdoc.valor,0)
+        when docLog.idcompra		is not null then isnull(fact.valor,0)
+        else 0
+        end)
+        when (case  when ch.idsolicitudcajach is not null then isnull(asi.idtipomoneda,14901)
+        when cajach.idsolicitudcajach is not null then isnull(cajach.idtipomoneda,14901)
+        when doc.idsolicitudcajach  is not null then isnull(doc.idtipomoneda,14901)
+        when docLog.idcompra	  is not null then isnull(docLog.idtipomoneda,14901)
+        else 0
+        end)= 14902 then
+        (case
+        when ch.idsolicitudcajach is not null then (isnull(asi.monto,0) * isnull(doc.tc,3))
+        when cajach.idsolicitudcajach is not null then isnull(solcrCP.valor,0) *  ISNULL(asiMov.TC,3)
+        when doc.idsolicitudcajach is not null then isnull(solcrdoc.valor,0)   * isnull(doc.tc,3)
+        when docLog.idcompra		is not null then isnull(fact.valor,0) * isnull(docLog.tc,3)
+        else 0
+        end)
+        else 0
+        end
+        )))),2)) AS presupuestoEje
+        from MT_SolicitudCajaCh     sol
+
+        LEFT join MT_DocEgreso doc on doc.idsolicitudcajach=sol.idsolicitudcajach and doc.unineg=sol.unineg  and doc.flganulado is  null AND SOL.idtiposolicitud=@idtiposolgeneral
+        left join MT_DetSolicitudCajaChCR solcrdoc on doc.idsolicitudCajach=solcrdoc.idsolicitudcajach  and sol.idtiposolicitud=@idtiposolgeneral
+
+        left join MT_cajachicaliquidacion ch on ch.idsolicitudcajach=sol.idsolicitudcajach and ch.unineg=sol.unineg
+        left join MT_Asiento asi on  asi.objeto='MT_CajaChicaLiquidacion' and asi.idobjeto=ch.idcajachicaliquidacion and isnull(asi.status,1)!=0
+
+        left join MT_CajaChicaMov cajach on cajach.idsolicitudcajach=sol.idsolicitudcajach and sol.unineg=cajach.unineg
+        left join MT_DetSolicitudCajaChCR solcrCP on solcrCP.idsolicitudCajach=cajach.idsolicitudcajach  and cajach.idtiposolicitud IN (@idtiposolarendir,@idtiposolcontrapago)
+        left join MT_Asiento asiMov on  asiMov.objeto='MT_CajaChicaMov' and asiMov.idobjeto=cajach.idcajachicamov and isnull(asiMov.status,1)!=0 and solcrCP.cr=asiMov.cr
+
+
+        left join ML_FacturaCompra f on f.idfacturacompra=doc.idcompra
+        LEFT join MT_DocEgreso docLog on docLog.idcompra =f.idfacturacompra and docLog.unineg=@unineg
+        LEFT join ML_CuentaFact fact on fact.idfacturacompra=docLog.idcompra and fact.unineg=docLog.unineg
+
+        inner join MT_CentroResponsabilidad cr  on (case when ch.idsolicitudcajach is not null then asi.cr		  /*ASIENTO*/ when cajach.idsolicitudcajach is not null then solcrCP.cr     /*MOV*/ when doc.idsolicitudcajach is not null then solcrdoc.cr	   /*GENERAL*/ when docLog.idcompra is not null then fact.cr         /*LOG*/	else 0  end) =cr.cr
+        inner join MT_Concepto              con on (case when ch.idsolicitudcajach is not null then ch.idconcepto /*ASIENTO*/ when cajach.idsolicitudcajach is not null then sol.idconcepto /*MOV*/ when doc.idsolicitudcajach is not null then sol.idconcepto /*GENERAL*/ when docLog.idcompra is not null then fact.idconcepto /*LOG*/	else 0  end) =con.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta=con.cuentad
+
+        left join MO_Codigo cod on cod.idcodigo= (case
+        when doc.idsolicitudcajach	is not null then doc.idtipomoneda
+        when ch.idsolicitudcajach is not null then asi.idtipomoneda
+        when cajach.idsolicitudcajach is not null then cajach.idtipomoneda
+        when docLog.idcompra		is not null then f.idtipomoneda
+        else 'X'
+        end)
+        left join MO_Codigo tip on tip.idcodigo= (case
+        when doc.idsolicitudcajach	is not null then doc.idtipodoc
+        when ch.idsolicitudcajach is not null then ch.idtipodoc
+        when cajach.idsolicitudcajach is not null then null
+        when docLog.idcompra		is not null then (select r.idtipodoc from ML_RegistroCompra r where r.idregistrocompra=f.idregistrocompra and r.unineg=@unineg)
+        else 'X'
+        end)
+        where (case when sol.idsolicitudcajach is not null then ISNULL(sol.montoaprobado,0) when docLog.idcompra is not null then f.montopago end)   >  0   and  (case when ch.idsolicitudcajach is not null then ch.idsolicitudcajach /*ASIENTO*/ when cajach.idsolicitudcajach is not null then cajach.idsolicitudcajach     /*MOV*/ when doc.idsolicitudcajach is not null then doc.idsolicitudcajach /*GENERAL*/ when docLog.idcompra is not null then docLog.idcompra /*LOG*/ else null end) is not null
+        and (case
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha)
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago)
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha)
+        else null end)  >=  @fechaini
+        and (case
+        when ch.idsolicitudcajach		is not null then convert(date,asi.creafecha)
+        when cajach.idsolicitudcajach	is not null then convert(date,cajach.fecpago)
+        when doc.idsolicitudcajach		is not null then convert(date,doc.creafecha)
+        when docLog.idcompra			is not null then convert(date,docLog.creafecha)
+        else null end)   <=  @fechafin
+        and (case
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha))
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha))
+        when docLog.idcompra is not null then (YEAR(docLog.creafecha))
+        else 0
+        end)=@anio
+
+
+
+
+
+
+
+        and cuenta in (Select  pla.cuenta From MT_PlanContable pla    where  (pla.cuenta like '6%' AND cuenta not like  '61%') or pla.cuenta like '33%')
+
+
+        GROUP BY cr.cr,cr.nombrE,pc.cuenta,pc.nombre,
+        (case
+        when ch.idsolicitudcajach is not null	then  YEAR((ASI.creafecha))
+        when cajach.idsolicitudcajach is not null then (YEAR(cajach.creafecha))
+        when doc.idsolicitudcajach is not null then  (YEAR(doc.creafecha))
+        when docLog.idcompra is not null then (YEAR(docLog.creafecha))
+        else 0
+        end)
+        )
+        SELECT PRESU.*,
+        convert(decimal(12,2),ISNULL(P.presupuestoprog,0)) AS presupuestoProg,
+        (CASE WHEN ISNULL(P.presupuestoProg,0)   > 0 THEN convert(decimal(12,2),( ((presu.presupuestoEje*100)/ISNULL(P.presupuestoProg,0)))) ELSE 0 END) as porcEje,
+        convert(decimal(12,2),(ISNULL(P.presupuestoProg,0) - presu.presupuestoEje)) as saldo,
+        (CASE WHEN ISNULL(P.presupuestoProg,0)  >  0 THEN convert(decimal(12,2),100-( (presu.presupuestoEje*100)/ISNULL(P.presupuestoProg,0))) ELSE 0 END)  as porcSaldo
+        FROM PRESU
+        LEFT JOIN MG_Presupuesto P ON P.cuenta=PRESU.cuenta AND P.cr=PRESU.cr AND P.unineg=PRESU.uniNeg AND P.anio=PRESU.anio
+
+            where isnull(p.presupuestoprog,0)=0
+
+        ORDER BY 2,7]]>
+	</queryString>
+	<field name="uniNeg" class="java.lang.String"/>
+	<field name="cr" class="java.lang.Integer"/>
+	<field name="nombreCr" class="java.lang.String"/>
+	<field name="tipocuenta" class="java.lang.String"/>
+	<field name="anio" class="java.lang.Integer"/>
+	<field name="idipomoneda" class="java.lang.Integer"/>
+	<field name="cuenta" class="java.lang.Integer"/>
+	<field name="nombreCuenta" class="java.lang.String"/>
+	<field name="presupuestoEje" class="java.math.BigDecimal"/>
+	<field name="presupuestoProg" class="java.math.BigDecimal"/>
+	<field name="porcEje" class="java.math.BigDecimal"/>
+	<field name="saldo" class="java.math.BigDecimal"/>
+	<field name="porcSaldo" class="java.math.BigDecimal"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="79" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="20" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="b01e0dfb-2563-49f5-9f22-23f4d5935a78" x="11" y="0" width="111" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Centro Responsabilidad]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="24875aed-bf06-48f0-9831-978bedbd5946" x="122" y="0" width="50" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[N° Cuenta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="008a7f85-8262-4be6-bd08-90d4551ce499" x="172" y="0" width="79" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nombre Cuenta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="19f2b9b9-ecdb-4759-8569-8ec0480ec468" x="251" y="0" width="50" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pres. Prog.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="95d1711f-6c06-44b8-ba38-6f5aa883d4d1" x="301" y="0" width="50" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pres. Ejec.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5e96bb3f-24e0-4280-85b4-48b67b2947bc" x="351" y="0" width="64" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Porc. Eje]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="35c8c3f6-91e9-4702-ba7e-03b1ac8ef498" x="415" y="0" width="64" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Saldo]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="665cdc58-901e-4c96-8b60-e6ec05886333" x="479" y="0" width="64" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Porc. Saldo]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="11" splitType="Stretch">
+			<textField>
+				<reportElement uuid="4440ae10-1d86-43c5-97fc-283d51e32ea3" x="13" y="0" width="27" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cr}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="505103d4-aae7-4108-8578-ee203cd37c71" x="40" y="0" width="17" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="6ee07615-5a2e-4b21-9ff1-76d469ac0c7e" x="57" y="0" width="62" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCr}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="6ce45fe3-0943-45fb-a7f9-99df70e4600e" x="122" y="0" width="50" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cuenta}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="fd5a2759-058e-450c-b87b-e8d8fa41561d" x="172" y="0" width="79" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCuenta}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="9e5d83b5-2411-4870-b1ba-2eda34b85137" x="251" y="0" width="46" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{presupuestoProg}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="e8c18224-4424-4ea4-a45a-e6a763aa9de6" x="301" y="0" width="47" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{presupuestoEje}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="7b82bc10-d42b-4689-9771-d55d0c1b838c" x="351" y="0" width="60" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcEje}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="c665f7e7-7384-418c-bf11-5c9f6f6ebedb" x="415" y="0" width="59" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{saldo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="040966ae-e1fd-487c-8759-e4be22e5cb79" x="479" y="0" width="59" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcSaldo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="57" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

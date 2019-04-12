@@ -1,0 +1,560 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body   onload="#{presupuestoRepMB.cargarFormularioCentros()}">
+            <h:panelGrid styleClass="centrado" >
+                <h:form id="frmDatosCR">
+                    <h:panelGrid  id="pnlTablaMov">
+                        <p:dataTable id="tblMov" value="#{presupuestoRepMB.listaPresupuestoNewBean}" widgetVar="tblMov"
+                                     scrollHeight="500" scrollable="true"
+                                     sortBy="#{presu.centroResponsabilidadBean.cr}" 
+                                     paginatorTemplate="{Exporters}"
+                                     var="presu" rowKey="#{presu}" rowIndexVar="n"  
+                                     rendered="#{not empty presupuestoRepMB.listaPresupuestoNewBean and presupuestoRepMB.verPor==1 }" 
+                                     style="width: #{presupuestoRepMB.anchoTablasExtraGrande}; font-size: 10px;font-size:14px !important;">
+                            <f:facet name="header">
+                                #{msgs.tituloPresResumenCRCC} 
+                                <h:commandLink  >
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xls" target="tblMov" fileName="presupuestoCrResumen" pageOnly="true" />
+                                </h:commandLink>
+                                <h:commandLink  >
+                                    <p:graphicImage value="/resources/images/icons/pdf.png" width="20"/>
+                                    <p:dataExporter type="pdf" target="tblMov" fileName="presupuestoCrResumen" pageOnly="true" />
+                                </h:commandLink>
+                            </f:facet> 
+                            <p:column groupRow="true"   headerText="#{msgs.etiquetaCentResAb}" filterBy="#{presu.centroResponsabilidadBean.cr} - #{presu.centroResponsabilidadBean.nombre}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 black">
+                                <h:outputText value="#{presu.centroResponsabilidadBean.cr} - #{presu.centroResponsabilidadBean.nombre}"  /> 
+                            </p:column>   
+                            <p:column style="white-space: nowrap" filterBy="#{presu.planContableBean.cuenta}" headerText="#{msgs.etiquetaCuentaConAbb}" filterMatchMode="startsWith" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{presu.planContableBean.cuenta}"  /> 
+                            </p:column> 
+                            <p:column   style="white-space: nowrap" filterBy="#{presu.planContableBean.nombre}" headerText="#{msgs.etiquetaCuenta}" filterMatchMode="contains" width="15%" styleClass="siseFontTable3  ">
+                                <h:outputText value="#{presu.planContableBean.nombre}"  /> 
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPresuProg}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu.presupuestoProg}" style="font-weight: bolder;color: #{presu.presupuestoProg eq 0 ? 'red' : black}" > 
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPresuEjec}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu.presupuestoEje}" style="font-weight: bolder;color: #{presu.presupuestoEje gt presu.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPorcPresuEjec}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu.porcEje}" style="font-weight: bolder;color: #{presu.presupuestoEje gt presu.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu.saldo}" style="font-weight: bolder;color: #{presu.presupuestoEje gt presu.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency" currencySymbol="S/"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPorcSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu.porcSaldo}"  style="font-weight: bolder;color: #{presu.presupuestoEje gt presu.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column exportable="false"  style="white-space: nowrap" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAccion}" styleClass="siseFontTable3 centrado-texto"/>
+                                </f:facet>
+                                <p:commandLink id="cmdConf" actionListener="#{presupuestoRepMB.obtenerDetalleGastosCrCuenta(presu)}"
+                                               update=":frmRegistros"
+                                               oncomplete="PF('popDetCrCta').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                            </p:column>
+                            <p:summaryRow  listener="#{presupuestoRepMB.calculateTotalPorCr(presu.centroResponsabilidadBean.cr)}" >
+                                <p:column exportable="true" colspan="3" style="text-align:right" >
+                                    <h:outputText value="Total:" />
+                                </p:column>
+                                <p:column exportable="true" style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.totalPresupuestado}" styleClass="siseFontTable3 centrado-derecha" >
+                                        <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>  
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.totalEjecutado}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.porcEjecutado}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.totalSaldo}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right" >
+                                    <h:outputText value="#{presupuestoRepMB.porcSaldo}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                            </p:summaryRow>
+                        </p:dataTable>  
+                        <p:dataTable id="tblMov2" value="#{presupuestoRepMB.listaPresupuestoNewBean}" widgetVar="tblMov2"
+                                     scrollHeight="500" scrollable="true"
+                                     sortBy="#{presu2.planContableBean.cuenta}" 
+                                     paginatorTemplate="{Exporters}"
+                                     var="presu2" rowKey="#{presu2}" rowIndexVar="n"  
+                                     rendered="#{not empty presupuestoRepMB.listaPresupuestoNewBean and presupuestoRepMB.verPor==2}" 
+                                     style="width: #{presupuestoRepMB.anchoTablasExtraGrande}; font-size: 10px;font-size:14px !important;">
+                            <f:facet name="header">
+                                #{msgs.tituloPresResumenCCCR}
+                                <h:commandLink  >
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xls" target="tblMov2" fileName="presu2puestoCCResumen" pageOnly="true" />
+                                </h:commandLink>
+                            </f:facet> 
+                            <p:column groupRow="true"  style="white-space: nowrap" filterBy="#{presu2.planContableBean.cuenta}" headerText="#{msgs.etiquetaCuentaConAbb}" filterMatchMode="startsWith" width="12%" styleClass="siseFontTable3  ">
+                                <h:outputText value="#{presu2.planContableBean.cuenta} - #{presu2.planContableBean.nombre}"  /> 
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaCRAbb}" filterBy="#{presu2.centroResponsabilidadBean.cr}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 black">
+                                <h:outputText value="#{presu2.centroResponsabilidadBean.cr}"  /> 
+                            </p:column>    
+                            <p:column headerText="#{msgs.etiquetaCentResAb}" filterBy="#{presu2.centroResponsabilidadBean.nombre}" filterMatchMode="contains" width="15%" styleClass="siseFontTable3 black">
+                                <h:outputText value="#{presu2.centroResponsabilidadBean.nombre}"  /> 
+                            </p:column>    
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPresuProg}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu2.presupuestoProg}" style="font-weight: bolder;color: #{presu2.presupuestoProg eq 0 ? 'red' : black}" > 
+                                    <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPresuEjec}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu2.presupuestoEje}" style="font-weight: bolder;color: #{presu2.presupuestoEje gt presu2.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPorcPresuEjec}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu2.porcEje}" style="font-weight: bolder;color: #{presu2.presupuestoEje gt presu2.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu2.saldo}" style="font-weight: bolder;color: #{presu2.presupuestoEje gt presu2.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency" currencySymbol="S/"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.etiquetaPorcSaldo}" filterMatchMode="contains" width="5%" styleClass="siseFontTable2 centrado-derecha">
+                                <h:outputText value="#{presu2.porcSaldo}"  style="font-weight: bolder;color: #{presu2.presupuestoEje gt presu2.presupuestoProg ? 'red' : black}" > 
+                                    <f:convertNumber type="currency"  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column exportable="false"  style="white-space: nowrap" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAccion}" styleClass="siseFontTable3 centrado-texto"/>
+                                </f:facet>
+                                <p:commandLink id="cmdConf" actionListener="#{presupuestoRepMB.obtenerDetalleGastosCrCuenta(presu2)}"
+                                               update=":frmRegistros"
+                                               oncomplete="PF('popDetCrCta').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                            </p:column>
+                            <p:summaryRow  listener="#{presupuestoRepMB.calculateTotalPorCuenta(presu2.planContableBean.cuenta)}" >
+                                <p:column exportable="true" colspan="3" style="text-align:right" >
+                                    <h:outputText value="Total:" />
+                                </p:column>
+                                <p:column exportable="true" style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.totalPresupuestado}" styleClass="siseFontTable3 centrado-derecha" >
+                                        <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>  
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.totalEjecutado}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.porcEjecutado}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right">
+                                    <h:outputText value="#{presupuestoRepMB.totalSaldo}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                                <p:column style="text-align:right" >
+                                    <h:outputText value="#{presupuestoRepMB.porcSaldo}" styleClass="siseFontTable3 centrado-derecha">
+                                        <f:convertNumber type="currency" currencySymbol="" pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                            </p:summaryRow>
+                        </p:dataTable>  
+                    </h:panelGrid>
+                    <h:panelGrid id="pnlMovDetCrCta">
+                        <p:dataTable id="detCrCta" value="#{presupuestoRepMB.listaDetallePresupuestoNewBean}" widgetVar="detCrCta" 
+                                     scrollable="true" scrollHeight="500"     sortBy="#{detCrCta.crCuenta}"
+                                     rowIndexVar="n"  expandableRowGroups="true"  
+                                     var="detCrCta" rowKey="#{detCrCta}" 
+                                     rendered="#{not empty presupuestoRepMB.listaDetallePresupuestoNewBean and presupuestoRepMB.verPor==1}" 
+                                     style="width: #{presupuestoRepMB.anchoTablasExtraGrande}; font-size: 10px;font-size:14px !important;">
+                            <f:facet name="header">
+                                #{msgs.tituloPresDetalleCRCC}
+                                <h:commandLink> 
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xls" target="detCrCta" fileName="presupuestoCrDetalle" pageOnly="true" />
+                                </h:commandLink>
+                            </f:facet>  
+                            <p:headerRow >
+                                <p:column  colspan="4" exportable="true"   >
+                                    <h:outputText value="#{detCrCta.cr} - #{detCrCta.nombreCr}" />    
+                                </p:column>
+                                <p:column colspan="5" exportable="true"  >
+                                    <h:outputText value="#{detCrCta.cuenta} - #{detCrCta.nombreCuenta}"/> 
+                                </p:column>
+                            </p:headerRow>
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCentResAb}">
+                                <h:outputText value="#{detCrCta.cr}"/>   
+                            </p:column>  
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCuentaConAbb}">
+                                <h:outputText value="#{detCrCta.nombreCr}"/>   
+                            </p:column>  
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCCAbb}">
+                                <h:outputText value="#{detCrCta.cuenta}"/>
+                            </p:column>  
+                            <p:column  colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCuentaContable}">
+                                <h:outputText value="#{detCrCta.nombreCuenta}"/>
+                            </p:column>  
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.numero}" width="2%" styleClass="nombre2Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta.id}" />
+                            </p:column>
+                            <p:column   filterBy="#{detCrCta.codigo}" sortBy="#{detCrCta.codigo}" headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains"  width="5%" styleClass="nombre4Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta.codigo}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta.ambito}" sortBy="#{detCrCta.ambito}" headerText="#{msgs.etiquetaAmbito}" filterMatchMode="contains"  width="5%" styleClass="nombre5Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta.ambito}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta.fecha}" sortBy="#{detCrCta.fecha}" headerText="#{msgs.etiquetaFecha}" filterMatchMode="contains"  width="4%" styleClass="nombre5Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta.fecha}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta.proveedor}" sortBy="#{detCrCta.proveedor}" headerText="#{msgs.etiquetaProvee}" filterMatchMode="contains"  width="15%" styleClass="nombre13Filtro  siseFont0">
+                                <h:outputText value="#{detCrCta.proveedor}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta.motivo}" sortBy="#{detCrCta.motivo}" headerText="#{msgs.etiquetaMotivo}" filterMatchMode="contains"  width="20%" styleClass="nombre13Filtro siseFont0">
+                                <h:outputText value="#{detCrCta.motivo}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta.nroDoc}" sortBy="#{detCrCta.nroDoc}" headerText="#{msgs.etiquetaRefAbb}" filterMatchMode="contains"  width="10%" styleClass="nombre12Filtro siseFont0">
+                                <h:outputText value="#{detCrCta.nroDoc}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta.monedaOrigen}" sortBy="#{detCrCta.monedaOrigen}" headerText="#{msgs.etiquetaMoneda}"   width="2%" styleClass="centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta.monedaOrigen}"/>
+                            </p:column> 
+                            <p:column  style="white-space: nowrap"   sortBy="#{detCrCta.valorSoles}" headerText="S/ #{msgs.etiquetaValor}" filterMatchMode="contains"  width="5%" styleClass="nombre4Filtro centrado-derecha siseFont0">
+                                <h:outputText value="#{detCrCta.valorSoles}" >
+                                    <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:summaryRow >   
+                                <p:column  colspan="7" > 
+                                    <h:panelGrid styleClass="siseFontTable3 centrado-derecha" columns="1" style="text-align:right;border: 0px #a0a0a0" >
+                                        <h:outputText value="#{msgs.etiquetaPresuEjec} (#{detCrCta.porcEje}%):" style="font-weight: bolder;color: #{detCrCta.presupuestoEje gt detCrCta.presupuestoProgramado ? 'red' : black}"/>
+                                        <h:outputText value="#{msgs.etiquetaPresuProg}:" style="font-weight: bolder;color: #{detCrCta.presupuestoProgramado eq 0 ? 'red' : negrita}"/>
+                                        <h:outputText value="#{msgs.etiquetaSaldo} (#{detCrCta.porcSaldo}%):" style="font-weight: bolder;color: #{detCrCta.saldo lt 0 ? 'red' : negrita}"/>
+                                    </h:panelGrid>  
+                                </p:column>  
+                                <p:column  colspan="2" style="text-align:right"> 
+                                    <h:panelGrid styleClass="siseFontTable3 centrado-derecha" columns="1" style="border-style: none !important;border: 0px #a0a0a0" border="0"> 
+                                        <h:outputText value="#{detCrCta.presupuestoEje}" style="font-weight: bolder;color: #{detCrCta.presupuestoEje gt detCrCta.presupuestoProgramado ? 'red' : black}" >
+                                            <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                        </h:outputText> 
+                                        <h:outputText value="#{detCrCta.presupuestoProgramado}" style="font-weight: bolder;color: #{detCrCta.presupuestoProgramado eq 0 ? 'red' : black}" >
+                                            <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                        </h:outputText> 
+                                        <h:outputText value="#{detCrCta.saldo}" style="font-weight: bolder;color: #{detCrCta.saldo lt 0 ? 'red' : negrita}" >
+                                            <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                        </h:outputText>
+                                    </h:panelGrid>  
+                                </p:column>  
+                            </p:summaryRow>
+                        </p:dataTable> 
+                        <p:dataTable id="detCrCta2" value="#{presupuestoRepMB.listaDetallePresupuestoNewBean}" widgetVar="detCrCta2" 
+                                     scrollable="true" scrollHeight="500"     sortBy="#{detCrCta2.crCuenta}"
+                                     rowIndexVar="n"  expandableRowGroups="true"  
+                                     var="detCrCta2" rowKey="#{detCrCta2}" 
+                                     rendered="#{not empty presupuestoRepMB.listaDetallePresupuestoNewBean and presupuestoRepMB.verPor==2}" 
+                                     style="width: #{presupuestoRepMB.anchoTablasExtraGrande}; font-size: 10px;font-size:14px !important;">
+                            <f:facet name="header">
+                                #{msgs.tituloPresDetalleCCCR}
+                                <h:commandLink> 
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xls" target="detCrCta2" fileName="presupuestoCCDetalle" pageOnly="true" />
+                                </h:commandLink>
+                            </f:facet>  
+                            <p:headerRow >
+                                <p:column  colspan="4" exportable="true"   >
+                                    <h:outputText value="#{detCrCta2.cuenta} - #{detCrCta2.nombreCuenta}"/> 
+                                </p:column> 
+                                <p:column colspan="5" exportable="true"  >
+                                    <h:outputText value="#{detCrCta2.cr} - #{detCrCta2.nombreCr}" />    
+                                </p:column>
+                            </p:headerRow>   
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCCAbb}">
+                                <h:outputText value="#{detCrCta2.cuenta}"/>
+                            </p:column>  
+                            <p:column  colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCuentaContable}">
+                                <h:outputText value="#{detCrCta2.nombreCuenta}"/>
+                            </p:column> 
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCentResAb}">
+                                <h:outputText value="#{detCrCta2.cr}"/>   
+                            </p:column>  
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCenCos}">
+                                <h:outputText value="#{detCrCta2.nombreCr}"/>   
+                            </p:column>
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.numero}" width="2%" styleClass="nombre2Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta2.id}" />
+                            </p:column>
+                            <p:column   filterBy="#{detCrCta2.codigo}" sortBy="#{detCrCta2.codigo}" headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains"  width="5%" styleClass="nombre4Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta2.codigo}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta2.ambito}" sortBy="#{detCrCta2.ambito}" headerText="#{msgs.etiquetaAmbito}" filterMatchMode="contains"  width="5%" styleClass="nombre5Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta2.ambito}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta2.fecha}" sortBy="#{detCrCta2.fecha}" headerText="#{msgs.etiquetaFecha}" filterMatchMode="contains"  width="4%" styleClass="nombre5Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta2.fecha}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta2.proveedor}" sortBy="#{detCrCta2.proveedor}" headerText="#{msgs.etiquetaProvee}" filterMatchMode="contains"  width="15%" styleClass="nombre13Filtro  siseFont0">
+                                <h:outputText value="#{detCrCta2.proveedor}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta2.motivo}" sortBy="#{detCrCta2.motivo}" headerText="#{msgs.etiquetaMotivo}" filterMatchMode="contains"  width="20%" styleClass="nombre13Filtro siseFont0">
+                                <h:outputText value="#{detCrCta2.motivo}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta2.nroDoc}" sortBy="#{detCrCta2.nroDoc}" headerText="#{msgs.etiquetaRefAbb}" filterMatchMode="contains"  width="10%" styleClass="nombre12Filtro siseFont0">
+                                <h:outputText value="#{detCrCta2.nroDoc}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta2.monedaOrigen}" sortBy="#{detCrCta2.monedaOrigen}" headerText="#{msgs.etiquetaMoneda}"   width="2%" styleClass="centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta2.monedaOrigen}"/>
+                            </p:column> 
+                            <p:column  style="white-space: nowrap"   sortBy="#{detCrCta2.valorSoles}" headerText="S/ #{msgs.etiquetaValor}" filterMatchMode="contains"  width="5%" styleClass="nombre4Filtro centrado-derecha siseFont0">
+                                <h:outputText value="#{detCrCta2.valorSoles}" >
+                                    <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:summaryRow >   
+                                <p:column  colspan="7" > 
+                                    <h:panelGrid styleClass="siseFontTable3 centrado-derecha" columns="1" style="text-align:right;border: 0px #a0a0a0" >
+                                        <h:outputText value="#{msgs.etiquetaPresuEjec} (#{detCrCta2.porcEje}%):" style="font-weight: bolder;color: #{detCrCta2.presupuestoEje gt detCrCta2.presupuestoProgramado ? 'red' : black}"/>
+                                        <h:outputText value="#{msgs.etiquetaPresuProg}:" style="font-weight: bolder;color: #{detCrCta2.presupuestoProgramado eq 0 ? 'red' : negrita}"/>
+                                        <h:outputText value="#{msgs.etiquetaSaldo} (#{detCrCta2.porcSaldo}%):" style="font-weight: bolder;color: #{detCrCta2.saldo lt 0 ? 'red' : negrita}"/>
+                                    </h:panelGrid>  
+                                </p:column>  
+                                <p:column  colspan="2" style="text-align:right"> 
+                                    <h:panelGrid styleClass="siseFontTable3 centrado-derecha" columns="1" style="border-style: none !important;border: 0px #a0a0a0" border="0"> 
+                                        <h:outputText value="#{detCrCta2.presupuestoEje}" style="font-weight: bolder;color: #{detCrCta2.presupuestoEje gt detCrCta2.presupuestoProgramado ? 'red' : black}" >
+                                            <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                        </h:outputText> 
+                                        <h:outputText value="#{detCrCta2.presupuestoProgramado}" style="font-weight: bolder;color: #{detCrCta2.presupuestoProgramado eq 0 ? 'red' : black}" >
+                                            <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                        </h:outputText> 
+                                        <h:outputText value="#{detCrCta2.saldo}" style="font-weight: bolder;color: #{detCrCta2.saldo lt 0 ? 'red' : negrita}" >
+                                            <f:convertNumber type="currency" currencySymbol="S/" pattern="#,##0.00" locale="en_US"/>
+                                        </h:outputText>
+                                    </h:panelGrid>  
+                                </p:column>  
+                            </p:summaryRow>
+                        </p:dataTable> 
+                    </h:panelGrid> 
+                </h:form> 
+            </h:panelGrid> 
+            <h:form>
+                <p:dialog id="popDone2" header="#{msgs.appSiglas}" widgetVar="popDone2" width="370" height="120" showEffect="fade" hideEffect="explode" resizable="false"
+                          closable="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton  oncomplete="PF('popDone2').hide();PF('popPantallaDocIng').hide();"
+                                          value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmRegistros">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDetCrCta"  showEffect="fade" hideEffect="explode" modal="true" styleClass="autoWidthDialog" position="top" closable="true">
+                    <h:panelGrid columns="3" styleClass="centrado" >
+                        <p:panel header="Datos" >    
+                            <h:panelGrid columns="2"> 
+                                <p:outputLabel value="#{msgs.etiquetaCentResAb}:" class="negrita" style="font-weight:bold"/>
+                                <h:outputText value="#{presupuestoRepMB.presupuestoNewBean.centroResponsabilidadBean.cr} - #{presupuestoRepMB.presupuestoNewBean.centroResponsabilidadBean.nombre}" />
+                                <p:outputLabel value="#{msgs.etiquetaCuentaConAbb}:" class="negrita" style="font-weight:bold"/>
+                                <h:outputText value="#{presupuestoRepMB.presupuestoNewBean.planContableBean.cuenta} - #{presupuestoRepMB.presupuestoNewBean.planContableBean.nombre}" />                                
+                                <p:outputLabel value="#{msgs.etiquetaPresuProg}:" class="negrita" style="font-weight:bold"/>
+                                <h:outputText value="#{presupuestoRepMB.presupuestoNewBean.presupuestoProg}">                                
+                                    <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                                <p:outputLabel value="#{msgs.etiquetaPresuEjec}:" class="negrita" style="font-weight:bold"/>
+                                <h:panelGrid columns="10">
+                                    <h:outputText value="#{presupuestoRepMB.presupuestoNewBean.presupuestoEje}" style="font-weight: bolder;color: #{presupuestoRepMB.presupuestoNewBean.presupuestoEje gt presupuestoRepMB.presupuestoNewBean.presupuestoProg ? 'red' : black}">                                
+                                        <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>                              
+                                    <p:spacer width="10"/>
+                                    <h:outputText value="-" />
+                                    <p:outputLabel value="#{msgs.etiquetaPorcPresuEjec}:" class="negrita" style="font-weight:bold"/>
+                                    <h:outputText value="#{presupuestoRepMB.presupuestoNewBean.porcEje}" style="font-weight: bolder;color: #{presupuestoRepMB.presupuestoNewBean.presupuestoEje gt presupuestoRepMB.presupuestoNewBean.presupuestoProg ? 'red' : black}">                                
+                                        <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </h:panelGrid>                               
+                                <p:outputLabel value="#{msgs.etiquetaSaldo}:" class="negrita" style="font-weight:bold"/>
+                                <h:panelGrid columns="10">
+                                    <h:outputText value="#{presupuestoRepMB.presupuestoNewBean.saldo}" style="font-weight: bolder;color: #{presupuestoRepMB.presupuestoNewBean.presupuestoEje gt presupuestoRepMB.presupuestoNewBean.presupuestoProg ? 'red' : black}">                                
+                                        <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>       
+                                    <p:spacer width="10"/>
+                                    <h:outputText value="-" />
+                                    <p:outputLabel value="#{msgs.etiquetaPorcSaldo}:" class="negrita" style="font-weight:bold"/>
+                                    <h:outputText value="#{presupuestoRepMB.presupuestoNewBean.porcSaldo}" style="font-weight: bolder;color: #{presupuestoRepMB.presupuestoNewBean.presupuestoEje gt presupuestoRepMB.presupuestoNewBean.presupuestoProg ? 'red' : black}">                                
+                                        <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </h:panelGrid>
+
+                            </h:panelGrid>
+                        </p:panel> 
+                    </h:panelGrid>  
+                    <h:panelGrid id="pnlMovCrCta">
+                        <p:dataTable id="detCrCta1" value="#{presupuestoRepMB.listaDetallePresupuestoNewBean}" widgetVar="detCrCta1" 
+                                     scrollable="true" scrollHeight="300"   
+                                     rowIndexVar="n"  
+                                     var="detCrCta1" rowKey="#{detCrCta1}" 
+                                     rendered="#{not empty presupuestoRepMB.listaDetallePresupuestoNewBean}" 
+                                     style="width: 1094px;font-size:14px !important;margin-bottom:0"> 
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.tituloPresDetalleCRCC}"/>
+                                <h:commandLink> 
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="20"/>
+                                    <p:dataExporter type="xls" target="detCrCta1" fileName="presupuestoCrDetalle_#{presupuestoRepMB.presupuestoNewBean.centroResponsabilidadBean.cr}-#{presupuestoRepMB.presupuestoNewBean.planContableBean.cuenta}" pageOnly="true" />
+                                </h:commandLink> 
+                            </f:facet>
+                            <p:column style="white-space: nowrap"  headerText="#{msgs.numero}" width="2%" styleClass="nombre2Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{n+1}" />
+                            </p:column>
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCRAbb}">
+                                <h:outputText value="#{detCrCta1.cr}"/>   
+                            </p:column>  
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCentResAb}">
+                                <h:outputText value="#{detCrCta1.nombreCr}"/>   
+                            </p:column>  
+                            <p:column colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCCAbb}">
+                                <h:outputText value="#{detCrCta1.cuenta}"/>
+                            </p:column>  
+                            <p:column  colspan="3" exportable="true" style="display:none;" width="1%" headerText="#{msgs.etiquetaCuentaContable}">
+                                <h:outputText value="#{detCrCta1.nombreCuenta}"/>
+                            </p:column>  
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta1.codigo}" sortBy="#{detCrCta1.codigo}" headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains"  width="3%" styleClass="nombre4Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta1.codigo}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta1.ambito}" sortBy="#{detCrCta1.ambito}" headerText="#{msgs.etiquetaAmbito}" filterMatchMode="contains"  width="5%" styleClass="nombre5Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta1.ambito}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta1.fecha}" sortBy="#{detCrCta1.fecha}" headerText="#{msgs.etiquetaFecha}" filterMatchMode="contains"  width="4%" styleClass="nombre5Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta1.fecha}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap" filterBy="#{detCrCta1.proveedor}" sortBy="#{detCrCta1.proveedor}" headerText="#{msgs.etiquetaProvee}" filterMatchMode="contains"  width="15%" styleClass="nombre13Filtro  siseFont0">
+                                <h:outputText value="#{detCrCta1.proveedor}"/>
+                            </p:column> 
+                            <p:column   filterBy="#{detCrCta1.motivo}" sortBy="#{detCrCta1.motivo}" headerText="#{msgs.etiquetaMotivo}" filterMatchMode="contains"  width="15%" styleClass="nombre13Filtro siseFont0">
+                                <h:outputText value="#{detCrCta1.motivo}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta1.nroDoc}" sortBy="#{detCrCta1.nroDoc}" headerText="#{msgs.etiquetaRefAbb}" filterMatchMode="contains"  width="10%" styleClass="nombre12Filtro siseFont0">
+                                <h:outputText value="#{detCrCta1.nroDoc}"/>
+                            </p:column> 
+                            <p:column style="white-space: nowrap"  filterBy="#{detCrCta1.monedaOrigen}" sortBy="#{detCrCta1.monedaOrigen}" headerText="#{msgs.etiquetaMoneda}"   width="2%" styleClass="nombre14Filtro centrado-texto siseFont0">
+                                <h:outputText value="#{detCrCta1.monedaOrigen}"/>
+                            </p:column> 
+                            <p:column    sortBy="#{detCrCta1.valorSoles}" headerText="S/ #{msgs.etiquetaValor}" filterMatchMode="contains"  width="5%" styleClass="nombre5Filtro centrado-derecha siseFont0">
+                                <h:outputText value="#{detCrCta1.valorSoles}" >
+                                    <f:convertNumber type="currency"   pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column> 
+                        </p:dataTable> 
+                    </h:panelGrid> 
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popDetCrCta').hide();"  
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmDetalle">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDetalle" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+                    <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="titulo"  style="font-weight: bold"/> 
+                    <h:outputLabel value=" " class="requerido" />
+                    <p:spinner id="minMaxPeriodo" value="#{presupuestoRepMB.periodo}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="5" required="true">
+                    </p:spinner>   
+                    <h:panelGrid class="centrado" columns="2"> 
+                        <p:commandButton value="#{msgs.botonBuscar}" action="#{presupuestoRepMB.cargarConsolidado()}"
+                                         update="pnlCata"/> 
+                    </h:panelGrid>
+                    <h:panelGrid columns="1" styleClass="centrado" id="pnlCata">
+
+                        <p:dataTable value="#{presupuestoRepMB.listaDetallePresupuestoNewBean}" paginator="true"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                     var="detalle" id="tblCatalogo" widgetVar="tblCatalogo"
+                                     rowKey="#{detalle.cuenta}" rows="15" 
+                                     rendered="#{not empty presupuestoRepMB.listaDetallePresupuestoNewBean}" 
+                                     style="width:600px; font-size: 10px" > 
+                            <f:facet name="{Exporters}">
+                                <h:commandLink> 
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                    <p:dataExporter type="xls" target="tblCatalogo" fileName="Detalle_Presupuesto" />
+                                </h:commandLink> 
+                            </f:facet>
+                            <p:column  styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaCuentaConAbb}" filterMatchMode="contains" width="3" sortBy="#{catalogo.item}">
+                                <h:outputText value="#{detalle.cuenta}"  style=" font-size: 12px"/>
+                            </p:column> 
+                            <p:column  styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaPresProg}" filterMatchMode="contains" width="3" sortBy="#{catalogo.item}">
+                                <h:outputText value="#{detalle.presupuestoProgramado}"  style=" font-size: 12px">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column  styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaEjecutado}" filterMatchMode="contains" width="3" sortBy="#{catalogo.item}">
+                                <h:outputText value="#{detalle.presupuestoEje}"  style=" font-size: 12px">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column  styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaDisponibles}" filterMatchMode="contains" width="3" sortBy="#{catalogo.item}">
+                                <h:outputText value="#{detalle.saldo}"  style=" font-size: 12px">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column  styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaPorcDispo}" filterMatchMode="contains" width="3" sortBy="#{catalogo.item}">
+                                <h:outputText value="#{detalle.porcSaldo}"  style=" font-size: 12px">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                            <p:column  styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaPorcPresuEjec}" filterMatchMode="contains" width="3" sortBy="#{catalogo.item}">
+                                <h:outputText value="#{detalle.porcEje}"  style=" font-size: 12px">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>  
+                        </p:dataTable>
+                    </h:panelGrid>
+                    <br/>
+                    <p:separator/>
+                    <h:panelGrid columns="4" styleClass="centrado"> 
+                        <div align="center"> 
+                            <h:commandLink action="#{presupuestoRepMB.imprimirTodosConsolidadoPdf()}" target="_blank">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                        </div>
+                        <p:commandButton id="btnCerrar" oncomplete="PF('popDetalle').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton> 
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form> 
+        </h:body>
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,175 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cajaMB.obtenerTodos()}">
+            <h:form id="frmDatosCaja">
+                <h:panelGrid styleClass="centrado" id="pnlDatosCaja" style="text-align: center !important ; font-weight: bold; font-size: 0.9em ; width: 700px" >
+                    <p:panel header="#{msgs.tituloMantCaja}" style="text-align: center !important">
+                        <h:panelGrid columns="1" id="DatosCaja"  >
+                            <h:panelGrid columns="6" class="siseFontGrid3" cellpadding="3">
+                                <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText value="#{cajaMB.cajaBean.nombre}" required="true"/>                            
+                                <h:outputLabel value="#{msgs.etiquetaHostIP}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <h:panelGrid columns="10">
+                                    <p:inputMask value="#{cajaMB.cajaBean.ip1}" mask="9?99" style="width: 40px" required="true"/>.
+                                    <p:inputMask value="#{cajaMB.cajaBean.ip2}" mask="9?99" style="width: 40px" required="true"/>.
+                                    <p:inputMask value="#{cajaMB.cajaBean.ip3}" mask="9?99" style="width: 40px" required="true"/>.
+                                    <p:inputMask value="#{cajaMB.cajaBean.ip4}" mask="9?99" style="width: 40px" required="true"/>
+                                </h:panelGrid>
+                                <h:outputLabel value="#{msgs.etiquetaHostName}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <h:inputText value="#{cajaMB.cajaBean.hostName}"/>  
+                                <h:outputLabel value="#{msgs.etiquetaStatus}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputSwitch  id="radioEstado" value="#{cajaMB.cajaBean.status}" required="true" label="#{msgs.etiquetaEstado}" onLabel="#{msgs.etiquetaActivo}" offLabel="#{msgs.etiquetaInactivo}"/>   
+                                <!--
+                            <h:outputLabel value="#{msgs.etiquetaMac}" class="negrita"/>
+                            <h:outputText value="" class="requerido"/>
+                            <p:inputMask  value="#{cajaMB.cajaBean.mac}" mask="**-**-**-**-**-**"/>
+                                -->
+                            </h:panelGrid>
+                            <h:panelGrid columns="2">
+                                <h:outputText value=" " class="requerido"/>
+                                <h:panelGrid columns="1" styleClass="centrado" id="listaDocIngresoSerie"> 
+                                    <h:panelGrid columns="3"  class="siseFontGrid3" cellpadding="3"> 
+                                        <h:outputLabel value="Asignar Impresora" class="negrita"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:pickList id="pickListPerfil" value="#{cajaMB.dualImpresora}" var="doc" itemLabel="#{doc.impresora}" itemValue="#{doc.impresora}" 
+                                                    label="#{msgs.etiquetaAsignarCaja}"   >
+                                            <f:facet name="sourceCaption">#{msgs.etiquetaDisponibles} </f:facet>
+                                            <f:facet name="targetCaption">#{msgs.etiquetaSeleccionados}</f:facet>
+                                        </p:pickList>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <h:outputText value=" " class="requerido"/>
+                                <h:outputText value="(*) Requerido" class="requerido" style="font-size: 0.9em" />                            
+                                <h:inputHidden value="#{cajaMB.cajaBean.idCaja}"/>
+                            </h:panelGrid>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2" style="font-size: 0.9em">
+                            <p:commandButton actionListener="#{cajaMB.guardarCaja()}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             update=":frmDatosCaja:pnlDatosCaja,msgsAddProc,:frmTablaCaja:tblCaja,:frmDatosCaja:listaDocIngresoSerie"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{cajaMB.limpiarCajabean()}" 
+                                             update=":frmDatosCaja:pnlDatosCaja,msgsAddProc,:frmTablaCaja:tblCaja,:frmDatosCaja:listaDocIngresoSerie"                                                                 
+                                             value="#{msgs.botonNuevo}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAddProc" showDetail="true" showSummary="true"/>
+                    </p:panel>
+
+                </h:panelGrid>
+            </h:form>  
+            <h:form id="frmTablaCaja">
+                <h:panelGrid styleClass="centrado" id="pnlTblCaja" style="text-align: center !important ; font-weight: bold; font-size: 0.9em" >
+                    <p:dataTable id="tblCaja" value="#{cajaMB.listaCajaBean}" widgetVar="tblCaja"
+                                 paginator="true" selectionMode="single" 
+                                 selection="#{cajaMB.cajaBean}"
+                                 var="caja" rowKey="#{caja.idCaja}"
+                                 rows="#{cajaMB.numRegistrosTablas}" 
+                                 rendered="#{not empty cajaMB.listaCajaBean}" 
+                                 style="width: #{cajaMB.anchoTablasBig}; font-size: 0.9em">
+                        <p:ajax event="rowSelect" listener="#{cajaMB.rowSelect}" update=":frmDatosCaja:pnlDatosCaja"/>
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaCajas}" />  
+                        </f:facet>
+                        <p:column filterBy="#{caja.nombre}" headerText="#{msgs.etiquetaNombres}" filterMatchMode="exact" width="20%" class="nombre0Filtro">
+                            <center>
+                                <h:outputText value="#{caja.nombre}" />
+                            </center>
+                        </p:column>
+                        <!--<p:column filterBy="#{caja.unidadNegocioBean.nombreUniNeg}"  headerText="#{msgs.etiquetaUnidNeg}" filterMatchMode="contains" width="30%" >
+                            <f:facet name="filter">
+                                <p:selectOneMenu  onchange="PF('tblCaja').filter()" style="width: 190px">
+                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItems value="#{cajaMB.listaUnidadNegocioBean}" var="unidadView" itemLabel="#{unidadView.nombreUniNeg}" itemValue="#{unidadView.nombreUniNeg}"/>
+                                </p:selectOneMenu>
+                            </f:facet>
+                            <h:outputText value="#{caja.unidadNegocioBean.nombreUniNeg}"/>
+                        </p:column>
+                        -->
+                        <p:column filterBy="#{caja.hostIp}" headerText="#{msgs.etiquetaHostIP}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{caja.hostIp}" />
+                        </p:column>
+                        <p:column filterBy="#{caja.hostName}" headerText="#{msgs.etiquetaHostName}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{caja.hostName}" />
+                        </p:column>        
+                        <!--<p:column filterBy="#{caja.mac}" headerText="#{msgs.etiquetaMac}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{caja.mac}" />
+                        </p:column>    
+                        -->
+                        <p:column width="20%">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCambiarEstado}" />
+                            </f:facet>
+                            <center>
+                                <p:inputSwitch id="swCambio" value="#{caja.status}">
+                                    <p:ajax listener="#{cajaMB.ponerCaja(caja)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </center>
+                        </p:column>
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEliminar" action="#{cajaMB.obtenerPorId(caja.idCaja)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelCatCon}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCaja}: #{cajaMB.cajaBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cajaMB.eliminarCaja()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCaja:pnlDatosCaja,:frmTablaCaja:tblCaja,:frmDatosCaja:listaDocIngresoSerie"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaCaja}: #{cajaMB.cajaBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cajaMB.cambiarEstadoCaja()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosCaja:radioEstado"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

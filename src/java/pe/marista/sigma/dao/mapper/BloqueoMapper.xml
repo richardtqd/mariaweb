@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.BloqueoDAO">
+    
+    <sql id="consultaCampos" >
+        select 
+        b.unineg,
+        b.idconfbloqueo,
+        b.anio,
+        b.flgconf,
+        b.descripcion,
+        b.creapor,
+        b.creafecha,
+        b.modipor,
+        b.modifecha,
+        b.posicion,
+        b.idtipostatusbloqueo,
+        b.idresponsable,
+        u.unineg as unineg,
+        u.nombreUniNeg as nombreUniNeg,
+        u.RUC as ruc,
+        (case 
+        when b.flgconf = 1 then 'ACTIVO'
+        else 'INACTIVO'
+        end) as estado,
+        per.apepat,per.apemat,per.nombre,per.idpersonal,per.nrodoc,per.codper
+        from 
+        mm_bloqueo b
+        inner join MO_UnidadNegocio u on b.unineg = u.unineg
+        left join MO_Personal per on b.idresponsable = per.idpersonal and b.unineg = per.unineg
+    </sql>
+    
+    <!-- BLOQUEO RESULTADO -->
+    <resultMap id="bloqueResultado" type="pe.marista.sigma.bean.BloqueoBean" >
+        <id property="idBloqueo" column="idconfbloqueo" />
+        <result property="anio" column="anio" />
+        <result property="flgConf" column="flgConf" />
+        <result property="descripcion" column="descripcion" />
+        <result property="estado" column="estado" />
+        <result property="creapor" column="creapor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiFecha" column="modiFecha" />
+        <result property="posicion" column="posicion" />
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="personalBean" column="idresponsable" 
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+    </resultMap>
+     
+    <!-- UNIDAD DE NEGOCIO RESULTADO -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="curUniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+    </resultMap>
+    
+    <!-- PERSONAL RESULTADO -->
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean" >
+        <id property="idPersonal" column="idpersonal" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+        <result property="nombre" column="nombre" />
+        <result property="edad" column="edad" />
+        <result property="nroDoc" column="nrodoc" />
+        <result property="codPer" column="codper" />
+    </resultMap>
+    
+    <select id="obtener" parameterType="pe.marista.sigma.bean.BloqueoBean" resultMap="bloqueResultado" >
+        <include refid="consultaCampos" />
+        where b.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerPorId" parameterType="pe.marista.sigma.bean.BloqueoBean" resultMap="bloqueResultado" >
+        <include refid="consultaCampos" />
+        where b.unineg = #{unidadNegocioBean.uniNeg} and b.idconfbloqueo = #{idBloqueo}
+    </select>
+    
+    <select id="obtenerBloqueoAnio" parameterType="pe.marista.sigma.bean.BloqueoBean" resultMap="bloqueResultado" >
+        <include refid="consultaCampos" />
+        where b.unineg = #{unidadNegocioBean.uniNeg} and b.anio = #{anio}
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.BloqueoBean" >
+        INSERT INTO [dbo].[MM_Bloqueo]([unineg],[anio],[flgconf],[descripcion],[creapor],[creafecha],posicion,idresponsable,idtipostatusbloqueo)
+        VALUES (#{unidadNegocioBean.uniNeg},#{anio},#{flgConf},#{descripcion},#{creapor},getdate(),#{posicion},#{personalBean.idPersonal},#{tipoStatusBloqueo.idCodigo})
+    </insert>
+    
+    <update id="modificar" parameterType="pe.marista.sigma.bean.BloqueoBean" >
+        UPDATE [dbo].[MM_Bloqueo]
+        SET  
+        [anio] = #{anio},
+        [flgconf] = #{flgConf},
+        [descripcion] = #{descripcion},
+        posicion = #{posicion},
+        idresponsable = #{personalBean.idPersonal},
+        [modipor] = #{modiPor},
+        [modifecha] = getdate()
+        WHERE idconfbloqueo = #{idBloqueo} and unineg = #{unidadNegocioBean.uniNeg}
+    </update>
+    
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.BloqueoBean" >
+        delete from [dbo].[MM_Bloqueo] 
+        WHERE idconfbloqueo = #{idBloqueo} and unineg = #{unidadNegocioBean.uniNeg}
+    </delete>
+    
+    <select id="obtenerIpServer" parameterType="String" resultType="String" >
+        select ip from MM_Servidor where unineg = #{uniNeg}
+    </select>
+    
+</mapper>

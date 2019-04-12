@@ -1,0 +1,511 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{cajaGenMB.autenticarCajaCierreEvento()}">
+            <h:form id="frmDatosCaja">
+                <h:panelGrid  id="pnlCaja" styleClass="centrado">
+                    <p:panel styleClass="centrado" id="pCaja"  style="width: 645px"  header="#{msgs.tituloCierreCaja}" >
+                        <h:panelGrid columns="3" styleClass="centrado" id="pnlCajaDet">
+                            <h:outputLabel value="#{msgs.etiquetaFechaCierre}"/>
+                            <h:outputText value="*" class="requerido"/>
+                            <p:calendar disabled="false" value="#{cajaGenMB.cajaGenBeanCierre.fecCierre}"  label="#{msgs.etiquetaFechaCierre}" mode="popup"
+                                        pattern="dd/MM/yyyy HH:mm" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="false" yearRange="c-90:c+30"/>
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid styleClass="centrado" columns="1" >
+                            <p:commandButton actionListener="#{cajaGenMB.insertarCajaCierre()}" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             update=":frmDatosCaja:pnlCaja,:frmDatosCaja:pCaja,:frmDatosCaja,:frmCajaEstado,:frmCajaEstado:cajaEstado,:frmCajaEstado:pnlCajaEstado,"
+                                             value="#{msgs.etiquetaCerrar}" disabled="#{cajaGenMB.disabledCierre}">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid styleClass="centrado" columns="1" >                            
+                            <p:commandButton actionListener="#{cajaGenMB.obtenerDepositoEvento()}"
+                                             update=":frmTablaCierre:pnlTablaCierre,:frmDepCta:pnlDepCta,frmDepCta:pnlDepCtaCongre,:frmDepCta:msgsCajDep"
+                                             oncomplete="PF('popDepCta').show()"
+                                             value="#{msgs.etiquetaDepost}" disabled="#{cajaGenMB.disabledDeposito}">
+                            </p:commandButton>                                                      
+                        </h:panelGrid> 
+                        <br/> 
+                        <h:panelGrid styleClass="centrado" columns="1" rendered="#{cajaGenMB.cajaGenBeanCierreDiaAnte.fecCierre == null}">
+                            <p:commandButton actionListener="#{cajaGenMB.insertarCierreDiaAnteriorEvento()}" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             value="#{msgs.etiquetaCerrarDiaAnte}" update="pnlCaja,:frmTablaCierre">
+                            </p:commandButton>              
+                        </h:panelGrid>
+                        <br/> 
+                        <p:messages id="msgsNoCaj"  autoUpdate="false"/>
+                    </p:panel>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmCajaEstado">
+                <h:panelGrid  id="pnlCajaEstado" styleClass="centrado">
+                    <p:panel styleClass="centrado" id="cajaEstado" rendered="#{cajaGenMB.cajaCierre.idCajaGen != null}">
+                        <h:panelGrid  columns="1" styleClass="centrado" >
+                            <p:panel style="background-color: #{cajaGenMB.cajaCierre.fecCierre==null?'green':'red'}">
+                                <h:panelGrid columns="1">
+                                    <h:outputLabel value="#{msgs.msjCajaAbi}" rendered="#{cajaGenMB.cajaCierre.fecCierre == null}" style="color: white;font-size:3em !important"/>
+                                    <h:outputLabel value="#{msgs.msjCajaCerr}" rendered="#{cajaGenMB.cajaCierre.fecCierre != null}" style="color: white;font-size:3em !important"/>
+                                    <h:panelGrid columns="2" style="color: white">
+                                        <h:outputLabel value="#{msgs.etiquetaFechaApe}"/>
+                                        <h:panelGrid columns="2" style="color: white">
+                                            <h:outputLabel value=":"/>
+                                            <h:outputText value="#{cajaGenMB.cajaCierre.fecApertura}">
+                                                <f:convertDateTime pattern="dd/MM/YYYY HH:mm" timeZone="GMT-5"/>
+                                            </h:outputText>
+                                        </h:panelGrid>
+                                        <h:outputLabel value="#{msgs.etiquetaFechaCierre}"/>
+                                        <h:panelGrid columns="6" style="color: white">
+                                            <h:outputLabel value=":"/>
+                                            <h:outputText value="#{cajaGenMB.cajaCierre.fecCierre}" 
+                                                          rendered="#{cajaGenMB.cajaCierre.fecCierre != null}">
+                                                <f:convertDateTime pattern="dd/MM/YYYY HH:mm" timeZone="GMT-5"/>
+                                            </h:outputText>
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                            </p:panel>
+                        </h:panelGrid>                        
+                    </p:panel>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmTablaCierre">
+                <h:panelGrid id="pnlTablaCierre" styleClass="centrado"> 
+                    <p:dataTable id="tblCierre" value="#{cajaGenMB.listaCierreCaja}" widgetVar="tblCierre" 
+                                 paginator="true" rowsPerPageTemplate="10,20"  
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}" 
+                                 paginatorPosition="bottom" rowIndexVar="n"  
+                                 var="cierre" rowKey="#{cierre}"  rows="#{cajaGenMB.numRegistrosTablasPorFiltroMin}" 
+                                 rendered="#{not empty cajaGenMB.listaCierreCaja}" 
+                                 style="width: 1200px;font-size:14px !important;margin-bottom:0"> 
+                        <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" style="width: 20px !important" styleClass="centrado-texto">
+                            <center>
+                                <h:outputText value="#{n+1}" />
+                            </center>
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaCaja}" styleClass="siseFontTable3 centrado-texto" width="10%" >
+                            <h:outputText value="#{cierre.cajaBean.nombre}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFechaApe}" styleClass="siseFontTable3 centrado-texto" sortBy="#{cierre.fecApertura}" width="15%">
+                            <h:outputText value="#{cierre.fechaAperturaView}" >                              
+                            </h:outputText> 
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaFechaCierre}" styleClass="siseFontTable3 centrado-texto" sortBy="#{cierre.fecCierre}" width="15%">
+                            <h:outputText value="#{cierre.fechaCierreView}" >                                
+                            </h:outputText> 
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaFecDeposito}" styleClass="siseFontTable3 centrado-texto" sortBy="#{cierre.fecDeposito}" width="15%">
+                            <h:outputText value="#{cierre.fechaDepositoView}" >                               
+                            </h:outputText> 
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaMontoDepSol}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                            <h:outputText value="#{cierre.montoDepositoSol}" >
+                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column> 
+                        <p:column headerText="#{msgs.etiquetaMontoDepDol}" styleClass="siseFontTable3 centrado-texto" width="10%">
+                            <h:outputText value="#{cierre.montoDepositoDol}" >
+                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column> 
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdConf" actionListener="#{cajaGenMB.obtenerPorIdCierre(cierre)}" update=":frmDepCta"
+                                           oncomplete="PF('popDepCta').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                            </p:commandLink>
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+            <p:dialog header="#{msgs.appSiglas}" widgetVar="popDepCta"  styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode" modal="true">
+                <h:form id="frmDepCta">
+                    <h:panelGrid styleClass="centrado"  columns="2" id="pnlGen">
+                        <p:panel header="#{msgs.etiquetaDepColegio}">
+                            <h:panelGrid styleClass="centrado" columns="1" id="pnlDepCta">
+                                <h:panelGrid columns="3">
+                                    <h:outputLabel value="#{msgs.etiquetaFechDep}"/>
+                                    <h:outputText value=" " class="requerido"/>
+                                    <p:calendar  value="#{cajaGenMB.cajaGenBeanDeposito.fecDeposito}"  label="#{msgs.etiquetaFechDep}" mode="popup"
+                                                 pattern="dd/MM/yyyy HH:mm" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30"/>
+
+                                    <h:outputLabel value="#{msgs.etiquetaBanco}"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:selectOneMenu value="#{cajaGenMB.cajaGenBeanDeposito.rucBanco}"  label="#{msgs.etiquetaBanco}" required="true">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{cajaGenMB.listaBancos}" var="banco" itemLabel="#{banco.nombre}" itemValue="#{banco.ruc}"/>
+                                        <p:ajax event="change" listener="#{cajaGenMB.obtenerCuentas('colegio')}" update=":frmDepCta:pnlDepCta"/>                                               
+                                    </p:selectOneMenu>
+                                </h:panelGrid>
+                                <p:fieldset legend="#{msgs.etiquetaSoles}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                    <h:panelGrid styleClass="centrado" columns="3" id="pnlDepCtaSol">
+                                        <h:outputLabel value="#{msgs.etiquetaMontoCobSol}"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.ingresoSol}" disabled="true"/>  
+
+                                        <h:outputLabel value="#{msgs.etiquetaMontoDepos}"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoSol}" label="#{msgs.etiquetaMontoDepos}" required="true">  
+                                            <f:ajax event="blur" listener="#{cajaGenMB.obtenerDiferenciaSol()}" render="montoDisSol"/>
+                                        </h:inputText>
+
+                                        <h:outputLabel value="#{msgs.etiquetaSaldo}"/>
+                                        <h:outputText value="" class="requerido"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.diferenciaSol}" disabled="true" id="montoDisSol"/>  
+
+                                        <h:outputLabel value="#{msgs.etiquetaNumCtaSol}"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:selectOneMenu id="cana1" value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaSol}"  label="#{msgs.etiquetaNumCta}" style="width: 200px" panelStyle="width:200px" required="true">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                            <f:selectItems value="#{cajaGenMB.listaCuentasBancoSol}" var="cuenta" itemLabel="#{cuenta.numCuenta}" itemValue="#{cuenta.numCuenta}"/>      
+                                        </p:selectOneMenu>
+                                        <h:outputLabel value="#{msgs.etiquetaNumOpe}"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionSol}" label="#{msgs.etiquetaNumOpe}" required="true"/>  
+                                    </h:panelGrid>
+                                    <br/> 
+                                </p:fieldset>   
+                                <p:fieldset legend="#{msgs.etiquetaDolares}" toggleSpeed="500"   style="width: 450px" collapsed="false" >
+                                    <h:panelGrid styleClass="centrado" columns="2" id="pnlDepCtaDol" title="aa">
+                                        <h:outputLabel value="#{msgs.etiquetaMontoCobDol}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.ingresoDol}" disabled="true"/>        
+                                        <h:outputLabel value="#{msgs.etiquetaMontoDepos}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoDol}" > 
+                                            <f:ajax event="blur" listener="#{cajaGenMB.obtenerDiferenciaDol()}" render="montoDisDol"/>
+                                        </h:inputText>
+                                        <h:outputLabel value="#{msgs.etiquetaSaldo}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.diferenciaDol}" disabled="true" id="montoDisDol"/> 
+
+                                        <h:outputLabel value="#{msgs.etiquetaNumCtaDol}"/>
+                                        <p:selectOneMenu id="cana2" value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaDol}"  label="#{msgs.etiquetaNumCta}" style="width: 200px" panelStyle="width:200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{cajaGenMB.listaCuentasBancoDol}" var="cuenta" itemLabel="#{cuenta.numCuenta}" itemValue="#{cuenta.numCuenta}"/>
+                                        </p:selectOneMenu>
+                                        <h:outputLabel value="#{msgs.etiquetaNumOpe}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionDol}" /> 
+                                    </h:panelGrid>
+                                    <br/> 
+                                </p:fieldset> 
+                            </h:panelGrid> 
+                        </p:panel> 
+                        <p:panel header="#{msgs.etiquetaDepCongre}"> 
+                            <h:panelGrid styleClass="centrado" columns="1" id="pnlDepCtaCongre"> 
+                                <h:panelGrid columns="2">
+                                    <h:outputLabel value="#{msgs.etiquetaBanco}"/>
+                                    <p:selectOneMenu value="#{cajaGenMB.cajaGenBeanDeposito.rucBancoCongre}"  label="#{msgs.etiquetaBanco}">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{cajaGenMB.listaBancosCongre}" var="bancoc" itemLabel="#{bancoc.nombre}" itemValue="#{bancoc.ruc}"/>
+                                        <p:ajax event="change" listener="#{cajaGenMB.obtenerCuentas('congre')}" update="frmDepCta:pnlDepCtaCongre"/>                                               
+                                    </p:selectOneMenu> 
+                                    <br></br>
+                                </h:panelGrid>
+                                <p:fieldset legend="#{msgs.etiquetaSoles}" toggleSpeed="500"    style="width: 450px" collapsed="false" >           
+                                    <h:panelGrid styleClass="centrado" columns="2" id="pnlDepCtaCongreSol">
+                                        <h:outputLabel value="#{msgs.etiquetaMontoCobSol}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.ingresoCongreEfectivoSol}" disabled="true"/>  
+                                        <h:outputLabel value="#{msgs.etiquetaMontoDepos}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoCongreSol}" /> 
+                                        <h:outputLabel value="#{msgs.etiquetaNumCtaSol}"/>
+                                        <p:selectOneMenu id="cmboCtaSol" value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaCongreSol}"  label="#{msgs.etiquetaNumCta}" style="width: 200px" panelStyle="width:200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{cajaGenMB.listaCuentasBancoCongreSol}" var="cuenta" itemLabel="#{cuenta.numCuenta}" itemValue="#{cuenta.numCuenta}"/>      
+                                        </p:selectOneMenu>
+                                        <h:outputLabel value="#{msgs.etiquetaNumOpe}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionCongreSol}" />  
+                                    </h:panelGrid>
+                                    <br/> 
+                                    <br/> 
+                                </p:fieldset>
+                                <p:fieldset legend="#{msgs.etiquetaDolares}" toggleSpeed="500"    style="width: 470px" collapsed="false" >           
+                                    <h:panelGrid styleClass="centrado" columns="2" id="pnlDepCtaCongreDol">
+
+                                        <h:outputLabel value="#{msgs.etiquetaMontoCobDol}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.ingresoCongreEfectivoDol}" disabled="true"/>  
+
+                                        <h:outputLabel value="#{msgs.etiquetaMontoDepos}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoCongreDol}" /> 
+
+                                        <h:outputLabel value="#{msgs.etiquetaNumCtaDol}"/>
+                                        <p:selectOneMenu id="cmboCtaDol" value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaCongreDol}"  label="#{msgs.etiquetaNumCta}" style="width: 200px" panelStyle="width:200px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{cajaGenMB.listaCuentasBancoCongreDol}" var="cuenta" itemLabel="#{cuenta.numCuenta}" itemValue="#{cuenta.numCuenta}"/>      
+                                        </p:selectOneMenu>
+
+                                        <h:outputLabel value="#{msgs.etiquetaNumOpe}"/>
+                                        <h:inputText value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionCongreDol}" />  
+                                    </h:panelGrid>
+                                    <br/> 
+                                    <br/> 
+                                    <br/> 
+                                </p:fieldset> 
+                            </h:panelGrid>
+                        </p:panel> 
+                    </h:panelGrid>
+                    <br/> 
+                    <br/> 
+                    <h:panelGrid styleClass="centrado" columns="1" id="pnlBtnCon" >
+                        <p:commandButton  oncomplete="{PF('popConfirma').show();}"
+                                          update=":frmConfirma:pnlDatosConf" value="#{msgs.botonGrabar}" >
+                        </p:commandButton> 
+                    </h:panelGrid> 
+                    <p:messages id="msgsCajDep"  autoUpdate="false"/>
+                </h:form>
+                <h:panelGrid  id="pnlCajaEstadoDep" styleClass="centrado">
+                    <p:panel styleClass="centrado" id="cajaEstadoDep" rendered="#{cajaGenMB.cajaGenBeanDeposito.idCajaGen != null}">
+                        <h:panelGrid  columns="1" styleClass="centrado" >
+                            <p:panel style="background-color: #{cajaGenMB.cajaGenBeanDeposito.fecCierre==null?'green':'red'}">
+                                <h:panelGrid columns="1">
+                                    <h:outputLabel value="#{msgs.msjCajaAbi}" rendered="#{cajaGenMB.cajaGenBeanDeposito.fecCierre == null}" style="color: white;font-size:3em !important"/>
+                                    <h:outputLabel value="#{msgs.msjCajaCerr}" rendered="#{cajaGenMB.cajaGenBeanDeposito.fecCierre != null}" style="color: white;font-size:3em !important"/>
+                                    <h:panelGrid columns="2" style="color: white">
+                                        <h:outputLabel value="#{msgs.etiquetaFechaApe}"/>
+                                        <h:panelGrid columns="2" style="color: white">
+                                            <h:outputLabel value=":"/>
+                                            <h:outputText value="#{cajaGenMB.cajaGenBeanDeposito.fecApertura}">
+                                                <f:convertDateTime pattern="dd/MM/YYYY HH:mm" timeZone="GMT-5"/>
+                                            </h:outputText>
+                                        </h:panelGrid>
+                                        <h:outputLabel value="#{msgs.etiquetaFechaCierre}"/>
+                                        <h:panelGrid columns="6" style="color: white">
+                                            <h:outputLabel value=":"/>
+                                            <h:outputText value="#{cajaGenMB.cajaGenBeanDeposito.fecCierre}" 
+                                                          rendered="#{cajaGenMB.cajaGenBeanDeposito.fecCierre != null}">
+                                                <f:convertDateTime pattern="dd/MM/YYYY HH:mm" timeZone="GMT-5"/>
+                                            </h:outputText>
+                                        </h:panelGrid>
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                            </p:panel>
+                        </h:panelGrid>                        
+                    </p:panel>
+                </h:panelGrid> 
+            </p:dialog> 
+            <h:form id="frmCuadre"  >
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popCuadre" resizable="false" modal="true" styleClass="autoWidthDialog" >
+                    <br></br>
+                    <h:panelGrid columns="1" id="pnlCtasXCobrar"> 
+                        <p:dataTable value="#{cajaGenMB.listaDetDocIngreso}"
+                                     var="det" id="tblCta" rowKey="#{det.idDetDocIngreso}" 
+                                     rows="5"  paginator="true"
+                                     rendered="#{not empty cajaGenMB.listaDetDocIngreso}" 
+                                     style="width: 940px; font-size: 0.8em"> 
+                            <p:column headerText="#{msgs.etiquetaCodigo} ope." filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto"   >
+                                <h:outputText value="#{det.idDetDocIngreso}"/>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto"   >
+                                <h:outputText value="#{det.cuentasPorCobrarBean.conceptoBean.nombre}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaCuenta}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto"   >
+                                <h:outputText value="#{det.cuentasPorCobrarBean.conceptoBean.planContableCuentaDBean.cuenta}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaMontoPagado}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto"   >
+                                <h:outputText value="#{det.montoPagado}"/>
+                            </p:column>  
+                        </p:dataTable>
+                        <br></br>
+                        <p:messages id="msgsAuto" showSummary="true"/>
+                    </h:panelGrid>
+                    <h:panelGrid class="centrado" columns="2">
+                        <p:commandButton
+                            oncomplete="PF('popCaudre').hide();" 
+                            value="#{msgs.botonCerrar}">
+                        </p:commandButton> 
+                        <p:commandButton value="Imprimir" type="button" icon="ui-icon-print" >
+                            <p:printer target="pnlCtasXCobrar" />
+                        </p:commandButton>
+                    </h:panelGrid>
+                </p:dialog> 
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2" id="pnlDatosConf" > 
+                        <p:panel header="#{msgs.etiquetaDepColegio}"> 
+                            <h:panelGrid columns="2"  > 
+                                <h:outputLabel value="#{msgs.etiquetaFechDep}: " class="black"/>
+                                <h:outputLabel  value="#{cajaGenMB.cajaGenBeanDeposito.fecDeposito}"> 
+                                    <f:convertDateTime type="date" dateStyle="full"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaBanco}:" class="black"/> 
+                                <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.nombreBanco}" /> 
+                            </h:panelGrid> 
+                            <p:fieldset legend="#{msgs.etiquetaSoles}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  > 
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.saldoSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaSaldo}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.diferenciaSol}"   />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaSol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionSol}" />  
+                                    <br/>  
+                                </h:panelGrid>
+                            </p:fieldset>  
+                            <p:fieldset legend="#{msgs.etiquetaDolares}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  >  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.saldoDol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoDol}" />  
+                                    <h:outputLabel value="#{msgs.etiquetaSaldo}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.diferenciaDol}"   />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaDol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionDol}" />  
+                                    <br/>  
+                                </h:panelGrid>
+                            </p:fieldset>  
+                        </p:panel> 
+                        <p:panel header="#{msgs.etiquetaDepCongre}"> 
+                            <h:panelGrid columns="2"  > 
+                                <h:outputLabel value="#{msgs.etiquetaFechDep}: " class="black"/>
+                                <h:outputLabel  value="#{cajaGenMB.cajaGenBeanDeposito.fecDeposito}"> 
+                                    <f:convertDateTime type="date" dateStyle="full"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaBanco}:" class="black"/> 
+                                <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.nombreBancoCongre}" /> 
+                            </h:panelGrid> 
+                            <p:fieldset legend="#{msgs.etiquetaSoles}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  > 
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.ingresoCongreEfectivoSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoCongreSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaCongreSol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionCongreSol}" />  
+                                    <br/>  
+                                    <br/> 
+                                </h:panelGrid>
+                            </p:fieldset>  
+                            <p:fieldset legend="#{msgs.etiquetaDolares}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  >  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobDol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.ingresoCongreEfectivoDol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoCongreDol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaCongreDol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionCongreDol}" />  
+                                    <br/>  
+                                    <br/> 
+                                </h:panelGrid>
+                            </p:fieldset>  
+                        </p:panel> 
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cajaGenMB.insertarMontoDepositoEvento()}"
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTablaCierre:pnlTablaCierre,:frmDepCta:pnlBtnCon,msgsConf"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDepCta').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:messages id="msgsConf" showDetail="false" showSummary="false"/>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmEdit">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEdit" resizable="false" modal="true">
+                    <h:panelGrid columns="2" id="pnlDatosEdit" > 
+                        <p:panel header="#{msgs.etiquetaDepColegio}"> 
+                            <h:panelGrid columns="2"  > 
+                                <h:outputLabel value="#{msgs.etiquetaFechDep}: " class="black"/>
+                                <h:outputLabel  value="#{cajaGenMB.cajaGenBeanDeposito.fecDeposito}"> 
+                                    <f:convertDateTime type="date" dateStyle="short"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaBanco}:" class="black"/> 
+                                <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.nombreBanco}" /> 
+                            </h:panelGrid> 
+                            <p:fieldset legend="#{msgs.etiquetaSoles}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  > 
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.saldoSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaSaldo}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.diferenciaSol}"   />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaSol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionSol}" />  
+                                    <br/>  
+                                </h:panelGrid>
+                            </p:fieldset>  
+                            <p:fieldset legend="#{msgs.etiquetaDolares}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  >  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.saldoDol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoDol}" />  
+                                    <h:outputLabel value="#{msgs.etiquetaSaldo}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.diferenciaDol}"   />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaDol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionDol}" />  
+                                    <br/>  
+                                </h:panelGrid>
+                            </p:fieldset>  
+                        </p:panel> 
+                        <p:panel header="#{msgs.etiquetaDepCongre}"> 
+                            <h:panelGrid columns="2"  > 
+                                <h:outputLabel value="#{msgs.etiquetaFechDep}: " class="black"/>
+                                <h:outputLabel  value="#{cajaGenMB.cajaGenBeanDeposito.fecDeposito}"> 
+                                    <f:convertDateTime type="date" dateStyle="full"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaBanco}:" class="black"/> 
+                                <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.nombreBancoCongre}" /> 
+                            </h:panelGrid> 
+                            <p:fieldset legend="#{msgs.etiquetaSoles}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  > 
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobSol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.ingresoCongreEfectivoSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoCongreSol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaCongreSol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionCongreSol}" />  
+                                    <br/>  
+                                    <br/> 
+                                </h:panelGrid>
+                            </p:fieldset>  
+                            <p:fieldset legend="#{msgs.etiquetaDolares}" toggleSpeed="500"   style="width: 470px" collapsed="false" >           
+                                <h:panelGrid columns="2"  >  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoCobDol}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.ingresoCongreEfectivoDol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaMontoDepos}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.montoDepositoCongreDol}"  />  
+                                    <h:outputLabel value="#{msgs.etiquetaNumCtaSol}:" class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numCuentaCongreDol}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaNumOpe}: " class="black"/>
+                                    <h:outputLabel value="#{cajaGenMB.cajaGenBeanDeposito.numOperacionCongreDol}" />  
+                                    <br/>  
+                                    <br/> 
+                                </h:panelGrid>
+                            </p:fieldset>  
+                        </p:panel> 
+                    </h:panelGrid>
+                    <h:panelGrid styleClass="centrado" columns="1" id="pnlBtnEdit" >
+                        <p:commandButton   
+                            update=":frmTablaCierre:pnlTablaCierre" disabled="#{cajaGenMB.disabledDepSol}" value="#{msgs.botonGrabar}" >
+                        </p:commandButton> 
+                    </h:panelGrid>  
+                </p:dialog>
+            </h:form> 
+
+        </h:body>
+    </ui:define>
+</ui:composition>

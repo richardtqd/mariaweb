@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body onload="#{enfermedadMB.obtenerEnfermedad()}">
+            <h:panelGrid styleClass="centrado" >
+                <h:form id="frmMantEnfermedad">
+                    <h:panelGrid styleClass="centrado" id="pnlDatosPersona" style="text-align: center !important ; font-weight: bold;" >
+                        <p:panel header="#{msgs.tituloDatosEnfermedad}" style="width: 1200px">
+                            <p:fieldset style="width: 800px" class="centrado">
+                                <h:panelGrid columns="6" id="pnlPersona" cellpadding="3" class="siseFontGrid4">
+                                    <h:outputLabel value="#{msgs.etiquetaNombre} #{msgs.etiquetaEnfermedad}" class="negrita"/>
+                                    <h:outputText value="*" class="requerido"/>
+                                    <p:inputText  value="#{enfermedadMB.enfermedadBean.enfermedad}" required="true"  label="#{msgs.etiquetaNombre}" size="30" maxlength="29"/> 
+                                    <h:outputLabel value="#{msgs.etiquetaTipEnfermedad}" class="negrita"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:selectOneMenu value="#{enfermedadMB.enfermedadBean.tipoEnfermedadBean.idCodigo}" required="true"  label="#{msgs.etiquetaNac}" filter="true">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{enfermedadMB.listaTipoEnfermedadBean}" var="enfermedad" itemLabel="#{enfermedad.codigo}" itemValue="#{enfermedad.idCodigo}"/>
+                                    </p:selectOneMenu>
+                                    <h:outputText value="(*) Requerido" class="requerido"/>
+                                    <h:inputHidden value="#{enfermedadMB.enfermedadBean.idEnfermedad}"/>
+                                    <h:inputHidden />
+                                </h:panelGrid>
+                            </p:fieldset>
+                            <h:panelGrid class="centrado" columns="2">
+                                <p:commandButton actionListener="#{enfermedadMB.guardarEnfermedad()}" 
+                                                 update=":frmDatosPersona:pnlTablaPersona,msgsAddPer,:frmDatosPersona:tblPersona"
+                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                 value="#{msgs.botonGrabar}">
+                                </p:commandButton>
+                                <p:commandButton actionListener="#{enfermedadMB.limpiarEnfermedad()}" 
+                                                 update=":frmMantEnfermedad:pnlDatosPersona,msgsAddPer,:frmDatosPersona:tblPersona"                                                                 
+                                                 value="#{msgs.botonNuevo}" process="@this">
+                                </p:commandButton>
+                            </h:panelGrid>
+                            <p:growl id="msgsAddPer" showDetail="true" showSummary="true"/>
+                        </p:panel>
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmDatosPersona">
+                    <h:panelGrid  id="pnlTablaPersona" style="margin:0 auto">
+                        <p:dataTable id="tblPersona" value="#{enfermedadMB.listaEnfermedadBean}" widgetVar="tblPersona"
+                                     paginator="true" selectionMode="single" scrollable="true"
+                                     selection="#{enfermedadMB.enfermedadBean}" paginatorPosition="bottom"
+                                     var="enfermedad" rowKey="#{enfermedad.idEnfermedad}" rows="10" 
+
+                                     style="width: 800px; overflow-x: auto;font-size:14px !important;">
+                            <p:ajax event="rowSelect" listener="#{enfermedadMB.RowSelect}" update=":frmMantEnfermedad:pnlDatosPersona" />
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloPersonas}" />  
+                            </f:facet>
+                            <p:column filterBy="#{enfermedad.enfermedad}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="10" styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{enfermedad.enfermedad}"/>
+                            </p:column>
+                            <p:column filterBy="#{enfermedad.tipoEnfermedadBean.codigo}" headerText="#{msgs.etiquetaTipEnfermedad}" filterMatchMode="contains" width="60" styleClass="siseFontTable3">
+                                <f:facet name="filter">
+                                    <p:selectOneMenu onchange="PF('tblPersona').filter()" style="width: 80px" filter="true">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                        <f:selectItems value="#{enfermedadMB.listaTipoEnfermedadBean}" var="tpEnt" itemValue="#{tpEnt.codigo}" itemLabel="#{tpEnt.codigo}"/>
+                                    </p:selectOneMenu>
+                                </f:facet>
+                                <h:outputText value="#{enfermedad.tipoEnfermedadBean.codigo}" />
+                            </p:column>
+                            <!---->        
+                            <p:column class="centrado-texto" style="width: 7%">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaEliminar}" />
+                                </f:facet>
+                                <p:commandLink id="cmdEliminarCod" action="#{enfermedadMB.obtenerEnfermedadPorId(enfermedad)}" update=":frmElimina:pnlDatosElimina"
+                                               oncomplete="PF('popEliminar').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip id="toolCodDel" for="cmdEliminarCod" value="#{msgs.mensajeDelCod}" />
+                            </p:column>
+                        </p:dataTable>
+                        <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmElimina">
+                    <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                        <h:panelGrid columns="2">
+                            <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                            <h:panelGrid columns="1" id="pnlDatosElimina">
+                                <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                                <h:outputLabel value="#{msgs.etiquetaNombre}: #{enfermedadMB.enfermedadBean.enfermedad}"/>
+                            </h:panelGrid>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" class="centrado">
+                            <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{enfermedadMB.eliminarEnfermedad()}" 
+                                             styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                             update=":frmDatosPersona:pnlTablaPersona,msgsDelProc,:frmDatosPersona:tblPersona"
+                                             oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                            <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                             icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                        </h:panelGrid>
+                        <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                    </p:dialog>
+                </h:form>
+            </h:panelGrid>
+        </h:body>
+    </ui:define>
+</ui:composition>

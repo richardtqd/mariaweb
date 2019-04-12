@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteTotalAlumnosIngresantesRetirados_subreport2" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="859df9c2-189e-47c0-8f5b-06c6ed21dd84">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\SIGMA_VER2\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[DECLARE @anio INT= 2018
+DECLARE @unineg varchar(6)='CHAMPS'
+declare @fechaInicioClases date='01-03-2018'
+declare @fechaFinFiltro date ='04-04-2018'
+
+select distinct
+(select count(*) from MX_Matricula m
+WHERE anio=@anio and unineg=@unineg
+and fechamatricula<=@fechaInicioClases ) as cantidadEstudianteInicio,
+(select count(*) from MX_Matricula m
+WHERE anio=@anio and unineg=@unineg
+and fechamatricula>@fechaInicioClases and fechamatricula<=@fechaFinFiltro) as cantidadIngresantes,
+(select count(*) from MX_Matricula ma
+inner join MX_Estudiante es on es.idestudiante=ma.idestudiante
+WHERE ma.anio=@anio and ma.unineg=@unineg
+and es.idtipostatusest=18002
+and fechamatricula>=@fechaInicioClases and es.fechastatusest<=@fechaFinFiltro) as cantidadRetirados,
+(select count(*) from MX_Matricula m
+WHERE anio=@anio and unineg=@unineg
+and fechamatricula<=@fechaFinFiltro) as cantidadTotal,
+upper(n.nombre) as nombreNivel,N.idnivelacademico as idNivelAcademico
+FROM MX_Matricula M
+INNER JOIN MO_UnidadNegocio uni on uni.unineg=m.unineg
+inner join MX_GradoAcademico g on g.idgradoacademico=m.idgradoacademico
+inner join MX_NivelAcademico n on n.idnivelacademico=g.idnivelacademico
+WHERE m.anio=@anio and uni.unineg=@unineg]]>
+	</queryString>
+	<field name="cantidadEstudianteInicio" class="java.lang.Integer"/>
+	<field name="cantidadIngresantes" class="java.lang.Integer"/>
+	<field name="cantidadRetirados" class="java.lang.Integer"/>
+	<field name="cantidadTotal" class="java.lang.Integer"/>
+	<field name="nombreNivel" class="java.lang.String"/>
+	<field name="idNivelAcademico" class="java.lang.Integer"/>
+	<field name="listaDetalle" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement uuid="37418640-b170-46e9-8753-b4b13dfabefb" positionType="Float" stretchType="RelativeToBandHeight" x="6" y="0" width="71" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreNivel}]]></textFieldExpression>
+			</textField>
+			<subreport>
+				<reportElement uuid="11f08321-66ce-4ab2-8ca7-949bb0061226" x="77" y="0" width="200" height="20"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaDetalle}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "reporteTotalAlumnosIngresantesRetirados_subreport1.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+</jasperReport>

@@ -1,0 +1,632 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body>
+            <p:layout id="layEst" fullPage="false"  style="width:1600px;height:750px" styleClass="centrado">
+                <p:layoutUnit position="west" size="700" header="#{msgs.appSiglas}" resizable="false" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500">
+                    <h:form id="frmDatosMatricula">
+                        <h:panelGrid  id="pnlTablaFiltroNoMatri" style="width: 600px" styleClass="centrado">
+                            <!-- FILTRO DE DESTINO DE MENSAJES -->
+                            <p:fieldset legend="#{msgs.etiquetaSeleccionar}" styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false">
+                                <h:panelGrid  columns="10">
+                                    <p:selectOneRadio value="#{envioMasivoMB.tipPagante}" >
+                                        <f:selectItem itemLabel="#{msgs.etiquetaEstudiante}" itemValue="1"/>
+                                        <f:selectItem itemLabel="#{msgs.etiquetaColaboradores}" itemValue="2"/> 
+                                        <f:selectItem itemLabel="#{msgs.etiquetaExterno}" itemValue="3"/> 
+                                        <f:selectItem itemLabel="#{msgs.etiquetaEntidad}" itemValue="4"/> 
+                                        <p:ajax listener="#{envioMasivoMB.cambiarFiltro()}" 
+                                                update=":frmDatosMatricula,
+                                                :frmDatosMatricula:flBusqueda,
+                                                :frmDatosMatricula:flBusquedaPersonal,
+                                                :frmDatosMatricula:flBusquedaExterno,
+                                                :frmDatosMatricula:flBusquedaEntidad" />
+                                    </p:selectOneRadio>
+                                   <!-- <h:panelGrid id="trans" columns="3">
+                                        <h:outputLabel value="#{msgs.etiquetaAB}" styleClass="negrita"/> 
+                                        <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgByCole}"/> 
+                                    </h:panelGrid>-->
+                                </h:panelGrid>
+                            </p:fieldset>
+                            <br/><br/>
+                            <!-- ESTUDIANTE -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusEst}" id="flBusqueda" rendered="#{envioMasivoMB.renderEstudiante==true}">
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid columns="2" >
+                                            <h:outputLabel value="#{msgs.etiquetaSeleccionar}: " styleClass="titulo" />
+                                            <p:selectOneRadio value="#{envioMasivoMB.matriculaFiltroBean.flgMatriculaVista}" >
+                                                <f:selectItem itemValue="#{1}" itemLabel="#{msgs.etiquetaMatriculado}" />
+                                                <f:selectItem itemValue="#{0}" itemLabel="#{msgs.etiquetaNoMatriculado}" />
+                                            </p:selectOneRadio>
+                                        </h:panelGrid>
+                                        <h:panelGrid id="pnlTodos" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgTodos}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlNivelGradoAca,pnlEstEsp,pnlAdi,:frmDatosMatricula:pnlMeses,pnlFlgPension" listener="#{envioMasivoMB.verificarFiltroTodos()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlEstEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgEstEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodos,pnlNivelGradoAca,pnlEstEsp,pnlAdi,:frmDatosMatricula:pnlMeses,pnlFlgPension" listener="#{envioMasivoMB.verificarFiltroEstEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaEstEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlNivelGradoAca" columns="3" >
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgPorNivelGrado}" styleClass="titulo"  > 
+                                                <p:ajax event="change" update="pnlNivelGradoAca,pnlTodos,pnlEstEsp,pnlAdi,:frmDatosMatricula:pnlMeses,pnlFlgPension" listener="#{envioMasivoMB.verificarFiltroNivelGrado()}" />
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaPorNivelGrado}"/> 
+                                        </h:panelGrid>  
+                                        <h:panelGrid columns="2">
+                                            <p:selectOneMenu value="#{envioMasivoMB.matriculaFiltroBean.anio}"    label="#{msgs.etiquetaPeriodo}" style="width: 125px" panelStyle="width: 125px" styleClass="resetSelect">
+                                                <f:selectItems value="#{envioMasivoMB.listaAnioFiltroMatricula}" var="anio" itemLabel="#{anio}" itemValue="#{anio}"/>
+                                            </p:selectOneMenu>  
+                                            <h:outputLabel value="#{msgs.etiquetaPeriodo}" styleClass="negrita siseFontGrid5" /> 
+                                        </h:panelGrid>
+                                        <h:panelGrid id="pnlFlgPension" columns="2" >
+                                            <p:selectBooleanCheckbox id="ckPension" value="#{envioMasivoMB.flgPension}">
+                                                <p:ajax event="change" listener="#{envioMasivoMB.obtenerFlgPension}" 
+                                                        update=":frmDatosMatricula:pnlMeses,pnlTodos,pnlNivelGradoAca,pnlEstEsp,pnlAdi,pnlFlgPension,:frmDatosMatricula:pnlBtnEnviar,pnlBtnEnviar" />
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaPens}" styleClass="negrita siseFontGrid5"/>
+                                        </h:panelGrid> 
+                                    </h:panelGrid> 
+                                    <h:panelGrid columns="1" id="pnlAdi">
+                                        <p:panel rendered="#{envioMasivoMB.flgEstEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.EtiquetaCodigo}" styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgEstEsp==true}" /> 
+                                                <p:inputText  value="#{envioMasivoMB.matriculaFiltroBean.estudianteBean.personaBean.idPersona}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{envioMasivoMB.flgEstEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaApePat}" styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgEstEsp==true}"/>
+                                                <p:inputText value="#{envioMasivoMB.matriculaFiltroBean.estudianteBean.personaBean.apepat}" label="#{msgs.etiquetaApePat}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgEstEsp==true}" />  
+                                                <h:outputLabel value="#{msgs.etiquetaApeMat}" styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgEstEsp==true}" />
+                                                <p:inputText value="#{envioMasivoMB.matriculaFiltroBean.estudianteBean.personaBean.apemat}" label="#{msgs.etiquetaApeMat}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgEstEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombre}" styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgEstEsp==true}"/>
+                                                <p:inputText value="#{envioMasivoMB.matriculaFiltroBean.estudianteBean.personaBean.nombre}" label="#{msgs.etiquetaNombre}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgEstEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel>
+                                        <p:panel rendered="#{envioMasivoMB.flgPorNivelGrado==true}">  
+                                            <h:panelGrid columns="2" width="300">
+                                                <h:outputLabel value="#{msgs.etiquetaNivelAcademico}" styleClass="titulo" rendered="#{envioMasivoMB.flgPorNivelGrado==true}" /> 
+                                                <p:selectOneMenu value="#{envioMasivoMB.matriculaFiltroBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}" style="width:160px" panelStyle="width:160px" label="#{msgs.etiquetaNivelAcademico}" rendered="#{envioMasivoMB.flgPorNivelGrado==true}" >
+                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                    <f:selectItems value="#{envioMasivoMB.listaNivelAcademico}" var="nivAca" itemLabel="#{nivAca.nombre}" itemValue="#{nivAca.idNivelAcademico}"/> 
+                                                    <p:ajax event="change" listener="#{envioMasivoMB.obtenerGradoAcaBasica()}" update="cmboGradoAcaBas" />
+                                                </p:selectOneMenu>     
+                                                <h:outputLabel value="#{msgs.etiquetaGradoAca}" styleClass="titulo" rendered="#{envioMasivoMB.flgPorNivelGrado==true}"  /> 
+                                                <p:selectOneMenu id="cmboGradoAcaBas" value="#{envioMasivoMB.matriculaFiltroBean.estudianteBean.gradoHabilitado.idGradoAcademico}" style="width:160px" panelStyle="width:160px" styleClass="resetSelect" label="#{msgs.etiquetaGradoAca}" rendered="#{envioMasivoMB.flgPorNivelGrado==true}">
+                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                    <f:selectItems value="#{envioMasivoMB.listaGradoAcademicoFiltroBean}" var="gradAcaBas" itemLabel="#{gradAcaBas.nombre}" itemValue="#{gradAcaBas.idGradoAcademico}"/>
+                                                </p:selectOneMenu>  
+                                            </h:panelGrid> 
+                                        </p:panel>
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                                <h:panelGrid columns="1" id="pnlMeses" >
+                                    <p:fieldset styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaMes}" rendered="#{envioMasivoMB.flgPension == true}">
+                                        <h:panelGrid columns="2" styleClass="centrado-izq" >
+                                            <h:outputLabel value="#{msgs.etiquetaTipoEstado}: " styleClass="titulo" />
+                                            <p:selectOneMenu  value="#{envioMasivoMB.cuentasPorCobrar.idTipoStatusCtaCte.idCodigo}" style="width:160px" panelStyle="width:160px" styleClass="resetSelect" label="#{msgs.etiquetaTipoEstado}" >
+                                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                <f:selectItems value="#{envioMasivoMB.listaTipoEstado}" var="estado" itemLabel="#{estado.codigo}" itemValue="#{estado.idCodigo}"/>
+                                            </p:selectOneMenu>
+                                            <h:outputLabel value="#{msgs.etiquetaEnviar}:" />
+                                            <p:selectOneRadio value="#{envioMasivoMB.cuentasPorCobrar.tipoRecep}" >
+                                                <f:selectItem itemValue="1" itemLabel="#{msgs.etiquetaResPago}" />
+                                                <f:selectItem itemValue="2" itemLabel="#{msgs.etiquetaPad}" />
+                                                <f:selectItem itemValue="3" itemLabel="#{msgs.etiquetaMad}" />
+                                            </p:selectOneRadio>
+                                        </h:panelGrid>
+                                        <p:selectManyCheckbox id="meses" value="#{envioMasivoMB.listaMeses}" layout="grid" columns="3">
+                                            <f:selectItems value="#{envioMasivoMB.listaMesesExpMap}" var="mes" itemValue="#{mes}" />
+                                        </p:selectManyCheckbox>
+
+                                        <p:commandLink value="#{msgs.etiquetaCrearMsj}" oncomplete="PF('popEsquela').show();" ></p:commandLink>
+                                    </p:fieldset> 
+                                </h:panelGrid>
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="2">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{envioMasivoMB.obtenerFiltro(1)}" process=":frmDatosMatricula:flBusqueda,ckPension"
+                                                     update="pnlTablaMatricula,msg"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{envioMasivoMB.obtenerLimpiaFiltro(1)}" update="pnlTablaFiltroNoMatri,pnlTablaMatricula,msg"/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msg"/>
+                            </p:fieldset>
+
+                            <!-- PERSONAL -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusPer}" id="flBusquedaPersonal" rendered="#{envioMasivoMB.renderPersonal==true}" >
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid id="pnlTodosPer" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgTodosPer}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlNivelGradoAcaPer,pnlPerEsp,pnlAdiPer" listener="#{envioMasivoMB.verificarFiltroTodosPer()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlPerEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgPerEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodosPer,pnlNivelGradoAcaPer,pnlPerEsp,pnlAdiPer" listener="#{envioMasivoMB.verificarFiltroPerEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaPerEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlNivelGradoAcaPer" columns="3" >
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgPerUniOrg}" styleClass="titulo"  > 
+                                                <p:ajax event="change" update="pnlNivelGradoAcaPer,pnlTodosPer,pnlPerEsp,pnlAdiPer" listener="#{envioMasivoMB.verificarFiltroPerUniOrg()}" />
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaPorUniOrg}"/> 
+                                        </h:panelGrid> 
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" id="pnlAdiPer">
+                                        <p:panel rendered="#{envioMasivoMB.flgPerEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.etiquetaNroDocAbb}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgPerEsp==true}" /> 
+                                                <p:inputText  value="#{envioMasivoMB.personalFiltroBean.nroDoc}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{envioMasivoMB.flgPerEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaCodigoPersonal}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgPerEsp==true}" /> 
+                                                <p:inputText  value="#{envioMasivoMB.personalFiltroBean.codPer}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{envioMasivoMB.flgPerEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaApePat}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgPerEsp==true}"/>
+                                                <p:inputText value="#{envioMasivoMB.personalFiltroBean.apepat}" label="#{msgs.etiquetaApePat}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgPerEsp==true}" />  
+                                                <h:outputLabel value="#{msgs.etiquetaApeMat}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgPerEsp==true}" />
+                                                <p:inputText value="#{envioMasivoMB.personalFiltroBean.apemat}" label="#{msgs.etiquetaApeMat}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgPerEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombre}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgPerEsp==true}"/>
+                                                <p:inputText value="#{envioMasivoMB.personalFiltroBean.nombre}" label="#{msgs.etiquetaNombre}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgPerEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel>
+                                        <p:panel rendered="#{envioMasivoMB.flgPerUniOrg==true}">  
+                                            <h:panelGrid columns="2" width="300">
+                                                <h:outputLabel value="#{msgs.etiquetaUnidOrg}: " styleClass="titulo" rendered="#{envioMasivoMB.flgPerUniOrg==true}" /> 
+                                                <p:selectOneMenu value="#{envioMasivoMB.personalFiltroBean.unidadOrganicaBean.idUniOrg}" style="width:160px" panelStyle="width:160px" label="#{msgs.etiquetaUnidOrgo}" rendered="#{envioMasivoMB.flgPerUniOrg==true}" >
+                                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                    <f:selectItems value="#{envioMasivoMB.listaUnidadOrganicaBean}" var="uo" itemLabel="#{uo.nombreUniOrg}" itemValue="#{uo.idUniOrg}"/> 
+                                                </p:selectOneMenu>
+                                            </h:panelGrid> 
+                                        </p:panel>
+                                    </h:panelGrid>
+                                </h:panelGrid> 
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="2">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{envioMasivoMB.obtenerFiltro(2)}" process=":frmDatosMatricula:flBusquedaPersonal"
+                                                     update=":frmDatosMatricula:pnlTablaPersonal,msgPer"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{envioMasivoMB.obtenerLimpiaFiltro(2)}" update=":frmDatosMatricula:flBusquedaPersonal,pnlTablaPersonal,msgPer"/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msgPer"/>
+                            </p:fieldset>
+
+                            <!-- EXTERNO -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusExt}" id="flBusquedaExterno" rendered="#{envioMasivoMB.renderPersona==true}" >
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid id="pnlTodosExt" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgTodosExt}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlTodosExt,pnlExtEsp,pnlAdiExt" listener="#{envioMasivoMB.verificarFiltroTodosExt()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlExtEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgExtEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodosExt,pnlExtEsp,pnlAdiExt" listener="#{envioMasivoMB.verificarFiltroExtEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaExtEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" id="pnlAdiExt">
+                                        <p:panel rendered="#{envioMasivoMB.flgExtEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.etiquetaNroDocAbb}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgExtEsp==true}" /> 
+                                                <p:inputText  value="#{envioMasivoMB.personaFiltroBean.idPersona}" label="#{msgs.EtiquetaCodigo}" readonly="false" size="15" rendered="#{envioMasivoMB.flgExtEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaApePat}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgExtEsp==true}"/>
+                                                <p:inputText value="#{envioMasivoMB.personaFiltroBean.apepat}" label="#{msgs.etiquetaApePat}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgExtEsp==true}" />  
+                                                <h:outputLabel value="#{msgs.etiquetaApeMat}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgExtEsp==true}" />
+                                                <p:inputText value="#{envioMasivoMB.personaFiltroBean.apemat}" label="#{msgs.etiquetaApeMat}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgExtEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombre}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgExtEsp==true}"/>
+                                                <p:inputText value="#{envioMasivoMB.personaFiltroBean.nombre}" label="#{msgs.etiquetaNombre}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgExtEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel> 
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="3">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{envioMasivoMB.obtenerFiltro(3)}" process=":frmDatosMatricula:flBusquedaExterno"
+                                                     update="pnlTablaExterno,msgExt"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{envioMasivoMB.obtenerLimpiaFiltro(3)}" update=":frmDatosMatricula:flBusquedaExterno,pnlTablaExterno,msgExt"/>
+                                    <p:link id="est" outcome="/mantenimientos/mantPersona.xhtml" target="_blank" value="#{msgs.etiquetaRegPersona}" accesskey=""/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msgExt"/>
+                            </p:fieldset>
+
+                            <!-- ENTIDAD -->
+                            <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBusEnt}" id="flBusquedaEntidad" rendered="#{envioMasivoMB.renderEntidad==true}" >
+                                <h:panelGrid columns="2">
+                                    <h:panelGrid columns="1">
+                                        <h:panelGrid id="pnlTodosEnt" columns="2">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgTodosEnt}" styleClass="titulo" > 
+                                                <p:ajax event="change" update="pnlTodosEnt,pnlEntEsp,pnlAdiEnt" listener="#{envioMasivoMB.verificarFiltroTodosEnt()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputText value="#{msgs.etiquetaTodos}"/> 
+                                        </h:panelGrid> 
+                                        <h:panelGrid id="pnlEntEsp" columns="3">
+                                            <p:selectBooleanCheckbox  value="#{envioMasivoMB.flgEntEsp}" styleClass="titulo"> 
+                                                <p:ajax event="change" update="pnlTodosEnt,pnlEntEsp,pnlAdiEnt" listener="#{envioMasivoMB.verificarFiltroEntEsp()}"/>
+                                            </p:selectBooleanCheckbox>
+                                            <h:outputLabel value="#{msgs.etiquetaEntEspecifico}" styleClass="titulo" />
+                                        </h:panelGrid> 
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" id="pnlAdiEnt">
+                                        <p:panel rendered="#{envioMasivoMB.flgEntEsp==true}">  
+                                            <h:panelGrid columns="2" styleClass="siseFont1" width="350"> 
+                                                <h:outputLabel value="#{msgs.etiquetaRuc}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgEntEsp==true}" /> 
+                                                <p:inputText  value="#{envioMasivoMB.entidadFiltroBean.ruc}" label="#{msgs.etiquetaRuc}" readonly="false" size="15" rendered="#{envioMasivoMB.flgEntEsp==true}"/> 
+                                                <h:outputLabel value="#{msgs.etiquetaNombreEnt}: " styleClass="negrita siseFont5" rendered="#{envioMasivoMB.flgEntEsp==true}"/>
+                                                <p:inputText value="#{envioMasivoMB.entidadFiltroBean.nombre}" label="#{msgs.etiquetaNombreEnt}" size="28" maxlength="30" rendered="#{envioMasivoMB.flgEntEsp==true}" />  
+                                            </h:panelGrid>
+                                        </p:panel> 
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <p:separator/>
+                                <h:panelGrid styleClass="centrado" columns="3">
+                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{envioMasivoMB.obtenerFiltro(4)}" process=":frmDatosMatricula:flBusquedaEntidad"
+                                                     update="pnlTablaEntidad,msgEnt"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" action="#{envioMasivoMB.obtenerLimpiaFiltro(4)}" update=":frmDatosMatricula:flBusquedaEntidad,pnlTablaEntidad,msgEnt"/>
+                                    <p:link outcome="/configuracion/mantEntidad.xhtml" target="_blank" value="#{msgs.etiquetaRegEntidad}" accesskey=""/>
+                                </h:panelGrid> 
+                                <p:messages autoUpdate="false" id="msgEnt"/>
+                            </p:fieldset>
+                        </h:panelGrid>
+                        <!-- ESTUDIANTES -->
+                        <h:panelGrid  id="pnlTablaMatricula" styleClass="centrado" >
+                            <p:dataTable id="tblMatricula" value="#{envioMasivoMB.listaMatriculaEstudianteMasivoBean}" widgetVar="tblMatricula"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="estudiante" rowKey="#{estudiante}"
+                                         rows="#{envioMasivoMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty envioMasivoMB.listaMatriculaEstudianteMasivoBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;">
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaEstPosNoMatri}" />   
+                                </f:facet>
+                                <p:column  headerText="N" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                                    <h:outputText value="#{estudiante.estudianteBean.personaBean.idPersona}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.idPersona}" >
+                                    <h:outputText value="#{estudiante.estudianteBean.personaBean.nombreCompleto}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaGradoAca}" filterMatchMode="contains" width="12%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.gradoAcademicoVista}" >
+                                    <h:outputText value="#{estudiante.gradoAcademicoVista}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaSeccAbr}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.seccion}" >
+                                    <h:outputText value="#{estudiante.seccion}"/>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.flgMatricula}" >
+                                    <h:outputText value="#{estudiante.flgMatriVista}"/>
+                                </p:column>
+                                <p:column colspan="3" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="12%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:commandLink id="cmdPdfEst" actionListener="#{envioMasivoMB.obtenerPorId(1,estudiante,2)}" target="_blank" >
+                                        <h:graphicImage value="/resources/images/icons/pdfShort.png"/>
+                                    </h:commandLink>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdSelEst" actionListener="#{envioMasivoMB.obtenerPorId(1,estudiante,1)}" target="_blank" >
+                                        <h:graphicImage value="/resources/images/icons/select3.png"/>
+                                    </p:commandLink>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdSeeEst" actionListener="#{envioMasivoMB.obtenerPorId(1,estudiante,3)}"
+                                                   oncomplete="PF('popCuenta').show();" update=":frmPopCuenta:pnlPopCuenta">
+                                        <h:graphicImage value="/resources/images/icons/ver2.png"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolSelEstPdf" for="cmdPdfEst" value="#{msgs.etiquetaImprimir}" />
+                                    <p:tooltip id="toolSelEstSel" for="cmdSelEst" value="#{msgs.etiquetaSeleccionar}" />
+                                    <p:tooltip id="toolSelEstSee" for="cmdSeeEst" value="#{msgs.etiquetaVer}" />
+                                </p:column>
+                            </p:dataTable>
+                            <br></br> 
+                        </h:panelGrid>
+                        <!-- PERSONAL -->
+                        <h:panelGrid  id="pnlTablaPersonal" styleClass="centrado" >
+                            <p:dataTable id="tblPersonal" value="#{envioMasivoMB.listaPersonalFiltroBean}" widgetVar="tblPersonal"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="personal" rowKey="#{personal}"
+                                         rows="#{envioMasivoMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty envioMasivoMB.listaPersonalFiltroBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;"> 
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaPersonales}" />
+                                </f:facet>
+                                <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaCodigoPersonalSol}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{personal.codPer}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{personal.nombreCompleto}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaUnidOrg}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{personal.unidadOrganicaBean.nombreUniOrg}" />
+                                </p:column>
+                                <p:column colspan="2" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdSelPer" actionListener="#{envioMasivoMB.obtenerPorId(2,personal,0)}" >
+                                        <h:graphicImage value="/resources/images/icons/select3.png"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolSelPerSel" for="cmdSelPer" value="#{msgs.etiquetaSeleccionar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <!-- EXTERNO -->
+                        <h:panelGrid  id="pnlTablaExterno" styleClass="centrado" >
+                            <p:dataTable id="tblExterno" value="#{envioMasivoMB.listaPersonaFiltroBean}" widgetVar="tblExterno"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="externo" rowKey="#{externo}"
+                                         rows="#{envioMasivoMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty envioMasivoMB.listaPersonaFiltroBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaExternos}" />
+                                </f:facet>
+                                <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{externo.idPersona}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{externo.nombreCompleto}" />
+                                </p:column> 
+                                <p:column colspan="2" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdSelExt" actionListener="#{envioMasivoMB.obtenerPorId(3,externo,0)}">
+                                        <h:graphicImage value="/resources/images/icons/select3.png"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolSelExtSel" for="cmdSelExt" value="#{msgs.etiquetaSeleccionar}" />
+                                </p:column>
+                            </p:dataTable> 
+                        </h:panelGrid>
+                        <!-- ENTIDAD -->
+                        <h:panelGrid  id="pnlTablaEntidad" styleClass="centrado" > 
+                            <p:dataTable id="tblEntidad" value="#{envioMasivoMB.listaEntidadFiltroBean}" widgetVar="tblEntidad"
+                                         paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="entidad" rowKey="#{entidad}"
+                                         rows="#{envioMasivoMB.numRegistrosTablasPorFiltro}" 
+                                         rendered="#{not empty envioMasivoMB.listaEntidadFiltroBean}" 
+                                         style="width:700px; font-size: 10px;font-size:14px !important;">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaEntidadesss}" />
+                                </f:facet>
+                                <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaRuc}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{entidad.ruc}" />
+                                </p:column>
+                                <p:column  headerText="#{msgs.etiquetaEntidad}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                    <h:outputText value="#{entidad.nombre}" />
+                                </p:column>
+                                <p:column colspan="1" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                    <p:commandLink id="cmdSelEnt" actionListener="#{envioMasivoMB.obtenerPorId(4,entidad,0)}" >
+                                        <h:graphicImage value="/resources/images/icons/select3.png"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolSelEntSel" for="cmdSelEnt" value="#{msgs.etiquetaSeleccionar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <h:panelGrid id="pnlBtnEnviar" styleClass="centrado" columns="1" >   
+                            <h:commandLink  target="_blank" rendered="#{envioMasivoMB.flgPension == true}"
+                                            action="#{envioMasivoMB.imprimirNotificacionMasiva()}">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                        </h:panelGrid>
+                        <p:messages autoUpdate="false" id="msgAsign" closable="true" />
+                    </h:form>
+                </p:layoutUnit>
+                <p:layoutUnit position="center" styleClass="centrado">
+                    <h:form id="frmAccEnvio" >
+                        <h:panelGrid id="pnlAccEnvio" styleClass="centrado" columns="1" style="width: 880px">
+                            <p:fieldset legend="#{msgs.etiquetaSeleccionar}" styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false">
+                                <p:selectOneRadio value="#{envioMasivoMB.tipAccion}" style="padding: 5px;font-size: 15px;" >
+                                    <f:selectItem itemLabel="#{msgs.etiquetaRedactar} &nbsp;&nbsp;" itemValue="0"/>
+                                    <f:selectItem itemLabel="#{msgs.etiquetaEnviados} &nbsp;&nbsp;" itemValue="1"/>
+                                    <f:selectItem itemLabel="#{msgs.etiquetaBorrador} &nbsp;&nbsp;" itemValue="3"/> 
+                                    <p:ajax event="change" listener="#{envioMasivoMB.obtenerListaMensaje()}" 
+                                            update=":frmMsgEsquela2,msgEnvioMasivo,pnlEnvioMsg"/>
+                                </p:selectOneRadio>
+                            </p:fieldset>
+                            <p:messages id="msgEnvioMasivo" showDetail="false" autoUpdate="false" />
+                        </h:panelGrid>
+                        <h:panelGrid id="pnlEnvioMsg" styleClass="centrado" >
+                            <p:dataTable id="tblPrueba" widgetVar="tblPrueba" value="#{envioMasivoMB.listaDetEsquelaBean}" 
+                                         paginator="true" paginatorPosition="bottom" rowIndexVar="n" rows="10" var="mensaje" 
+                                         rendered="#{not empty envioMasivoMB.listaDetEsquelaBean}"> 
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaMensaje}" />
+                                </f:facet>
+                                <p:column headerText="#{msgs.etiquetaNumeroDe}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{n + 1}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAsunto}" filterMatchMode="contains" width="5%" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{mensaje.asunto}"  escape="false" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaMensaje}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-izquierda" >
+                                    <h:outputText value="#{mensaje.mensaje.subSequence(0, 20)}" escape="false" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                    <p:commandLink id="cmdEliminar" action="#{envioMasivoMB.obtenerPorIdMensaje(mensaje)}" oncomplete="PF('popVerDetalle').show();" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/ver_detalle.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:commandLink id="cmdPorMensaje" action="#{envioMasivoMB.obtenerPorIdMensaje(mensaje)}" update=":frmEliminaMsj:pnlDatosEliminaMsj"
+                                                   oncomplete="PF('popEliminarMsj').show();" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeEliminar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid> 
+                    </h:form>
+                    <h:form id="frmMsgEsquela2" >
+                        <p:panel header="#{msgs.etiquetaNuevoMensaje}" rendered="#{envioMasivoMB.flgRedactar == true}" >
+                            <h:panelGrid styleClass="centrado" rendered="#{envioMasivoMB.flgRedactar == true}">
+                                <p:inputText value="#{envioMasivoMB.esquelaBean.titulo}" placeholder="#{msgs.etiquetaIngAsunto}" style="width: 750px;" />
+                                <br/>
+                                <p:editor value="#{envioMasivoMB.esquelaBean.mensaje}" widgetVar="editorWidget" onchange="saveHtml();" height="350" width="750"/> 
+                            </h:panelGrid>
+                            <p:separator/>
+                            <h:panelGrid columns="3" styleClass="centrado" >
+                                <p:commandButton value="#{msgs.botonEnviar}" actionListener="#{envioMasivoMB.enviarMailMasivo()}" 
+                                                 oncomplete="if(args.operacionCorrecta){PF('popDone').show();}" update="msgEnvio"/>
+                                <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{envioMasivoMB.limpiarMailMasivo()}"/>
+                            </h:panelGrid>
+                            <p:messages id="msgEnvio" showDetail="false" autoUpdate="false" />
+                        </p:panel> 
+                    </h:form>
+                    <h:form id="frmTblEnvioMasivo" > 
+                        <h:panelGrid id="pnlEnvioMasivo" styleClass="centrado" >
+                            <p:dataTable id="tblEnvioMasivo" value="#{envioMasivoMB.listaEsquelaAviso}" var="envio"
+                                         paginator="true" paginatorPosition="bottom" rowIndexVar="n" rows="10"
+                                         rendered="#{not empty envioMasivoMB.listaEsquelaAviso}"
+                                         style="width: 900px;font-size: 12px">
+                                <f:facet name="header" >
+                                    <p:outputLabel value="#{msgs.etiquetaEnvios}" />
+                                </f:facet>
+                                <p:column headerText="#{msgs.etiquetaNumeroDe}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{n + 1}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaDestino}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{envio.nombreDestino.toUpperCase()}" />
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaAsunto}" filterMatchMode="contains" width="6%" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{envio.titulo}" escape="false"/>
+                                </p:column> 
+                                <p:column headerText="#{msgs.etiquetaAcciones}" colspan="2" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                    <p:commandLink id="cmdEditar" actionListener="#{envioMasivoMB.obtenerPorIdMasivo(envio)}" 
+                                                   process="@this">
+                                        <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipEdit" for="cmdEditar" value="#{msgs.mensajeEdit}" />
+                                    &nbsp;&nbsp;&nbsp;
+                                    <p:commandLink id="cmdEliminar" actionListener="#{envioMasivoMB.obtenerPorIdMasivo(envio)}" 
+                                                   update=":frmElimina:pnlDatosElimina"
+                                                   oncomplete="PF('popEliminar').show();" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeEliminar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                    </h:form> 
+                </p:layoutUnit> 
+            </p:layout>
+
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" closeOnEscape="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{envioMasivoMB.eliminarMensaje()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTblEnvioMasivo:pnlEnvioMasivo,msgsDel"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form> 
+
+            <h:form id="frmEliminaMsj">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarMsj" resizable="false" closeOnEscape="true" modal="true" >
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosEliminaMsj">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{envioMasivoMB.ponerMensajeBorrador()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmAccEnvio:pnlEnvioMsg,msgsDel" process="@this,:frmAccEnvio:pnlEnvioMsg"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarMsj').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarMsj').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDel" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form> 
+
+            <p:dialog id="popCuenta" header="#{msgs.appTitulo}" widgetVar="popCuenta" showEffect="fade" hideEffect="explode" resizable="false" closeOnEscape="true">
+                <h:form id="frmPopCuenta" >
+                    <h:panelGrid id="pnlPopCuenta" styleClass="centrado" >
+                        <p:dataTable id="tblPopcuenta" value="#{envioMasivoMB.listaCuentasPorCobrarBean}" var="cuenta" 
+                                     paginator="true" paginatorPosition="bottom" style="width: 700px;" rows="6"
+                                     rendered="#{not empty envioMasivoMB.listaCuentasPorCobrarBean}">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetacodigo}" styleClass="nombre3Filtro centrado-texto" filterMatchMode="contains" width="50" >
+                                <h:outputText value="#{cuenta.estudianteBean.codigo}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaEstado}" styleClass="nombre3Filtro centrado-texto" filterMatchMode="contains" width="30" >
+                                <h:outputText value="#{cuenta.idTipoStatusCtaCte.codigo}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaMes}" styleClass="nombre3Filtro centrado-texto" filterMatchMode="contains" width="30" >
+                                <h:outputText value="#{cuenta.meses}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog> 
+            <!-- MODAK DE ESQUELA -->
+            <h:form id="frmPopEsquela" > 
+                <p:dialog id="popEsquela" header="#{msgs.appTitulo}" widgetVar="popEsquela"  closeOnEscape="true" modal="true">
+                    <h:panelGrid>
+                        <p:outputLabel value="Para completar un mensaje personalizado ingresar lo siguiente:" />
+                        <p:outputLabel value="SG1111 => Nombres de estudiante" />
+                        <p:outputLabel value="SG1112 => Monto a Pagar" />
+                        <p:outputLabel value="SG1113 => Mora calculada" />
+                        <p:outputLabel value="SG1114 => Nro. Documento" />
+                        <p:outputLabel value="SG1115 => Anio" />
+                        <p:outputLabel value="SG1116 => Codigo de Estudiante" />
+                    </h:panelGrid>
+                    <h:panelGrid id="pnlPopEsquela" >
+                        <h:panelGrid columns="2" styleClass="centrado-izq" rendered="false" >
+                            <h:outputLabel value="#{msgs.etiquetaSeleccionar}: " styleClass="negrita siseFont5"/> 
+                            <p:selectOneRadio value="#{envioMasivoMB.obj}" >
+                                <f:selectItem itemValue="S1111" itemLabel="#{msgs.etiquetaCodigoAlumno}" />
+                                <f:selectItem itemValue="S1112" itemLabel="#{msgs.etiquetaNroDoc}" />
+                                <f:selectItem itemValue="S1113" itemLabel="#{msgs.etiquetaNombres}" />
+                                <f:selectItem itemValue="S1114" itemLabel="#{msgs.etiquetaMonto}" />
+                                <f:selectItem itemValue="S1115" itemLabel="#{msgs.etiquetaMora}" />
+                                <f:selectItem itemValue="S1116" itemLabel="#{msgs.etiquetaMontoPagado}" />
+                                <p:ajax listener="#{envioMasivoMB.ponerEsquelaMasivo()}" update=":frmPopEsquela:editor" process="@this" />
+                            </p:selectOneRadio>
+                        </h:panelGrid>
+                        <h:panelGrid id="pnlEditEsquela" columns="1" styleClass="centrado" >
+                            <p:inputText value="#{envioMasivoMB.tituloObj}" placeholder="#{msgs.etiquetaIngAsunto}" style="width: 600px;" />
+                            <br/>
+                            <p:editor id="editor" widgetVar="editorWidget" value="#{envioMasivoMB.mensajeObj}" width="600" />
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:commandButton value="#{msgs.etiquetaGenEnv}" actionListener="#{envioMasivoMB.enviarMensajeNotiPension()}"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             update=":frmPopEsquela:pnlEditEsquela"/>
+                            <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{envioMasivoMB.limpiarNotiPension()}"
+                                             update=":frmPopEsquela:pnlEditEsquela"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+

@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteContratoServicio" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="860a91b5-a098-4689-8ef3-bd9be34629c6">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="246"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["C:\\Users\\Gilmar\\Documents\\NetBeansProjects\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[DECLARE @RUC VARCHAR(11),@RUCCOLEGIO VARCHAR(11), @COLEUNI VARCHAR(6) ,@IDORDENCOMPRA INT
+SET @RUC ='20543609758'
+SET @COLEUNI='CHAMPS'
+SET @IDORDENCOMPRA = 1
+SET @RUCCOLEGIO = (select  ruc from MO_UnidadNegocio where unineg=@COLEUNI)
+
+DECLARE
+
+@PROVEEDOR VARCHAR(100) = (SELECT nombre FROM MO_Entidad WHERE ruc=@RUC)
+,@RUBRO VARCHAR(100)=(SELECT c.codigo FROM MO_Entidad e inner join MO_Codigo c on c.idcodigo=e.idtiporubro WHERE ruc=@RUC)
+,@DIRECCION VARCHAR(250) = (SELECT direccion FROM MO_Entidad WHERE ruc=@RUC)
+,@PARTIDA VARCHAR(100) = (SELECT partidaregistral FROM MO_Entidad WHERE ruc=@RUC)
+,@CONTACTO VARCHAR(100)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad WHERE ruc=@RUC)+(SELECT representante FROM MO_Entidad WHERE ruc=@RUC)+' con DNI'+(SELECT dnirepresentante FROM MO_Entidad WHERE ruc=@RUC)
+,@UNINEG VARCHAR(50)=(SELECT un.nombreUniNeg FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC)
+,@RUCUNINEG VARCHAR(11)= (SELECT un.ruc FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUC)
+,@REPRESENTANTECOLE VARCHAR(500)=(SELECT case when sexorepresentante=1 then 'el Sr.' when sexorepresentante=0 then 'la Sra.' end as sexoRepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+(SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+'  con D.N.I. Nº '+(SELECT e.dnirepresentante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)+', con domicilio en '+(SELECT e.direccion FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
++', distrito de '+(SELECT d.nombre FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg inner join MO_Distrito d on d.iddistrito=e.iddistrito WHERE e.RUC=@RUCCOLEGIO)
+,@MONTO VARCHAR(100) = (select sum(cantidad*importe) from ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA and unineg=@COLEUNI)
+,@MONTODESC VARCHAR(500)= (select  DBO.CantidadConLetra (sum(cantidad*importe)) from ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA and unineg=@COLEUNI)
+,@DISTRITOCOLE VARCHAR(100)=(SELECT e.direccion FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO) +', del distrito de '+(SELECT d.nombre FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg inner join MO_Distrito d on d.iddistrito=e.iddistrito WHERE e.RUC=@RUCCOLEGIO)
+,@FECHA VARCHAR(100)=(select  lower(DBO.FechaConLetra(DATENAME(day, getdate())))+' días del mes de ' +DateName(month,getdate())+' de '+lower(DBO.FechaConLetra(DateName(year,getdate()))))
+,@REPRESENCOLE VARCHAR(50)= (SELECT e.representante FROM MO_Entidad e inner join MO_UnidadNegocio un on un.unineg= e.unineg WHERE e.RUC=@RUCCOLEGIO)
+,@REPREPROVE VARCHAR(50)= (SELECT representante FROM MO_Entidad WHERE ruc=@RUC)
+,@COLE VARCHAR(50)=(SELECT nombre FROM MO_Entidad WHERE RUC=@RUCCOLEGIO)
+,@IDORDEN varchar(5) = (SELECT distinct idordencompra FROM ML_DetOrdenCompra where idordencompra=@IDORDENCOMPRA and unineg=@COLEUNI)
+SELECT
+'Conste por el presente documento, el contrato de servicios que celebran de una parte  la empresa '+ @PROVEEDOR+' con RUC Nº '+ @RUC+
+', con domicilio legal en '+@DIRECCION+', con  Partida Registral Nº '+@PARTIDA+', representada por  '+@CONTACTO+
+', a quien en adelante se le denominará "EL CONTRATISTA” y por otra parte el  '+@UNINEG +' a quien en adelante se le denominará “EL CONTRATANTE”
+con RUC '+@RUCUNINEG +'  representado legalmente por el '+@REPRESENTANTECOLE+'.' as contrato,
+
+'EL CONTRATANTE es una Institución que proporciona servicios educativos en los niveles inicial, primario y secundario en el inmueble destinado a su funcionamiento, ubicado en '+@DISTRITOCOLE+'.
+EL CONTRATISTA '+@PROVEEDOR+' declara que es una empresa que se dedica al rubro de '+@RUBRO+' en sus diferentes modalidades y  consecuentemente está plenamente capacitado y habilitado para brindar el servicio requerido por el Contratante.
+“EL CONTRATANTE”  toma los servicios de  "EL CONTRATISTA” para que brinde la prestación de los servicios de transportes para el traslado del alumnado y personal; según requerimientos descritos a continuación.
+' AS primeraParte,
+'El presente contrato tiene por objeto garantizar que los servicios requeridos por “EL CONTRATISTA” se brinden con calidad y seguridad, garantizando el confort y la integridad física de los alumnos y el personal.' as segundaParte,
+'El plazo de ejecución de la prestación concluirá una vez cumplido con el servicio, de acuerdo al siguiente cronograma:	' as terceraParte,
+'El monto pactado por el total de la prestación del servicio por servicio es de S/.'+@MONTO+' '+@MONTODESC+' el que será cancelado al término del servicio, previa presentación de la factura correspondiente.' as cuartaParte,
+'“EL CONTRATISTA” es el responsable por la calidad ofrecida a “EL CONTRATANTE”, los vehículos  contaran con iluminación, ventilación adecuada, limpios y bien presentados, asientos cómodos y cinturones de seguridad en perfecto funcionamiento.  Las unidades  de transporte  asignadas  a prestar los servicios, contaran con la documentación correspondiente al servicio, vigente y/o actualizada:
+
+•	Tarjeta de Propiedad
+•	Tarjeta de Circulación Terrestre
+•	Revisión Técnica (copia legalizada del documento que acredite que se encuentra vigente)
+•	SOAT  (Copia legalizada de la póliza vigente del Seguro Obligatorio de Accidentes de Tránsito)
+•	Póliza de accidentes.
+•	Fotocopia legalizada de la licencia profesional de conducir y del DNI de los choferes.
+•	Record de papeletas emitidas por el servicio de Administración Tributaria (SAT) con 24 horas de anticipación a la fecha del servicio.
+
+Además los vehículos deben contar con:
+
+•	Botiquín de primeros auxilios.
+•	Luces de señales de emergencia
+•	Extintor
+•	Llanta de repuesto
+•	Gata, llaves de ruedas y herramientas
+•	Asientos con cinturones de seguridad en perfectas condiciones.
+
+Para los puntos anteriores se tomará en cuenta lo que exige la normativa vigente y dado el caso la futura, además los conductores contarán con radio-celular para las comunicaciones en casos de emergencias o imprevistos.
+Los conductores procuran y mantendrán en todo momento el manejo responsable de sus unidades.
+' as quintaParte,
+'Caso 1: Si el “CONTRATISTA” incumpliera con la cláusula quinta y tercera del presente contrato y esto derivara  al perjuicio de la actividad a desarrollar, de los alumnos y/o personal se tendrá en cuenta lo que estipula la ley vigente.
+Caso 2: “EL CONTRATISTA”, reembolsa  la totalidad y/o asume los gastos ocasionados por exceder el límite de la tolerancia de treinta minutos dentro del radio urbano y una hora fuera del radio urbano, para los casos de reemplazos de las unidades cuando se presente  desperfectos en uno de sus vehículos.
+Caso 3: Para los casos de subcontrata de unidades por  “EL CONTRATISTA” se aplicará el CASO 1 de la presente cláusula.' as sextaParte,
+'“EL CONTRATISTA” asume administrativa y económicamente las gestiones  y costos por las infracciones de tránsito que ocasione  su personal.
+“EL CONTRATISTA” asume los costos de peajes, impuestos de Ley y combustible.
+“EL CONTRATANTE” se hace responsable de los daños y perjuicios que los pasajeros pudieran ocasionar a la infraestructura interna y externa de los vehículos que prestan servicio de movilidad.
+“EL CONTRATANTE” es responsable y asume todos los riesgos sobre las obligaciones de los usuarios. Esto según D.S. 017-2009 Art. 77.M.T.C.' as setimaParte,
+'EL CONTRATISTA se obliga a realizar lo establecido en el presente Contrato en la forma más diligente posible, procurando la mayor eficiencia en la prestación de los servicios, considerando que el Contrato es suscrito de buena fe.' as octavaParte,
+'El incumplimiento de cualquiera de las obligaciones asumidas por las partes contratantes, dará lugar a que el Contrato se resuelva, quedando facultada EL CONTRATANTE para  continuar el trabajo con otros profesionales.' as novenaParte,
+'Las partes contratantes han declarado sus respectivos domicilios en la parte introductoria del presente contrato. Para efectos del presente contrato se tendrá por válida cualquier notificación efectuada a estas direcciones.
+
+De acuerdo con lo consignado, en el presente contrato, las partes lo firman en señal de conformidad en la ciudad de Lima a los '+@FECHA+'.' as decimaParte,
+@REPRESENCOLE AS representanteCole, @REPREPROVE as repreProveedor , @PROVEEDOR as nobreProveedor, @COLE as nombreCole
+ ,'000'+@IDORDEN as idOrdenCompra]]>
+	</queryString>
+	<field name="contrato" class="java.lang.String"/>
+	<field name="primeraParte" class="java.lang.String"/>
+	<field name="segundaParte" class="java.lang.String"/>
+	<field name="terceraParte" class="java.lang.String"/>
+	<field name="cuartaParte" class="java.lang.String"/>
+	<field name="quintaParte" class="java.lang.String"/>
+	<field name="sextaParte" class="java.lang.String"/>
+	<field name="setimaParte" class="java.lang.String"/>
+	<field name="octavaParte" class="java.lang.String"/>
+	<field name="novenaParte" class="java.lang.String"/>
+	<field name="decimaParte" class="java.lang.String"/>
+	<field name="representanteCole" class="java.lang.String"/>
+	<field name="repreProveedor" class="java.lang.String"/>
+	<field name="nobreProveedor" class="java.lang.String"/>
+	<field name="nombreCole" class="java.lang.String"/>
+	<field name="idOrdenCompra" class="java.lang.String"/>
+	<field name="listaContrato" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<title>
+		<band height="450" splitType="Immediate">
+			<staticText>
+				<reportElement uuid="7d84b8d4-ecb4-46a0-92c8-e229b9e9bd9c" positionType="Float" x="80" y="13" width="399" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isItalic="false" isUnderline="false" isStrikeThrough="false"/>
+				</textElement>
+				<text><![CDATA[CONTRATO DE PRESTACION DE SERVICIOS DE TRANSPORTE DE PERSONAS ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1ea069ba-bd42-45da-b7e8-172d2dd1fcab" positionType="Float" mode="Transparent" x="11" y="94" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[PRIMERA.-  ANTECEDENTES]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="80985680-f57b-4cb8-8275-664dc99f1eeb" positionType="Float" x="11" y="241" width="544" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{terceraParte}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="27508570-e88c-47b1-a2e9-a0d34fcaf1b8" positionType="Float" mode="Transparent" x="11" y="163" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[SEGUNDA.- OBJETO DEL CONTRATO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1e5e8929-64f8-4f7b-8632-4430f4be9263" positionType="Float" mode="Transparent" x="11" y="221" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[TERCERA.- PLAZO]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="77450f03-773b-46ae-b947-1a7e9172b254" positionType="Float" x="11" y="114" width="544" height="40"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{primeraParte}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="416b53e2-a8f6-4345-b3e9-adf319b1dd2c" positionType="Float" x="11" y="183" width="544" height="30"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{segundaParte}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="336b181e-7842-4b08-a168-84b78adddcd4" positionType="Float" x="11" y="55" width="544" height="35"/>
+				<textElement verticalAlignment="Top"/>
+				<textFieldExpression><![CDATA[$F{contrato}]]></textFieldExpression>
+			</textField>
+			<subreport>
+				<reportElement uuid="22705e4f-3b3b-4d70-a3d9-957686a1fc7e" positionType="Float" x="11" y="265" width="544" height="38"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaContrato}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "reporteContratoServicio_subreport1.jasper"]]></subreportExpression>
+			</subreport>
+			<staticText>
+				<reportElement uuid="38e3da6b-4bf3-41c4-a5b3-0ddf6c04a93a" positionType="Float" mode="Transparent" x="11" y="313" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[CUARTA.- DEL MONTO DEL CONTRATO Y PAGO]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="f0bcb75c-4fd4-4e1e-a8d6-253dc638ef7b" positionType="Float" mode="Transparent" x="13" y="333" width="543" height="46" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cuartaParte}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="29e77f01-a5be-475e-9c16-b544b1f2d93b" positionType="Float" mode="Transparent" x="12" y="387" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[QUINTA.- DE LOS DOCUMENTOS, CONFORT Y SEGURIDAD ]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="f2881b19-4790-44ca-a85e-b64b01f87e34" positionType="Float" mode="Transparent" x="12" y="407" width="543" height="36" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{quintaParte}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="50e54973-20ac-410e-9208-8b530544c21f" x="254" y="33" width="100" height="22"/>
+				<textElement verticalAlignment="Middle">
+					<font isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{idOrdenCompra}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="bcacd44f-e621-4a68-87a9-1483959a9b71" positionType="Float" x="202" y="33" width="45" height="22"/>
+				<textElement verticalAlignment="Middle">
+					<font isItalic="false" isUnderline="false" isStrikeThrough="false"/>
+				</textElement>
+				<text><![CDATA[CODIGO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="442c8a3b-da8d-4df7-9171-0a4e2f43d9d5" x="247" y="33" width="7" height="22"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="false" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+		</band>
+	</title>
+	<summary>
+		<band height="423" splitType="Immediate">
+			<staticText>
+				<reportElement uuid="2e109a4c-e290-4da9-8e7c-ba6b42e5de5d" positionType="Float" mode="Transparent" x="11" y="3" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[SEXTA.-  CLÁUSULA PENAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="666e0e5c-fb69-4fee-8abb-cd96b0d352bc" positionType="Float" mode="Transparent" x="12" y="74" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[SETIMA.- DE LAS RESPONSABILIDADES]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="f13bb5a4-7bef-48b9-a530-bfbeaa137c71" positionType="Float" mode="Transparent" x="11" y="95" width="545" height="40" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{setimaParte}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="1e8056aa-5429-4498-a593-31793b132658" positionType="Float" mode="Transparent" x="11" y="144" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[OCTAVA.- DE LA BUENA FE]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="38449bd9-d982-4412-99a5-bdf1c3a3ff17" positionType="Float" mode="Transparent" x="11" y="166" width="544" height="31" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{octavaParte}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="293aea2e-91b7-40b7-af5d-a4519b60a530" positionType="Float" mode="Transparent" x="12" y="206" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[NOVENO.- INCUMPLIMIENTO CONTRACTUAL]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="c32af09c-7ad5-40c1-b6ed-969180ab1c5f" positionType="Float" mode="Transparent" x="11" y="226" width="543" height="32" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{novenaParte}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="06e6267d-8027-41db-8cdf-dc612ac5aa75" positionType="Float" mode="Transparent" x="11" y="267" width="544" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<text><![CDATA[DECIMA.- DOMICILIO Y  NOTIFICACIONES]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="325cae02-975c-4c93-a7c5-1e5c1f277c03" positionType="Float" mode="Transparent" x="12" y="287" width="544" height="40" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{decimaParte}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="f3b351ed-6da5-4127-969c-e02f2717676d" positionType="Float" x="43" y="383" width="161" height="1" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<line>
+				<reportElement uuid="ab0b01bf-d07c-4703-b12f-4d632b55242b" positionType="Float" x="337" y="382" width="161" height="1" isPrintWhenDetailOverflows="true"/>
+			</line>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="9930e340-7cdc-4507-bdfc-cd178a07a2af" positionType="Float" x="43" y="383" width="161" height="20" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{representanteCole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a61e2d61-a144-40bb-b4b6-ed5715f8a060" positionType="Float" x="337" y="384" width="161" height="20" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{repreProveedor}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="af02cc1a-070a-465a-a6ae-f8d04edee3dc" positionType="Float" x="43" y="403" width="161" height="20" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{nombreCole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="42b7155d-4dbe-4bf8-a18b-2c0ecedb785f" positionType="Float" x="337" y="403" width="161" height="20" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{nobreProveedor}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="false">
+				<reportElement uuid="7495c8cb-3e38-4eaf-8152-e91be075c8a8" positionType="Float" mode="Transparent" x="13" y="23" width="543" height="41" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sextaParte}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="pe.marista.sigma.dao.IndicadorDAO">  
+    <sql id="consultaCampos">
+        select 
+        ind.idIndicador                         as idIndicador, 
+        ind.nombre				as nombreIndicador,
+        ind.codigo				as codigoIndicador, 
+        ind.idTipoIndicador                     as tipoIndicador,
+        ind.idtipoValor                         as tipoValor,
+        ind.meta				as meta,
+        ind.creaPor,
+        ind.creaFecha,
+        ind.modiPor,
+        ind.modiVer,
+        cod.codigo                              as codigo,
+        ind.formula                             as formula,
+        ind.idTipoUsoIndicador                  as tipoUsoIndicador, 
+        cod.idCodigo                            as idTipoIndicador,
+        cod.codigo                              as codigoTipo,
+        cod2.idCodigo                           as idTipoUsoIndicador,
+        cod2.codigo                             as codigoUso,
+        cod3.idcodigo                           as idTipoVal,
+        cod3.codigo				as codigoValor
+        from ME_Indicador  ind
+        LEFT JOIN MO_Codigo cod ON ind.idTipoIndicador = cod.idcodigo
+        LEFT JOIN MO_Codigo cod2 ON ind.idtipoUsoIndicador = cod2.idcodigo
+        LEFT JOIN MO_Codigo cod3 ON ind.idtipoValor = cod3.idcodigo 
+    </sql>
+    <resultMap id="indicadorResultado" type="pe.marista.sigma.bean.IndicadorBean">
+        <id property="idIndicador" column="idIndicador" />
+        <result property="nombre" column="nombreIndicador" />
+        <result property="codigo" column="codigoIndicador" />
+        <result property="formula" column="formula" />
+        <result property="meta" column="meta" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="codigoTiPoIndicador" column="idtipoIndicador" 
+                     javaType="pe.marista.sigma.bean.CodigoBean" 
+                     resultMap="codigoResultado"/>
+        <association property="codigoTiPoUso" column="idtipoUsoIndicador" 
+                     javaType="pe.marista.sigma.bean.CodigoBean" 
+                     resultMap="codigoResultado1"/>
+        <association property="codigoTipoValor" column="idtipoValor"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado2"/>
+    </resultMap>
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoIndicador" />
+        <result property="codigo" column="codigoTipo" />
+    </resultMap>
+    <resultMap id="codigoResultado1" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoUsoIndicador" />
+        <result property="codigo" column="codigoUso" />
+    </resultMap>
+    <resultMap id="codigoResultado2" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoVal" />
+        <result property="codigo" column="codigoValor" />
+    </resultMap>
+    
+    <select id="obtenerTodos" resultMap="indicadorResultado">
+        <include refid="consultaCampos" />
+    </select>  
+    
+    <select id="obtenerPorTipoUso" resultMap="indicadorResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE ind.idTipoUsoIndicador = #{idCodigo}
+    </select>
+    
+    <select id="obtenerPorFiltro" resultMap="indicadorResultado" parameterType="pe.marista.sigma.bean.IndicadorBean">
+        <include refid="consultaCampos"/>
+        <where>
+            <if test="nombreIndicador != null and nombreIndicador != '' " >
+                and upper(ind.nombreIndicador) like concat('%',#{nombreIndicador},'%')
+            </if> 
+            <if test="codigoIndicador != null and codigoIndicador != '' " >
+                and upper(ind.codigoIndicador) like concat('%',#{codigoIndicador},'%')
+            </if>  
+            <if test="formula != null and formula != '' " >
+                and upper(ind.formula) like concat('%',#{formula},'%') 
+            </if>   
+        </where>
+    </select>
+    <select id="buscarPorId" resultMap="indicadorResultado" parameterType="Integer">
+        <include refid="consultaCampos" /> Where ind.idIndicador = #{idIndicador}
+    </select>    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.IndicadorBean">
+        <!--
+        INSERT INTO ME_Indicador (nombreIndicador,codigoIndicador,idTipoIndicador,formula,idTipoUsoIndicador,creaPor,creaFecha)
+        Values (#{nombreIndicador},#{codigoIndicador},#{codigoBean.idCodigo},#{formula},#{codigoBean1.idCodigo},#{creaPor},#{creaFecha})
+        -->
+        INSERT INTO ME_Indicador(nombre,codigo,meta,idtipoindicador,formula,idtipousoindicador,idtipovalor,creapor,creafecha)
+        VALUES
+        (#{nombre},#{codigo},#{meta},#{codigoTiPoIndicador.idCodigo},#{formula},#{codigoTiPoUso.idCodigo},#{codigoTipoValor.idCodigo},#{creaPor},getDate())
+  
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.IndicadorBean">
+        UPDATE ME_Indicador
+        SET 
+        nombre = #{nombre}, 
+        idTipoIndicador = #{codigoTiPoIndicador.idCodigo},
+        formula = #{formula},
+        meta = #{meta},
+        idTipoUsoIndicador = #{codigoTiPoUso.idCodigo},
+        idtipovalor = #{codigoTipoValor.idCodigo},
+        modiPor = #{modiPor}
+        WHERE idIndicador = #{idIndicador}
+    </update>
+    <delete id="eliminar" parameterType="Integer">
+        Delete From ME_Indicador 
+        Where idIndicador = #{idIndicador}
+    </delete>
+    
+    <sql id="consultaCamposCodigo">
+        Select  
+        cod.idCodigo                as idCodigo,
+        cod.idTipoCodigo            as idTipoCodigo,
+        tipCod.tipoCodigo           as tipoCodigo,
+        tipCod.descripTipoCodigo    as descripTipoCodigo,
+        cod.codigo                  as codigo,
+        cod.valor                   as valor
+        From MO_Codigo cod 
+        inner join MO_TipoCodigo tipCod on cod.idTipocodigo = tipCod.idTipoCodigo   
+    </sql>
+    
+    <resultMap id="codigoResultado3" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idCodigo"/>
+        <result property="codigo" column="codigo"/>
+        <result property="valor" column="valor"/>
+        <association property="tipoCodigoBean" column="idTipoCodigo"
+                     javaType="pe.marista.sigma.bean.TipoCodigoBean"
+                     resultMap="tipoCodigoResultado"/>
+    </resultMap>
+    
+    <resultMap id="tipoCodigoResultado" type="pe.marista.sigma.bean.TipoCodigoBean">
+        <id property="idTipoCodigo" column="idTipoCodigo"/>
+        <result property="tipoCodigo" column="tipoCodigo"/>
+        <result property="descripTipoCodigo" column="descripTipoCodigo"/>
+    </resultMap>
+    
+    <select id="obtenerTodosTipoIndicador" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado3">
+        <include refid="consultaCamposCodigo" /> where cod.idTipoCodigo = 1
+    </select>
+    
+    <select id="obtenerTodoTipoUsoIndicador" parameterType="pe.marista.sigma.bean.TipoCodigoBean" resultMap="codigoResultado3">
+        <include refid="consultaCamposCodigo" /> where cod.idTipoCodigo = 7
+    </select>
+    
+    <select id="obtenerCodigo" resultType="String" parameterType="String">
+        <!--
+        select 
+        max(substring(codigo,7,10)) as codigoIndicador
+        from ME_Indicador
+        -->
+        select CONVERT(Integer,ISNULL(MAX(substring(codigo,5,10)),0)) as codigoIndicador from ME_Indicador 
+    </select>
+    
+</mapper>

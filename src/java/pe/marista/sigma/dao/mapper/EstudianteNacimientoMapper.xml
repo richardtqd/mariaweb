@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteNacimientoDAO">  
+    <sql id="consultaEstudianteNacimiento">
+        SELECT  
+        estNa.idestudiante as idEstudiante
+        ,estNa.idestudiantenacimiento as idEstudianteNacimiento
+        ,estNa.controlprenatal as controlPrenatal
+        ,estNa.cantidadcontroles as cantidadControles
+        ,estNa.enfembarazo as enfEmbarazo
+        ,estNa.partonormal as partoNormal
+        ,estNa.aplianestesia as apliAnestesia
+        ,estNa.partosesarea as partoSesarea
+        ,estNa.causasesarea as causaSesarea
+        ,estNa.pesobebe as pesoBebe
+        ,estNa.talla as talla
+        ,estNa.puntajeapgarminuto as puntajeApgarMinuto
+        ,estNa.puntajeapgarcincominutos as puntajeApgarCincoMinutos
+        ,estNa.creafecha as creaFecha
+        ,estNa.creapor as creaPor
+        ,estNa.modipor as modiPor
+        ,est.idestudiante as idEstudiante
+        ,uni.unineg as uniNeg
+        ,uni.nombreUniNeg as nombreUniNeg
+        FROM MX_EstudianteNacimiento estNa
+        left join MO_UnidadNegocio uni on uni.unineg=estNa.unineg
+        left join MX_Estudiante est on est.idestudiante= estNa.idestudiante and uni.unineg=est.unineg
+    </sql>
+    <resultMap id="estudianteNacimientoResultado" type="pe.marista.sigma.bean.EstudianteNacimientoBean">  
+        <id property="idEstudianteNacimiento" column="idEstudianteNacimiento"/>
+        <id property="estudianteBean.personaBean.unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="estudianteBean.personaBean.idPersona" column="idEstudiante"/>
+        <result property="controlPrenatal" column="controlPrenatal"/>
+        <result property="cantidadControles" column="cantidadControles"/> 
+        <result property="enfEmbarazo"  column="enfEmbarazo"/>
+        <result property="partoNormal" column="partoNormal"/>
+        <result property="apliAnestesia" column="apliAnestesia"/>
+        <result property="partoSesarea" column="partoSesarea"/>
+        <result property="causaSesarea" column="causaSesarea"/>
+        <result property="pesoBebe" column="pesoBebe"/>
+        <result property="talla" column="talla"/>
+        <result property="puntajeApgarMinuto" column="puntajeApgarMinuto"/>
+        <result property="puntajeApgarCincoMinutos" column="puntajeApgarCincoMinutos"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha"  column="creaFecha"/>
+        <result property="modiPor"  column="modiPor"/> 
+        <!--1. idEstudiante (Estudiante)-->
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/> 
+    </resultMap>
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+    </resultMap>
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    <select id="obtenerEstNacimientoPorEst" resultMap="estudianteNacimientoResultado" parameterType="String">
+        <include refid="consultaEstudianteNacimiento" />
+        Where estNa.idEstudiante = #{idPersona}
+    </select>
+    <insert id="insertarEstudianteNacimiento" parameterType="pe.marista.sigma.bean.EstudianteNacimientoBean">
+        INSERT INTO MX_EstudianteNacimiento
+        (unineg
+        ,idestudiante
+        , controlprenatal
+        , cantidadcontroles
+        , enfembarazo
+        , partonormal
+        , aplianestesia
+        , partosesarea
+        , causasesarea
+        , pesobebe
+        , talla
+        , puntajeapgarminuto
+        , puntajeapgarcincominutos
+        , creapor
+        , creafecha)
+        Values 
+        (#{estudianteBean.personaBean.unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona},#{controlPrenatal},#{cantidadControles},#{enfEmbarazo},#{partoNormal},#{apliAnestesia},#{partoSesarea},
+        #{causaSesarea},#{pesoBebe},#{talla},#{puntajeApgarMinuto},#{puntajeApgarCincoMinutos},#{creaPor},getDate())        
+        <selectKey keyProperty="idEstudianteNacimiento" order="AFTER" resultType="Integer">
+            SELECT max(idEstudianteNacimiento) FROM MX_EstudianteNacimiento WHERE uniNeg = #{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and idEstudiante = #{estudianteBean.personaBean.idPersona}
+        </selectKey>
+    </insert>  
+    <update id="modificarEstudianteNacimiento" parameterType="pe.marista.sigma.bean.EstudianteNacimientoBean">
+        UPDATE MX_EstudianteNacimiento
+        SET   
+        controlprenatal = #{controlPrenatal},
+        cantidadcontroles = #{cantidadControles},
+        enfembarazo = #{enfEmbarazo},
+        partonormal = #{partoNormal},
+        aplianestesia = #{apliAnestesia},
+        partosesarea = #{partoSesarea},
+        causasesarea = #{causaSesarea},
+        pesobebe = #{pesoBebe},
+        talla = #{talla},
+        puntajeapgarminuto = #{puntajeApgarMinuto},
+        puntajeapgarcincominutos = #{puntajeApgarCincoMinutos},  
+        modipor = #{modiPor} 
+        Where idEstudiante = #{estudianteBean.personaBean.idPersona} and idestudiantenacimiento=#{idEstudianteNacimiento} and unineg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg}
+    </update>
+    <select id="obtenerEstudianteNacimiento" resultType="pe.marista.sigma.bean.reporte.EstudianteNacimientoRepBean" parameterType="map">
+        SELECT 
+        isnull(case
+        when estNa.controlprenatal =1 then 'SI'
+        when estNa.controlprenatal= 0 then 'NO'
+        END,'-') AS controlPrenatal 
+        ,isnull(estNa.cantidadcontroles,'-') as cantidadControles
+        ,isnull(case
+        when estNa.enfembarazo =1 then 'SI'
+        when estNa.enfembarazo= 0 then 'NO'
+        END,'-') AS enfEmbarazo
+        ,isnull(case
+        when estNa.partonormal =1 then 'SI'
+        when estNa.partonormal= 0 then 'NO'
+        END,'-') AS partoNormal 
+        ,isnull(case
+        when estNa.aplianestesia =1 then 'SI'
+        when estNa.aplianestesia= 0 then 'NO'
+        END,'-') AS apliAnestesia  
+        ,isnull(case
+        when estNa.partosesarea =1 then 'SI'
+        when estNa.partosesarea= 0 then 'NO'
+        END,'-') AS partoSesarea   
+        ,isnull(estNa.causasesarea,'-') as causaSesarea
+        ,isnull(convert(varchar,estNa.pesobebe,103),'-')as pesoBebe 
+        ,isnull(convert(varchar,estNa.talla,103),'-') as talla
+        ,isnull(estNa.puntajeapgarminuto,'-') as puntajeApgarMinuto
+        ,isnull(estNa.puntajeapgarcincominutos,'-') as puntajeApgarCincoMinutos 
+        FROM MX_Estudiante est
+        left join MO_UnidadNegocio uni on uni.unineg=est.unineg
+        left join MX_EstudianteNacimiento estNa on est.idestudiante= estNa.idestudiante and uni.unineg=est.unineg
+        WHERE est.idestudiante=#{idEstudiante}  and est.unineg=#{uniNeg}
+    </select>
+</mapper>

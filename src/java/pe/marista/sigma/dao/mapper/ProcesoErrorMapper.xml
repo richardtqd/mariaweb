@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ProcesoErrorDAO"> 
+   
+    <sql id="consultaCampos" >
+        SELECT 
+        p.unineg
+        ,p.idprocesobanco
+        ,p.idprocesorecup
+        ,p.idprocesoenvio
+        ,p.descripcion
+        ,p.idtipoerror
+        ,p.flgerror
+        ,p.creapor
+        ,p.creafecha
+        ,p.modipor
+        ,p.modiver
+        ,pb.nombre
+        ,pb.flgproceso
+        ,pb.creafecha as fecha
+        ,pr.idprocesorecup as idpr
+        ,pr.iddiscente     as idestproenv
+        ,ppr.nombre + ' ' + ppr.apepat + ' ' + ppr.apemat as nombrecompletoRec
+        ,pe.iddiscente	   as idestproenv
+        ,pr.iddiscente	   as idestprorec
+        ,epe.idestudiante  as codEstEnv 
+        ,epd.idestudiante  as codEstRec
+        ,ppe.nombre + ' ' + ppe.apepat + ' ' + ppe.apemat as nombrecompletoEnv
+        ,ppe.nombre as nombrePerEnv
+        ,ppe.apepat as apePatPerEnv
+        ,ppe.apemat as apeMatPerEnv
+        FROM MT_ProcesoError p
+        left join MT_ProcesoBanco pb on p.idprocesobanco = pb.idprocesobanco
+        left join MT_ProcesoEnvio pe on p.idprocesoenvio = pe.idprocesoenvio
+        left join MX_Estudiante epe on pe.iddiscente = epe.idestudiante
+        left join MX_Persona ppe on epe.idestudiante = ppe.idpersona
+        left join MT_ProcesoRecup pr on p.idprocesorecup = pr.idprocesorecup
+        left join MX_Estudiante epd on pr.iddiscente = epd.idestudiante
+        left join MX_Persona ppr on epd.idestudiante = ppr.idpersona
+        left join MO_UnidadNegocio u on p.unineg = u.unineg
+    </sql>
+    
+    <resultMap id="errorResultado" type="pe.marista.sigma.bean.ProcesoErrorBean" >
+        <result property="descripcion" column="descripcion" />
+        <result property="idTtipoError" column="idTtipoError" />
+        <result property="flgError" column="flgError" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="procesoBancoBean" column="idprocesobanco"
+                     javaType="pe.marista.sigma.bean.ProcesoBancoBean"
+                     resultMap="bancoResultado"/>
+        <association property="procesoRecuperacionBean" column="idprocesorecup"
+                     javaType="pe.marista.sigma.bean.ProcesoRecuperacionBean"
+                     resultMap="recuperacionResultado"/>
+        <association property="procesoEnvioBean" column="idprocesoenvio"
+                     javaType="pe.marista.sigma.bean.ProcesoEnvioBean"
+                     resultMap="envioResultado"/>
+    </resultMap>
+       
+    <!-- Proceso_Banco -->
+    <resultMap id="bancoResultado" type="pe.marista.sigma.bean.ProcesoBancoBean" >
+        <id property="idProcesoBanco" column="idProcesoBanco" />
+        <result property="nombre" column="nombre" />
+        <result property="flgProceso" column="flgProceso" />
+        <result property="creaFecha" column="creafecha" />
+        <result property="anio" column="anio" />
+    </resultMap> 
+    
+    <!-- Proceso_Recupoeracion -->
+    <resultMap id="recuperacionResultado" type="pe.marista.sigma.bean.ProcesoRecuperacionBean" >
+        <id property="idProcesoRecup" column="idProcesoRecup" />
+        <association property="estudianteBean" column="iddiscente"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteRecResultado"/>
+    </resultMap> 
+    <resultMap id="estudianteRecResultado" type="pe.marista.sigma.bean.EstudianteBean" >
+        <id property="idEstudiante" column="codEstRec" />
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultadoRec"/>
+    </resultMap> 
+    <resultMap id="personaResultadoRec" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombre" column="nombrePersona" />
+        <result property="apepat" column="apePat" />
+        <result property="apemat" column="apeMat" />
+        <result property="sexo" column="sexo" />
+        <result property="correo" column="correo" />
+    </resultMap>
+   
+    <!-- Proceso_Envio -->
+    <resultMap id="envioResultado" type="pe.marista.sigma.bean.ProcesoEnvioBean" >
+        <id property="idProcesoEnvio" column="idprocesoenvio" />
+        <association property="idDiscente" column="iddiscente"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteEnvResultado"/>
+    </resultMap>
+    <resultMap id="estudianteEnvResultado" type="pe.marista.sigma.bean.EstudianteBean" >
+        <id property="idEstudiante" column="codEstEnv" />
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultadEnv"/>
+    </resultMap> 
+    <resultMap id="personaResultadEnv" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPersona"/>
+        <result property="nombreCompleto" column="nombrecompletoEnv" />
+        <result property="nombre" column="nombrePerEnv" />
+        <result property="apepat" column="apePatPerEnv" />
+        <result property="apemat" column="apeMatPerEnv" />
+    </resultMap>
+   
+    <select id="obtenerError" resultMap="errorResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE p.unineg = #{uniNeg} 
+    </select>
+    
+    <select id="filtrarError" resultMap="errorResultado" parameterType="pe.marista.sigma.bean.ProcesoErrorBean" >
+        <include refid="consultaCampos"/>
+        <where>
+            p.uniNeg = #{unidadNegocioBean.uniNeg}
+            <if test="procesoBancoBean.flgProceso != 2 and procesoBancoBean.flgProceso != null " >
+                and upper(pb.flgProceso) like concat('%',#{procesoBancoBean.flgProceso},'%')
+            </if>
+            <if test="creaFecha = null" >
+               <![CDATA[
+                and  p.creaFecha = #{creaFecha}
+                ]]>
+            </if>
+        </where>
+    </select>
+   
+    <select id="obtenerPorProcesoBanco" resultMap="errorResultado" parameterType="map" >
+        <include refid="consultaCampos"/>
+        WHERE p.idProcesoBanco = #{idProcesoBanco} and p.uniNeg = #{uniNeg}
+    </select>
+   
+</mapper>

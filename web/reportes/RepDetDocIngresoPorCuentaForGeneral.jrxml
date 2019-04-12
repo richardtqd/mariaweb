@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RepDetDocIngreso" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="eb3bbc41-75a0-433d-aa7c-3bfc14fb569a">
+	<property name="ireport.zoom" value="1.331000000000003"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="240"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\Sigma\\Proyecto\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[declare @unineg varchar(6)
+set @uniNeg='CHAMPS'
+declare @montoBanco money = (select isnull(sum(isnull(montosoles,0)),0)
+								from MT_DetDocIngreso det
+									inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+									  where doc.idcajagen in (1000) and
+										     doc.unineg=@uniNeg and
+									          doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago')),
+        @sumTotSoles  money = (select isnull(sum(isnull(montosoles,0)),0)
+								  from MT_DetDocIngreso det
+									inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+									  where doc.idcajagen in (1000) and doc.unineg=@uniNeg),
+        @sumTotDolares  money = (select isnull(sum(isnull(montodolares,0)),0)
+								  from MT_DetDocIngreso det
+									inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+									  where doc.idcajagen in (1000) and doc.unineg=@uniNeg) ,
+		@tc money = (select top 1 tc from MT_DocIngreso where idcajagen in ( 1000)   and unineg=@uniNeg order by creafecha desc),
+		@mora money = (select isnull(sum(isnull(mora,0)-isnull(dscto,0)),0)
+						from MT_DetDocIngreso det
+					       inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+							where doc.idcajagen in(1000) and doc.unineg=@uniNeg)
+		SELECT distinct
+		upper(uni.nombreUniNeg) as nombreUniNeg,
+		upper(caj.nombre) as nomCaja,
+		upper((concat(per.apePat+' ',per.apeMat+' ',per.nombre))) as nomCompletoPersonal,
+		cajGen.usuario AS usuario,
+		upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa,
+		convert(varchar,cajGen.fecApertura,103) as fecApertura,
+		convert(varchar,cajGen.fecCierre,103) as fecCierre,
+		CONVERT(varchar, CAST(isnull(cajGen.aperturaSol,0) AS money), 1)  as aperturaSol,
+		CONVERT(varchar, CAST(isnull(cajGen.aperturaDol,0) AS money), 1)  as aperturaDol,
+		CONVERT(varchar, CAST(isnull(cajGen.ingresoSol,0) AS money), 1)   as ingresoSol,
+		CONVERT(varchar, CAST(isnull(cajGen.ingresoDol,0) AS money), 1)   as ingresoDol,
+		CONVERT(varchar, CAST(isnull(cajGen.ingresoPos1,0) AS money), 1)  as ingresoPos1,
+		CONVERT(varchar, CAST(isnull(cajGen.ingresoPos2,0) AS money), 1)  as ingresoPos2,
+		CONVERT(varchar, CAST(isnull(@montoBanco,0) AS money), 1)  as montoBanco,
+		CONVERT(varchar, CAST(isnull(@sumTotSoles,0) AS money), 1)  as sumTotSoles,
+		CONVERT(varchar, CAST(isnull(@sumTotDolares,0) AS money), 1)  as sumTotDolares,
+		CONVERT(varchar, CAST(isnull(@tc,0) AS money), 1)  as tc,
+		(case when @mora>0 then 1 else 0 end) as mora
+		FROM MT_CajaGen cajGen
+	    INNER join MT_DocIngreso doc on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg
+		INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+		INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja AND CAJ.unineg=UNI.unineg
+		INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+		INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg
+		LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg
+		WHERE doc.idcajagen in (1000) and doc.unineg=@uniNeg]]>
+	</queryString>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="nomCaja" class="java.lang.String"/>
+	<field name="nomCompletoPersonal" class="java.lang.String"/>
+	<field name="usuario" class="java.lang.String"/>
+	<field name="nomCompletoSupervisa" class="java.lang.String"/>
+	<field name="fecApertura" class="java.lang.String"/>
+	<field name="fecCierre" class="java.lang.String"/>
+	<field name="aperturaSol" class="java.lang.String"/>
+	<field name="aperturaDol" class="java.lang.String"/>
+	<field name="ingresoSol" class="java.lang.String"/>
+	<field name="ingresoDol" class="java.lang.String"/>
+	<field name="ingresoPos1" class="java.lang.String"/>
+	<field name="ingresoPos2" class="java.lang.String"/>
+	<field name="montoBanco" class="java.lang.String"/>
+	<field name="sumTotSoles" class="java.lang.String"/>
+	<field name="sumTotDolares" class="java.lang.String"/>
+	<field name="tc" class="java.lang.String"/>
+	<field name="mora" class="java.lang.Integer"/>
+	<field name="listaCuentas" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<field name="txtFiltro" class="java.lang.String"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="66" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="d7f4ea97-ca08-4747-ba6b-b2e9e9a31351" x="153" y="23" width="248" height="22"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true" isItalic="false" isUnderline="true" isStrikeThrough="false"/>
+				</textElement>
+				<text><![CDATA[PLANILLA DE COBRANZA POR RANGO DE FECHA]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="e8bad94c-5d85-45ab-86bc-d85c3c592bc4" x="100" y="2" width="357" height="18"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="d39ee123-b152-4428-8700-0e7a9228fe84" x="454" y="20" width="80" height="11"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5dea163d-3a5e-4777-a778-742137d7664e" x="441" y="10" width="97" height="13"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FECHA DE IMPRESIÓN:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="cba6ff23-7b8a-4108-a943-92f5210a1ae6" x="153" y="40" width="248" height="19"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{txtFiltro}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="22" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="62df1333-8b2e-4fbd-b658-d333b12786cb" x="0" y="2" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" isStrikeThrough="false"/>
+				</textElement>
+				<text><![CDATA[RESUMEN]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="21" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="d91cb50f-ecd4-4299-ba1d-dc6703df6bcd" x="7" y="2" width="545" height="16"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="86903d5a-f505-4f53-9e7b-72d165c63ae1" x="13" y="3" width="54" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cuenta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d20b2132-e8f3-4086-996f-de3e149bdb97" x="447" y="3" width="35" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Soles]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9c3a3572-f6ed-4b0c-832f-816708173d96" x="67" y="3" width="116" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Concepto]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d7018f86-06a9-4e69-913b-0cca86c84654" x="502" y="3" width="35" height="15"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dólares]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="39" splitType="Stretch">
+			<subreport>
+				<reportElement uuid="f66274e4-950f-46bf-8213-c30a280c8eec" x="8" y="2" width="545" height="31"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaCuentas}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "RepDetDocIngresoPorCuentaFor_cuentas.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="26" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="8fc83b31-538f-4d61-9413-4903ac01fc8d" x="40" y="8" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6210c319-c6b8-4c75-a1ec-48b385ae9f38" x="7" y="8" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="df80ae6b-0084-46cb-ac81-b8fedea92052" x="27" y="8" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement uuid="38a4c902-998c-4238-a8a2-9628493acd34" x="55" y="8" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="364" splitType="Stretch">
+			<line>
+				<reportElement uuid="dcc29dd4-10f9-4639-b67a-b5565a22afb1" x="44" y="202" width="155" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="ae9721a1-3c29-47dd-87fc-efd2e1455630" x="352" y="201" width="155" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="d834ce1c-f6b5-4d37-8f53-e329a85930b3" x="66" y="204" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TESORERÍA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6d4d5c11-d779-4885-80a3-f580edf91f0c" x="375" y="203" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[ADMINISTRACIÓN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9285af37-3327-476a-8812-1f5b480c6ddf" x="38" y="112" width="85" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="72fca5ee-57cc-4e87-8736-af42b15f147e" x="411" y="2" width="65" height="14"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotSoles}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="b145816a-339b-4da9-9ab6-ce35f1923c9b" x="334" y="2" width="70" height="20"/>
+				<textElement>
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[TOTALES]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="621f77fb-0949-4601-90ae-be1dd6cc9d23" x="475" y="2" width="65" height="14"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotDolares}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2c7ab38f-6f60-4a56-9ac0-4658c78f44c6" x="123" y="116" width="24" height="14"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="b15a4349-b5b4-4828-9858-0802c21d20b5" x="132" y="116" width="65" height="14"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotSoles}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="96809477-02f1-42cb-b323-66d800528b27" x="207" y="116" width="65" height="14"/>
+				<textElement textAlignment="Right">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sumTotDolares}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="dc21ee7b-cce2-43e9-a42e-e3f6ab921e86" x="132" y="84" width="65" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{montoBanco}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="1137c4b3-6373-4773-8470-fa400ed34f93" x="35" y="58" width="88" height="16"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ingreso VISA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="834190fd-7403-457f-ad89-5fae7c8e9c36" x="35" y="30" width="88" height="20"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ingreso Efec. S/.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00" isBlankWhenNull="false">
+				<reportElement uuid="bce4a108-ce8d-4b18-9e02-f2923f1ef347" x="207" y="43" width="65" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{ingresoDol}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="8f905bb3-b9c7-4c61-bfc5-8eed0358f288" x="132" y="56" width="65" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{ingresoPos1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2b9e2e05-1365-4efe-8bec-0b2778e55435" x="35" y="43" width="88" height="20"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ingreso Efec. $.]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement uuid="b49d73a6-7f8c-499c-8b25-c84a64d31b90" x="132" y="31" width="65" height="14"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{ingresoSol}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="91f01c45-29a3-4616-a921-cea6ab40e361" x="123" y="43" width="24" height="14"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="bbb9fe7a-d9dd-40b7-b26c-394cb97c8fd9" x="132" y="71" width="65" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{ingresoPos2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="e9f181f5-8bbe-4e24-a254-bcf58fdac3fa" x="123" y="83" width="24" height="14"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="027b0dce-3e92-4c69-877e-edb75700f07f" x="35" y="72" width="88" height="20"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ingreso MC]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1c82bd1e-f2cc-4365-a1d2-5563131dba1b" x="123" y="30" width="24" height="14"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="729cd5c7-7b6b-4efa-8d41-a0f7ad46ee95" x="35" y="85" width="88" height="20"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ing. Banco S/.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="91eb1ec8-199c-4dba-807e-6e4982aebee6" x="123" y="55" width="24" height="14"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0c0966cc-1953-4b97-aabf-3991a9a1542d" x="123" y="70" width="24" height="14"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="5791046f-65b8-4bd1-a9d0-8ba82362c69d" x="427" y="1" width="124" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="5f9093f5-6acd-452c-a08f-5f7dfcfe7ca6" x="427" y="16" width="124" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="5e475d9b-5021-4c63-a601-5c279f1d36ea" x="31" y="130" width="251" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="07e7d5fc-c852-4d5d-acb0-d4e676e02055" x="31" y="114" width="251" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="13e674ec-73ba-45dc-80e5-62e82703e4ee" x="26" y="329" width="77" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Observaciones:]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="f3d0fafd-11f6-466a-8c99-902a797ebb49" x="103" y="345" width="420" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="32b6a494-08b1-4ec0-8256-ce7bb59cc6aa" x="27" y="362" width="496" height="1"/>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

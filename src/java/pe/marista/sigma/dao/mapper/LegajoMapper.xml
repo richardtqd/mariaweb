@@ -1,0 +1,1016 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.LegajoDAO">
+    <sql id="consultaCampos">
+        select
+        pe.uniNeg,
+        pe.idPersonal,
+        pe.codper,       
+        pe.nombre,
+        pe.apepat,
+        pe.apemat,
+        pe.fecnac,
+        pe.idtipodocper,
+        pe.nrodoc,
+        pe.idnacionalidad,
+        pe.ruc,
+        pe.correoper,
+        pe.correocor,
+        pe.sexo,
+        pe.foto,
+        pe.idtipoestadocivil,
+        pe.idpaisnacimiento,
+        pe.idpaisemisordoc as idPaisEmisionDoc,
+        pe.obsNacimiento, 
+        pe.iddistritonac,
+        proNac.idProvincia as idProvinciaNac,
+        depNac.idDepartamento as idDepartamentoNac,
+        pe.iddistritodom,
+        proDomi.idProvincia as idProvinciaDom,
+        depDomi.idDepartamento as idDepartamentoDom,
+        pe.domicilio,
+        pe.idtipovivienda,
+        pe.idtipocasa,
+        pe.idtipostatuscasa,
+        pe.observacioncasa, 
+        pe.numeroeps,
+        pe.numeropension,
+        pe.fecingreso,
+        pe.fecbaja,
+        pe.status,
+        pe.idtipoocupacion,
+        uni.unineg,
+        pe.idUniOrg,
+        uo.idUniOrg as idUO,
+        uo.nombreUniOrg,
+        pe.grupoSanguineo,
+        pe.factorSanguineo,
+        pe.telefonofijo,
+        pe.celular1,
+        pe.idTipoSeguroPersonal,
+        pe.celular2, 
+        CONVERT(DECIMAL(8,2),pe.basico) AS basico,
+        CONVERT(DECIMAL(8,2),pe.basicoEstatal) AS basicoEstatal,
+        pe.nrodias,
+        pe.nrohoras,
+        entPen.ruc as identidadPensionEnt,
+        entPen.nombre as nombrePension, 
+        entEPS.ruc as idEntidadEpsEnt, 
+        entPen.nombre as nombreEps,
+        cr1.cr as cr1,
+        cr1.nombre nomCr1,
+        cr2.cr as cr2,
+        cr2.nombre nomCr2,
+        cr3.cr as cr3,
+        cr3.nombre nomCr3,
+        cr4.cr as cr4,
+        cr4.nombre nomCr4,
+        isnull(pe.status,0) as statusVista,
+        niv.codigo as tipoNivel,
+        niv.idcodigo as idTipoNivel
+        ,via.codigo as tipoVia
+        ,via.idcodigo as idTipoVia
+        ,zona.idcodigo as idTipoZona
+        ,zona.codigo as tipoZona,
+        pe.nombrezona as nombreZona,
+        pe.interior, pe.numero,
+        pe.flgdiscapacitado as flgDiscapacitado,
+        pe.nrohijosdepen as nroHijosDepen,
+        pe.nombrecontacto as nombreContacto,
+        pe.telefonocontacto as telefonoContacto,
+        pe.fechainiseguro as fechaIniSeguro,
+        pe.fechainipension as fechaIniPension,
+        pe.participacionactparro as participacionActParro,
+        pe.flgbautismo as flgBautismo,
+        pe.flgconfirmacion as flgConfirmacion,
+        pe.flgcomunion as flgComunion,
+        pe.flgmatrimonio as flgMatrimonio,
+        pe.flgdonadorsangre as flgDonadorSangre,
+        pe.flgdonadororganos as flgDonadorOrganos,
+        pe.nropolizasctr as nroPolizaSctr,
+        pe.nombrecompaniasctr as nombreCompaniaSctr,
+        pe.beneficiariossctr as beneficiariosSctr,
+        pe.flgtrabajoaltoriesgo as flgTrabajoAltoRiesgo,
+        tipoPlan.idCodigo as idTipoPlanillaColegio,
+        tipoPlan.codigo as tipoPlanillaColegio,
+        CONVERT(DECIMAL(8,2),pe.bonicargototal) as boniCargoTotal
+        from MO_Personal  pe
+        left join MO_UnidadNegocio uni on pe.unineg = uni.unineg 
+        left join MO_UnidadOrganica uo on pe.idUniOrg=uo.idUniOrg
+        left Join MO_Distrito disNac On pe.idDistritoNac=disNac.idDistrito
+        left Join MO_Provincia proNac On disNac.idProvincia=proNac.idProvincia
+        left Join MO_Departamento depNac On proNac.idDepartamento=depNac.idDepartamento
+        left Join MO_Distrito disDomi On pe.idDistritoDom=disDomi.idDistrito
+        left Join MO_Provincia proDomi On disDomi.idProvincia=proDomi.idProvincia
+        left Join MO_Departamento depDomi On proDomi.idDepartamento=depDomi.idDepartamento
+        left Join MO_Entidad entPen On pe.identidadpension=entPen.ruc
+        left Join MO_Entidad entEPS On pe.identidadeps=entEPS.ruc 
+        left Join MT_CentroResponsabilidad cr1 On pe.cr1=cr1.cr
+        left Join MT_CentroResponsabilidad cr2 On pe.cr2=cr2.cr
+        left Join MT_CentroResponsabilidad cr3 On pe.cr3=cr3.cr
+        left Join MT_CentroResponsabilidad cr4 On pe.cr4=cr4.cr
+        left join MO_Codigo niv on niv.idcodigo=pe.idtiponivelins
+        left join MO_Codigo via on via.idcodigo=pe.idtipovia
+        left join MO_Codigo zona on zona.idcodigo=pe.idtipozona
+        left join MO_Codigo tipoPlan on tipoPlan.idcodigo=pe.idtipoplanillacolegio
+    </sql>
+    <resultMap id="legajoResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal" />
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+        <result property="fecNac" column="fecNac" />
+        <result property="nroDoc" column="nroDoc" />
+        <result property="ruc" column="ruc" />
+        <result property="correoPer" column="correoPer" />
+        <result property="correoCor" column="correoCor" />
+        <result property="sexo" column="sexo" />
+        <result property="foto" column="foto" />
+        <result property="obsNacimiento" column="obsNacimiento" />
+        <result property="domicilio" column="domicilio" />
+        <result property="observacionCasa" column="observacionCasa" />
+        <result property="numeroEps" column="numeroEps" />
+        <result property="numeroPension" column="numeroPension" />
+        <result property="fecIngreso" column="fecIngreso" />
+        <result property="fecBaja" column="fecBaja" />
+        <result property="status" column="status" />
+        <result property="statusVista" column="statusVista" />
+        <result property="grupoSanguineo" column="grupoSanguineo" />
+        <result property="factorSanguineo" column="factorSanguineo" />
+        <result property="telefonoFijo" column="telefonoFijo" />
+        <result property="celular1" column="celular1" />
+        <result property="celular2" column="celular2" />
+        <result property="basico" column="basico" />
+        <result property="basicoEstatal" column="basicoEstatal" />
+        <result property="nroDias" column="nroDias" />
+        <result property="nroHoras" column="nroHoras" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="diaFecNac" column="diaFecNac" />
+        <result property="mesFecNac" column="mesFecNac" />
+        <result property="usuario" column="usuario" /> 
+        <result property="nombreZona" column="nombreZona" />
+        <result property="interior" column="interior" />
+        <result property="numero" column="numero" />
+        <result property="flgDiscapacitado" column="flgDiscapacitado" />
+        <result property="nroHijosDepen" column="nroHijosDepen" />
+        <result property="nombreContacto" column="nombreContacto" />
+        <result property="telefonoContacto" column="telefonoContacto" />
+        <result property="fechaIniSeguro" column="fechaIniSeguro" />
+        <result property="fechaIniPension" column="fechaIniPension" />
+        <result property="participacionActParro" column="participacionActParro" />
+        <result property="flgBautismo" column="flgBautismo" />
+        <result property="flgConfirmacion" column="flgConfirmacion" />
+        <result property="flgComunion" column="flgComunion" />
+        <result property="flgMatrimonio" column="flgMatrimonio" />
+        <result property="flgDonadorSangre" column="flgDonadorSangre" />
+        <result property="flgDonadorOrganos" column="flgDonadorOrganos" />
+        <result property="nroPolizaSctr" column="nroPolizaSctr" />
+        <result property="nombreCompaniaSctr" column="nombreCompaniaSctr" />
+        <result property="beneficiariosSctr" column="beneficiariosSctr" />
+        <result property="flgTrabajoAltoRiesgo" column="flgTrabajoAltoRiesgo" />
+        <result property="boniCargoTotal" column="boniCargoTotal" />
+        
+        <!--1 idTipoDocPer-->                
+        <association property="tipoDocPerBean" column="idTipoDocPer"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocPerResultado"/>
+        <!--2 idNacionalidad-->     
+        <association property="paisNacionalidadBean" column="idNacionalidad"
+                     javaType="pe.marista.sigma.bean.PaisBean"
+                     resultMap="nacionalidadResultado"/>
+        <!--3 idTipoEstadoCivil-->
+        <association property="tipoEstadoCivilBean" column="idTipoEstadoCivil"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoEstadoCivilResultado"/>
+        <!--4 idPaisNacimiento-->
+        <association property="paisNacimientoBean" column="idPaisNacimiento"
+                     javaType="pe.marista.sigma.bean.PaisBean"
+                     resultMap="nacimientoResultado"/>
+        <!--5 idDistritoNac--> 
+        <association property="distritoNacBean" column="idDistritoNac"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoNacResultado"/>
+        <!--6 idDistritoDom--> 
+        <association property="distritoDomBean" column="idDistritoDom"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoDomResultado"/>
+        <!--7 idTipoVivienda-->
+        <association property="tipoViviendaBean" column="idTipoVivienda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoViviendaResultado"/>
+        <!--8 idTipoCasa-->
+        <association property="tipoCasaBean" column="idTipoCasa"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCasaResultado"/>
+        <!--9 idTipoStatusCasa-->
+        <association property="tipoStatusCasaBean" column="idTipoStatusCasa"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusCasaResultado"/>
+        <!--10 idEntidadEps-->
+        <association property="entidadEpsBean" column="idEntidadEps"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadEpsResultado"/>
+        <!--11 idEntidadPension--> 
+        <association property="entidadPensionBean" column="idEntidadPension"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadPensionResultado"/>
+        <!--12 idTipoAsegurado-->
+         
+        <!--13 idTipoSeguroPersonal-->   
+        <association property="tipoSeguroPersonalBean" column="idTipoSeguroPersonal"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoSeguroPersonalResultado"/>  
+ 
+        <!--14 idTipoOcupacion-->
+        <association property="tipoOcupacionBean" column="idTipoOcupacion"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoOcupacionResultado"/>
+        
+        <!--15 idTipoProfesion-->
+        
+        <!--16 uniNeg-->
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+        
+        <!--17 idUnidadOrganica-->
+        <association property="unidadOrganicaBean" column="idUniOrg" 
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean" 
+                     resultMap="unidadOrganicaResultado"/>
+        
+        <!--18 idGradoAcademico-->
+         
+        <!--19 idCarrera-->
+        <!--20 centros de responsabilidad-->
+        <association property="cr1" column="cr1" 
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean" 
+                     resultMap="cr1Resultado"/>
+        <association property="cr2" column="cr2" 
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean" 
+                     resultMap="cr2Resultado"/>
+        <association property="cr3" column="cr3" 
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean" 
+                     resultMap="cr3Resultado"/>
+        <association property="cr4" column="cr4" 
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean" 
+                     resultMap="cr4Resultado"/>
+        <!-- tipo nivel-->
+        <association property="tipoNivelInsBean" column="idTipoNivel"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoNivelResultado"/>
+        <!--21 idTipoVia-->
+        <association property="tipoViaBean" column="idTipoVia"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoViaResultado"/>
+        <!--22 idTipoZona-->
+        <association property="tipoZonaBean" column="idTipoZona"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoZonaResultado"/>
+        <!--23 idPaisEmisionDoc-->
+        <association property="paisEmisorDoc" column="idPaisEmisionDoc"
+                     javaType="pe.marista.sigma.bean.PaisBean"
+                     resultMap="emisionDocResultado"/>
+        <!--24 idTipoPensionPersonal-->   
+        <association property="tipoPensionPersonal" column="idTipoPensionPersonal"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPensionPersonalResultado"/>  
+        <!--25 idTipoPlanillaColegio-->   
+        <association property="tipoPlanillaColegio" column="idTipoPlanillaColegio"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPlanillaColegioResultado"/>  
+    </resultMap>
+   
+    <!--1 idTipoDocPer--> 
+    <resultMap id="tipoDocPerResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDocPer"/>
+        <result property="codigo" column="tipoDocPer"/>  
+    </resultMap>
+    
+    <!--2 idNacionalidad-->     
+    <resultMap id="nacionalidadResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idNacionalidad"/>
+        <result property="nacionalidad" column="nacionalidad"/>
+    </resultMap>
+    
+    <!--3 idTipoEstadoCivil-->
+    <resultMap id="tipoEstadoCivilResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoEstadoCivil"/>
+        <result property="codigo" column="tipoEstadoCivil"/>  
+    </resultMap>
+    
+    <!--4 idPaisNacimiento-->
+    <resultMap id="nacimientoResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPaisNacimiento"/> 
+        <result property="nombre" column="paisNacimiento"/>
+    </resultMap>
+    
+    <!--5 idDistritoNac--> 
+    <resultMap id="distritoNacResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistritoNac"/>
+        <result property="nombre" column="nombre"/>
+        <association property="provinciaBean" column="idProvinciaNac"
+                     javaType="pe.marista.sigma.bean.ProvinciaBean"
+                     resultMap="provinciaNacResultado"/>   
+    </resultMap>
+    <resultMap id="provinciaNacResultado" type="pe.marista.sigma.bean.ProvinciaBean">
+        <id property="idProvincia" column="idProvinciaNac"/>
+        <association property="departamentoBean" column="idDepartamentoNac"
+                     javaType="pe.marista.sigma.bean.DepartamentoBean"
+                     resultMap="departamentoNacResultado"/>
+    </resultMap>
+    <resultMap id="departamentoNacResultado" type="pe.marista.sigma.bean.DepartamentoBean">
+        <id property="idDepartamento" column="idDepartamentoNac"/>
+    </resultMap>
+    
+    <!--6 idDistritoDom--> 
+    <resultMap id="distritoDomResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistritoDom"/>
+        <result property="nombre" column="nombre"/>
+        <association property="provinciaBean" column="idProvinciaDom"
+                     javaType="pe.marista.sigma.bean.ProvinciaBean"
+                     resultMap="provinciaDomResultado"/>
+    </resultMap>
+    <resultMap id="provinciaDomResultado" type="pe.marista.sigma.bean.ProvinciaBean">
+        <id property="idProvincia" column="idProvinciaDom"/>
+        <association property="departamentoBean" column="idDepartamentoDom"
+                     javaType="pe.marista.sigma.bean.DepartamentoBean"
+                     resultMap="departamentoDomResultado"/>
+    </resultMap>
+    <resultMap id="departamentoDomResultado" type="pe.marista.sigma.bean.DepartamentoBean">
+        <id property="idDepartamento" column="idDepartamentoDom"/>
+    </resultMap>
+    
+    <!--7 idTipoVivienda-->
+    <resultMap id="tipoViviendaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoVivienda"/>
+        <result property="codigo" column="tipoVivienda"/>  
+    </resultMap>
+    
+    <!--8 idTipoCasa-->
+    <resultMap id="tipoCasaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCasa"/>
+        <result property="codigo" column="tipoCasa"/>  
+    </resultMap> 
+    
+    <!--9 idTipoStatusCasa-->
+    <resultMap id="tipoStatusCasaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusCasa"/>
+        <result property="codigo" column="tipoStatusCasa"/>  
+    </resultMap>
+    
+    <!--10 idEntidadEps-->
+    <resultMap id="entidadEpsResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="idEntidadEpsEnt"/>
+        <result property="nombre" column="nombreEps"/>   
+    </resultMap>
+    
+    <!--11 idEntidadPension--> 
+    <resultMap id="entidadPensionResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="idEntidadPensionEnt"/>
+        <result property="nombre" column="nombrePension"/>   
+    </resultMap>
+    
+    <!--12 idTipoAsegurado-->
+   
+           
+    <!--13 idTipoSeguro-->         
+    <resultMap id="tipoSeguroPersonalResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoSeguroPersonal"/>
+        <result property="codigo" column="tipoSeguroPersonal"/>
+    </resultMap>
+    
+    <!--14 idTipoOcupacion-->
+    <resultMap id="tipoOcupacionResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoOcupacion"/>
+        <result property="codigo" column="tipoOcupacion"/>  
+    </resultMap>
+    
+    <!--15 idTipoProfesion-->
+           
+    <!--16 uniNeg-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    
+    <!--17 idUnidadOrganica-->
+    <resultMap id="unidadOrganicaResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUO" />
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap> 
+    
+    <!--18 idGradoAcademico-->
+     
+    <!--19 idCarrera-->
+    <!--20 CR--> 
+    <resultMap id="cr1Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr1" />
+        <result property="nombre" column="nomCr1"/>
+    </resultMap> 
+    <resultMap id="cr2Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr2" />
+        <result property="nombre" column="nomCr2"/>
+    </resultMap> 
+    <resultMap id="cr3Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr3" />
+        <result property="nombre" column="nomCr3"/>
+    </resultMap> 
+    <resultMap id="cr4Resultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr4" />
+        <result property="nombre" column="nomCr4"/>
+    </resultMap> 
+    <!--8 idTipoNivel-->
+    <resultMap id="tipoNivelResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoNivel"/>
+        <result property="codigo" column="tipoNivel"/>  
+    </resultMap>
+    <select id="obtenerTodos" resultMap="legajoResultado">
+        <include refid="consultaCampos" />
+    </select>
+    <!--21 idTipoVia-->
+    <resultMap id="tipoViaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoVia"/>
+        <result property="codigo" column="tipoVia"/>  
+    </resultMap>
+    <!--22 idTipoZona-->
+    <resultMap id="tipoZonaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoZona"/>
+        <result property="codigo" column="tipoZona"/>  
+    </resultMap>
+    <!--23 idPaisEmisionDoc-->
+    <resultMap id="emisionDocResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPaisEmisionDoc"/> 
+        <result property="nombre" column="paisNacimiento"/>
+    </resultMap>
+    <!--24 idTipoPension-->         
+    <resultMap id="tipoPensionPersonalResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPensionPersonal"/>
+        <result property="codigo" column="tipoPensionPersonal"/>
+    </resultMap>
+    <!--24 idTipoPlanillaColegio-->         
+    <resultMap id="tipoPlanillaColegioResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPlanillaColegio"/>
+        <result property="codigo" column="tipoPlanillaColegio"/>
+    </resultMap>
+    <insert id="insertarPersonal" parameterType="pe.marista.sigma.bean.PersonalBean"
+            useGeneratedKeys="true" keyProperty="idPersonal" keyColumn="idPersonal">
+        INSERT INTO  MO_Personal(idPersonal,codPer,nombre,apepat,apemat,fecnac,idtipodocper,nrodoc,idnacionalidad,ruc,correoper,correocor,sexo,foto,
+        idtipoestadocivil,idpaisnacimiento,obsnacimiento,iddistritonac,iddistritodom,domicilio,
+        idtipovivienda,idtipocasa,idtipostatuscasa,observacioncasa,
+        identidadeps,numeroeps,identidadpension,numeropension,
+        fecbaja,fecingreso,status,idtipoocupacion,unineg,
+        idUniOrg,gruposanguineo,telefonofijo,celular1,celular2,basico,nrodias,nrohoras,
+        creapor,creafecha,factorSanguineo,idTipoSeguroPersonal,cr1,cr2,cr3,cr4,
+        idtipovia,nombrezona,idtipozona,interior,numero,flgdiscapacitado,nrohijosdepen,nombrecontacto,
+        telefonocontacto,idpaisemisordoc,idtipopensionpersonal,fechainiseguro,fechainipension,
+        participacionactparro,flgbautismo,flgconfirmacion,flgcomunion,flgmatrimonio,flgdonadorsangre,flgdonadororganos,basicoestatal)
+        
+        Values (0,#{codPer},#{nombre},#{apepat},#{apemat},#{fecNac},#{tipoDocPerBean.idCodigo},#{nroDoc},#{paisNacionalidadBean.idPais},
+        #{ruc},#{correoPer},#{correoCor},#{sexo},#{foto},#{tipoEstadoCivilBean.idCodigo},#{paisNacimientoBean.idPais},#{obsNacimiento},
+        #{distritoNacBean.idDistrito},#{distritoDomBean.idDistrito},#{domicilio},
+        #{tipoViviendaBean.idCodigo},#{tipoCasaBean.idCodigo},#{tipoStatusCasaBean.idCodigo},#{observacionCasa},
+        #{entidadEpsBean.ruc},#{numeroEps},#{entidadPensionBean.ruc},#{numeroPension},
+        #{fecBaja},#{fecIngreso},#{status},#{tipoOcupacionBean.idCodigo},#{unidadNegocioBean.uniNeg},
+        #{unidadOrganicaBean.idUniOrg},#{grupoSanguineo},#{telefonoFijo},#{celular1},#{celular2},#{basico},#{nroDias},#{nroHoras},
+        #{creaPor},getDate(),#{factorSanguineo},#{tipoSeguroPersonalBean.idCodigo},#{cr1.cr},#{cr2.cr},#{cr3.cr},#{cr4.cr}
+        ,#{tipoViaBean.idCodigo},#{nombreZona},#{tipoZonaBean.idCodigo},#{interior},#{numero},#{flgDiscapacitado}
+        ,#{nroHijosDepen},#{nombreContacto},#{telefonoContacto},#{paisEmisorDoc.idPais},
+        #{tipoPensionPersonal.idCodigo},#{fechaIniSeguro},#{fechaIniPension},
+        #{participacionActParro},#{flgBautismo},#{flgConfirmacion},#{flgComunion},#{flgMatrimonio},#{flgDonadorSangre},#{flgDonadorOrganos},#{basicoEstatal})
+        <selectKey keyProperty="idPersonal" order="AFTER" resultType="Integer">
+            SELECT max(idPersonal) FROM MO_Personal WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>                                                                                                       
+                  
+    <update id="modificarPersonal" parameterType="pe.marista.sigma.bean.PersonalBean">
+        Update MO_Personal set
+        codper=#{codPer},       
+        nombre=#{nombre},
+        apepat=#{apepat},
+        apemat=#{apemat},
+        fecnac=#{fecNac},
+        idtipodocper=#{tipoDocPerBean.idCodigo},
+        nrodoc=#{nroDoc},
+        idnacionalidad=#{paisNacionalidadBean.idPais},
+        ruc=#{ruc},
+        correoper=#{correoPer},
+        correocor=#{correoCor},
+        sexo=#{sexo},
+        foto=#{foto},
+        idtipoestadocivil=#{tipoEstadoCivilBean.idCodigo},
+        idpaisnacimiento=#{paisNacimientoBean.idPais},
+        obsnacimiento=#{obsNacimiento},
+        iddistritonac= #{distritoNacBean.idDistrito},
+        iddistritodom= #{distritoDomBean.idDistrito},
+        domicilio= #{domicilio},
+        idtipovivienda= #{tipoViviendaBean.idCodigo},
+        idtipocasa= #{tipoCasaBean.idCodigo},
+        idtipostatuscasa= #{tipoStatusCasaBean.idCodigo},
+        observacioncasa= #{observacionCasa}, 
+        identidadeps= #{entidadEpsBean.ruc},
+        numeroeps= #{numeroEps},
+        identidadpension= #{entidadPensionBean.ruc},
+        numeropension= #{numeroPension},       
+        idTipoSeguroPersonal=#{tipoSeguroPersonalBean.idCodigo},
+        fecingreso= #{fecIngreso},
+        fecbaja= #{fecBaja},
+        status= #{status},
+        idtipoocupacion= #{tipoOcupacionBean.idCodigo},
+        unineg= #{unidadNegocioBean.uniNeg},
+        idUniOrg= #{unidadOrganicaBean.idUniOrg},
+        gruposanguineo= #{grupoSanguineo},
+        telefonofijo= #{telefonoFijo},
+        celular1= #{celular1},
+        celular2= #{celular2},
+        basico= #{basico},
+        basicoestatal= #{basicoEstatal},
+        nrodias= #{nroDias},
+        nrohoras= #{nroHoras},
+        factorSanguineo=#{factorSanguineo},
+        cr1=#{cr1.cr},
+        cr2=#{cr2.cr},
+        cr3=#{cr3.cr},
+        cr4=#{cr4.cr},
+        modiPor=#{modiPor},
+        idtipovia=#{tipoViaBean.idCodigo},
+        nombrezona= #{nombreZona},
+        idtipozona= #{tipoZonaBean.idCodigo},
+        interior= #{interior},
+        numero= #{numero},
+        flgdiscapacitado= #{flgDiscapacitado},
+        nrohijosdepen= #{nroHijosDepen},
+        nombrecontacto= #{nombreContacto},
+        telefonocontacto=#{telefonoContacto},
+        idpaisemisordoc=#{paisEmisorDoc.idPais},
+        idtipopensionpersonal=#{tipoPensionPersonal.idCodigo},
+        fechainiseguro=#{fechaIniSeguro},
+        fechainipension=#{fechaIniPension}, 
+        participacionactparro= #{participacionActParro},
+        flgbautismo=#{flgBautismo},
+        flgconfirmacion = #{flgConfirmacion},
+        flgcomunion =#{flgComunion},
+        flgmatrimonio = #{flgMatrimonio},
+        flgdonadorsangre =#{flgDonadorSangre},
+        flgdonadororganos=#{flgDonadorOrganos}
+        Where idPersonal=#{idPersonal}  and  unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarPersonalSangre" parameterType="pe.marista.sigma.bean.PersonalBean">
+        Update MO_Personal set 
+        gruposanguineo= #{grupoSanguineo}, 
+        factorSanguineo=#{factorSanguineo},
+        modiPor=#{modiPor},
+        nropolizasctr=#{nroPolizaSctr},
+        nombrecompaniasctr =#{nombreCompaniaSctr},
+        beneficiariossctr =#{beneficiariosSctr},
+        flgtrabajoaltoriesgo=#{flgTrabajoAltoRiesgo}
+        Where idPersonal=#{idPersonal}  and  unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+     
+    <delete id="eliminarPersonal" parameterType="pe.marista.sigma.bean.PersonalBean">
+        Delete From MO_Personal Where idPersonal = #{idPersonal}  and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+    <select id="obtenerTodosActivos" resultMap="legajoResultado">
+        <include refid="consultaCampos" />Where pe.status = 1  and pe.unineg=#{unidadNegocioBean.uniNeg}
+        order by uo.iduniorg,uo.codigouniorg
+    </select> 
+    <select id="obtenerFiltroPersonal" resultMap="legajoResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />
+        <where>
+            pe.uniNeg = #{unidadNegocioBean.uniNeg}   
+            <if test="codPer != null and codPer != '' ">
+                and  pe.codPer=#{codPer}
+            </if> 
+            <if test="apepat != null and apepat != ''">
+                and upper(pe.apepat) like concat('%',#{apepat},'%')
+            </if>
+            <if test="apemat != null and apemat != ''">
+                and upper(pe.apemat) like concat('%',#{apemat},'%')
+            </if>
+            <if test="nombre != null and nombre != ''">
+                and upper(pe.nombre) like concat('%',#{nombre},'%')
+            </if>
+            <if test="unidadOrganicaBean.idUniOrg != null and unidadOrganicaBean.idUniOrg!=0"> 
+                and uo.idUniOrg=#{unidadOrganicaBean.idUniOrg}
+            </if> 
+        </where>
+        order by uo.iduniorg,uo.codigouniorg
+    </select> 
+    <select id="obtenerPersonalPorId" resultMap="legajoResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos"/>Where pe.idpersonal = #{idPersonal} and pe.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerUniOrgPersonalPorId" resultMap="legajoResultado" parameterType="pe.marista.sigma.bean.PersonalBean" >
+        select pe.idPersonal, 
+        pe.idUniOrg,
+        uo.idUniOrg as idUO,
+        uo.nombreUniOrg  
+        from MO_Personal  pe
+        left join MO_UnidadNegocio uni on pe.unineg = uni.unineg 
+        left join MO_UnidadOrganica uo on pe.idUniOrg=uo.idUniOrg        
+        Where pe.idpersonal = #{idPersonal} and pe.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        UPDATE MO_Personal
+        SET status = #{status}
+        Where idPersonal = #{idPersonal} and  unineg=#{unidadNegocioBean.uniNeg}
+    </update> 
+    <select id="obtenerPersonalPorUnidadNegocio" parameterType="String" resultMap="legajoResultado">
+        <include refid="consultaCampos" />
+        where pe.unineg = #{uniNeg}  
+        order by  concat(pe.apepat,' '+pe.apemat,', '+pe.nombre)
+    </select>
+    <select id="obtenerPersonalPorUnidadNegocioPorId" parameterType="map" resultMap="legajoResultado">
+        <include refid="consultaCampos" />
+        where pe.unineg = #{uniNeg}   and   pe.idpersonal=(select isnull(idpersonal,0) from MM_Usuario where usuario=#{usuario})
+        order by uo.iduniorg,uo.codigouniorg
+    </select> 
+    
+    <select id="obtenerCumpleaniosPersonal" resultMap="legajoResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        select
+        pe.uniNeg,
+        pe.idPersonal,
+        pe.codper,       
+        pe.nombre,
+        pe.apepat,
+        pe.apemat,
+        pe.fecnac, 
+        pe.idtipodocper,
+        pe.nrodoc, 
+        pe.sexo,  
+        DATEPART(MM,fecnac) as mesFecNac,
+        DATEPART(DD,fecnac) as diaFecNac,
+        uo.idUniOrg as idUO,
+        uo.nombreUniOrg  
+        from MO_Personal  pe
+        left join MO_UnidadNegocio uni on pe.unineg = uni.unineg 
+        left join MO_UnidadOrganica uo on pe.idUniOrg=uo.idUniOrg 
+        <where> pe.fecnac is not null and pe.unineg=#{unidadNegocioBean.uniNeg}         
+            <!--   AND DATEPART(DD,pe.fecnac)  between DATEPART(DD,getdate()) and (DATEPART(DD,getdate())+7)--> 
+            <if test="codPer != null and codPer != '' ">
+                and  pe.codPer=#{codPer}
+            </if>  
+            <if test="mes != null     ">
+                 <![CDATA[ AND  #{mes} = (DATEPART(MM,pe.fecnac))  ]]>    
+            </if> 
+            <if test="apepat != null and apepat != ''">
+                and upper(pe.apepat) like concat('%',#{apepat},'%')
+            </if>
+            <if test="apemat != null and apemat != ''">
+                and upper(pe.apemat) like concat('%',#{apemat},'%')
+            </if>
+            <if test="nombre != null and nombre != ''">
+                and upper(pe.nombre) like concat('%',#{nombre},'%')
+            </if>
+            <if test="unidadOrganicaBean.idUniOrg != null and unidadOrganicaBean.idUniOrg != null"> 
+                and uo.idUniOrg=#{unidadOrganicaBean.idUniOrg}
+            </if> 
+            <!--<if test="fechaInicio != null" >
+                <![CDATA[
+                and  convert(date,pe.fecnac) >= convert(date,#{fechaInicio})
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  convert(date,pe.fecnac) <= convert(date,#{fechaFin})
+                ]]>
+            </if>
+            -->
+        </where>
+        order by  DATEPART(MM,pe.fecnac) desc,DATEPART(DD,pe.fecnac),UO.iduniorg 
+    </select> 
+    
+    <select id="obtenerPersonalPorFiltro" resultType="pe.marista.sigma.bean.reporte.DetDocEgresoRepBean" parameterType="pe.marista.sigma.bean.PersonalBean">
+        select
+        uni.nombreUniNeg as nomUniNeg, 
+        pe.codper as codPer,        
+        pe.apepat +' '+pe.apemat+', '+ pe.nombre as nombreCompleto, 
+        pe.status,
+        pe.[status] as estado,
+        uo.nombreUniOrg  as uniOrg 
+        from MO_Personal  pe
+        left join MO_UnidadNegocio uni on pe.unineg = uni.unineg 
+        left join MO_UnidadOrganica uo on pe.idUniOrg=uo.idUniOrg 
+        <where> pe.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="unidadOrganicaBean.idUniOrg != null and unidadOrganicaBean.idUniOrg!=0"> 
+                and uo.idUniOrg=#{unidadOrganicaBean.idUniOrg}
+            </if> 
+        </where> 
+        order by pe.codper
+    </select>
+    
+    <select id="obtenerPersonalRepPorFiltro" resultType="pe.marista.sigma.bean.reporte.PersonalRepBean" parameterType="pe.marista.sigma.bean.reporte.PersonalRepBean">
+        select     
+        upper(ent.nombre) as nombreUniNeg,
+        'R.U.C.: '+ent.ruc as rucUniNeg,
+
+        isnull(celular1,' ') as celular1,
+        isnull(celular2,' ') as celular2,
+        isnull(correoPer,' ') as correoPer,
+        isnull(correoCor,' ') as correoCor,
+        isnull(codper,' ') as codPer,  
+        CONCAT(per.apepat,' ',per.apemat,', ',per.nombre) as nombrePersonal,
+        concat((case when cod.codigo='Carnet de Extranjeria' then 'C.E.' when cod.codigo='Pasaporte' then 'PAS.'   else isnull(cod.codigo,'') end) ,': ',isnull(per.nrodoc,'')) as nroDoc,
+        uo.nombreuniorg as nombreUniOrg,
+        isnull(car.nombre,'-') as cargo, 
+
+        (case when per.fecingreso is null then '-' else (SELECT CONVERT(VARCHAR(10), per.fecingreso, 103))  end) as fechaIng,
+        (
+        select (case 
+        when (select top 1 count (*) from MO_PersonalDocumento where idpersonal=per.idpersonal and flgobligatorio=1 and fechapresentacion is null)>0 then 'Pendiente'
+        else 
+        (case 
+        when (select top 1 count (*) from MO_PersonalDocumento where idpersonal=per.idpersonal)>0 then 'Completo' else 'No tiene Documentos'
+        end)
+        end)
+        ) as documento,
+        (case when isnull(per.status,0)=1 then 'Activo' else 'Inactivo' end) as estado
+        from MO_Personal per
+        left join MO_Codigo cod on cod.idcodigo=idtipodocper
+        inner join MO_UnidadNegocio un on un.unineg=per.unineg
+        inner join MO_Entidad ent on ent.ruc=un.RUC and ent.unineg=un.unineg
+        left join MO_UniNegUniOrg unuo on unuo.unineg=per.unineg and unuo.iduniorg=per.iduniorg
+        left join MO_UnidadOrganica uo on uo.iduniorg=per.iduniorg
+        left join MO_PersonalCargo pcar on pcar.idpersonal=per.idpersonal and pcar.unineg=per.unineg and pcar.status=1
+        left join MO_CargoUniNeg cun on cun.unineg=per.unineg and cun.idcargo=pcar.idcargo
+        left join MO_Cargo car on car.idcargo=pcar.idcargo
+        left join MO_Distrito dis on dis.iddistrito=per.iddistritodom
+        left join MO_Codigo estCiv on estCiv.idcodigo=per.idtipoestadocivil
+        left join MO_Pais nac on nac.idpais=per.idnacionalidad
+        left join MO_Pais nacimi on nacimi.idpais=per.idpaisnacimiento
+        <where> per.unineg = #{uniNeg} 
+            <if test="flgStatusFiltro == false "> 
+                and per.status=#{flgStatus}
+            </if> 
+            <if test="idUniOrg != null and idUniOrg != 0"> 
+                and uo.idUniOrg=#{idUniOrg}
+            </if> 
+            <if test="idCargo != null and idCargo != 0"> 
+                and  car.idCargo=#{idCargo} 
+            </if> 
+            <if test="sexo != null and sexo != '' "> 
+                and   per.sexo=#{sexo}
+            </if> 
+            <if test="estado != null and estado != '' "> 
+                and   per.status=#{estado}
+            </if> 
+            <if test="flgPadres != null ">  
+                <if test="flgPadres == 1 and flgMadres==0">  
+                    and per.sexo='1' and per.idpersonal in (select distinct idpersonal from MO_PersonalDependiente where idtipoparentesco=12410
+                    <if test="flgPadresConHijosH != null "> 
+                        and   sexo=#{flgPadresConHijosH}
+                    </if> )
+                </if> 
+            </if> 
+            <if test="flgMadres != null "> 
+                <if test="flgMadres == 1  and flgPadres == 0"> 
+                    and per.sexo='0' and per.idpersonal in (select distinct idpersonal from MO_PersonalDependiente where idtipoparentesco=12410
+                    <if test="flgMadresConHijosH != null "> 
+                        and   sexo=#{flgMadresConHijosH}
+                    </if> )
+                </if> 
+            </if> 
+            <if test="flgMadres != null and flgPadres != null"> 
+                <if test="flgMadres == 1  and flgPadres == 1"> 
+                    and per.sexo is not null and per.idpersonal in (select distinct idpersonal from MO_PersonalDependiente where idtipoparentesco=12410
+                    <if test="flgMadresConHijosH != null and flgMadresConHijosH == null"> 
+                        and   sexo=#{flgMadresConHijosH} 
+                    </if> 
+                    <if test="flgMadresConHijosH == null and flgMadresConHijosH != null"> 
+                        and   sexo=#{flgPadresConHijosH} 
+                    </if> 
+                    <if test="flgMadresConHijosH != null and flgMadresConHijosH != null"> 
+                        and   ( sexo=#{flgPadresConHijosH} or sexo=#{flgMadresConHijosH} )
+                    </if> )
+                </if> 
+            </if> 
+            <if test="idPaisNacionalidad != null and idPaisNacionalidad != 0 "> 
+                and   per.idnacionalidad=#{idPaisNacionalidad}
+            </if> 
+            <if test="idPaisNacimiento != null and idPaisNacimiento != 0 "> 
+                and   per.idpaisnacimiento=#{idPaisNacimiento}
+            </if> 
+            <if test="idDistritoDomi != null and idDistritoDomi != 0 "> 
+                and   per.iddistritodom=#{idDistritoDomi}
+            </if> 
+            <if test="estadoCivil != null and estadoCivil != '' "> 
+                and   estCiv.codigo=#{estadoCivil}
+            </if> 
+            <if test="fechaIngIniDate != null" >
+                <![CDATA[ 
+                and  per.fecingreso >= #{fechaIngIniDate}
+                ]]>
+            </if>
+            <if test="fechaIngFinDate != null" >
+                <![CDATA[ 
+                and  per.fecingreso <= #{fechaIngFinDate}
+                ]]>
+            </if>
+            
+            <if test="fechaBajaIniDate != null" >
+                <![CDATA[
+                and  per.fecbaja >= #{fechaBajaIniDate}
+                ]]>
+            </if>
+            <if test="fechaBajaIniDate != null" >
+                <![CDATA[
+                and  per.fecbaja <= #{fechaBajaIniDate}
+                ]]>
+            </if>
+        </where> 
+        order by uo.iduniorgpadre,uo.iduniorg
+    </select>
+    <select  id="obtenerFichaPersonal" parameterType="map" resultType="pe.marista.sigma.bean.reporte.LegajoRepBean">
+        select top 1
+        upper(ent.nombre) as nombreUniNeg,
+        'R.U.C.: '+ent.ruc as rucUniNeg,
+        isnull(per.codper,'') as codPer,
+        UPPER(isnull(per.nombre,'')) as nombre,
+        UPPER(isnull(per.apepat,'')) as apePat,
+        UPPER(isnull(per.apemat,'')) as apeMat,  
+
+        UPPER(isnull(cod.codigo,'')) as tipoDoc,
+        UPPER(isnull(per.nrodoc,'')) as nroDoc,
+        UPPER(isnull(per.ruc,'')) as ruc,
+        UPPER(isnull(estCiv.codigo,'')) as estadoCiv,
+        (case when per.sexo=1 then 'MASCULINO' when per.sexo=0 then 'FEMENINO' else ' ' end ) as sexo,
+
+        isnull(per.celular1,'') as celular1 ,
+        isnull(per.celular2,'') as celular2,
+        isnull(per.telefonofijo,'') as teleFijo,
+        isnull(per.correocor,'') as correoCor,
+        isnull(per.correoper,'') as correoPer,
+
+        (case when per.fecnac is null then '  /  / ' else (CONVERT(VARCHAR(10), per.fecnac, 103))  end) as fecNac, 
+        UPPER(isnull(nac.nombre,'')) as paisNac,
+        UPPER(isnull(nac.nacionalidad,'')) as nacionalidad,
+        UPPER(isnull(dep.nombre,'')) as nombreDep,
+        UPPER(isnull(pro.nombre,'')) as nombreProv,
+        UPPER(isnull(dis.nombre,'')) as nombreDis, 
+
+        UPPER(isnull(per.domicilio,'')) as domicilio, 
+        UPPER(isnull(depdomi.nombre,'')) as nombreDepDomi, 
+        UPPER(isnull(prodomi.nombre,'')) as nombreProvDomi,
+        UPPER(isnull(disdomi.nombre,'')) as nombreDisDomi,
+        UPPER(isnull(UPPER(tipViv.codigo),'')) as tipoViv,
+        UPPER(isnull(UPPER(tipCasa.codigo),'')) as condicionPropiedad,
+        UPPER(isnull(UPPER(tipstaCasa.codigo),'')) as estadoConservacion,
+
+
+        UPPER(isnull(tipSegPer.codigo,''))  as tipoSegPer,
+        UPPER(isnull(entEPS.nombre,'')) as nombreEntEPS,
+        isnull(per.numeroeps,'') as numeroEPS,
+
+        UPPER(isnull(entPen.nombre,'')) as nombreEntPension,
+        isnull(per.numeropension,'') as numeroPension,
+
+        isnull(uo.nombreuniorg,'') as nombreUniOrg
+
+        from MO_Personal per 
+        left join MO_Codigo cod on cod.idcodigo=per.idtipodocper
+        left join MO_Distrito dis on dis.iddistrito = per.iddistritonac
+        left join MO_Provincia pro on pro.idprovincia=dis.idprovincia
+        left join MO_Departamento dep on dep.iddepartamento=pro.iddepartamento
+        left join MO_Distrito disdomi on disdomi.iddistrito=per.iddistritodom
+        left join MO_Provincia prodomi on prodomi.idprovincia=disdomi.idprovincia
+        left join MO_Departamento depdomi on depdomi.iddepartamento=prodomi.iddepartamento
+        left join MO_Pais nac on nac.idpais=per.idnacionalidad
+        left join MO_Pais nacimi on nacimi.idpais=per.idpaisnacimiento
+        left join MO_Codigo estCiv on estCiv.idcodigo=per.idtipoestadocivil
+        left join MO_Codigo tipViv on tipViv.idcodigo=per.idtipovivienda
+        left join MO_Codigo tipCasa on tipCasa.idcodigo=per.idtipocasa
+        left join MO_Codigo tipStaCasa on tipStaCasa.idcodigo=per.idtipostatuscasa
+        left join MO_Codigo tipSegPer on tipSegPer.idcodigo=per.idtiposeguropersonal
+        left join MO_Entidad entPen on entPen.ruc=per.identidadpension and entPen.unineg=per.unineg
+        left join MO_Entidad entEPS on entEPS.ruc=per.identidadeps and entEPS.unineg=per.unineg
+        left join MO_UniNegUniOrg unuo on unuo.unineg=per.unineg and unuo.iduniorg=per.iduniorg
+        left join MO_UnidadOrganica uo on uo.iduniorg=per.iduniorg
+        inner join MO_UnidadNegocio un on un.unineg=per.unineg
+        left join MO_Entidad ent on ent.ruc=un.RUC and ent.unineg=un.unineg
+        where per.idpersonal=#{idPersonal} and per.unineg=#{uniNeg}
+    </select>
+    
+    <select id="obtenerCorreoCorPorPersonal" resultType="string">
+        declare @unineg varchar(6)=#{uniNeg},@unidad varchar(100)=#{unidad},
+        @correodef varchar(100)='meylinsuyin@gmail.com'
+        declare @correo varchar (100)=
+        (select top 1 per.correocor from MO_JefeUniOrg juo
+        inner join MO_UnidadOrganica uo on uo.iduniorg = juo.iduniorg
+        inner join MO_Personal per on per.idpersonal=juo.idpersonal and juo.unineg=per.unineg
+        where uo.nombreuniorg  like '%'+@unidad+'%' and juo.unineg=@unineg and juo.status=1)
+        select
+        case when @correo is not null then @correo else @correodef end as correo
+    </select>
+    <select id="obtenerFotoPersonal" parameterType="map" resultType="String" >
+        declare @unineg varchar (6),@codLPM varchar(15)
+        set @unineg=#{uniNeg}
+        set @codLPM=#{codPer}
+        declare @flgest int 
+        set @flgest= (SELECT top 1 count(*) 
+        FROM MO_Personal PER 
+        where per.codper=@codLPM and per.unineg=@unineg)
+        SELECT 
+        (
+        case when @flgest=1 then (case  
+        when @unineg in ('CHAMPS') THEN '/fotosTrabajadores/'+@codLPM+'.bmp' 	 
+        else  '/fotosTrabajadores/'+@codLPM+'.JPG'    
+        END)
+        else '/resources/images/noFoto.bmp'
+        end
+        )	              		
+    </select> 
+    
+    <sql id="consultaCamposVoluntariado">
+        select 
+        uni.unineg as uniNeg,
+        per.idpersonal as idPersonal,
+        vo.idpersonalvoluntariado as idPersonalVoluntariado, 
+        vo.descripcion as descripcion,
+        vo.fechavoluntariado as fechaVoluntariado,
+        vo.creapor as creaPor,
+        vo.creafecha as creaFecha,
+        vo.modipor as modiPor
+        from MO_PersonalVoluntariado vo
+        inner join MO_UnidadNegocio uni on uni.unineg=vo.unineg
+        inner join MO_Personal per on per.idpersonal=vo.idpersonal
+    </sql>
+    <resultMap id="voluntariadoResultado" type="pe.marista.sigma.bean.PersonalVoluntariadoBean">
+        <id property="idPersonalVoluntariado" column="idPersonalVoluntariado" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg" /> 
+        <result property="descripcion" column="descripcion" />
+        <result property="fechaVoluntariado" column="fechaVoluntariado" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" /> 
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+        <association property="personalBean" column="idPersonal" 
+                     javaType="pe.marista.sigma.bean.PersonalBean" 
+                     resultMap="legajoResultado"/>
+    </resultMap>
+    <insert id="insertarPersonalVoluntariado" parameterType="pe.marista.sigma.bean.PersonalVoluntariadoBean">
+        INSERT INTO  MO_PersonalVoluntariado
+        (unineg,idPersonal,descripcion,fechavoluntariado,creaPor)
+        Values 
+        (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{descripcion},#{fechaVoluntariado},#{creaPor})
+    </insert>      
+    <select id="obtenerPersonalVoluntariadoLista" resultMap="voluntariadoResultado" parameterType="pe.marista.sigma.bean.PersonalVoluntariadoBean">
+        <include refid="consultaCamposVoluntariado" />
+        where per.idPersonal=#{personalBean.idPersonal} and uni.unineg=#{unidadNegocioBean.uniNeg} 
+        order by idPersonalVoluntariado desc
+    </select>
+    
+    <sql id="consultaCamposDatosHistoricos">
+        select 
+        uni.unineg as uniNeg,
+        per.idpersonal as idPersonal,
+        vo.idpersonalhistorico as idPersonalHistorico, 
+        vo.direccion as direccion,
+        vo.creapor as creaPor,
+        vo.creafecha as creaFecha,
+        vo.modipor as modiPor,
+        civil.codigo as tipoEstadoCivil,
+        civil.idcodigo as idTipoEstadoCivil
+        from MO_PersonalDatosHistorico vo
+        inner join MO_UnidadNegocio uni on uni.unineg=vo.unineg
+        inner join MO_Personal per on per.idpersonal=vo.idpersonal
+        inner join MO_Codigo civil on civil.idcodigo=vo.idtipoestadocivil
+
+    </sql>
+    <resultMap id="historicoResultado" type="pe.marista.sigma.bean.PersonalDatosHistoricoBean">
+        <id property="idPersonalHistorico" column="idPersonalHistorico" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg" /> 
+        <result property="direccion" column="direccion" /> 
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" /> 
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+        <association property="personalBean" column="idPersonal" 
+                     javaType="pe.marista.sigma.bean.PersonalBean" 
+                     resultMap="legajoResultado"/>
+        <association property="tipoEstadoCivil" column="idTipoEstadoCivil"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoEstadoCivilResultado"/>
+    </resultMap>
+    <insert id="insertarPersonalHistorico" parameterType="pe.marista.sigma.bean.PersonalDatosHistoricoBean">
+        INSERT INTO  MO_PersonalDatosHistorico
+        (unineg,idPersonal,direccion,idtipoestadocivil,creaPor)
+        Values 
+        (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal},#{direccion},#{tipoEstadoCivil.idCodigo},#{creaPor})
+    </insert>      
+    <select id="obtenerPersonalHistoricoLista" resultMap="historicoResultado" parameterType="pe.marista.sigma.bean.PersonalDatosHistoricoBean">
+        <include refid="consultaCamposDatosHistoricos" />
+        where per.idPersonal=#{personalBean.idPersonal} and uni.unineg=#{unidadNegocioBean.uniNeg} 
+        order by idpersonalhistorico desc
+    </select>
+    <select id="obtenerUltimoDirecEstadoCivil" parameterType="map" resultMap="historicoResultado">
+        select TOP 1 direccion ,idtipoestadocivil as idTipoEstadoCivil from MO_PersonalDatosHistorico
+        where unineg = #{uniNeg} and idpersonal=#{idPersonal} 
+        ORDER BY idpersonalhistorico DESC
+    </select>
+</mapper>

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ModuloDAO">  
+    <sql id="consultaCampos">
+        Select  
+        idModulo,
+        idTipoNodo,
+        nodo,
+        descrip,
+        idModuloPadre,
+        url,
+        folder,
+        icono,
+        status,
+        posicion,
+        creaPor,
+        creaFecha,
+        modiFecha
+        From MM_MODULO     
+    </sql>
+    <resultMap id="moduloResultado" type="pe.marista.sigma.bean.ModuloBean">
+        <id property="idModulo" column="idModulo"/>
+        <result property="idTipoNodo" column="idTipoNodo"/>
+        <result property="nodo" column="nodo"/>
+        <result property="descrip" column="descrip"/>
+        <result property="idModuloPadre" column="idModuloPadre"/>
+        <result property="url" column="url"/>
+        <result property="folder" column="folder"/>
+        <result property="posicion" column="posicion"/>
+        <result property="status" column="status"/>
+        <result property="icono" column="icono"/>
+        <result property="modiFecha" column="modiFecha"/>
+    </resultMap>
+    <select id="obtenerTodos" resultType="pe.marista.sigma.bean.ModuloBean">
+        <include refid="consultaCampos" /> order by idmodulopadre,posicion
+    </select>
+    <select id="obtenerFiltro" resultType="pe.marista.sigma.bean.ModuloBean" parameterType="Integer">
+        <include refid="consultaCampos" />Where idTipoNodo=#{idTipoNodo}
+    </select>
+    <select id="obtenerPorId" resultType="pe.marista.sigma.bean.ModuloBean">
+        <include refid="consultaCampos" />WHERE idModulo = #{idModulo}
+    </select>
+    <select id="obtenerModuloPadre" resultMap="moduloResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE idModuloPadre = #{idModuloPadre} order by idmodulo
+    </select>
+    <select id="obtenerModuloPadrePos" resultMap="moduloResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE idModuloPadre = #{idModuloPadre} 
+        order by posicion
+    </select>
+    <select id="obtenerModuloPadrePosicion" resultMap="moduloResultado" parameterType="map" >
+        <include refid="consultaCampos" />
+        WHERE idModuloPadre = #{idModuloPadre} and posicion <![CDATA[ >= ]]> #{posicionIni} and posicion <![CDATA[ <= ]]> #{posicionFin} and idModulo <![CDATA[ <> ]]> #{idModulo}
+        order by idmodulo
+    </select>
+    <select id="obtenerPosMin" parameterType="map" resultType="Integer" >
+        Select MIN(posicion) as posicion From MM_MODULO 
+        WHERE idModuloPadre = #{idModuloPadre} and posicion <![CDATA[ >= ]]> #{posicionIni} and posicion <![CDATA[ <= ]]> #{posicionFin} and idModuloPadre <![CDATA[ <> ]]> #{idModulo}
+    </select>
+    <select id="obtenerPosMax" parameterType="map" resultType="Integer" >
+        Select MAX(posicion) as posicion From MM_MODULO 
+        WHERE idModuloPadre = #{idModuloPadre} and posicion <![CDATA[ >= ]]> #{posicionIni} and posicion <![CDATA[ <= ]]> #{posicionFin} and idModuloPadre <![CDATA[ <> ]]> #{idModulo}
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.ModuloBean">
+        INSERT INTO MM_MODULO (idTipoNodo,nodo,descrip,idModuloPadre,url,folder,icono,status,creaPor,creaFecha)
+        Values (#{idTipoNodo},#{nodo},#{descrip},#{idModuloPadre},#{url},#{folder},#{icono},#{status},#{creaPor},getDate())
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.ModuloBean">
+        UPDATE MM_MODULO
+        SET 
+        idTipoNodo = #{idTipoNodo},
+        nodo = #{nodo},
+        descrip = #{descrip},
+        url = #{url},
+        folder = #{folder},
+        icono = #{icono},
+        status = #{status}
+        Where idModulo = #{idModulo}
+    </update>
+    <update id="actualizarPadre" parameterType="pe.marista.sigma.bean.ModuloBean">
+        Update  MM_MODULO set
+        idModuloPadre = #{idModuloPadre}
+        Where idModulo = #{idModulo}
+    </update>
+    <update id="eliminarLogicamente" parameterType="pe.marista.sigma.bean.ModuloBean">
+        Update MM_MODULO
+        status=0
+        Where idModulo = #{idModulo}
+    </update>
+    <update id="modificarPosicion" parameterType="map" >
+        update MM_Modulo 
+        set 
+        posicion = #{posicion}
+        where idmodulopadre = #{idModuloPadre}
+        and idmodulo = #{idModulo}
+    </update>
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.ModuloBean">
+        Delete From MM_MODULO Where idModulo = #{idModulo};
+    </delete>
+    <delete id="eliminarHijos" parameterType="pe.marista.sigma.bean.ModuloBean">
+        Delete From MM_MODULO Where idModuloPadre = #{idModulo};
+    </delete>
+    <!--Tipo-->
+    
+    <!-- MODIFICAR ORDENAMIENTO -->
+    <update id="modificarOrdenamiento" parameterType="pe.marista.sigma.bean.ModuloBean">
+        ;with lista as(
+        select idmodulo,posicion,ROW_NUMBER() over(order by idmodulo) as pos from MM_Modulo 
+        where idmodulopadre = #{idModulo})
+        update m	
+        set 
+        m.posicion = l.pos
+        from MM_Modulo m 
+        inner join lista l on m.idmodulo = l.idmodulo
+    </update>
+    
+    <!-- MODIFICAR POSICIONES -->
+    <update id="modificarPosicionPro" parameterType="pe.marista.sigma.bean.ModuloBean">
+        update MM_Modulo 
+        set 
+        posicion = #{posicion},
+        modiFecha = GETDATE()
+        where idmodulo = #{idModulo}
+    </update>
+    
+    <update id="modificarOrdenamientoPro" parameterType="pe.marista.sigma.bean.ModuloBean">
+        declare @table as table(idmodulo Integer,posicion Integer)
+        ;with lista as(
+        select idmodulo,posicion,ROW_NUMBER() over(order by posicion,modifecha desc) as pos,modifecha from MM_Modulo 
+        where idmodulopadre = #{idModulo})
+        insert into @table(idmodulo,posicion)
+        select m.idmodulo,m.pos from (
+        select m.idmodulo,l.pos,m.posicion,m.modifecha from MM_Modulo m 
+        inner join lista l on m.idmodulo = l.idmodulo) as m
+        order by m.posicion,m.modifecha desc
+        update m
+            set
+                m.posicion = t.posicion
+        from MM_Modulo m
+        inner join @table t on m.idmodulo = t.idmodulo
+    </update>
+    
+    <!-- LISTA DE POSICIONES EN 0 -->
+    <select id="obtenerPosicionCero" parameterType="Integer" resultType="Integer" >
+        select COUNT(*) from mm_modulo where idmodulopadre = 6031 and posicion = 0
+    </select>
+    
+</mapper>

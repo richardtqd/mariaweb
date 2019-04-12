@@ -1,0 +1,768 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.ProcesoFinalDAO">
+    
+    <resultMap id="procesoFinalResultado" type="pe.marista.sigma.bean.ProcesoFinalBean" >
+        <id property="idProcesoFinal" column="idproceso" />
+        <result property="valor" column="valor" />
+        <result property="idReferencia" column="idreferencia" />
+    </resultMap>
+     
+    <resultMap id="procesosResultado" type="pe.marista.sigma.bean.ProcesoFinalBean" autoMapping="true" ></resultMap> 
+    
+    <select id="obtenerMaxIdFile" resultType="Integer" parameterType="map" > 
+        declare @unidad char(6) = ''
+        declare @query  varchar(1500) = ''
+        declare @banco  varchar(11) = ''
+        declare @razon  varchar(1200) = ''
+        set @unidad = #{uniNeg}
+        set @banco = #{ruc} 
+        
+        <!-- Obteniendo nombre del Banco -->
+        set @razon = (select case
+        when (select ruc from MO_Entidad where flgfinanciera = 1 and unineg = @unidad and ruc = @banco) = @banco then (select nombre from MO_Entidad where flgfinanciera = 1 and unineg = @unidad and ruc = @banco)
+        end as nomEn)
+        <!-- fin de consulta -->
+        
+        set @query = 'select ISNULL(MAX(id),0) from ' + 'Recuperacion_'+@unidad+'_'+replace(@razon,' ','') + ' where unineg = ' +''''+ @unidad+''''
+        exec (@query)
+    </select>
+    
+    <select id="obtenerListaBancos" parameterType="map" resultType="Object" >
+        /* Declarando Parametros */
+        declare @uniNeg         char(6),
+        @ruc            varchar(11),
+        @idprocesobanco Integer
+
+        /* Declarando variables locales */
+        declare @nomBanco varchar(1200) = '',
+        @sql      varchar(5000) = ''
+
+        /* Seteando Valores */
+        set @uniNeg = #{uniNeg}
+        set @ruc = #{ruc}
+        set @idprocesobanco = #{idProcesoBanco}
+
+        /* Validando Nombre de Banco */
+        set @nomBanco = (select case
+        when (select ruc from MO_Entidad where flgfinanciera = 1 and unineg = @uniNeg and ruc = @ruc) = @ruc then (select nombre from MO_Entidad where flgfinanciera = 1 and unineg = @unineg and ruc = @ruc)
+        end as nomEn)
+
+        /* Realizando Consulta */
+        <!--set @sql = 'select * from RECUPERACION_'+@uniNeg+'_'+@nomBanco+' where idprocesobanco='+convert(varchar,@idprocesobanco)-->
+        set @sql = 'select *,(select case when flgconcilia = 1 then '+ '''' + 'Conciliado' + '''' +' when flgconcilia = 0 then '+ '''' + 'No Conciliado' + '''' +' end)as concilia from RECUPERACION_'+@uniNeg+'_'+@nomBanco+' where idprocesobanco='+convert(varchar,@idprocesobanco)
+        exec(@sql)
+    </select> 
+    
+    <insert id="insertarProcesoFinal" parameterType="pe.marista.sigma.bean.ProcesoFinalBean" >
+        INSERT INTO MT_Proceso(valor,idreferencia)
+        VALUES(#{valor},#{idReferencia})
+    </insert>
+    
+    <select id="execProRecup" parameterType="pe.marista.sigma.bean.ProcesoFinalBean" resultType="Object">
+        exec PRO_RECUPERACION
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@elemento = #{valor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@posicion = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProcesoRecup" parameterType="map" resultType="Object"> 
+        exec PRO_PROCESO_RECUP_BANCO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@sizeFile = #{sizeFile,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idprocesobanco = #{idprocesobanco,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProcesoRecupIns" parameterType="map" resultType="Object" >
+        exec PRO_PROCESO_RECUP_BANCO_INS
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idprocesobanco = #{idprocesobanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@elemento = #{elemento,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@posicion = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@ID = #{id,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProConcilia" parameterType="map" resultType="Object" >
+        exec PRO_RECUPERACION_CONCILIA
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@id = #{id,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@modipor = #{modiPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+             
+    <select id="execProEnvio" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@sizeFile = #{sizeFile,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioIns" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_INS
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@posicion = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@nomColumna = #{nomColumna,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@constante = #{constante,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@valorCons = #{valorCons,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@noconstante = #{noConstante,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioInsCons" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_INS
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@posicion = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@nomColumna = #{nomColumna,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@constante = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@valorCons = #{nomColumna,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProEnvioFile" parameterType="map" resultType="java.util.List" >  
+        exec PRO_ENVIO_FILE
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioCab" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_CAB
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@sizeFile = #{sizeFile,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioCabIns" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_CAB_INS
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@posicion = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@nomColumna = #{nomColumna,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@constante = #{constante,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@valorCons = #{valorCons,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProEnvioCabInsFile" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_CAB_FILE
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@sizeFile = #{sizeFile,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioInt" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_INT
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@sizeFile = #{sizeFile,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioIntIns" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_INT_INS
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@posicion = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@nomColumna = #{nomColumna,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@constante = #{constante,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@valorCons = #{valorCons,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProEnvioCabIntFile" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_INT_FILE
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@sizeFile = #{sizeFile,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProAsiento" parameterType="map" resultType="Object" >
+        exec PRO_ASIENTO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@objeto = #{objeto,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idobjeto = #{idObjeto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <!--
+    <select id="execProEnvioCabIns" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_CAB_INS
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@posicion = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@nomColumna = #{nomColumna,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@constante = #{posicion,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@valorCons = #{nomColumna,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    -->
+    
+    <select id="execProCtaCte" parameterType="map" resultType="Object" >
+        exec PRO_RECUPERACION_CTACTE
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@modiPor = #{modiPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProEnvioPro" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_PRO 
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idprocesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@fechaVenc = #{fechaVenc,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fechaInic = #{fechaInic,javaType=Date,jdbcType=DATE,mode=IN},
+        @@anio = #{anio,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombreCompleto = #{nombreCompleto,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idTipoConcepto = #{idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idConcepto = #{idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@tipoRegistro = #{idTipoRegistro,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@estado = #{estado,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="execProEnvioProCab" parameterType="map" resultType="Object">
+        exec PRO_ENVIO_PRO_CAB 
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idprocesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fecha = #{fecha,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@registroDefecto = #{registroDefecto,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProEnvioProCur" parameterType="map" resultType="Object" >
+        exec PRO_ENVIO_PRO_CURSO
+        @@unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idprocesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idEstudiante = #{idEstudiante,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@codigo = #{codigo,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@nombres = #{nombres,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@creaPor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fechaInic = #{fechaInic,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fecha = #{fecha,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idtipoconcepto = #{idTipoConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@idconcepto = #{idConcepto,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select> 
+    
+    <select id="obtenerPosItem" resultType="Integer" parameterType="map" >
+        declare @post Integer = 0
+        declare @flgProceso Integer = 0
+        set @post = #{post} <!-- POSICION DE INICIO O FIN -->
+        set @flgProceso = #{flgProceso} <!-- TIPO DE ARCHIVO 1:RECUPERACION 2:ENVIO -->
+        if @post = 0 
+        begin
+        select min(posicionitem) from MT_ProcesoFile where unineg = #{uniNeg} and flgproceso = @flgProceso and idtipofile = 20002 and ruc = #{ruc}
+        end 
+        if @post = 1
+        begin
+        select max(posicionitem) from MT_ProcesoFile where unineg = #{uniNeg} and flgproceso = @flgProceso and idtipofile = 20002 and ruc = #{ruc}
+        end
+    </select>
+    
+    <select id="obtenerPosItemCab" resultType="Integer" parameterType="map">
+        declare @post Integer = 0
+        declare @flgProceso Integer = 0
+        set @post = #{post}
+        set @flgProceso = #{flgProceso}
+        if @post = 0
+        begin
+        select min(posicionitem) from MT_ProcesoFile where unineg = #{uniNeg} and flgproceso = @flgProceso and idtipofile = 20001 and ruc = #{ruc}
+        end 
+        if @post = 1
+        begin
+        select max(posicionitem) from MT_ProcesoFile where unineg = #{uniNeg} and flgproceso = @flgProceso and idtipofile = 20001 and ruc = #{ruc}
+        end
+    </select>
+    
+    <select id="obtenerPosItemInt" resultType="Integer" parameterType="map" >
+        declare @post Integer = 0
+        declare @flgProceso Integer = 0
+        set @post = #{post}
+        set @flgProceso = #{flgProceso}
+        if @post = 0
+        begin
+        select min(posicionitem) from MT_ProcesoFile where unineg = #{uniNeg} and flgproceso = @flgProceso and idtipofile = 20003 and ruc = #{ruc}
+        end 
+        if @post = 1
+        begin
+        select max(posicionitem) from MT_ProcesoFile where unineg = #{uniNeg} and flgproceso = @flgProceso and idtipofile = 20003 and ruc = #{ruc}
+        end
+    </select>
+    
+    <select id="execProErrores" parameterType="map" resultType="object" >
+        exec PRO_ERRORES 
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idprocesobanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@creapor = #{creaPor,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@proceso = #{proceso,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="obtenerDisabledItem" resultType="Integer" parameterType="map" >
+        declare @ini Integer = 0
+        declare @fin Integer = 0
+        declare @sql varchar(max) = ''
+        declare @unineg char(6) = ''
+        declare @ruc    varchar(11) = ''
+        declare @nomBanco varchar(1000) = ''
+        declare @idprocesobanco Integer = 0
+        declare @list table(dato Integer)
+ 
+        set @unineg = #{uniNeg}
+        set @ruc = #{ruc}
+        set @idprocesobanco = #{idProcesoBanco}
+        
+        set @ini = (select MIN(posicionitem) from MT_ProcesoFile where unineg = @unineg and ruc = @ruc and flgproceso = 2 and idtipofile = 20002)
+        set @fin = (select MAX(posicionitem) from MT_ProcesoFile where unineg = @unineg and ruc = @ruc and flgproceso = 2 and idtipofile = 20002)
+        set @nomBanco = (select case
+        when (select ruc from MO_Entidad where flgfinanciera = 1 and unineg = @unineg and ruc = @ruc) = @ruc then (select nombre from MO_Entidad where flgfinanciera = 1 and unineg = @unineg and ruc = @ruc)
+        end as nomEn)   
+
+        while @ini <![CDATA[ < ]]>= @fin
+        begin
+        if @ini <![CDATA[ < ]]> @fin
+        begin
+        set @sql = @sql + 'select case  when (select count(elemento_'+CONVERT(varchar,@ini)+') from ENVIO_'+@unineg+'_'+@nomBanco+' WHERE idprocesobanco = '+CONVERT(varchar,@idprocesobanco)+') = 0 then 1 end ' 	
+        end
+        else
+        begin
+        if @ini = @fin
+        begin
+        set @sql = @sql + 'select case when (select count(elemento_'+CONVERT(varchar,@ini)+') from ENVIO_'+@unineg+'_'+@nomBanco+' WHERE idprocesobanco = '+CONVERT(varchar,@idprocesobanco)+') = 0 then 1 end' 
+        end
+        end 
+        set @ini = @ini + 1
+        end
+        insert into @list
+        exec(@sql)
+        select COUNT(*) from @list where dato = 1
+    </select>
+    
+    <delete id="eliminarArchivoFile" parameterType="map" >
+        declare @uniNeg			char(6)
+        declare @ruc			varchar(11)
+        declare @idProcesoBanco         Integer
+        declare @nomBanco		varchar(max)
+        declare @sql			varchar(max)
+        declare @sqll                   varchar(max)
+        declare @res                    Integer
+
+        set @uniNeg = #{uniNeg}
+        set @ruc    = #{ruc}
+        set @idProcesoBanco = #{idProcesoBanco}
+
+        set @nomBanco = (select case
+        when (select ruc from MO_Entidad where flgfinanciera = 1 and unineg = @uniNeg and ruc = @ruc) = @ruc then (select nombre from MO_Entidad where flgfinanciera = 1 and unineg = @uniNeg and ruc = @ruc)
+        end as nomEn)
+        print @nomBanco 
+        set @sql = 'DELETE FROM ENVIO_'+@uniNeg+'_'+@nomBanco+' where idProcesoBanco = '+CONVERT(varchar,@idProcesoBanco)
+        set @sqll = 'DELETE FROM Envio_Cabecera_'+@uniNeg+'_'+@nomBanco+' where idProcesoBanco = '+CONVERT(varchar,@idProcesoBanco)
+        exec(@sql)
+        exec(@sqll)
+    </delete>
+    
+    <delete id="eliminarFile" parameterType="map" >
+        declare @uniNeg char(6)
+        declare @ruc varchar(11)
+        declare @res Integer
+
+        declare @nomBanco varchar(max)
+        declare @xp       varchar(max)
+        declare @sql      varchar(1000)
+        declare @root     varchar(1000)
+
+        set @uniNeg = #{uniNeg}
+        set @ruc    = #{ruc}
+        set @res    = #{res}
+
+        set @nomBanco = (select case
+        when (select ruc from MO_Entidad where flgfinanciera = 1 and unineg = @uniNeg and ruc = @ruc) = @ruc then (select nombre from MO_Entidad where flgfinanciera = 1 and unineg = @uniNeg and ruc = @ruc)
+        end as nomEn)
+        set @root = @@SERVERNAME
+        if @res = 2
+        begin
+        set @xp = 'Exec master..xp_cmdshell '   
+        set @sql = 'bcp "select * from sigma_desa.dbo.Envio_'+@uniNeg+'_'+@nomBanco+'" queryout "'+ '\\'+@root+'\Temporal\\envio_'+convert(varchar,GETDATE(),4)+'.txt'+'" -c -T -S'
+        set @xp = @xp + '''' + @sql + ''''
+        exec(@xp)
+        declare @dell varchar(max)
+        set @dell = 'drop table Envio_'+@uniNeg+'_'+@nomBanco
+        exec(@dell)
+        end
+        else
+        begin
+        if @res = 1
+        begin
+        set @xp = 'Exec master..xp_cmdshell '   
+        set @sql = 'bcp "select * from sigma_desa.dbo.Envio_Cabecera_'+@uniNeg+'_'+@nomBanco+'" queryout "'+ '\\'+@root+'\Temporal\\envio_'+convert(varchar,GETDATE(),4)+'.txt'+'" -c -T -S'
+        set @xp = @xp + '''' + @sql + ''''
+        exec(@xp)
+        declare @del varchar(max)
+        set @del = 'drop table Envio_Cabecera_'+@uniNeg+'_'+@nomBanco
+        exec(@del)
+        end
+        end 
+    </delete>
+    <update id="modificarEnvioFiltro"  parameterType="map" >
+        declare @uniNeg varchar(1000) = '',@idProcesoBanco Integer = 0,@ruc varchar(1000) = '',
+        @tableName varchar(1000),@nomBanco varchar(1000),@sql varchar(1000) = '',@defectoImporte Integer = 0,
+        @res Integer = 0
+        set @uniNeg = #{uniNeg}
+        set @ruc = #{ruc}
+        set @idProcesoBanco = #{idProcesoBanco}
+        set @defectoImporte = #{defectoImporte}
+        <!--
+        set @nomBanco = (select case
+                                when (select ruc from MO_Entidad where flgfinanciera = 1 and unineg = @uniNeg and ruc = @ruc) = @ruc then (select nombre from MO_Entidad where flgfinanciera = 1 and unineg = @uniNeg and ruc = @ruc)
+                         end as nomEn)
+        -->
+        set @nomBanco = (select case
+        when @ruc = '20100053455' then 'InterBank' 
+        when @ruc = '20100047218' then 'BCP'
+        when @ruc = '20100043140' then 'SCOTIABANK'
+        end)
+        set @defectoImporte = (select posicionitem from MT_ProcesoFile where unineg = @uniNeg and ruc = @ruc and flgproceso = 2 and idDefecto = @defectoImporte)
+        set @tableName = 'Envio_'+@uniNeg+'_'+@nomBanco
+        set @sql = 'UPDATE MT_ProcesoBanco
+        set 
+        regenv = (select count(*) from '+@tableName+' where unineg = '+''''+@uniNeg+''''+' and idprocesobanco = '+CONVERT(varchar,@idProcesoBanco)+'),
+        montoenv = (select ISNULL(sum(CONVERT(MONEY,elemento_'+CONVERT(varchar,@defectoImporte)+')),0) from '+@tableName+' where unineg = '+''''+@uniNeg+''''+' and idprocesobanco = '+CONVERT(varchar,@idProcesoBanco)+')
+        WHERE unineg = '+''''+@uniNeg+''''+' and idprocesobanco = '+ CONVERT(varchar,@idProcesoBanco) +' '
+        exec(@sql)
+    </update>
+    
+    <select id="obtenerTotalRepBanco" resultType="pe.marista.sigma.bean.reporte.ReportePagoRepBean" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        ;with listaMeses as (
+        select sum(isnull(c.montopagado,0)) as monto,ga.idgradoacademico,CONCAT(ga.nombre,'/',mat.seccion) as grado,
+        (case
+        when mes = 2 then 'montoFebrero'
+        when mes = 3 then 'montoMarzo'
+        when mes = 4 then 'montoAbril'
+        when mes = 5 then 'montoMayo'
+        when mes = 6 then 'montoJunio'
+        when mes = 7 then 'montoJulio'
+        when mes = 8 then 'montoAgosto'
+        when mes = 9 then 'montoSetiembre'
+        when mes = 10 then 'montoOctubre'
+        when mes = 11 then 'montoNoviembre'
+        when mes = 12 then 'montoDiciembre'
+        end) as mes  
+        from mt_ctasxcobrar C
+        INNER JOIN mt_concepto co on c.idconcepto = co.idconcepto
+        inner join MX_Matricula mat on c.idmatricula = mat.idmatricula and c.unineg = mat.unineg
+        inner join MX_GradoAcademico ga on mat.idgradoacademico = ga.idgradoacademico
+        where c.unineg = #{unidadNegocioBean.uniNeg} and c.anio in (ISNULL(year(#{fechaInicio}),YEAR(getdate())),ISNULL(year(#{fechaFin}),YEAR(getdate())))   
+        and c.idtipostatusctacte = 19404 and c.mes is not null and mat.flgmatricula = 1
+        and c.idestudiante <![CDATA[ <> ]]> '48227010' and DATEDIFF(DAY,c.fechavenc,GETDATE()) > 0 
+        <if test="fechaInicio != null" >
+            and c.fechapago <![CDATA[ >= ]]> #{fechaInicio} 
+        </if>
+        <if test="fechaFin != null" >
+            and c.fechapago <![CDATA[ <= ]]> #{fechaFin}
+        </if>
+        group by ga.idgradoacademico,ga.nombre,mat.seccion,c.mes)
+        select grado,ISNULL([montoFebrero],0) as montoFebrero,ISNULL([montoMarzo],0) as montoMarzo,ISNULL([montoAbril],0) as montoAbril,
+        ISNULL([montoMayo],0) as montoMayo,ISNULL([montoJunio],0) as montoJunio,ISNULL([montoJulio],0) as montoJulio,ISNULL([montoAgosto],0) as montoAgosto,
+        ISNULL([montoSetiembre],0) as montoSetiembre,ISNULL([montoOctubre],0) as montoOctubre,ISNULL([montoNoviembre],0) as montoNoviembre,ISNULL([montoDiciembre],0) as montoDiciembre
+        from listaMeses PIVOT(SUM(monto) for mes in ([montoFebrero],[montoMarzo],[montoAbril],[montoMayo],[montoJunio],[montoJulio],[montoAgosto],[montoSetiembre],[montoOctubre],[montoNoviembre],[montoDiciembre])) AS pt 
+        order by idgradoacademico;
+    </select>
+    
+    <select id="obtenerTotalRepBancoDeuda" resultType="pe.marista.sigma.bean.reporte.ReportePagoRepBean" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        ;with listaMeses as (
+        select sum(isnull(c.monto + ISNULL(c.dsctobeca,0),0)) as monto,ga.idgradoacademico,CONCAT(ga.nombre,'/',mat.seccion) as grado,
+        (case
+        when mes = 2 then 'montoFebrero'
+        when mes = 3 then 'montoMarzo'
+        when mes = 4 then 'montoAbril'
+        when mes = 5 then 'montoMayo'
+        when mes = 6 then 'montoJunio'
+        when mes = 7 then 'montoJulio'
+        when mes = 8 then 'montoAgosto'
+        when mes = 9 then 'montoSetiembre'
+        when mes = 10 then 'montoOctubre'
+        when mes = 11 then 'montoNoviembre'
+        when mes = 12 then 'montoDiciembre'
+        end) as mes  
+        from mt_ctasxcobrar C
+        INNER JOIN mt_concepto co on c.idconcepto = co.idconcepto
+        inner join MX_Matricula mat on c.idmatricula = mat.idmatricula and c.unineg = mat.unineg
+        inner join MX_GradoAcademico ga on mat.idgradoacademico = ga.idgradoacademico
+        where c.unineg = #{unidadNegocioBean.uniNeg} and c.anio in (ISNULL(year(#{fechaInicio}),YEAR(getdate())),ISNULL(year(#{fechaFin}),YEAR(getdate())))
+        and c.idtipostatusctacte = 19401 and c.mes is not null and mat.flgmatricula = 1 
+        and c.idestudiante <![CDATA[ <> ]]>'48227010' and DATEDIFF(DAY,c.fechavenc,GETDATE()) > 0 
+        <if test="fechaInicio != null" >
+            and c.fechapago <![CDATA[ >= ]]> #{fechaInicio} 
+        </if>
+        <if test="fechaFin != null" >
+            and c.fechapago <![CDATA[ <= ]]> #{fechaFin}
+        </if>
+        group by ga.idgradoacademico,ga.nombre,mat.seccion,c.mes)
+        select grado,ISNULL([montoFebrero],0) as montoFebrero,ISNULL([montoMarzo],0) as montoMarzo,ISNULL([montoAbril],0) as montoAbril,
+        ISNULL([montoMayo],0) as montoMayo,ISNULL([montoJunio],0) as montoJunio,ISNULL([montoJulio],0) as montoJulio,ISNULL([montoAgosto],0) as montoAgosto,
+        ISNULL([montoSetiembre],0) as montoSetiembre,ISNULL([montoOctubre],0) as montoOctubre,ISNULL([montoNoviembre],0) as montoNoviembre,ISNULL([montoDiciembre],0) as montoDiciembre
+        from listaMeses PIVOT(SUM(monto) for mes in ([montoFebrero],[montoMarzo],[montoAbril],[montoMayo],[montoJunio],[montoJulio],[montoAgosto],[montoSetiembre],[montoOctubre],[montoNoviembre],[montoDiciembre])) AS pt order by idgradoacademico;
+    </select>
+    
+    <select id="execProGenRepPago" parameterType="map" resultType="object" >
+        exec PRO_GENRESPPAGO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@fecini = #{fecIni,javaType=Date,jdbcType=DATE,mode=IN},
+        @@fecfin = #{fecFin,javaType=Date,jdbcType=DATE,mode=IN},
+        @@idtiporeppago = #{idTipoRepPago,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    
+    <select id="obtenerRepPago" resultType="pe.marista.sigma.bean.reporte.PagosUniNegRepBean" parameterType="pe.marista.sigma.bean.reporte.PagosUniNegRepBean" >
+        select unineg,grado,montoFebrero,montoMarzo,montoAbril,montoMayo,montoJunio,montoJulio,
+        montoAgosto,montoSetiembre,montoOctubre,montoNoviembre,montoDiciembre,idtiporeppago
+        from MT_PagosUniNeg where unineg = #{uniNeg} and idtiporeppago = #{idtiporeppago}
+    </select>
+    
+    <select id="obtenerRepNotaAbono" resultType="pe.marista.sigma.bean.reporte.NotaAbonoRepBean" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" > 
+        ;with lista as(
+        select pb.idprocesobanco,pb.fecha as fecha,
+        sum(cta.montopagado) as monto, 
+        cta.anio,
+        (case
+        when mes = 2 then 'montoFebrero'
+        when mes = 3 then 'montoMarzo'
+        when mes = 4 then 'montoAbril'
+        when mes = 5 then 'montoMayo'
+        when mes = 6 then 'montoJunio'
+        when mes = 7 then 'montoJulio'
+        when mes = 8 then 'montoAgosto'
+        when mes = 9 then 'montoSetiembre'
+        when mes = 10 then 'montoOctubre'
+        when mes = 11 then 'montoNoviembre'
+        when mes = 12 then 'montoDiciembre'
+        end) as mes,pb.montorecup as montorecup,
+        (select SUM(cta.mora) from MT_CtasxCobrar cta where cta.unineg = #{unidadNegocioBean.uniNeg} and cta.idprocesobanco = pb.idprocesobanco) as mora,
+        (pb.montorecup - (select SUM(cta.mora) from MT_CtasxCobrar cta where cta.unineg = #{unidadNegocioBean.uniNeg} and cta.idprocesobanco = pb.idprocesobanco)) as montoSub
+        from MT_ProcesoBanco pb
+        inner join MT_CtasxCobrar cta on pb.idprocesobanco = cta.idprocesobanco and pb.unineg = cta.unineg
+        where pb.unineg = #{unidadNegocioBean.uniNeg} and pb.flgproceso = 0 
+        and cta.unineg = #{unidadNegocioBean.uniNeg} and cta.idtipostatusctacte = #{estado}
+        <if test="fechaInicio != null" >
+            and pb.fecha <![CDATA[ >= ]]> #{fechaInicio}
+        </if>
+        <if test="fechaFin != null" >
+            and pb.fecha <![CDATA[ <= ]]> #{fechaFin}
+        </if>
+        group by pb.idprocesobanco,cta.mes,pb.fecha,cta.anio,pb.montorecup)
+        select CONVERT(varchar,fecha,105) as fechaVista,fecha,anio,
+        ISNULL([montoFebrero],0) as montoFebrero,
+        ISNULL([montoMarzo],0) as montoMarzo,
+        ISNULL([montoAbril],0) as montoAbril,
+        ISNULL([montoMayo],0) as montoMayo,
+        ISNULL([montoJunio],0) as montoJunio,
+        ISNULL([montoJulio],0) as montoJulio,
+        ISNULL([montoAgosto],0) as montoAgosto,
+        ISNULL([montoSetiembre],0) as montoSetiembre,
+        ISNULL([montoOctubre],0) as montoOctubre,
+        ISNULL([montoNoviembre],0) as montoNoviembre,
+        ISNULL([montoDiciembre],0) as montoDiciembre,
+        mora as totalMora,
+        montoSub as subtotal,
+        montorecup as total
+        from lista l PIVOT(SUM(l.monto) 
+        for l.mes in ([montoFebrero],[montoMarzo],[montoAbril],[montoMayo],[montoJunio],[montoJulio],[montoAgosto],[montoSetiembre],[montoOctubre],[montoNoviembre],[montoDiciembre])) AS pt order by fecha;
+    </select>
+    
+    <select id="obtenerListaFallo" resultType="pe.marista.sigma.bean.reporte.ProcesoFalloRepBean" parameterType="pe.marista.sigma.bean.reporte.ProcesoFalloRepBean" > 
+        ;with lista as(
+        select pf.unineg,pf.idprocesobanco,pf.idestudiante,est.codigo,
+        CONCAT(per.apepat,' ',per.apemat,',',per.nombre) as nombres,
+        (case
+        when pf.mes = 1 then 'PENSION ENERO'
+        when pf.mes = 2 then 'MATRICULA'
+        when pf.mes = 3 then 'PENSION MARZO'
+        when pf.mes = 4 then 'PENSION ABRIL'
+        when pf.mes = 5 then 'PENSION MAYO'
+        when pf.mes = 6 then 'PENSION JUNIO'
+        when pf.mes = 7 then 'PENSION JULIO'
+        when pf.mes = 8 then 'PENSION AGOSTO'
+        when pf.mes = 9 then 'PENSION SETIEMBRE'
+        when pf.mes = 10 then 'PENSION OCTUBRE'
+        when pf.mes = 11 then 'PENSION NOVIEMBRE'
+        when pf.mes = 12 then 'PENSION DICIEMBRE'
+        end) as concepto,convert(varchar,pf.fecha,105) as fechaPago,pf.monto,pf.anio
+        from MT_ProcesoFallo pf
+        inner join MX_Estudiante est on pf.idestudiante = est.idestudiante and pf.unineg = est.unineg
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg
+        <where>
+            pf.unineg = #{uniNeg}
+            <if test="fechaIni != null and fechaIni != '' " >
+                and pf.fecha <![CDATA[ >= ]]> #{fechaIni}
+            </if>
+            <if test="fechaFin != null and fechaFin != '' " >
+                and pf.fecha <![CDATA[ <= ]]> #{fechaFin}
+            </if>
+            <if test="codigo != null and codigo != '' " >
+                and est.codigo like concat('%',#{codigo},'%')
+            </if>
+            <if test="idestudiante != null and idestudiante != '' " >
+                and est.idestudiante like concat('%',#{idestudiante},'%')
+            </if>
+            <if test="nombres != null and nombres != '' " >
+                and CONCAT(per.apepat,' ',per.apemat,',',per.nombre) like concat('%',#{nombres},'%')
+            </if>
+        </where>)
+        select l.anio,l.codigo,l.concepto,l.fechaPago,l.idestudiante,l.idprocesobanco,l.monto,l.nombres,l.unineg,
+        (select sum(monto) from lista group by id) as totalMonto
+        from lista l
+    </select>
+    
+    <select id="obtenerListaDetConcilia" resultType="pe.marista.sigma.bean.reporte.ConciliaBancoRepBean" parameterType="pe.marista.sigma.bean.reporte.ConciliaBancoRepBean" >
+        declare @unineg varchar(6) = #{uniNeg}
+        declare @idprocesoBanco Integer = #{idProcesoBanco}
+        if(@unineg = 'SANJOC')
+        begin
+        select 
+        rc.id,cta.idprocesobanco,rc.idprocesobanco as idpro,cta.mes,cta.anio,cta.idestudiante,est.codigo,cta.montopagado,cta.pagado,cta.fechapago,
+        CONCAT(per.apepat,' ',per.apemat,',',per.nombre) as nombreCompleto,con.nombre as nomConcepto,
+        convert(varchar,cta.fechapago,105) as fechaPagoVista,
+        (case
+        when cta.mes = 2 then 'MATRICULA'
+        when cta.mes = 3 then 'MARZO'
+        when cta.mes = 4 then 'ABRIL'
+        when cta.mes = 5 then 'MAYO'
+        when cta.mes = 6 then 'JUNIO'
+        when cta.mes = 7 then 'JULIO'
+        when cta.mes = 8 then 'AGOSTO'
+        when cta.mes = 9 then 'SETIEMBRE'
+        when cta.mes = 10 then 'OCTUBRE'
+        when cta.mes = 11 then 'NOVIEMBRE'
+        when cta.mes = 12 then 'DICIEMBRE'
+        end) as mesVista
+        from MT_CtasxCobrar cta
+        inner join MX_Estudiante est on cta.idestudiante = est.idestudiante and cta.unineg = est.unineg 
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg 
+        inner join Recuperacion_SANJOC_InterBank rc on est.codigo = REPLACE(rc.elemento_5,' ','') and SUBSTRING(rc.elemento_6,1,4) = cta.anio and SUBSTRING(rc.elemento_6,5,2) = cta.mes
+        inner join MT_ProcesoBanco pb on pb.idprocesobanco = cta.idprocesobanco and pb.unineg = cta.unineg
+        inner join MT_Concepto con on cta.idconcepto = con.idconcepto
+        where cta.unineg = @unineg and cta.anio in (2016,2015) and rc.idprocesobanco = @idprocesoBanco 
+        order by est.codigo
+        end
+        if(@unineg = 'SANLUI')
+        begin
+        print ''
+        end
+        if(@unineg = 'CHAMPS')
+        begin
+        print ''
+        end
+        if(@unineg = 'BARINA')
+        begin
+        print ''
+        end
+    </select>
+    <select id="obtenerListaDetConciliaFallo" resultType="pe.marista.sigma.bean.reporte.ConciliaBancoRepBean" parameterType="pe.marista.sigma.bean.reporte.ConciliaBancoRepBean" >
+        declare @unineg varchar(6) = #{uniNeg}
+        declare @idprocesoBanco Integer = #{idProcesoBanco}
+        if(@unineg = 'SANJOC') begin 
+        ;with lista as(
+        select rc.unineg,rc.id,cta.idprocesobanco,rc.idprocesobanco as idpro,
+        cta.mes,cta.anio,cta.idestudiante,est.codigo,cta.montopagado,
+        cta.pagado,cta.fechapago, CONCAT(per.apepat,' ',per.apemat,',',per.nombre) as nombreCompleto,
+        con.nombre as nomConcepto, convert(varchar,cta.fechapago,105) as fechaPagoVista, 
+        (case 
+        when cta.mes = 2 then 'MATRICULA' 
+        when cta.mes = 3 then 'MARZO' 
+        when cta.mes = 4 then 'ABRIL'
+        when cta.mes = 5 then 'MAYO' 
+        when cta.mes = 6 then 'JUNIO' 
+        when cta.mes = 7 then 'JULIO' 
+        when cta.mes = 8 then 'AGOSTO' 
+        when cta.mes = 9 then 'SETIEMBRE' 
+        when cta.mes = 10 then 'OCTUBRE' 
+        when cta.mes = 11 then 'NOVIEMBRE' 
+        when cta.mes = 12 then 'DICIEMBRE' 
+        end) as mesVista 
+        from MT_CtasxCobrar cta 
+        inner join MX_Estudiante est on cta.idestudiante = est.idestudiante and cta.unineg = est.unineg 
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg 
+        inner join Recuperacion_SANJOC_InterBank rc on est.codigo = REPLACE(rc.elemento_5,' ','') and SUBSTRING(rc.elemento_6,1,4) = cta.anio and SUBSTRING(rc.elemento_6,5,2) = cta.mes
+        inner join MT_Concepto con on cta.idconcepto = con.idconcepto 
+        where cta.unineg = @unineg and cta.anio in (2016,2015) and rc.idprocesobanco = @idprocesoBanco)
+        select 
+        est.unineg,
+        est.idestudiante as idEstudiante,
+        est.codigo as codigo,
+        rc.idprocesobanco,
+        rc.elemento_6 as cuota,
+        CONVERT(varchar,rc.elemento_9,105) as fechaPagoVista,
+        rc.elemento_8,
+        rc.elemento_11 as montoRecup,
+        rc.elemento_12 as moraRecup,
+        CONCAT(per.apepat,' ',per.apemat,',',per.nombre) as nombreCompleto,
+        SUBSTRING(rc.elemento_6,1,4) as anio,
+        convert(Integer,SUBSTRING(rc.elemento_6,5,2)) as mes,
+        (case 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 2 then 'MATRICULA' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 3 then 'MARZO' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 4 then 'ABRIL'
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 5 then 'MAYO' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 6 then 'JUNIO' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 7 then 'JULIO' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 8 then 'AGOSTO' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 9 then 'SETIEMBRE' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 10 then 'OCTUBRE' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 11 then 'NOVIEMBRE' 
+        when convert(Integer,SUBSTRING(rc.elemento_6,5,2)) = 12 then 'DICIEMBRE'
+        end) as mesVista
+        from Recuperacion_SANJOC_InterBank rc 
+        inner join MX_Estudiante est on est.codigo = REPLACE(rc.elemento_5,' ','') and rc.unineg = est.unineg 
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg
+        where rc.unineg = @unineg and rc.idprocesobanco = @idprocesoBanco and rc.id 
+        not in (select l.id from lista l where l.unineg = @unineg and idprocesobanco = @idprocesoBanco)
+        end 
+        if(@unineg = 'SANLUI') begin print '' end if(@unineg = 'CHAMPS') begin print '' end if(@unineg = 'BARINA') begin print '' end
+    </select>
+    
+    <select id="execProCtaCte1" parameterType="map" resultType="Object" >
+        exec PRO_RECUPERACION_CTACTE_1
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@modiPor = #{modiPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProCtaCte2" parameterType="map" resultType="Object" >
+        exec PRO_RECUPERACION_CTACTE_2
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@modiPor = #{modiPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+    <select id="execProError" parameterType="map" resultType="Object" >
+        exec PRO_RECUPERACION_DOBLE_PAGO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@ruc = #{ruc,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idProcesoBanco = #{idProcesoBanco,javaType=Integer,jdbcType=INTEGER,mode=IN},
+        @@modiPor = #{modiPor,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    
+</mapper>

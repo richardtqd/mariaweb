@@ -1,0 +1,1283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.RegistroCompraDAO">  
+    <sql id="consultaCampos">
+        SELECT distinct
+        rc.unineg
+        ,rc.idRegistroCompra
+        ,rc.anio
+        ,rc.idordencompra
+        ,rc.fechaemision
+        ,rc.idtipodoc
+        ,rc.importe 
+        ,rc.total
+        ,rc.ruc
+        ,rc.flgdonacion
+        ,rc.flgrecibido
+        ,rc.idtipostatusregc
+        ,rc.glosa
+        ,rc.obsvenc
+        ,rc.idtipocategoria 
+        ,rc.idtipoprioridad 
+        ,rc.creapor
+        ,rc.creafecha
+        ,rc.modipor
+        ,rc.modiver
+        ,rc.nroregistro as nroRegistro,
+        right(replicate('0', 3) + rtrim(rc.nroRegistro), 3) as nroRegistro
+        ,(select sum(d.importe*d.cantidad) from ML_DetOrdenCompra d
+        where d.idOrdenCompra = oc.idordencompra) as sumaImporte,
+        uni.nombreUniNeg
+        ,uni.unineg as idUniNeg
+        ,oc.idordencompra as orCompra
+        ,re.importePropuesto as importePropuesto
+        ,oc.ruc rucOC
+        ,oc.idtipocategoria as categoria
+        ,codoc.codigo as tipoDoc 
+        ,cocat.codigo as tipoCategoria
+        ,costa.codigo as tipoStatusRegC 
+        ,coprio.codigo as tipoPrioridad 
+        ,en.nombre as nombreEnt 
+        ,en.ruc as rucEnt
+        ,en.nombre as nombreOC
+        ,en.nombre as direccion
+        ,fact.idfacturacompra
+        ,concat(fact.seriedoc+'-',fact.nrodoc) as serieNroDoc 
+        ,coregc.idcodigo as idTipoStatusRegCOC
+        ,coregc.codigo as tipoStatusRegCOC,
+        oc.importeadelanto as importeAdelanto,
+        oc.obs as obs,
+        <!-- /*reCR.cr as crRequerimiento,
+        reCR.idrequerimiento as idRequerimientoCR,
+        reCR.idtipodistribucion as idDistribucionCR,
+        reCR.valor as valorCR,
+        reCR.unineg as uniNegCR,*/-->
+        fc.glosa,
+        fact.flgadelanto as flgAdelanto
+        FROM ML_RegistroCompra rc
+        left join MO_UnidadNegocio uni on rc.unineg = uni.unineg
+        left join ML_OrdenCompra oc on rc.idordencompra = oc.idordencompra
+        left join MO_Codigo coregc on coregc.idcodigo = oc.idtipostatusregc
+        left join ML_DetOrdenCompra deto on deto.idordencompra = oc.idordencompra
+        left join ML_FacturaCompra fact on fact.idfacturacompra = deto.idfacturacompra
+        left join MO_Codigo codoc on rc.idtipodoc = codoc.idcodigo
+        left join MO_Codigo costa on rc.idtipostatusregc = costa.idcodigo 
+        left join MO_Codigo cocat on rc.idtipocategoria = cocat.idcodigo 
+        left join MO_Codigo coprio on rc.idtipoprioridad = coprio.idcodigo
+        left join MO_Entidad en on oc.ruc = en.ruc 
+        left join ML_DetRequerimiento detreque on detreque.iddetrequerimiento = deto.iddetrequerimiento
+        left join ML_DetRequerimientoCR reCR on reCR.idrequerimiento = detreque.idrequerimiento
+        left join ML_Requerimiento re on re.idrequerimiento =detreque.idrequerimiento
+        left join ML_DetRegistroCompra rg on rg.idregistrocompra = rc.idregistrocompra
+        left join ML_FacturaCompra fc on fc.idfacturacompra = rg.idfacturacompra
+    </sql> 
+    <resultMap id="registroCompraResultado" type="pe.marista.sigma.bean.RegistroCompraBean">
+        <id property="idRegistroCompra" column="idRegistroCompra"/>
+        <result property="anio" column="anio"/>
+        <result property="fechaEmision" column="fechaEmision"/>  
+        <result property="importe" column="importe"/> 
+        <result property="total" column="total"/> 
+        <result property="flgDonacion" column="flgDonacion"/>
+        <result property="glosa" column="glosa"/> 
+        <result property="obsVenc" column="obsVenc"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="flgRecibido" column="flgRecibido"/>
+        <result property="nroRegistro" column="nroRegistro"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+        <association property="ordenCompraBean" column="idOrdenCompra"
+                     javaType="pe.marista.sigma.bean.OrdenCompraBean"
+                     resultMap="ordenCompraFacturaResultado"/>
+        <association property="tipoDocBean" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>  
+        <association property="tipoStatusRegCBean" column="idTipoStatusRegC"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusRegCResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaResultado"/> 
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/> 
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadResultado"/>
+        <association property="facturaCompraBean" column="idFacturaCompra"
+                     javaType="pe.marista.sigma.bean.FacturaCompraBean"
+                     resultMap="facturaCompraResultado"/>
+    </resultMap>
+    <resultMap id="negocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="idUniNeg"/> 
+        <id property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>  
+    <resultMap id="ordenCompraFacturaResultado" type="pe.marista.sigma.bean.OrdenCompraBean">
+        <id property="idOrdenCompra" column="orCompra"/>
+        <result property="anio" column="anio"/>  
+        <result property="obs" column="obs"/>  
+        <result property="importeAdelanto" column="importeAdelanto"/>  
+        <result property="importePropuesto" column="importePropuesto"/>  
+        <result property="montoRef" column="montoRef"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultadoOC"/> 
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadResultadoOC"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaResultadoOC"/> 
+        <association property="tipoStatusRegCBean" column="idTipoStatusRegCOC"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusRegCOCResultado"/>
+    </resultMap>
+    <resultMap id="tipoStatusRegCOCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusRegCOC"/>
+        <result property="codigo" column="tipoStatusRegCOC"/>
+    </resultMap>
+    <!--  <resultMap id="tipoOrdenResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoOrden"/>
+        <result property="codigo" column="tipoOrden"/>
+    </resultMap>-->
+    <resultMap id="tipoPrioridadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="tipoPrioridad"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaResultadoOC" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>
+    <resultMap id="entidadResultadoOC" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucEnt"/>
+        <result property="nombre" column="nombreOC"/>
+        <result property="direccion" column="direccion"/>
+        <association property="distritoBean" column="idDistrito"
+                     javaType="pe.marista.sigma.bean.DistritoBean"
+                     resultMap="distritoResultado"/> 
+    </resultMap> 
+    <resultMap id="distritoResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="nombreDis"/>
+    </resultMap>
+    <resultMap id="tipoDocResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDoc"/>
+        <result property="codigo" column="tipoDoc"/>
+    </resultMap>
+    <!-- <resultMap id="tipoFacResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoNumeroFactura"/>
+        <result property="codigo" column="tipoNumeroFactura"/>
+    </resultMap>--> 
+    <resultMap id="tipoCategoriaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>
+    <resultMap id="tipoPrioridadResultadoOC" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="tipoPrioridadOC"/>
+    </resultMap>
+    <resultMap id="tipoStatusRegCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusRegC"/>
+        <result property="codigo" column="tipoStatusRegC"/>
+    </resultMap> 
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucEnt2"/>
+        <result property="nombre" column="nombreEnt2"/>
+    </resultMap>  
+    <select id="obtenerTodosPorUniNeg" resultMap="registroCompraResultado" parameterType="String">
+        <include refid="consultaCampos" /> where rc.unineg = #{uniNeg}
+    </select>
+    <select id="obtenerTodosPorUniNegFact" resultMap="facturaCompraResultado" parameterType="String">
+        <include refid="consultaCamposFactura" /> where fact.unineg = #{uniNeg}
+    </select> 
+    <select id="obtenerPorId" resultMap="registroCompraResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where rc.idRegistroCompra = #{idRegistroCompra}
+    </select>
+    
+    <!--Listo todas las solicitudes de estado Autorizado -->
+    <select id="obtenerTodosAutorizados" resultMap="registroCompraResultado">
+        <include refid="consultaCampos" />
+        where costa.codigo in ('Autorizado')
+        order by rc.fechaEmision desc
+    </select> 
+    <select id="obtenerTodosAprob" resultMap="registroCompraResultado">
+        <include refid="consultaCampos" />
+        where costa.codigo in ('Autorizado')
+        order by rc.fechaEmision desc
+    </select> 
+    <select id="obtenerSerie" resultMap="registroCompraResultado" parameterType="String">
+        <include refid="consultaCampos" />Where fact.seriedoc = #{facturaCompraBean.seriedoc} and fact.uniNeg =#{unidadNegocioBeam.uniNeg}
+    </select>
+    
+    <select id="obtenerPorFiltroRC" resultMap="registroCompraResultado" parameterType="pe.marista.sigma.bean.RegistroCompraBean">
+        <include refid="consultaCampos" />
+        <where>  
+            rc.unineg =#{unidadNegocioBean.uniNeg}       
+            <if test="idPaso == 'Autorizado' ">
+                and costa.codigo in ('Autorizado')
+            </if>
+            <if test="nroRegistro != null and nroRegistro != 0 ">
+                and rc.nroRegistro = #{nroRegistro}
+            </if> 
+            <if test="anio != null and anio != 0 ">
+                and rc.anio = #{anio}
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and rc.fechaEmision >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and rc.fechaEmision <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by rc.idRegistroCompra desc
+    </select>
+    <select id="obtenerPorFiltroRCAutorizados" resultMap="registroCompraResultado" parameterType="pe.marista.sigma.bean.RegistroCompraBean">
+        <include refid="consultaCampos" />
+        <where>   
+            rc.uniNeg= #{unidadNegocioBean.uniNeg}
+            <!--            and costa.idCodigo=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusRegCBean.codigo} and idTipoCodigo=#{tipoStatusRegCBean.tipoCodigoBean.descripcion})-->
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and rc.fechaEmision >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and rc.fechaEmision <= #{fechaFin}
+                ]]>
+            </if>  
+            <if test="idRegistroCompra != null and idRegistroCompra != 0 ">
+                and rc.idRegistroCompra = #{idRegistroCompra}
+            </if> 
+            <if test="nroDoc != null and nroDoc != 0 ">
+                and rc.nroDoc = #{nroDoc}
+            </if>
+            <if test="serieDoc != null and serieDoc != 0 ">
+                and rc.serieDoc = #{serieDoc}
+            </if> 
+            <if test="entidadBean.ruc != null and entidadBean.ruc != 0 ">
+                and rc.ruc = #{entidadBean.ruc}
+            </if> 
+            <if test="entidadBean.nombre != null and entidadBean.nombre != '' ">
+                and en.nombre = #{entidadBean.nombre}
+            </if> 
+        </where>
+        order by rc.idRegistroCompra desc
+    </select> 
+    <select id="obtenerPorIdFactura" resultMap="facturaCompraResultado" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        <include refid="consultaCamposFactura" />where fact.idfacturacompra = #{idFacturaCompra} and fact.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select> 
+    <select id="obtenerPorIdFacturaVer2" resultMap="facturaCompraResultado" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        SELECT  fact.unineg as uniNegFc
+        ,fact.idFacturaCompra
+        ,fact.idRegistroCompra
+        ,fact.serieDoc
+        ,fact.nroDoc
+        ,fact.idTipoMoneda
+        ,tipMon.codigo as codMoneda
+        
+        ,isnull(fact.importe,0) - isnull(fact.impuesto ,0) AS importeSinIgv 
+        ,fact.igv as igv
+        ,fact.impuesto as impuesto
+        ,fact.importe AS importe 
+        ,fact.idDetraccion 
+        ,fact.valorDetraccion as valorDetraccion
+        ,fact.montoPago as montoPago
+        
+        ,fact.idTipoStatusFactura
+        ,tipStaFact.codigo as codStaFact 
+        ,fact.idTipoPrioridad
+        ,tipPrio.codigo as codTipPrio            
+        ,fact.fechaVenc
+        ,fact.obsVenc 
+        ,fact.fechaProg 
+        ,concat(fact.serieDoc+' - ',fact.nroDoc) as serieNroDoc 
+        ,en.ruc as rucEnt2
+        ,en.nombre as nombreEnt2
+        ,reg.idRegistroCompra
+        ,reg.anio 
+        ,codoc.codigo as tipoDoc
+        ,reg.fechaemision
+        ,reg.idtipodoc  
+        ,reg.flgdonacion
+        ,reg.flgrecibido
+        ,reg.nroRegistro
+        ,oc.idordencompra as idOC
+        , (select 
+        (case 
+        when fact.idregistrocompra is null then oc.idordencompra
+        else reg.idregistrocompra
+        end)
+        ) as idCompra,
+        (select 
+        (case 
+        when fact.idregistrocompra is null then oc.obs
+        else fact.glosa
+        end)
+        ) as glosaCompra,
+ 
+        (select 
+        (case 
+        when fact.idregistrocompra is null then entOc.ruc
+        else en.ruc
+        end)
+        ) as rucCompra,
+
+        (select 
+        (case 
+        when fact.idregistrocompra is null then entOc.nombre
+        else en.nombre
+        end)
+        ) as entidadCompra,
+        fact.flgadelanto as flgAdelanto,
+        msj.idtipomodopago as idTipoModoPago,
+        isnull(tipModPag.codigo,'') as codModoPago,
+        (select concat(p.apepat, ' ', p.apemat,', ',p.nombre) from MO_Personal p where p.idpersonal= msj.idsolicitante and p.unineg=msj.unineg)  as solicitante,
+        (case when isnull(tipStaFact.codigo,'Pendiente')='Pagada' then 'true' else 'false' end) as flgAutorizar
+        FROM ML_FacturaCompra fact
+        INNER join MO_UnidadNegocio neg on fact.unineg = neg.unineg
+        left join ML_RegistroCompra reg on fact.idRegistroCompra = reg.idRegistroCompra
+        left join MO_Entidad en on reg.ruc = en.ruc
+        left join MO_Codigo codoc on reg.idtipodoc = codoc.idcodigo
+        
+        Left JOIN ML_OrdenCompra   oc     on oc.idordencompra=fact.idordencompra and fact.unineg=oc.unineg 
+        Left join MO_Entidad   entOc      on entOc.ruc=oc.ruc and entOc.unineg=oc.unineg 
+        Left join MO_Codigo tipCatOc      on tipCatOc.idcodigo=oc.idtipocategoria
+         
+        left join MT_Detraccion detra on detra.idDetraccion=fact.idDetraccion 
+        Left Join MO_Codigo tipMon ON tipMon.idCodigo = fact.idTipoMoneda   
+        Left Join MO_Codigo tipStaFact  ON tipStaFact.idCodigo = fact.idTipoStatusFactura
+        Left Join MO_Codigo tipPrio ON tipPrio.idCodigo = fact.idTipoPrioridad
+        Left Join MM_TipoSolicitud ts on ts.idTipoSolicitud=fact.idTipoSolicitud
+       
+        left join MO_Personal perA1 on fact.idAutoriza1=perA1.idPersonal and perA1.uniNeg=fact.uniNeg
+        left join MO_Personal perA2 on fact.idAutoriza2=perA2.idPersonal and perA2.uniNeg=fact.uniNeg
+        left join MO_Personal perA3 on fact.idAutoriza3=perA3.idPersonal and perA3.uniNeg=fact.uniNeg 
+        left join MM_Mensaje msj on msj.idobjeto=fact.idfacturacompra and msj.unineg=fact.unineg
+        and msj.objeto='ML_FacturaCompra'
+        Left Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago 
+        where fact.idfacturacompra = #{idFacturaCompra} and fact.uniNeg = #{unidadNegocioBean.uniNeg}
+    </select> 
+    <select id="llamarAutorizadores" parameterType="pe.marista.sigma.bean.RegistroCompraBean" resultType="Object">
+        exec PRO_GET_AUTORIZADORES
+        @@unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idobjeto = #{idRegistroCompra,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@objeto = #{objeto,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>  
+    <select id="llamarDuende" resultMap="facturaCompraResultado" >
+        EXEC PRO_CURRIER_FACTURA
+    </select>  
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.RegistroCompraBean"
+            useGeneratedKeys="true" keyProperty="idRegistroCompra" keyColumn="idRegistroCompra">
+        insert into ML_RegistroCompra (idRegistroCompra,unineg,anio,idordencompra,fechaemision,idtipodoc,total,
+        importe,ruc,flgdonacion,obsvenc,idtipocategoria,idtipoprioridad,creapor,creafecha,glosa,
+        flgRecibido,idtipostatusregc,nroregistro)        
+        values (0,#{unidadNegocioBean.uniNeg},#{ordenCompraBean.anio},#{ordenCompraBean.idOrdenCompra},#{fechaEmision},#{tipoDocBean.idCodigo}
+        ,#{total},#{ordenCompraBean.montoRef},#{ordenCompraBean.entidadBean.ruc},#{flgDonacion}
+        ,#{obsVenc},#{ordenCompraBean.tipoCategoriaBean.idCodigo},#{ordenCompraBean.tipoPrioridadBean.idCodigo},
+        #{creaPor},getDate(),#{glosa},#{flgRecibido},#{tipoStatusRegCBean.idCodigo},#{nroRegistro})
+        <selectKey keyProperty="idRegistroCompra" order="AFTER" resultType="Integer">
+            SELECT max(idRegistroCompra) FROM ML_RegistroCompra WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>      
+    <update id="modificar" parameterType="pe.marista.sigma.bean.RegistroCompraBean">
+        update ML_RegistroCompra
+        set  
+        idtipodoc = #{tipoDocBean.idCodigo}, 
+        importe = #{importe},  
+        obsvenc = #{obsVenc},
+        idtipocategoria = #{tipoCategoriaBean.idCodigo}, 
+        idtipostatusregc =#{tipoStatusRegCBean.idCodigo},   
+        modipor = #{modiPor},
+        glosa = #{glosa} 
+        where idRegistroCompra = #{idRegistroCompra} and uniNeg= #{unidadNegocioBean.uniNeg}
+        and idOrdenCompra =#{ordenCompraBean.idOrdenCompra} and idtipostatusregc= #{tipoStatusRegCBean.idCodigo}
+    </update> 
+    <update id="cambiarEstadoSolicitudRC" parameterType="pe.marista.sigma.bean.RegistroCompraBean">
+        Update ML_RegistroCompra set 
+        idtipostatusregc = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusRegCBean.codigo} and idTipoCodigo=#{tipoStatusRegCBean.tipoCodigoBean.descripcion})
+        Where idRegistroCompra = #{idRegistroCompra} and unineg=#{unidadNegocioBean.uniNeg}
+    </update> 
+    <update id="cambiarEstadoPagadoSolicitudRC" parameterType="pe.marista.sigma.bean.RegistroCompraBean">
+        Update ML_RegistroCompra set 
+        idtipostatusregc = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusRegCBean.codigo} and idTipoCodigo=#{tipoStatusRegCBean.tipoCodigoBean.descripcion})
+        Where idRegistroCompra = #{idRegistroCompra} and unineg=#{unidadNegocioBean.uniNeg}
+    </update> 
+    <update id="anularSolicitudRegistro" parameterType="pe.marista.sigma.bean.RegistroCompraBean">
+        Update ML_RegistroCompra set 
+        idtipostatusregc = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusRegCBean.codigo} and idTipoCodigo=#{tipoStatusRegCBean.tipoCodigoBean.descripcion}),
+        modiPor = #{modiPor}   
+        Where idRegistroCompra = #{idRegistroCompra} and unineg=#{unidadNegocioBean.uniNeg}
+    </update> 
+    <select id="obtenerUltimoRegistro" resultType="String" parameterType="String" >
+        select
+        right(replicate('0', 3) + rtrim(isnull((max(nroRegistro)),0)+1),3) as nroSolicitud from ML_RegistroCompra 
+        WHERE uniNeg=#{uniNeg} 
+    </select> 
+    <!--sql de la tabla facturaCompra-->
+    <sql id="consultaCamposFactura">
+        SELECT  fact.unineg as uniNegFc
+        ,fact.idFacturaCompra
+        ,fact.idRegistroCompra
+        ,fact.serieDoc
+        ,fact.nroDoc
+        ,fact.idTipoMoneda
+        ,tipMon.codigo as codMoneda
+        ,fact.importe
+        ,fact.igv
+        ,fact.montoPago
+        ,fact.idDetraccion
+        ,fact.valorDetraccion
+        ,fact.idTipoStatusFactura
+        ,tipStaFact.codigo as codStaFact 
+        ,fact.idTipoPrioridad
+        ,tipPrio.codigo as codTipPrio
+        ,fact.idTipoSolicitud as idTipoSolicitud
+        ,ts.nombre as nomTipSolFact
+        ,ts.idTipoAutoriza1 as idTipoAutoriza1Fact 
+        ,ts.idTipoAutoriza2 as idTipoAutoriza2Fact 
+        ,ts.idTipoAutoriza3 as idTipoAutoriza3Fact 
+        ,ts.idTipoSolicitud as idTipoSolicitudFact 
+        ,fact.idAutoriza1
+        ,perA1.nombre as nomA1
+        ,perA1.apepat as apePatA1
+        ,perA1.apemat as apeMatA1
+        ,fact.idAutoriza2
+        ,perA2.nombre as nomA2
+        ,perA2.apepat as apePatA2
+        ,perA2.apemat as apeMatA2
+        ,fact.idAutoriza3
+        ,perA3.nombre as nomA3
+        ,perA3.apepat as apePatA3
+        ,perA3.apemat as apeMatA3
+        ,fact.flgAutoriza1
+        ,fact.flgAutoriza2
+        ,fact.flgAutoriza3
+        ,fact.fecAutoriza1
+        ,fact.fecAutoriza2
+        ,fact.fecAutoriza3
+        ,fact.nivelAutoriza
+        ,fact.fechaVenc
+        ,fact.obsVenc
+        ,fact.glosa
+        ,fact.fechaProg 
+        ,concat(fact.serieDoc+'-',fact.nroDoc) as serieNroDoc 
+        ,en.ruc as rucEnt2
+        ,en.nombre as nombreEnt2
+        ,reg.idRegistroCompra
+        ,reg.anio
+        ,reg.glosa
+        ,codoc.codigo as tipoDoc
+        ,reg.fechaemision
+        ,reg.idtipodoc  
+        ,reg.flgdonacion
+        ,reg.flgrecibido
+        ,oc.idordencompra as idOC
+        , (select 
+        (case 
+        when fact.idregistrocompra is null then oc.idordencompra
+        else reg.idregistrocompra
+        end)
+        ) as idCompra,
+        (select 
+        (case 
+        when fact.idregistrocompra is null then oc.obs
+        else reg.glosa
+        end)
+        ) as glosaCompra,
+ 
+        (select 
+        (case 
+        when fact.idregistrocompra is null then entOc.ruc
+        else en.ruc
+        end)
+        ) as rucCompra,
+
+        (select 
+        (case 
+        when fact.idregistrocompra is null then entOc.nombre
+        else en.nombre
+        end)
+        ) as entidadCompra,
+        fact.flgadelanto as flgAdelanto,
+        msj.idtipomodopago as idTipoModoPago,
+        isnull(tipModPag.codigo,'') as codModoPago
+        FROM ML_FacturaCompra fact
+        INNER join MO_UnidadNegocio neg on fact.unineg = neg.unineg
+        left join ML_RegistroCompra reg on fact.idRegistroCompra = reg.idRegistroCompra
+        left join MO_Entidad en on reg.ruc = en.ruc
+        left join MO_Codigo codoc on reg.idtipodoc = codoc.idcodigo
+        
+        Left JOIN ML_OrdenCompra   oc     on oc.idordencompra=fact.idordencompra and fact.unineg=oc.unineg 
+        Left join MO_Entidad   entOc      on entOc.ruc=oc.ruc and entOc.unineg=oc.unineg 
+        Left join MO_Codigo tipCatOc      on tipCatOc.idcodigo=oc.idtipocategoria
+         
+        left join MT_Detraccion detra on detra.idDetraccion=fact.idDetraccion 
+        Left Join MO_Codigo tipMon ON tipMon.idCodigo = fact.idTipoMoneda   
+        Left Join MO_Codigo tipStaFact  ON tipStaFact.idCodigo = fact.idTipoStatusFactura
+        Left Join MO_Codigo tipPrio ON tipPrio.idCodigo = fact.idTipoPrioridad
+        Left Join MM_TipoSolicitud ts on ts.idTipoSolicitud=fact.idTipoSolicitud
+       
+        left join MO_Personal perA1 on fact.idAutoriza1=perA1.idPersonal and perA1.uniNeg=fact.uniNeg
+        left join MO_Personal perA2 on fact.idAutoriza2=perA2.idPersonal and perA2.uniNeg=fact.uniNeg
+        left join MO_Personal perA3 on fact.idAutoriza3=perA3.idPersonal and perA3.uniNeg=fact.uniNeg 
+        left join MM_Mensaje msj on msj.idobjeto=fact.idfacturacompra and msj.unineg=fact.unineg
+        and msj.objeto='ML_FacturaCompra'
+        Left Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago
+    </sql>
+    
+    <!--resultmap de facturaCompra-->
+    <resultMap id="facturaCompraResultado" type="pe.marista.sigma.bean.FacturaCompraBean">
+        <id property="idFacturaCompra" column="idFacturaCompra"/>
+        <result property="serieDoc" column="serieDoc"/>
+        <result property="nroDoc" column="nroDoc"/> 
+        <result property="importe" column="importe"/>
+        <result property="igv" column="igv"/> 
+        <result property="montoPago" column="montoPago"/>
+        <result property="valorDetraccion" column="valorDetraccion"/>
+        <result property="flgAutoriza1" column="flgAutoriza1"/>
+        <result property="fecAutoriza1" column="fecAutoriza1"/>
+        <result property="flgAutoriza2" column="flgAutoriza2"/>
+        <result property="fecAutoriza2" column="fecAutoriza2"/>
+        <result property="flgAutoriza3" column="flgAutoriza3"/>
+        <result property="fecAutoriza3" column="fecAutoriza3"/>
+        <result property="nivelAutoriza" column="nivelAutoriza"/> 
+        <result property="fechaVenc" column="fechaVenc"/> 
+        <result property="obsVenc" column="obsVenc"/>
+        <result property="fechaProg" column="fechaProg"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="serieNroDoc" column="serieNroDoc"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="fechaInicio" column="fechaInicio"/>
+        <result property="fechaFin" column="fechaFin"/>
+        <result property="objeto" column="objeto"/>
+        <result property="idCompra" column="idCompra"/>
+        <result property="glosaCompra" column="glosaCompra"/>
+        <result property="glosa" column="glosa"/>
+        <result property="flgAdelanto" column="flgAdelanto"/>
+        <result property="tipoCompra" column="tipoCompra"/>
+        <result property="rucCompra" column="rucCompra"/>
+        <result property="entidadCompra" column="entidadCompra"/>
+        <result property="idTipoModoPago" column="idTipoModoPago"/>
+        <result property="codModoPago" column="codModoPago"/>
+        <result property="impuesto" column="impuesto"/>
+        <result property="solicitante" column="solicitante"/>
+        <result property="importeSinIgv" column="importeSinIgv"/>
+        <result property="flgAutorizar" column="flgAutorizar"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultadoFC"/>
+        <association property="registroCompraBean" column="idRegistroCompra"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="registroCompraResultado"/>
+        <association property="ordenCompraBean" column="idOC"
+                     javaType="pe.marista.sigma.bean.OrdenCompraBean"
+                     resultMap="ordenCompraResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"    
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaFCResultado"/>
+        <association property="detraccionBean" column="idDetraccion"
+                     javaType="pe.marista.sigma.bean.DetraccionBean"
+                     resultMap="detraccionResultado"/> 
+        <association property="tipoStatusFacturaBean" column="idTipoStatusFactura"    
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusFacturaResultado"/>
+        <association property="tipoSolicitudBean" column="idTipoSolicitud"
+                     javaType="pe.marista.sigma.bean.TipoSolicitudBean"
+                     resultMap="tipoSolicitudResultadoFC"/>
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"    
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadFCResultado"/>
+        <!-- autorizadores-->
+        <association property="idAutorizaPer1Bean" column="idAutoriza1"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="autoriza1Resultado"/>
+        <association property="idAutorizaPer2Bean" column="idAutoriza2"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="autoriza2Resultado"/>
+        <association property="idAutorizaPer3Bean" column="idAutoriza3"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="autoriza3Resultado"/>
+    </resultMap>
+    
+   
+    <resultMap id="negocioResultadoFC" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegFc"/> 
+    </resultMap> 
+    <resultMap id="tipoMonedaFCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="codMoneda"/>
+    </resultMap> 
+    <resultMap id="ordenCompraResultado" type="pe.marista.sigma.bean.OrdenCompraBean">
+        <id property="idOrdenCompra" column="idOC"/> 
+    </resultMap> 
+    <resultMap id="detraccionResultado" type="pe.marista.sigma.bean.DetraccionBean">
+        <id property="idDetraccion" column="idDetraccion"/>
+        <result property="descripcion" column="descripcion"/>
+        <result property="valor" column="valorDetra"/> 
+    </resultMap> 
+    <resultMap id="tipoStatusFacturaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusFactura"/>
+        <result property="codigo" column="codStaFact"/>
+    </resultMap>
+    <resultMap id="tipoSolicitudResultadoFC" type="pe.marista.sigma.bean.TipoSolicitudBean">
+        <result property="nombre" column="nombreTSFact"/>  
+        <result property="idAutoriza1Vista" column="idAutoriza1VistaFact"/>
+        <result property="idAutoriza2Vista" column="idAutoriza2VistaFact"/>
+        <result property="idAutoriza3Vista" column="idAutoriza3VistaFact"/>     
+        <result property="idTipoAutoriza1" column="idTipoAutoriza1Fact"/>     
+        <result property="idTipoAutoriza2" column="idTipoAutoriza2Fact"/>     
+        <result property="idTipoAutoriza3" column="idTipoAutoriza3Fact"/>     
+    </resultMap>
+    <resultMap id="tipoPrioridadFCResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="codTipPrio"/> 
+    </resultMap> 
+    <!--Personal autorizador 1-->
+    <resultMap id="autoriza1Resultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idAutoriza1"/>
+        <result property="nombre" column="nomA1"/>
+        <result property="apepat" column="apePatA1"/>
+        <result property="apemat" column="apeMatA1"/>  
+    </resultMap>   
+    <!--Personal autorizador 2-->
+    <resultMap id="autoriza2Resultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idAutoriza2"/>
+        <result property="nombre" column="nomA2"/>
+        <result property="apepat" column="apePatA2"/>
+        <result property="apemat" column="apeMatA2"/>  
+    </resultMap>   
+    <!--Personal autorizador 3-->
+    <resultMap id="autoriza3Resultado" type="pe.marista.sigma.bean.PersonalBean"> 
+        <id property="idPersonal" column="idAutoriza3"/>
+        <result property="nombre" column="nomA3"/>
+        <result property="apepat" column="apePatA3"/>
+        <result property="apemat" column="apeMatA3"/>  
+    </resultMap>   
+    
+    <insert id="insertarFactura" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        insert into ML_FacturaCompra
+        (unineg,serieDoc,nroDoc,idRegistroCompra
+        ,importe,igv,montoPago,idDetraccion,valorDetraccion
+        ,idTipoStatusFactura
+        ,idTipoSolicitud
+        ,idTipoPrioridad
+        <!--,fechaVenc,obsVenc,fechProg-->
+        ,idTipoMoneda,creaPor,creaFecha, idordencompra,glosa,flgadelanto,impuesto,nroNotaCredito
+        ,dsctoNotCred)
+        values
+        (#{unidadNegocioBean.uniNeg},#{serieDoc},#{nroDoc},#{registroCompraBean.idRegistroCompra}
+        ,#{importe},#{igv},#{montoPago},#{detraccionBean.idDetraccion},#{detraccionBean.valor}
+        ,(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFacturaBean.codigo} and idTipoCodigo=#{tipoStatusFacturaBean.tipoCodigoBean.descripcion})
+        ,(select idTipoSolicitud from MM_TipoSolicitud where nombre=#{tipoSolicitudBean.nombre} and uniNeg=#{unidadNegocioBean.uniNeg})
+        ,#{tipoPrioridadBean.idCodigo}
+        <!--,#{fechaVenc},#{obsVenc},#{fechProg}-->
+        ,#{tipoMonedaBean.idCodigo},#{creaPor},getDate(),#{ordenCompraBean.idOrdenCompra},#{glosa},#{flgAdelanto},#{impuesto}
+        ,#{nroNotaCredito},#{dsctoNotCred})
+        <selectKey keyProperty="idFacturaCompra" order="AFTER" resultType="Integer">
+            SELECT max(idFacturaCompra) FROM ML_FacturaCompra WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>    
+    <update id="modificarFactura" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        update ML_FacturaCompra
+        set
+        serieDoc = #{serieDoc},
+        nroDoc = #{nroDoc},
+        idRegistroCompra=#{registroCompraBean.idRegistroCompra},
+        importe=#{importe},
+        igv=#{igv}, 
+        montopago = #{montoPago},
+        idDetraccion=#{detraccionBean.idDetraccion},
+        valorDetraccion=#{detraccionBean.valor},
+        <!-- fechaVenc=#{fechaVenc},-->
+        obsVenc=#{obsVenc},
+        <!--fechaProg=#{fechaProg},-->
+        idTipoMoneda=#{tipoMonedaBean.idCodigo},
+        idTipoPrioridad=#{tipoPrioridadBean.idCodigo}, 
+        glosa=#{glosa},
+        modipor = #{modiPor},
+        impuesto=#{impuesto}
+        where idFacturaCompra = #{idFacturaCompra} and unineg= #{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarGlosa" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        update ML_FacturaCompra
+        set
+        glosa=#{glosa}, 
+        modipor = #{modiPor}
+        where idFacturaCompra = #{idFacturaCompra} and unineg= #{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="modificarFacturaReg" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        update ML_FacturaCompra
+        set
+        idregistrocompra = #{registroCompraBean.idRegistroCompra}
+        where idfacturacompra = #{idFacturaCompra} and unineg= #{unidadNegocioBean.uniNeg}
+    </update>
+    <select id="llamarProGetAutorizadores" parameterType="pe.marista.sigma.bean.FacturaCompraBean" resultType="Object">
+        exec PRO_GET_AUTORIZADORES
+        @@unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idobjeto = #{idFacturaCompra,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @@objeto = #{objeto,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select> 
+    <update id="anularFacturaCompra" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        Update ML_FacturaCompra set 
+        idTipoStatusFactura= (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFacturaBean.codigo} and idTipoCodigo=#{tipoStatusFacturaBean.tipoCodigoBean.descripcion}),
+        modiPor = #{modiPor}   
+        Where idFacturaCompra = #{idFacturaCompra} and unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoFacturaCompra" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        Update ML_FacturaCompra set 
+        idTipoStatusFactura = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFacturaBean.codigo} and idTipoCodigo=#{tipoStatusFacturaBean.tipoCodigoBean.descripcion})
+         
+        where idFacturaCompra = #{idFacturaCompra} and unineg= #{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoPagadoFacturaCompra" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        Update ML_FacturaCompra set 
+        idTipoStatusFactura = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFacturaBean.codigo} and idTipoCodigo=#{tipoStatusFacturaBean.tipoCodigoBean.descripcion}) 
+        ,  nroNotaCredito=#{nroNotaCredito},
+        dsctoNotCred=#{dsctoNotCred}
+        where idFacturaCompra = #{idFacturaCompra} and unineg= #{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoFacturaPorReg" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        Update ML_FacturaCompra set 
+        idTipoStatusFactura = (Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFacturaBean.codigo} and idTipoCodigo=#{tipoStatusFacturaBean.tipoCodigoBean.descripcion}) 
+        where idFacturaCompra = ( select distinct idfacturacompra from ML_FacturaCompra where idfacturacompra=#{idFacturaCompra} and unineg=#{unidadNegocioBean.uniNeg})
+        and unineg= #{unidadNegocioBean.uniNeg}
+    </update>
+    <select id="obtenerFacturaPorSerieCompleta" resultMap="facturaCompraResultado" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        <include refid="consultaCamposFactura" />
+        where   fact.serieDoc=#{serieDoc} and fact.nroDoc=#{serieDoc} and en.ruc=#{registroCompraBean.entidadBean.ruc}
+    </select>
+    
+    <!--mis solicitudes, mensaje, lista de factura para obtener la lista de factura realizadas-->
+    <select id="obtenerPorIdFact" resultMap="facturaCompraResultado" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        <include refid="consultaCamposFactura" />where fact.idregistrocompra = #{registroCompraBean.idRegistroCompra}
+    </select>
+    <!--Para obtener las facturas que pertenecen a ese pago -DocEgreso -->
+    <select id="obtenerFactura" resultMap="facturaCompraResultado" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        <include refid="consultaCamposFactura" />
+        where fact.unineg=#{unidadNegocioBean.uniNeg} and fact.idFacturaCompra=#{idFacturaCompra}
+    </select>
+    
+    <!--
+    <select id="obtenerFacturaAutorizadoPorFiltro" resultMap="facturaCompraResultado" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        SELECT
+        distinct 
+        detRC.idfacturacompra
+        ,rc.unineg
+        ,rc.idregistrocompra
+        ,rc.glosa
+        ,tipCat.codigo as tipCat
+        ,fc.serieDoc
+        ,fc.nroDoc
+        ,ent.ruc as rucEnt2
+        ,ent.nombre as nombreEnt2
+        ,fc.montopago 
+        ,tipMon.codigo as codMoneda
+        ,tipCat.codigo as tipoCategoria  
+        ,fc.creafecha
+        ,fc.idDetraccion
+        ,fc.valorDetraccion as valorDetra
+        ,tipStaFact.codigo as codStaFact
+        FROM  ML_FacturaCompra FC
+        INNER JOIN ML_RegistroCompra rc ON rc.idregistrocompra=fc.idregistrocompra 
+        inner join MO_Entidad ent on ent.ruc=rc.ruc and ent.unineg=rc.unineg
+        INNER JOIN ML_DetRegistroCompra detRC on detRC.idregistrocompra=rc.idregistrocompra  and detrc.idfacturacompra=fc.idfacturacompra
+        inner join MO_Codigo tipCat on tipCat.idcodigo=rc.idtipocategoria
+        Left Join MO_Codigo tipMon ON tipMon.idCodigo = FC.idTipoMoneda    
+        Left Join MO_Codigo tipStaFact  ON tipStaFact.idCodigo = FC.idTipoStatusFactura  
+        left join MT_Detraccion detra on detra.idDetraccion=fc.idDetraccion  
+        <where>   
+            fc.uniNeg= #{unidadNegocioBean.uniNeg} 
+            and tipStaFact.idCodigo=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFacturaBean.codigo} and idTipoCodigo=#{tipoStatusFacturaBean.tipoCodigoBean.descripcion})
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and FC.creafecha >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and FC.creafecha <= #{fechaFin}
+                ]]>
+            </if>  
+            <if test="registroCompraBean.idRegistroCompra != null and registroCompraBean.idRegistroCompra != 0 ">
+                and rc.idRegistroCompra = #{registroCompraBean.idRegistroCompra}
+            </if> 
+            <if test="nroDoc != null and nroDoc != 0 ">
+                and fc.nroDoc = #{nroDoc}
+            </if>
+            <if test="serieDoc != null and serieDoc != 0 ">
+                and fc.serieDoc = #{serieDoc}
+            </if> 
+            <if test="registroCompraBean.entidadBean.ruc != null and registroCompraBean.entidadBean.ruc != 0 ">
+                and rc.ruc = #{registroCompraBean.entidadBean.ruc}
+            </if> 
+            <if test="registroCompraBean.entidadBean.nombre != null and registroCompraBean.entidadBean.nombre != '' ">
+                and en.nombre = #{registroCompraBean.entidadBean.nombre}
+            </if> 
+            <if test="registroCompraBean.tipoCategoriaBean.idCodigo != null and registroCompraBean.tipoCategoriaBean.idCodigo != '' ">
+                and tipCat.idCodigo = #{registroCompraBean.tipoCategoriaBean.idCodigo}
+            </if> 
+        </where>
+        order by rc.idRegistroCompra desc
+    </select> 
+    -->
+    <select id="obtenerFacturaAutorizadoPorFiltro" resultMap="facturaCompraResultado" parameterType="pe.marista.sigma.bean.FacturaCompraBean">
+        SELECT  distinct  
+        fc.idFacturaCompra,
+        fc.uniNeg,
+        (select 
+        (case 
+        when fc.idregistrocompra is null then oc.idordencompra
+        else rc.idregistrocompra
+        end)
+        ) as idCompra,
+        rc.idRegistroCompra,
+        oc.idOrdenCompra,
+        fc.glosa, 
+        (select 
+        (case 
+        when fc.idregistrocompra is null then oc.obs
+        else fc.glosa
+        end)
+        ) as glosaCompra, 
+        tipCat.codigo as tipCat, 
+        (select 
+        (case 
+        when fc.idregistrocompra is null then tipCatOc.codigo 
+        else tipCat.codigo 
+        end)
+        ) as tipoCompra, 
+        fc.serieDoc,
+        fc.nroDoc, 
+        (select 
+        (case 
+        when fc.idregistrocompra is null then entOc.ruc
+        else ent.ruc
+        end)
+        ) as rucCompra,
+        ent.ruc as rucEnt2, 
+        (select 
+        (case 
+        when fc.idregistrocompra is null then entOc.nombre
+        else ent.nombre
+        end)
+        ) as entidadCompra, 
+        ent.nombre as nombreEnt2,
+        fc.montopago,
+        tipMon.codigo as codMoneda, 
+        fc.creafecha ,fc.idDetraccion,
+        fc.valorDetraccion as valorDetra,
+        tipStaFact.codigo as codStaFact,
+        msj.idtipomodopago as idTipoModoPago,
+        isnull(tipModPag.codigo,'') as codModoPago
+        FROM ML_FacturaCompra FC 
+        Left JOIN ML_RegistroCompra    rc    on rc.idregistrocompra=fc.idregistrocompra and fc.unineg=rc.unineg
+        Left JOIN ML_DetRegistroCompra detRC on detRC.idregistrocompra=rc.idregistrocompra and detrc.idfacturacompra=fc.idfacturacompra 
+        Left join MO_Entidad   ent           on ent.ruc=rc.ruc and ent.unineg=rc.unineg 
+        Left join MO_Codigo tipCat           on tipCat.idcodigo=rc.idtipocategoria  
+        Left JOIN ML_OrdenCompra   oc     on oc.idordencompra=fc.idordencompra and fc.unineg=oc.unineg
+        Left JOIN ML_DetOrdenCompra detOC on detOC.idordencompra=oc.idordencompra  
+        Left join MO_Entidad   entOc      on entOc.ruc=oc.ruc and entOc.unineg=oc.unineg 
+        Left join MO_Codigo tipCatOc      on tipCatOc.idcodigo=oc.idtipocategoria 
+        Left Join MO_Codigo tipMon       ON tipMon.idCodigo = FC.idTipoMoneda 
+        Left Join MO_Codigo tipStaFact   ON tipStaFact.idCodigo = FC.idTipoStatusFactura
+        Left join MT_Detraccion detra    on detra.idDetraccion=fc.idDetraccion
+        left join MM_Mensaje msj on msj.idobjeto=FC.idfacturacompra and msj.unineg=FC.unineg
+        and msj.objeto='ML_FacturaCompra'
+        Left Join MO_Codigo tipModPag ON tipModPag.idCodigo = msj.idtipomodopago
+
+        <where>   
+            fc.uniNeg= #{unidadNegocioBean.uniNeg} 
+            and tipStaFact.idCodigo=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusFacturaBean.codigo} and idTipoCodigo=#{tipoStatusFacturaBean.tipoCodigoBean.descripcion})
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and FC.creafecha >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and FC.creafecha <= #{fechaFin}
+                ]]>
+            </if>  
+            <if test="registroCompraBean.idRegistroCompra != null and registroCompraBean.idRegistroCompra != 0 ">
+                and rc.idRegistroCompra = #{registroCompraBean.idRegistroCompra}
+            </if> 
+            <if test="nroDoc != null and nroDoc != 0 ">
+                and fc.nroDoc = #{nroDoc}
+            </if>
+            <if test="serieDoc != null and serieDoc != 0 ">
+                and fc.serieDoc = #{serieDoc}
+            </if> 
+            <if test="registroCompraBean.entidadBean.ruc != null and registroCompraBean.entidadBean.ruc != 0 ">
+                and rc.ruc = #{registroCompraBean.entidadBean.ruc}
+            </if> 
+            <if test="registroCompraBean.entidadBean.nombre != null and registroCompraBean.entidadBean.nombre != '' ">
+                and en.nombre = #{registroCompraBean.entidadBean.nombre}
+            </if> 
+            <if test="registroCompraBean.tipoCategoriaBean.idCodigo != null and registroCompraBean.tipoCategoriaBean.idCodigo != '' ">
+                and tipCat.idCodigo = #{registroCompraBean.tipoCategoriaBean.idCodigo}
+            </if> 
+        </where>
+        order by fc.idfacturacompra desc
+    </select> 
+    
+    
+    <!--Registro Compra CR -->
+   
+    <sql id="consultaCamposRegistroCR">
+        select
+        detCr.unineg as uniNegCR,
+        detCR.idregistrocompra as idRegistroCompra,
+        detCR.cr as cr,
+        detCR.idtipodistribucion as idTipoDistribucionCR,
+        detCR.valor,
+        detCR.valor as valorD,
+        uni.nombreUniNeg as nombreUniNegCR,
+        tipoDis.codigo as tipoDistribucionCR,
+        cr.nombre as nombreCeR,
+        cr.cr as crReq,
+        re.idregistrocompra,
+        fact.idfacturacompra as idFacturaCompra
+        from ML_DetRegCompraCR detCR
+        left join MO_UnidadNegocio uni on uni.unineg = detCR.unineg 
+        left join MO_Codigo tipoDis on tipoDis.idcodigo = detCR.idtipodistribucion
+        left join MT_CentroResponsabilidad cr on cr.cr = detCR.cr
+        left join ML_RegistroCompra re on re.idregistrocompra= detCR.idregistrocompra and re.unineg=detCR.unineg
+        left join ML_FacturaCompra fact on fact.idfacturacompra= detCR.idfacturacompra and fact.unineg=detCR.unineg 
+    </sql>
+      
+    <resultMap id="detRegistroCRResultado" type="pe.marista.sigma.bean.DetRegistroCompraCRBean">
+        <id property="centroResponsabilidadBean.cr" column="cr"/> 
+        <id property="registroCompraBean.idRegistroCompra" column="idRegistroCompra"/> 
+        <id property="unidadNegocioBean.uniNeg" column="uniNegCR"/> 
+        <id property="facturaCompraBean.idFacturaCompra" column="facturaCompra"/> 
+        <result property="valor" column="valor"/> 
+        <result property="creaPor" column="creaPor"/> 
+        <result property="creaFecha" column="creaFecha"/>     
+        <result property="modiPor" column="modiPor"/> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioCRResultado"/>
+        <association property="centroResponsabilidadBean" column="cr"
+                     javaType="pe.marista.sigma.bean.CentroResponsabilidadBean"
+                     resultMap="centroResponsabilidadCRResultado"/>
+        <association property="tipoDistribucion" column="idTipoDistribucion"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDistribucionCRResultado"/> 
+        <association property="registroCompraBean" column="idRegistroCompra"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="registroResultado"/> 
+        <association property="facturaCompraBean" column="idFacturaCompra"
+                     javaType="pe.marista.sigma.bean.FacturaCompraBean"
+                     resultMap="facturaResultado"/> 
+    </resultMap>
+    <resultMap id="negocioCRResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCR"/>
+        <result property="nombreUniNeg" column="nombreUniNegCR"/>
+    </resultMap>
+    <resultMap id="centroResponsabilidadCRResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombreCeR"/>
+        <result property="idTipoGrupoCR" column="idTipoGrupoCR"/>
+    </resultMap>
+    <resultMap id="tipoDistribucionCRResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDistribucionCR"/>
+        <result property="codigo" column="tipoDistribucionCR"/>
+    </resultMap>
+    <resultMap id="registroResultado" type="pe.marista.sigma.bean.RegistroCompraBean">
+        <id property="idRegistroCompra" column="idRegistroCompra"/> 
+    </resultMap>
+    <resultMap id="facturaResultado" type="pe.marista.sigma.bean.FacturaCompraBean">
+        <id property="idFacturaCompra" column="idFacturaCompra"/>
+        <association property="registroCompraBean" column="idRegistroCompra"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="registroCompraResultado"/>
+    </resultMap> 
+    <insert id="insertarRegistroCR" parameterType="pe.marista.sigma.bean.DetRegistroCompraCRBean"> 
+        INSERT INTO ML_DetRegCompraCR(uniNeg,idregistrocompra,cr,idTipoDistribucion,valor,creaPor,creaFecha,idfacturacompra) 
+        VALUES( 
+        #{unidadNegocioBean.uniNeg},
+        #{registroCompraBean.idRegistroCompra},
+        #{centroResponsabilidadBean.cr},
+        #{tipoDistribucion.idCodigo},
+        #{valor},
+        #{creaPor},
+        getDate(),
+        #{facturaCompraBean.idFacturaCompra}
+        )
+    </insert>
+    <select id="obtenerRegistroCompraCabecera" resultType="pe.marista.sigma.bean.reporte.RegistroCompraRepBean" parameterType="map">
+        declare @uniNeg varchar(6) = #{uniNeg} 
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        else  'resources\images\sector.jpg'  end)
+        select distinct
+        @IMG AS rutaImagen,
+        ENT.nombre AS nombreColegio,
+        reg.nroRegistro as nroRegistro,
+        ent.ruc as rucColegio,
+        right(replicate('0', 10) + rtrim(reg.idregistrocompra), 10)   as idRegistroCompra,
+        fact.idfacturacompra ,
+        (case when en.ruc=pe.ruc then '-'
+        else en.nombre end) as nombreProveedor,
+        en.ruc as rucProveedor,
+        right(replicate('0', 10) + rtrim(ord.idordencompra), 10) as idOrdenCompra,
+        isnull(fact.glosa,'-') as descripcion ,
+        ent.direccion as direccionColegio,
+        dis.nombre as nombreDistrito,
+        pais.nombre as nombrePais,
+        ent.telefono as telefonoColegio,
+        ent.correo as correoColegio,
+        ent.url as webColegio,
+        concat(fact.seriedoc+'-',fact.nrodoc) as serieNroDoc,
+        moneda.codigo as moneda,
+        case
+        when fact.igv=18 then
+        CONVERT(varchar, CAST(fact.importe/1.18 AS money), 1)
+        else CONVERT(varchar, CAST(fact.importe AS money), 1) end as importe ,
+        CONVERT(varchar, CAST(fact.igv AS money), 1)  as igv,
+        CONVERT(varchar, CAST(fact.montopago AS money), 1) as montoPago ,
+        CONVERT(varchar, CAST((fact.impuesto) AS money), 1)  as igvResultado,
+        fact.valordetraccion as detraccion,
+        de.valor as valordetraccion,
+        doc.codigo as tipoDoc
+        FROM ML_DetRegistroCompra detreg
+        left join ML_FacturaCompra fact on fact.idfacturacompra = detreg.idfacturacompra
+        left join MT_Detraccion de on de.idDetraccion= fact.iddetraccion 
+        left join MO_UnidadNegocio uni on detreg.unineg = uni.unineg
+        left join MO_Entidad ent on unI.ruc = ent.ruc AND ENT.unineg= UNI.unineg
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        left join ML_RegistroCompra reg on detreg.idRegistroCompra = reg.idRegistroCompra
+        left join MO_Codigo doc on reg.idtipodoc = doc.idcodigo
+        left join MO_Codigo moneda on fact.idtipomoneda = moneda.idcodigo
+        left join ML_Catalogo ca on detreg.idcatalogo = ca.idcatalogo
+        left join ML_OrdenCompra ord on detreg.idordencompra = ord.idordencompra
+        left join MO_Codigo cat on ord.idtipocategoria = cat.idcodigo
+        left join ML_DetOrdenCompra deto on detreg.iddetordencompra = deto.iddetordencompra
+        left join MO_Entidad en on detreg.ruc = en.ruc AND EN.unineg=detreg.unineg
+        left join MO_Codigo comed on comed.idcodigo = detreg.idtipounimed 
+        left join MO_Personal pe on Pe.ruc=en.ruc
+        where detreg.idRegistroCompra = #{idRegistroCompra} and detreg.unineg=#{uniNeg} 
+    </select>
+    <!-- CuentaFcatura -->
+    <sql id="consultaCuentaFact">
+        SELECT c.unineg
+        ,c.idcuentafact
+        ,c.idfacturacompra
+        ,c.cuentad
+        ,c.cuentah
+        ,c.valor
+        ,c.creapor
+        ,c.creafecha
+        ,c.modipor
+        ,c.modiver,
+        f.idfacturacompra as idFacturaCompra,
+        pd.cuenta as cuantaD,
+        pd.nombre as nombreD,
+        ph.cuenta as cunetaH,
+        ph.nombre as nombreH,
+        ce.cr as cr,
+        ce.nombre as nombreCeR, 
+        ce.idtipogrupocr as idTipoGrupoCR,
+        dis.idcodigo as idTipoDistribucion,
+        dis.codigo as distribucion,
+        co.idconcepto as idConcepto,
+        co.nombre as nombreConcepto
+        FROM ML_CuentaFact c
+        left join MO_UnidadNegocio u on u.unineg = c.unineg
+        left join ML_FacturaCompra f on f.idfacturacompra= c.idfacturacompra and f.unineg= u.unineg
+        left join ML_DetRegCompraCR de on de.idfacturacompra=f.idfacturacompra
+        left join MT_PlanContable pd on pd.cuenta = c.cuentad  
+        left join MT_PlanContable ph on ph.cuenta = c.cuentah  
+        left join MO_Codigo dis on dis.idcodigo=c.idtipodistribucion
+        left join MT_Concepto co on co.idconcepto = c.idconcepto
+        left join MT_CentroResponsabilidad ce on ce.cr=c.cr
+    </sql>
+    <resultMap id="cuantaFacturaResultado" type="pe.marista.sigma.bean.CuentaFacturaBean">
+        <id property="idCuentaFact" column="idCuentaFact"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/> 
+        <result property="valor" column="valor"/> 
+        <result property="valorCuenta" column="valorCuenta"/> 
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+        <association property="facturaCompraBean" column="idfacturacompra"
+                     javaType="pe.marista.sigma.bean.FacturaCompraBean"
+                     resultMap="facturaResultado"/>
+        <association property="planContableDBean" column="cuentad"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultado"/>
+        <association property="planContableHBean" column="cuentah"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultado"/>
+        <association property="centroResponsabilidadBean" column="cuentah"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="centroResponsabilidadCRResultado"/>
+        <association property="tipoDistribucion" column="idCodigo"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDistribucionResultado"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <!--<resultMap id="facturaResultado" type="pe.marista.sigma.bean.FacturaCompraBean">
+        <id property="idFacturaBean" column="idFaccturaBean"/>
+         <association property="registroCompraBean" column="idRegistroCompra"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="registroCompraResultado"/>
+    </resultMap>--> 
+    <resultMap id="planContableDResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentaD"/> 
+        <result property="nombre" column="nombreD"/> 
+    </resultMap>
+    <resultMap id="planContableHResultado" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentaH"/> 
+        <result property="nombre" column="nombreH"/> 
+    </resultMap>
+    <resultMap id="tipoDistribucionResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDistribucion"/> 
+        <result property="codigo" column="distribucion"/> 
+    </resultMap>
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/> 
+        <result property="nombre" column="nombreConcepto"/> 
+    </resultMap>
+    <insert id="insertarCuentaFact" parameterType="pe.marista.sigma.bean.CuentaFacturaBean"> 
+        INSERT INTO ML_CuentaFact(unineg 
+        ,idfacturacompra
+        ,cuentad
+        ,cuentah
+        ,creapor
+        ,valor
+        ,creafecha,
+        cr,
+        idtipodistribucion, idconcepto) 
+        VALUES( 
+        #{unidadNegocioBean.uniNeg},
+        #{facturaCompraBean.idFacturaCompra},
+        #{planContableDBean.cuenta},
+        #{planContableHBean.cuenta}, 
+        #{creaPor},
+        #{valor},
+        getDate(),#{centroResponsabilidadBean.cr},
+        #{tipoDistribucion.idCodigo},#{conceptoBean.idConcepto}
+        )
+    </insert>
+    <insert id="modificarCuentaFact" parameterType="pe.marista.sigma.bean.CuentaFacturaBean"> 
+        UPDATE ML_CuentaFact 
+        set
+        unineg =#{unidadNegocioBean.uniNeg},
+        idfacturacompra=#{facturaCompraBean.idFacturaCompra},
+        cuentad=#{planContableDBean.cuenta},
+        cuentah=#{planContableHBean.cuenta}, 
+        creapor=#{creaPor},
+        valor=#{valor},
+        creafecha=getDate(),
+        cr=#{centroResponsabilidadBean.cr},
+        idtipodistribucion=#{tipoDistribucion.idCodigo},
+        idconcepto=#{conceptoBean.idConcepto} 
+        where idcuentafact=#{idCuentaFact}
+    </insert>
+    <update id="modificarCuentaFactDsctoNotaCred" parameterType="pe.marista.sigma.bean.CuentaFacturaBean"> 
+        declare @idfact int , @count int, @dscto decimal(8,2),@dsctoCr decimal(8,2),@unineg varchar(6)
+        set @unineg=#{uniNeg}
+        set @dscto=#{monto}
+        set @idfact =#{idFact}
+        set @count = (select COUNT(cr) from ML_CuentaFact where idfacturacompra =@idfact and unineg=@unineg)
+        set @dsctoCr=(convert( decimal(8,2),(@dscto/@count)))
+  
+        update  ML_CuentaFact
+        set  valor=isnull(valor,0)-@dsctoCr 
+        where idfacturacompra =@idfact   
+    </update>
+    <!--
+    <select id="obtenerPorIdFacturaPorIdCompra" parameterType="map" resultType="Integer" >
+        select ISNULL(idfacturacompra,0)  from Ml_FacturaCompra where unineg = #{uniNeg} and idregistrocompra=#{idRegistroCompra}
+    </select>-->
+    
+    <select id="obtenerCuentaFact" resultMap="cuantaFacturaResultado" parameterType="pe.marista.sigma.bean.CuentaFacturaBean">
+        <include refid="consultaCuentaFact" />
+        where c.unineg=#{unidadNegocioBean.uniNeg} and f.idregistrocompra=#{facturaCompraBean.registroCompraBean.idRegistroCompra}
+    </select> 
+    <select id="obtenerCuentaFactNota" resultMap="cuantaFacturaResultado" parameterType="map">
+        <include refid="consultaCuentaFact" />
+        where c.unineg=#{uniNeg} and c.idfacturacompra=#{idFacturaCompra}
+    </select> 
+    <select id="obtenerCuentaDistribucion" resultType="String" parameterType="map">
+        select distinct 
+        isnull(dis.codigo,'') as distribucion from ML_CuentaFact c
+        left join MO_Codigo dis on dis.idcodigo=c.idtipodistribucion
+        where c.unineg=#{uniNeg} and c.idfacturacompra=#{idFacturaCompra}
+    </select> 
+    <select id="obtenerCuentaDistribucionCr" resultMap="cuantaFacturaResultado" parameterType="map">
+        <include refid="consultaCuentaFact" />
+        where c.unineg=#{uniNeg} and c.idfacturacompra=#{idFacturaCompra}
+    </select> 
+    <select id="obtenerCuentaFactPorIdFactura" resultMap="cuantaFacturaResultado" parameterType="map">         
+        SELECT c.unineg
+        ,c.idcuentafact
+        ,c.idfacturacompra
+        ,c.cuentad
+        ,c.cuentah
+        ,c.valor
+        ,c.creapor
+        ,c.creafecha
+        ,c.modipor
+        ,c.modiver,
+        f.idfacturacompra as idFacturaCompra,
+        pd.cuenta as cuentaD,
+        pd.nombre as nombreD,
+        ph.cuenta as cunetaH,
+        ph.nombre as nombreH,
+        ce.cr as cr,
+        ce.nombre as nombreCeR,
+        dis.idcodigo as idTipoDistribucion,
+        dis.codigo as distribucion,
+        co.idconcepto as idConcepto,
+        co.nombre as nombreConcepto
+        FROM ML_CuentaFact c
+        inner join MO_UnidadNegocio u on u.unineg = c.unineg
+        inner join ML_FacturaCompra f on f.idfacturacompra= c.idfacturacompra and f.unineg= u.unineg        
+        left join MT_PlanContable pd on pd.cuenta = c.cuentad  
+        left join MT_PlanContable ph on ph.cuenta = c.cuentah  
+        left join MO_Codigo dis on dis.idcodigo=c.idtipodistribucion
+        left join MT_Concepto co on co.idconcepto = c.idconcepto
+        left join MT_CentroResponsabilidad ce on ce.cr=c.cr
+        where c.idfacturacompra=#{idFact} and c.unineg=#{uniNeg} 
+    </select>
+    <select id="obtenerCuentasPorIdFactura" resultMap="cuantaFacturaResultado" parameterType="map">      
+        SELECT    
+        c.idFacturaCompra ,c.cuentad,pd.nombre as nombreD,sum(isnull(c.valor,0)) as valorCuenta
+        FROM ML_CuentaFact c 
+        inner join ML_FacturaCompra f on f.idfacturacompra= c.idfacturacompra and f.unineg= c.unineg        
+        left join MT_PlanContable pd on pd.cuenta = c.cuentad  
+        left join MT_PlanContable ph on ph.cuenta = c.cuentah   
+        left join MT_Concepto co on co.idconcepto = c.idconcepto 
+        where c.idfacturacompra=#{idFact} and c.unineg=#{uniNeg}  
+        group by  c.idFacturaCompra  ,c.cuentad,pd.nombre 
+    </select>
+    <delete id="eliminarCuentaFact" parameterType="map">
+        Delete From ML_CuentaFact Where idfacturacompra = #{idFact} and uniNeg = #{uniNeg}
+    </delete>
+    <update id="modificarCuentaFactValorNoC" parameterType="pe.marista.sigma.bean.CuentaFacturaBean"> 
+        update  ML_CuentaFact
+        set  valor=#{valor}
+        where idfacturacompra =#{idFact} and unineg=#{uniNeg}  and cr=#{cr}
+    </update>
+</mapper>

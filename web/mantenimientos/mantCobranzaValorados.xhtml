@@ -1,0 +1,482 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml">
+    <ui:define name="content">
+        <h:body>
+            <div class="ui-fluid">
+                <p:layout fullPage="false"  style="width:1400px;height:800px" styleClass="centrado" >
+                    <p:layoutUnit position="west" resizable="true" size="700" minSize="40" maxSize="900" >
+                        <h:form id="frmBuscaPagante" > 
+                            <p:fieldset id="fieldBuscador" legend="#{msgs.etiquetaBuscador}" toggleSpeed="500" toggleable="true" collapsed="false">    
+                                <h:panelGrid id="pnlBuscaPagante" columns="2" styleClass="centrado" >  
+                                    <p:outputLabel value="#{msgs.etiquetaTipoFiltro}: " />
+                                    <p:selectOneRadio id="console" value="#{cobranzaValoradosMB.tipoFiltro}">
+                                        <f:selectItem itemLabel="#{msgs.etiquetaNormal}" itemValue="1" />
+                                        <f:selectItem itemLabel="#{msgs.etiquetaEspecial}" itemValue="0" />
+                                        <p:ajax event="change" listener="#{cobranzaValoradosMB.obtenerBusquedaEspecial()}" 
+                                                update=":frmBuscaPagante:fieldBuscador"/>
+                                    </p:selectOneRadio>
+                                    <p:outputLabel value="#{msgs.etiquetaEvento}: " />
+                                    <p:selectOneMenu id="cboEvento" value="#{cobranzaValoradosMB.paganteBean.eventoBean.idEvento}"  label="#{msgs.etiquetaEvento}"  
+                                                     style="width: 275px" panelStyle="width:275px" required="true" filter="true" filterMatchMode="startsWith">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                        <f:selectItems value="#{cobranzaValoradosMB.listaEventoBean}" var="evento" itemLabel="#{evento.nombre}" 
+                                                       itemValue="#{evento.idEvento}"/>
+                                        <p:ajax event="change" listener="#{cobranzaValoradosMB.obtenerTipoPagante()}" update=":frmBuscaPagante:cboTipPagante"/>
+                                    </p:selectOneMenu> 
+                                    <h:outputLabel value="#{msgs.etiquetaTipoPagante}:" class="negrita" style="font-size: 1em"/>
+                                    <p:selectOneMenu id="cboTipPagante" value="#{cobranzaValoradosMB.paganteBean.tipoPaganteBean.idtipoPagante}"  label="#{msgs.etiquetaTipoPagante}"  
+                                                     style="width: 275px" panelStyle="width:275px" filter="true" filterMatchMode="startsWith"
+                                                     disabled="#{cobranzaValoradosMB.disFil}">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                        <f:selectItems value="#{cobranzaValoradosMB.listaEventoTipoPaganteBean}" var="tevento" itemLabel="#{tevento.tipoPaganteBean.nomPagante}" 
+                                                       itemValue="#{tevento.tipoPaganteBean.idtipoPagante}"/>
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="#{msgs.etiquetaNroDocAbb}: " />
+                                    <p:inputText value="#{cobranzaValoradosMB.paganteBean.nroDoc}" size="39" disabled="#{cobranzaValoradosMB.disFil}" />
+                                    <p:outputLabel value="#{msgs.etiquetaPagante}: " />
+                                    <p:inputTextarea value="#{cobranzaValoradosMB.paganteBean.nomPagante}" rows="3" cols="40" disabled="#{cobranzaValoradosMB.disFil}" />
+                                    <h:panelGrid columns="2" styleClass="centrado" >
+                                        <p:outputLabel value="#{msgs.etiquetaNumeroDe}: " />
+                                        <p:inputText value="#{cobranzaValoradosMB.paganteBean.nroFicha}" size="5" />
+                                    </h:panelGrid>
+                                    <p:outputLabel id="txtEstado" value="#{cobranzaValoradosMB.estadoFicha}" style="color: red;" />
+                                </h:panelGrid>
+                                <br/>
+                                <h:panelGrid columns="3" styleClass="centrado" >
+                                    <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{cobranzaValoradosMB.filtrarPaganteMasivo()}" 
+                                                     update=":frmTblBuscaPagante:pnlTblBuscaPagante,msgFilterPagante,:frmPopConFicha:pnlPopConFicha,
+                                                     :frmBuscaPagante:txtEstado"
+                                                     oncomplete="if(args.especial){PF('popConfirmFicha').show();}else if(args.pagada){PF('popAlertFicha').show();}"/>
+                                    <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{cobranzaValoradosMB.limpiarFiltroPagante()}"
+                                                     update=":frmBuscaPagante:pnlBuscaPagante,:frmTblBuscaPagante:pnlTblBuscaPagante"/>
+                                    <p:commandButton value="#{msgs.etiquetaAgregar}" oncomplete="PF('popPagante').show();" />
+                                </h:panelGrid>
+                            </p:fieldset>
+                            <p:messages id="msgFilterPagante" showDetail="false" autoUpdate="false" />
+                        </h:form>
+                        <h:form id="frmTblBuscaPagante" >
+                            <h:panelGrid id="pnlTblBuscaPagante" styleClass="centrado" >
+                                <p:dataTable id="tblPagante" value="#{cobranzaValoradosMB.listaPaganteBean}" widgetVar="tblPagante"
+                                             paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="pagante" rowKey="#{pagante}"
+                                             rows="#{cobranzaValoradosMB.numRegistrosTablasPorFiltro}" 
+                                             rendered="#{not empty cobranzaValoradosMB.listaPaganteBean}" 
+                                             style="width:650px; font-size: 10px;font-size:14px !important;" >
+                                    <f:facet name="header" >
+                                        <p:outputLabel value="#{msgs.etiquetaPagante}(s)" />
+                                    </f:facet>
+                                    <p:column  headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                        <center>
+                                            <h:outputText value="#{n+1}" />
+                                        </center>
+                                    </p:column>
+                                    <p:column  headerText="#{msgs.etiquetaNroDocAbb}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{pagante.nroDoc}" />
+                                    </p:column>
+                                    <p:column  headerText="#{msgs.etiquetaPagante}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                        <h:outputText value="#{pagante.nomPagante.toUpperCase()}" />
+                                    </p:column> 
+                                    <p:column colspan="2" headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                        <p:commandLink id="cmdVer" actionListener="#{cobranzaValoradosMB.obtenerPorIdPagante(pagante)}"
+                                                       oncomplete="PF('popFicha').show();" update=":frmPopFicha:pnlPopFicha,:frmPopFicha:pnlPopFichaView">
+                                            <h:graphicImage value="/resources/images/icons/search2.jpg" style="border:0; cursor:pointer;"/>
+                                        </p:commandLink>
+                                        &nbsp;&nbsp;&nbsp;
+                                        <p:commandLink id="cmdAddFicha" actionListener="#{cobranzaValoradosMB.asignarFichasEsp(pagante)}" 
+                                                       update=":frmAddFicha:pnlAddFichaPagante" oncomplete="PF('popAddFicha').show();" >
+                                            <h:graphicImage value="/resources/images/icons/ver_detalle.png" style="border:0; cursor:pointer;"/>
+                                        </p:commandLink>
+                                        <p:tooltip id="toolTipVer" for="cmdVer" value="#{msgs.etiquetaVerAsig}" />
+                                        <p:tooltip id="toolTipAdd" for="cmdAddFicha" value="#{msgs.etiquetaAsignar}" />
+                                    </p:column>
+                                </p:dataTable>
+                            </h:panelGrid>
+                        </h:form>
+                    </p:layoutUnit>
+                    <p:layoutUnit position="center">
+                        <h:form id="frmCobranza"> 
+                            <h:panelGrid styleClass="centrado" columns="2" >
+                                <p:panel>
+                                    <h:panelGrid id="pnlTipDoc" columns="3">
+                                        <h:outputLabel value="#{msgs.etiquetaImpr}:" class="negrita" style="font-size: 1em"/>
+                                        <h:outputText value=" " class="requerido"/>
+                                        <p:selectOneMenu value="#{cobranzaValoradosMB.fichaBean.impresoraCajaBean.impresora.impresora}" required="true"  label="#{msgs.etiquetaImpr}"  style="width: 275px" panelStyle="width:275px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                            <f:selectItems value="#{cobranzaValoradosMB.listaImpresora}" var="impr" itemLabel="#{impr.impresora}" itemValue="#{impr.impresora}"/>
+                                            <p:ajax event="change" listener="#{cobranzaValoradosMB.obtenerTipDoc()}"
+                                                    update="pnlTipDoc,pnlRecibo"/>
+                                        </p:selectOneMenu>
+                                        <h:outputLabel value="#{msgs.etiquetaTipoDoc}:" style="font-size: 1em" class="negrita" rendered="#{cobranzaValoradosMB.fichaBean.impresoraCajaBean.impresora.impresora != null}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{cobranzaValoradosMB.fichaBean.impresoraCajaBean.impresora.impresora != null}"/>
+                                        <p:selectOneRadio rendered="#{cobranzaValoradosMB.fichaBean.impresoraCajaBean.impresora.impresora != null}" value="#{cobranzaValoradosMB.fichaBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo}" required="true"  label="#{msgs.etiquetaTipoDoc}" id="cmbTipDoc">
+                                            <f:selectItems value="#{cobranzaValoradosMB.listaTipoDocumento}" var="tipDoc" itemLabel="#{tipDoc.codigo}" itemValue="#{tipDoc.idCodigo}"/>
+                                            <p:ajax event="change" listener="#{cobranzaValoradosMB.obtenerDetalleDoc()}" 
+                                                    update="pnlRecibo"/>
+                                        </p:selectOneRadio> 
+                                    </h:panelGrid>   
+                                    <h:panelGrid id="pnlRecibo" columns="3" style="text-align: center" >
+                                        <h:outputText value="#{cobranzaValoradosMB.impresoraCajaBean.impresora.idTipoDoc.codigo}" style="font-size: 1.5em" rendered="#{cobranzaValoradosMB.fichaBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo != null}" />
+                                        <h:outputText value=" " class="requerido"/>
+                                        <h:outputText value="#{cobranzaValoradosMB.impresoraCajaBean.impresora.serie} - Nro. #{cobranzaValoradosMB.numActual}" style="font-size: 1.5em" rendered="#{cobranzaValoradosMB.fichaBean.impresoraCajaBean.idTipoDoc.idTipoDoc.idCodigo != null}" />
+                                    </h:panelGrid> 
+                                </p:panel>
+                                <p:panel>
+                                    <h:panelGrid id="pnlTC" columns="1" styleClass="siseFontGrid3"> 
+                                        <p:link id="linkSunat" styleClass="siseFontGrid5s" style="font-size: 2em"  value="#{msgs.etiquetaTcambio}"
+                                                href="http://www.sunat.gob.pe/cl-at-ittipcam/tcS01Alias" target="_blank" />
+                                        <br></br>
+                                        <p:tooltip id="toolTipPagTC" for="linkSunat" value="#{msgs.mensajeIrAPagSunat}" />
+                                        <h:outputLabel value="#{cobranzaValoradosMB.tipoCambio.fecha}" class="negrita">   
+                                        </h:outputLabel>
+                                        <p:inplace id="tc" editor="true" class="black"  effectSpeed="fast" event="dblclick" >
+                                            <p:inputText  size="4" value="#{cobranzaValoradosMB.tipoCambio.tcVenta}"  > 
+                                                <p:ajax event="change" listener="#{cobranzaValoradosMB.insertarTipoCambio()}" update="pnlTC"/>
+                                                <f:convertNumber pattern="#,##0.000" locale="en_US"/>
+                                            </p:inputText>  
+                                        </p:inplace>
+                                        <p:tooltip id="toolTC" for="tc" value="#{msgs.mensajeCambiarTpCambio}" />
+                                        <br></br> 
+                                    </h:panelGrid> 
+                                </p:panel>
+                            </h:panelGrid> 
+                        </h:form>
+                        <h:form id="frmPanelCobranzaPag" > 
+                            <h:panelGrid id="pnlCobranza" columns="1" styleClass="centrado" rendered="#{cobranzaValoradosMB.paganteView.idPagante != null}" >
+                                <p:panelGrid>
+                                    <p:row>
+                                        <p:column styleClass="ui-widget-header">
+                                            <h:outputText value="#{msgs.etiquetaMoneda}:" style="font-size: 1em ;text-align: left !important;font-weight: bold" />
+                                        </p:column>
+                                        <p:column>
+                                            <p:selectOneRadio value="#{cobranzaValoradosMB.fichaBean.tipoMoneda.idCodigo}" required="true"  label="#{msgs.etiquetaTipoMoneda}" id="cmbMon" >
+                                                <f:selectItems value="#{cobranzaValoradosMB.listaMoneda}" var="mon" itemLabel="#{mon.codigo}" itemValue="#{mon.idCodigo}"/>                                              
+                                            </p:selectOneRadio> 
+                                        </p:column> 
+                                    </p:row>
+                                    <p:row rendered="false" >
+                                        <p:column styleClass="ui-widget-header">
+                                            <h:outputText value="#{msgs.etiquetaModali}:" style="font-size: 1em ;text-align: left !important;font-weight: bold" />
+                                        </p:column>
+                                        <p:column>
+                                            <p:selectOneRadio value="#{cobranzaValoradosMB.fichaBean.tipoModoPago.idCodigo}"  styleClass="black" required="true"  label="#{msgs.etiquetaModali}" id="cmbModPag" style="padding-left: 17px" >
+                                                <f:selectItems value="#{cobranzaValoradosMB.listaModoPago}" var="modo" itemLabel="#{modo.codigo}" itemValue="#{modo.idCodigo}" />
+                                                <p:ajax event="change" update=":frmPanelCobranzaPag:pnlIngEfec"
+                                                        listener="#{cobranzaValoradosMB.mostrarModAmbos()}"/>
+                                            </p:selectOneRadio>
+                                        </p:column> 
+                                    </p:row>
+                                    <p:row>
+                                        <p:column styleClass="ui-widget-header">
+                                            <h:outputText value="#{msgs.etiquetaPagante}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                        </p:column>
+                                        <p:column>
+                                            <h:outputText value="#{cobranzaValoradosMB.paganteView.nomPagante}" style="font-size: 1.25em"  class="black"/>
+                                        </p:column> 
+                                    </p:row>
+                                </p:panelGrid>
+                            </h:panelGrid>
+                            <br/>
+                            <h:panelGrid id="pnlCobranzaFicha" styleClass="centrado" >
+                                <p:dataTable id="tblCobranzaFicha"  widgetVar="tblCobranzaFicha" scrollable="true"  
+                                             value="#{cobranzaValoradosMB.listaFichaPagoBean}" var="ficha"   
+                                             style="width: 625px" rendered="#{not empty cobranzaValoradosMB.listaFichaPagoBean}"
+                                             editable="true" editMode="cell" >
+                                    <p:column style="text-align:center;font-size: 0.85em " width="4%" headerText="#{msgs.etiquetaAcci}">
+                                        <p:commandLink id="cmdEliminar" actionListener="#{cobranzaValoradosMB.quitarAsignacion(ficha)}" 
+                                                       update=":frmPanelCobranzaPag:pnlCobranzaFicha">
+                                            <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                        </p:commandLink>
+                                        <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.etiquetaDelAsign}" />
+                                    </p:column>
+                                    <p:column headerText="#{msgs.etiquetaRef}"  width="25%" style="font-size: 0.85em" > 
+                                        <h:outputText value="#{ficha.referencia}" />
+                                    </p:column>
+                                    <p:column headerText="#{msgs.etiquetaMontoPag}"  width="15%" style="font-size: 0.85em; text-align: right;" >
+                                        <h:outputText value="#{ficha.monto}" >
+                                            <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                        </h:outputText>
+                                    </p:column>
+                                    <p:columnGroup type="footer" >
+                                        <p:column colspan="3"  style="font-size: 1em; text-align: right;" footerText="#{msgs.etiquetaTotal}:" />
+                                        <p:column footerText="#{cobranzaValoradosMB.montoTotal}" style="font-size: 1.1em; text-align: right;" id="prueba"/>
+                                    </p:columnGroup>
+                                </p:dataTable> 
+                            </h:panelGrid>
+                            <br/>
+                            <h:panelGrid id="pnlIngEfec">
+                                <p:panel rendered="#{cobranzaValoradosMB.flgModPOS==true}" >
+                                    <h:panelGrid id="pnlMontos2" columns="5" > 
+                                        <p:selectBooleanCheckbox id="chkV" value="#{cobranzaValoradosMB.posVisa}" rendered="#{cobranzaValoradosMB.flgModPOS==true}">
+                                            <p:ajax event="change"  update="basic1,basic2" listener="#{cobranzaValoradosMB.montosPOS()}"/>
+                                        </p:selectBooleanCheckbox>  
+                                        <h:graphicImage value="/resources/images/icons/icon-visa.png" width="20%" style="width: 60px;height: 45px"
+                                                        rendered="#{cobranzaValoradosMB.flgModPOS==true}"/>
+                                        <p:spacer width="10"/>
+                                        <p:inplace id="basic1" effectSpeed="fast"   editor="true" class="black"  rendered="#{cobranzaValoradosMB.flgModPOS==true}">
+                                            <p:inputText  size="4" value="#{cobranzaValoradosMB.fichaBean.montoPos1}" id="visa"
+                                                          rendered="#{cobranzaValoradosMB.flgModPOS==true}" >
+                                                <p:ajax event="change" listener="#{cobranzaValoradosMB.diferenciaPOS()}" 
+                                                        update="mc,visa,basic1,basic2,val" ></p:ajax> 
+                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                            </p:inputText>  
+                                        </p:inplace>
+                                        <p:spacer width="20"/>
+                                        <p:selectBooleanCheckbox id="chkMC" value="#{cobranzaValoradosMB.posMC}" rendered="#{cobranzaValoradosMB.flgModPOS==true}">
+                                            <p:ajax event="change"  update="basic1,basic2" listener="#{cobranzaValoradosMB.montosPOS()}"/>
+                                        </p:selectBooleanCheckbox> 
+                                        <h:graphicImage value="/resources/images/icons/icon-mcard.png" width="20%" style="width: 60px;height: 45px"
+                                                        rendered="#{cobranzaValoradosMB.flgModPOS==true}"/>
+                                        <p:spacer width="10"/>
+                                        <p:inplace id="basic2" effectSpeed="fast"   editor="true" class="black"  rendered="#{cobranzaValoradosMB.flgModPOS==true}">
+                                            <p:inputText size="4" value="#{cobranzaValoradosMB.fichaBean.montoPos2}"  id="mc"
+                                                         rendered="#{cobranzaValoradosMB.flgModPOS==true}" >
+                                                <p:ajax event="change" listener="#{cobranzaValoradosMB.diferenciaPOS()}" 
+                                                        update="mc,visa,basic1,basic2,val" ></p:ajax> 
+                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                            </p:inputText>
+                                        </p:inplace>
+                                    </h:panelGrid> 
+                                </p:panel>
+                            </h:panelGrid>
+                            <br/>
+                            <h:panelGrid columns="2" styleClass="centrado" rendered="#{cobranzaValoradosMB.paganteView.idPagante != null}" >
+                                <p:commandButton id="btnGrabarAsig" value="#{msgs.botonGrabar}" actionListener="#{cobranzaValoradosMB.grabarAsignacion()}" 
+                                                 update=":frmPanelCobranzaPag:btnGrabarAsig,:frmPanelCobranzaPag:imprimir,:frmCobranza" oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                 disabled="#{cobranzaValoradosMB.disabledGuardar}" />
+                                <p:commandButton value="#{msgs.botonNuevo}" actionListener="#{cobranzaValoradosMB.limpiarAsignacion()}" 
+                                                 update=":frmPanelCobranzaPag:pnlCobranza,:frmPanelCobranzaPag,btnGrabarAsig,
+                                                 :frmTblBuscaPagante:pnlTblBuscaPagante" 
+                                                 process="@this" />
+                            </h:panelGrid>
+                            <br/>
+                            <br/>
+                            <h:panelGrid columns="1" id="impr" class="centrado" rendered="#{cobranzaValoradosMB.paganteView.idPagante != null}" >
+                                <h:commandLink action="#{cobranzaValoradosMB.generarComprobanteValorado()}" target="_blank" id="imprimir"
+                                               disabled="#{cobranzaValoradosMB.renderImprimir}">
+                                    <h:graphicImage value="/resources/images/impresora.png" />
+                                </h:commandLink>
+                                <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" />
+                            </h:panelGrid>
+                            <h:inputHidden value="#{cobranzaValoradosMB.fichaBean.tipoModoPago.idCodigo}" id="hdLugar"/>
+                            <h:inputHidden value="#{cobranzaValoradosMB.fichaBean.tipoMoneda.idCodigo}" id="hdMon"/>
+                        </h:form>  
+                    </p:layoutUnit>
+                </p:layout>
+            </div>
+
+            <!-- POP DE ASIGNACIONES -->
+            <p:dialog id="popFicha" header="#{msgs.etiquetaFichaPag}" widgetVar="popFicha" showEffect="fade" hideEffect="explode" resizable="false" modal="true" >
+                <h:form id="frmPopFicha" >
+                    <h:panelGrid id="pnlPopFichaView" styleClass="centrado" columns="2" >
+                        <p:outputLabel value="#{msgs.etiquetaPagante}:" />
+                        <h:outputText value="#{cobranzaValoradosMB.paganteView.nomPagante.toUpperCase()}" class="negrita" /> 
+                    </h:panelGrid> 
+                    <h:panelGrid id="pnlPopFicha" styleClass="centrado" >
+                        <p:dataTable id="tblPagante" value="#{cobranzaValoradosMB.listaFichaAfterBean}"  
+                                     rowIndexVar="n" var="ficha" rowKey="#{ficha}"
+                                     rendered="#{not empty cobranzaValoradosMB.listaFichaAfterBean}" 
+                                     style="width:750px; font-size: 10px;font-size:14px !important;" 
+                                     scrollable="true" scrollHeight="150">
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaFichas}" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetaNro}." filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column> 
+                            <p:column filterBy="#{ficha.nroficha}" headerText="#{msgs.etiquetaNroFicha}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{ficha.nroficha}" />
+                            </p:column>
+                            <p:column id="colEstado" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="3%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{ficha.tipoStatusFicha.codigo}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAcci}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                <p:commandLink id="cmdAddAsig" actionListener="#{cobranzaValoradosMB.asignarFicha(ficha,1)}"
+                                               update=":frmPanelCobranzaPag:pnlCobranzaFicha,:frmPanelCobranzaPag"
+                                               disabled="#{ficha.disabled}">
+                                    <h:graphicImage value="/resources/images/icons/agregar.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink> 
+                                <p:tooltip id="toolTipAddAsig" for="cmdAddAsig" value="#{msgs.etiquetaAgregar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid columns="2" styleClass="centrado" style="padding: 10px;" >
+                        <p:commandButton value="#{msgs.botonAgregar}" actionListener="#{cobranzaValoradosMB.asignarFicha(1,2)}" 
+                                         update=":frmPanelCobranzaPag:pnlCobranzaFicha,
+                                         :frmPanelCobranzaPag:impr,:frmPanelCobranzaPag:pnlCobranzaFicha,
+                                         :frmPanelCobranzaPag:pnlCobranzaFicha,:frmPanelCobranzaPag" 
+                                         oncomplete="PF('popFicha').hide();" process="@this" />
+                        <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popFicha').hide();" />
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <p:dialog widgetVar="popPagante" header="#{msgs.etiquetaAgregar} #{msgs.etiquetaPagante}" showEffect="fade" hideEffect="explode"
+                      modal="true" closable="false" closeOnEscape="true" >
+                <h:form id="frmDatosPersona" >
+                    <h:panelGrid styleClass="centrado" id="pnlDatosPersona" style="text-align: center !important ; font-weight: bold ">
+                        <h:panelGrid columns="3" id="pnlPersona" cellpadding="3" styleClass="centrado siseFontGrid4">
+                            <h:panelGrid columns="3" style="font-size: 1em;padding: 5px;width: 405px" >
+                                <h:panelGrid columns="3">
+                                    <p:selectBooleanCheckbox  value="#{cobranzaValoradosMB.flgGenCod}" styleClass="titulo" > 
+                                        <p:ajax event="change" listener="#{cobranzaValoradosMB.generarCodigoPersona()}" update=":frmDatosPersona:idPersona" />
+                                    </p:selectBooleanCheckbox>
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                    <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                </h:panelGrid>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  id="idPersona" value="#{cobranzaValoradosMB.personaBean.idPersona}"    label="#{msgs.etiquetaCodigo} (#{msgs.etiquetaDocId})" maxlength="15">
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaEvento}" class="negrita" />
+                                <h:outputText value="*" class="requerido"/>
+                                <p:selectOneMenu value="#{cobranzaValoradosMB.paganteNewBean.eventoBean.idEvento}"  label="#{msgs.etiquetaEvento}"  
+                                                 style="width: 275px" panelStyle="width:275px" required="true" 
+                                                 filter="true" filterMatchMode="startsWith">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                    <f:selectItems value="#{cobranzaValoradosMB.listaEventoBean}" var="evento" itemLabel="#{evento.nombre}" 
+                                                   itemValue="#{evento.idEvento}"/>
+                                </p:selectOneMenu>
+                                <h:outputLabel value="#{msgs.etiquetaApepat}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{cobranzaValoradosMB.personaBean.apepat}"    label="#{msgs.etiquetaApepat}" size="30" maxlength="29"> 
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaApemat}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{cobranzaValoradosMB.personaBean.apemat}"    label="#{msgs.etiquetaApemat}" size="30" maxlength="29">
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{cobranzaValoradosMB.personaBean.nombre}"    label="#{msgs.etiquetaNombre}" size="30" maxlength="29"> 
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaFecNac}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:calendar id="fecIni" value="#{cobranzaValoradosMB.personaBean.fecNac}" label="#{msgs.etiquetaNaci}" mode="popup" size="10"
+                                            pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar> 
+                            </h:panelGrid>
+                            <p:separator style="width:5px;height:215px" />
+                            <h:panelGrid columns="3" style="font-size: 1em;padding: 5px;width: 515px">
+                                <h:outputLabel value="#{msgs.etiquetaSexo}" class="negrita"/>
+                                <h:outputText value=""  class="requerido"/>
+                                <p:selectOneRadio  value="#{cobranzaValoradosMB.personaBean.sexo}" label="#{msgs.etiquetaSexo}">
+                                    <f:selectItem itemValue="1" itemLabel="#{msgs.comboMasculino}"/>
+                                    <f:selectItem itemValue="0" itemLabel="#{msgs.comboFemenino}"/>
+                                </p:selectOneRadio>
+                                <h:outputLabel value="#{msgs.etiquetaContactoPer}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputTextarea  value="#{cobranzaValoradosMB.personaBean.contacto}"  label="#{msgs.etiquetaContactoPer}" cols="45" rows="3" maxlength="99"> 
+                                </p:inputTextarea>
+                                <br></br> 
+                            </h:panelGrid>
+                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                            <h:inputHidden />
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{cobranzaValoradosMB.comprobarPersonaFicha('desc4')}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();PF('popPagante').hide();}else if(args.error){PF('popAlertFicha').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton> 
+                            <p:commandButton oncomplete="PF('popPagante').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages id="msgsAddPer" showDetail="false" showSummary="true" autoUpdate="false"/>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <p:dialog header="#{msgs.etiquetaAsignar} #{msgs.etiquetaFichas}" widgetVar="popAddFicha" showEffect="fade" hideEffect="explode" modal="true" closable="false" closeOnEscape="true" >
+                <h:form id="frmAddFicha" >
+                    <p:fieldset id="fieldPaganate" legend="#{msgs.etiquetaPagante}" toggleSpeed="500" toggleable="true" collapsed="false">
+                        <h:panelGrid id="pnlAddFichaPagante" styleClass="centrado" columns="2" >
+                            <p:outputLabel value="#{msgs.etiquetaPagante}: " class="negrita" />
+                            <h:outputText value="#{cobranzaValoradosMB.paganteView.nomPagante}" class="negrita" />
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid columns="2" styleClass="centrado" >
+                            <p:outputLabel value="#{msgs.etiquetaTipoAsig}: " class="negrita" />
+                            <p:selectOneRadio  value="#{cobranzaValoradosMB.tipAsignacion}" label="#{msgs.etiquetaTipoAsig}" required="true">
+                                <f:selectItem itemValue="1" itemLabel="#{msgs.asigDonacion}"/>
+                                <f:selectItem itemValue="0" itemLabel="#{msgs.asigPendient}"/>
+                            </p:selectOneRadio>
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid id="pnlAsigEspecial" styleClass="centrado" columns="4" >  
+                            <p:outputLabel value="#{msgs.etiquetaNumeroDe}: " />
+                            <p:inputText id="txtNroIni" value="#{cobranzaValoradosMB.nroIni}" size="5" label="#{msgs.etiquetaNroIni}" />
+                            <p:commandButton value="#{msgs.etiquetaAsignar}" actionListener="#{cobranzaValoradosMB.obtenerNroAsigna()}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}else if(args.numeroIgual){PF('popAlertFichaNro').show();}" 
+                                             update=":frmAddFicha:msgAddFicha,:frmPanelCobranzaPag:pnlCobranzaFicha,:frmPanelCobranzaPag" />
+                            <p:commandButton value="#{msgs.botonCerrar}" oncomplete="PF('popAddFicha').hide();" />
+                        </h:panelGrid> 
+                        <p:messages id="msgAddFicha" showDetail="false" autoUpdate="false" />
+                    </p:fieldset>   
+                </h:form>
+            </p:dialog>
+
+            <!-- MODAL FILTRO ESPECIAL -->
+            <p:dialog header="#{msgs.appSiglas}" id="popConfirmFicha" widgetVar="popConfirmFicha" showEffect="fade" hideEffect="explode" modal="true" closable="false" closeOnEscape="true" 
+                      width="300">
+                <h:form id="frmPopConFicha" >
+                    <h:panelGrid styleClass="center-margin" columns="2" >
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:outputText value="#{msgs.etiquetaConCobranza}" /> 
+                    </h:panelGrid>
+                    <h:panelGrid id="pnlPopConFicha" styleClass="centrado"  columns="2">
+                        <h:outputText value="#{msgs.etiquetaNroFicha}: " />
+                        <h:outputText value="#{cobranzaValoradosMB.fichaEspecialBean.nroficha}" />
+                    </h:panelGrid>
+                    <br/>
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{cobranzaValoradosMB.agregarFichaCompra()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirmFicha').hide();}"
+                                         update=":frmPanelCobranzaPag:pnlCobranzaFicha,
+                                         :frmPanelCobranzaPag:impr,:frmPanelCobranzaPag:pnlCobranzaFicha,
+                                         :frmPanelCobranzaPag:pnlCobranzaFicha,:frmPanelCobranzaPag"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirmFicha').hide();"/>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <!-- MODAL FILTRO DE ALERTA ESPECIAL -->
+            <p:dialog header="#{msgs.appSiglas}" id="popAlertFicha" widgetVar="popAlertFicha" showEffect="fade" hideEffect="explode" modal="true" closable="false" closeOnEscape="true" width="400">
+                <h:form id="frmPopAlertFicha" >
+                    <h:panelGrid id="pnlPopAlertFicha" styleClass="center-margin" columns="2" >
+                        <h:graphicImage value="/resources/images/icons/warning.png"/>
+                        <h:outputText value="#{msgs.etiquetaAlertPersona}" /> 
+                    </h:panelGrid>
+                    <h:panelGrid styleClass="centrado" >
+                        <p:commandButton oncomplete="PF('popAlertFicha').hide();" value="#{msgs.botonCerrar}" />
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+            <!-- MODAL NUMERO de RECIBO IGUAL -->
+            <p:dialog header="#{msgs.appSiglas}" id="popAlertFichaNro" widgetVar="popAlertFichaNro" showEffect="fade" hideEffect="explode" modal="true" closable="false" closeOnEscape="true" width="400">
+                <h:form id="frmPopAlertFichaIgual" >
+                    <h:panelGrid id="pnlPopAlertFicha" styleClass="center-margin" columns="2" >
+                        <h:graphicImage value="/resources/images/icons/warning.png"/>
+                        <h:outputText value="#{msgs.etiquetaAlertNumero}" /> 
+                    </h:panelGrid>
+                    <h:panelGrid styleClass="centrado" >
+                        <p:commandButton oncomplete="PF('popAlertFicha').hide();" value="#{msgs.botonCerrar}" />
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+        </h:body>    
+    </ui:define> 
+</ui:composition>
+

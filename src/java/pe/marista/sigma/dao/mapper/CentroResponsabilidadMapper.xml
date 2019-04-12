@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.CentroResponsabilidadDAO">  
+    <sql id="consultaCentroResponsabilidad">
+        SELECT 
+        cr.cr ,
+        cr.nombre as nombre ,
+        cr.idtipogrupocr as idtipogrupocr,
+        co.codigo,
+        cr.nivel ,
+        cr.creapor ,
+        cr.creaFecha,
+        convert(varchar, getdate(), 103) as creaFechaAc,
+        convert(varchar, getdate(), 8) as creaHoraAc  
+        FROM MT_CentroResponsabilidad cr
+        Left join MO_Codigo co on   cr.idtipogrupocr = co.idcodigo
+        Left join MO_Codigo cod on cod.idCodigo  = cr.idtipogrupocr
+    </sql>
+
+
+    <sql id="consultaCentroResponsabilidadDist">
+        SELECT  distinct  idtipogrupocr FROM MT_CentroResponsabilidad
+    </sql>
+    
+    <sql id="queryCentoInicial">
+        select*from MT_CentroResponsabilidad
+        where idtipogrupocr=11401 
+    </sql>
+    <sql id="queryCentoPrimaria">
+        select*from MT_CentroResponsabilidad
+        where idtipogrupocr=11402
+    </sql>
+    <sql id="queryCentoSecundaria">
+        select*from MT_CentroResponsabilidad
+        where idtipogrupocr=11403 
+    </sql>
+    <sql id="queryCentoBachiller">
+        select*from MT_CentroResponsabilidad
+        where idtipogrupocr=11404 
+    </sql>
+    
+    <resultMap id="centroResponsabilidadResultado" type="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        <id property="cr" column="cr"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nivel" column="nivel"/>
+        <result property="creaFechaAc" column="creaFechaAc"/>
+        <result property="creaHoraAc" column="creaHoraAc"/>
+        <result property="tipoNivelCR" column="idtipogrupocr"/>
+        <association property="tipoGrupoCRBean" column="idtipogrupocr"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/>
+    </resultMap>
+
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idCodigo"/><!--codigo-->
+        <!--<id property="idCodigo" column="idcodigo"/>-->
+        <result property="codigo" column="codigo"/>
+    </resultMap>
+ 
+    <select id="obtenerCentroResponsabilidad" resultMap="centroResponsabilidadResultado">
+        <include refid="consultaCentroResponsabilidad"/>
+        order by cr.cr
+    </select>
+    <select id="obtenerCentroResponsabilidadVista" resultMap="centroResponsabilidadResultado">
+        SELECT 
+        cr.cr ,
+        concat(cr.cr,' - '+cr.nombre) as nombre ,
+        cr.idtipogrupocr as idtipogrupocr,
+        co.codigo,
+        cr.nivel ,
+        cr.creapor ,
+        cr.creaFecha,
+        convert(varchar, getdate(), 103) as creaFechaAc,
+        convert(varchar, getdate(), 8) as creaHoraAc  
+        FROM MT_CentroResponsabilidad cr
+        Left join MO_Codigo co on   cr.idtipogrupocr = co.idcodigo
+        Left join MO_Codigo cod on cod.idCodigo  = cr.idtipogrupocr
+        order by cr.cr
+    </select>
+    <select id="obtenerCRPorId" parameterType="Integer" resultMap="centroResponsabilidadResultado">
+        <include refid="consultaCentroResponsabilidad"/>
+        where cr.cr= #{cr}
+    </select>
+    
+    <select id="obtenerCentroResPorNombre" resultMap="centroResponsabilidadResultado" parameterType="String">
+        <include refid="consultaCentroResponsabilidad"/>Where nombre = #{nombre}
+    </select>
+    
+    <select id="obtenerCentroResNivel3" resultMap="centroResponsabilidadResultado">
+        <include refid="consultaCentroResponsabilidad"/>
+        where nivel=3
+    </select>
+    
+    <select id="obtenerIdTipoCR" resultMap="centroResponsabilidadResultado" parameterType="Integer">
+        <include refid="consultaCentroResponsabilidad"/>
+        where idtipogrupocr = #{tipoGrupoCRBean.idCodigo}
+    </select>
+    
+    <select id="obtenerCentroInicial" resultMap="centroResponsabilidadResultado">
+        <include refid="queryCentoInicial" />
+    </select>
+    <select id="obtenerCentroPrimaria" resultMap="centroResponsabilidadResultado">
+        <include refid="queryCentoPrimaria" />
+    </select>
+    <select id="obtenerCentroSecundaria" resultMap="centroResponsabilidadResultado">
+        <include refid="queryCentoSecundaria" />
+    </select>
+    <select id="obtenerCentroBachiller" resultMap="centroResponsabilidadResultado">
+        <include refid="queryCentoBachiller" />
+    </select>
+
+        
+    <!--Cambios-->
+    <insert id="insertarCentroResponsabilidad" parameterType="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        Insert Into MT_CentroResponsabilidad (Nombre,idtipogrupocr,nivel,creapor,creafecha) 
+        Values (#{nombre},#{idtipoCR},#{nivel},#{creaPor},getdate())
+    </insert> 
+    
+    <update id="modificarCentroResponsabilidad" parameterType="pe.marista.sigma.bean.CentroResponsabilidadBean">
+        Update MT_CentroResponsabilidad set
+        Nombre = #{nombre},
+        idtipogrupocr = #{tipoGrupoCRBean.idCodigo},
+        nivel = #{nivel}
+        Where  cr = #{cr}   
+    </update>
+    
+    <delete id="eliminarCentroResposabilidad" parameterType="Integer">
+        Delete from MT_CentroResponsabilidad Where cr = #{cr}  
+    </delete>
+    <!--CR Multi-->
+    <select id="obtenerTotales" parameterType="pe.marista.sigma.bean.ViewMatriculaBean" resultType="pe.marista.sigma.bean.ViewMatriculaBean">
+        select
+        (select sum(Matriculados) from EstadisticaMatricula(#{uniNeg}) where nivel = #{nivelInicial} and anio = #{anio}) as totalIni, 
+        (select sum(Matriculados) from EstadisticaMatricula(#{uniNeg}) where nivel = #{nivelPrimaria} and anio = #{anio}) as totalPri,
+        (select sum(Matriculados) from EstadisticaMatricula(#{uniNeg}) where nivel = #{nivelSecundaria} 
+        and grado NOT IN (#{nivelBach4},#{nivelBach5})
+        and anio = #{anio}) as totalSec,         
+        (select sum(Matriculados) from EstadisticaMatricula(#{uniNeg}) where nivel = #{nivelSecundaria} 
+        and grado IN (#{nivelBach4},#{nivelBach5})
+        and anio = #{anio}) as totalSecB,
+        (SELECT count(cur.idcursotaller) AS totalTaller FROM MX_CursoTaller cur Inner Join MX_Programacion prog On cur.idprogramacion=prog.idprogramacion Where prog.anio = #{anio} and cur.uniNeg = #{uniNeg}) 
+    </select>
+    
+    <!--Cambio Act_CR-->
+    <select id="obtenerCrInAct" resultMap="centroResponsabilidadResultado">
+        <include refid="consultaCentroResponsabilidad"/> 
+        left join ME_ActividadCR acr on cr.cr = acr.cr
+        WHERE cr.cr in (select cr from ME_ActividadCR) and acr.idactividad = #{idActividad} 
+    </select>
+    <select id="obtenerCrOutAct" resultMap="centroResponsabilidadResultado">
+        <include refid="consultaCentroResponsabilidad"/>  
+        left join ME_ActividadCR acr on cr.cr = acr.cr
+        WHERE cr.cr not in (select cr from ME_ActividadCR where idactividad = #{idActividad}) 
+    </select> 
+    <select id="obtenerPresCr" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/> 
+        where cr.cr in (select cr from ME_ActividadCR where unineg = #{uniNeg} and cuenta not like 0) 
+    </select> 
+    <select id="obtenerInCrReque" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>  
+        where cr.cr in (select cr from ML_DetRequerimientoCR 
+        where idrequerimiento =  #{idRequerimiento} and unineg=#{uniNeg})
+        order by cr.cr
+    </select> 
+    <select id="obtenerOutCrReque" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>
+        where cr.cr not in (select cr from ML_DetRequerimientoCR 
+        where idrequerimiento =  #{idRequerimiento} and unineg=#{uniNeg})
+        order by cr.cr
+    </select> 
+    <select id="obtenerInCrRegistro" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>  
+        where cr.cr in (select cr from ML_DetRequerimientoCR 
+        where idregistrocompra =  #{idRegistroCompra} and unineg=#{uniNeg})
+        order by cr.cr
+    </select> 
+    <select id="obtenerOutCrRegistro" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>
+        where cr.cr not in (select cr from ML_DetRequerimientoCR 
+        where idregistrocompra =  #{idRegistroCompra} and unineg=#{uniNeg})
+        order by cr.cr
+    </select> 
+    <select id="obtenerInCrSolCaj" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>  
+        where cr.cr in (select cr from MT_DetSolicitudCajaChCR 
+        where idSolicitudCajaCh =  #{idSolicitudCajaCh} and unineg=#{uniNeg})
+        order by cr.cr
+    </select> 
+    <select id="obtenerOutCrSolCaj" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>
+        where cr.cr not in (select cr from MT_DetSolicitudCajaChCR 
+        where idSolicitudCajaCh =  #{idSolicitudCajaCh} and unineg=#{uniNeg})
+        order by cr.cr
+    </select> 
+    <select id="obtenerOutCrLiq" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/> 
+        where cr.cr not in ( Select asi.cr  From MT_Asiento asi Inner Join MT_CentroResponsabilidad resp On asi.cr=resp.cr
+        Where unineg = #{uniNeg} and objeto ='MT_CajaChicaLiquidacion' and idObjeto = #{idSolicitudCajaCh})
+        order by cr.cr
+    </select> 
+    <select id="obtenerPorUniOrg" resultMap="centroResponsabilidadResultado" parameterType="Integer">
+        <include refid="consultaCentroResponsabilidad"/>
+        where cr.iduniorg in (#{idUniOrg}) 
+        order by cr.cr
+    </select> 
+    <select id="obtenerPorUniOrgPadre" resultMap="centroResponsabilidadResultado" parameterType="Integer">
+        <include refid="consultaCentroResponsabilidad"/> 
+        where cr.iduniorg in (select iduniorgpadre from MO_UnidadOrganica where iduniorg=#{idUniOrg}) 
+        order by cr.cr
+    </select> 
+    <select id="obtenerCrPorNivelAcademico" resultMap="centroResponsabilidadResultado" parameterType="string">
+        SELECT 
+        cr.cr ,
+        cr.Nombre ,
+        cr.idtipogrupocr,
+        co.codigo  
+        FROM MT_CentroResponsabilidad cr
+        Left join MO_Codigo co on   cr.idtipogrupocr = co.idcodigo
+        Left join MO_Codigo cod on cod.idCodigo  = cr.idtipogrupocr 
+        WHERE NOMBRE LIKE '${value}%'
+    </select> 
+    <!-- CAMBIOS POR ACTIVIDAD -->
+    <select id="obtenerCrInDetAct" resultMap="centroResponsabilidadResultado" parameterType="pe.marista.sigma.bean.DetActividadBean" >
+        <include refid="consultaCentroResponsabilidad"/> 
+        WHERE cr.cr in (select cr from ME_ActividadCR where idDetActividad = #{idDetActividad} and unineg = #{unidadNegocioBean.uniNeg})  
+    </select>
+    <select id="obtenerCrOutDetAct" resultMap="centroResponsabilidadResultado" parameterType="pe.marista.sigma.bean.DetActividadBean" >
+        <include refid="consultaCentroResponsabilidad"/>  
+        WHERE cr.cr not in (select cr from ME_ActividadCR where idDetActividad = #{idDetActividad} and unineg = #{unidadNegocioBean.uniNeg}) 
+    </select>  
+    <select id="obtenerInCrAcceso" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>  
+        where cr.cr in (
+        SELECT  distinct ta.nivel 
+        FROM  MM_NivelTipoAcceso ta  
+        where ta.unineg=#{uniNeg} and ta.anio=#{anio} and ta.idtipoacceso=#{idTipoAcceso} and ta.tiponivel='CR'
+        )
+        order by cr.cr
+    </select> 
+    <select id="obtenerOutCrAcceso" resultMap="centroResponsabilidadResultado" parameterType="map">
+        <include refid="consultaCentroResponsabilidad"/>  
+        where cr.cr not in (
+        SELECT  distinct ta.nivel 
+        FROM  MM_NivelTipoAcceso ta  
+        where ta.unineg=#{uniNeg} and ta.anio=#{anio} and ta.idtipoacceso=#{idTipoAcceso} and ta.tiponivel='CR'
+        )
+        order by cr.cr
+    </select> 
+    <select id="obtenerInCrAccesoPorNivel" resultMap="centroResponsabilidadResultado" parameterType="map">
+        SELECT 
+        cr.cr ,
+        cr.nombre as nombre ,
+        cr.idtipogrupocr as idtipogrupocr,
+        co.codigo,
+        cr.nivel ,
+        cr.creapor ,
+        cr.creaFecha,
+        convert(varchar, getdate(), 103) as creaFechaAc,
+        convert(varchar, getdate(), 8) as creaHoraAc  
+        FROM MT_CentroResponsabilidad cr
+        Left join MO_Codigo co on   cr.idtipogrupocr = co.idcodigo
+        Left join MO_Codigo cod on cod.idCodigo  = cr.idtipogrupocr
+        where cr.cr  in (
+        SELECT  distinct ta.nivel 
+        FROM  MM_NivelTipoAcceso ta  
+        where ta.unineg=#{uniNeg} and ta.anio=#{anio} and 
+        ta.idtipoacceso in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> 
+        and ta.tiponivel='CR' and ta.status=1
+        )
+        order by cr.cr
+    </select> 
+</mapper>

@@ -1,0 +1,246 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{docIngresoMB.cargarDatosRep()}">
+            <h:form id="frmDatosFiltroMov">
+                <h:panelGrid class="centrado" columns="2">   
+                    <p:panel style="width: 690px" header="#{msgs.tituloBusFiltro}" toggleable="false" toggleSpeed="500" closeSpeed="500"> 
+                        <h:panelGrid columns="4" styleClass="centrado" id="pnlFiltro" cellpadding="3">  
+                            <h:panelGrid columns="2">
+                                <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" styleClass="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{docIngresoMB.docIngresoFiltroBean.fechaInicio}"  label="#{msgs.etiquetaFechaInicio}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar>
+                                <h:outputLabel value="#{msgs.etiquetaFechaFin}:" styleClass="negrita siseFontGrid5"/>  
+                                <p:calendar  value="#{docIngresoMB.docIngresoFiltroBean.fechaFin}"  label="#{msgs.etiquetaFechaFin}" mode="popup" size="10"
+                                             pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar>
+
+                                <h:outputLabel value="#{msgs.etiquetaLugarPag}"/>
+                                <p:selectOneMenu value="#{docIngresoMB.docIngresoFiltroBean.idTipoLugarPago.idCodigo}" label="#{msgs.etiquetaLugarPag}" filter="false" style="width: 175px" panelStyle="width:175px">
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                    <f:selectItems value="#{docIngresoMB.listaTipoLugarPago}" var="est" itemLabel="#{est.codigo}" itemValue="#{est.idCodigo}"/> 
+                                </p:selectOneMenu> 
+                            </h:panelGrid>
+                            <h:panelGrid columns="2">  
+                                <h:outputLabel value="#{msgs.etiquetaNroDocDisc}"/> 
+                                <p:inputText value="#{docIngresoMB.docIngresoFiltroBean.codDiscente}" label="#{msgs.etiquetaNroDoc}" size="10" maxlength="15"/>
+                                <h:outputLabel value="#{msgs.etiquetaDisce}"/> 
+                                <p:inputTextarea value="#{docIngresoMB.docIngresoFiltroBean.nombreDiscente}" label="#{msgs.etiquetaDisce}" cols="20" rows="2" maxlength="90"/>
+                            </h:panelGrid> 
+                        </h:panelGrid>
+                        <p:separator /> 
+                        <h:panelGrid class="centrado" columns="3"> 
+                            <p:commandButton value="#{msgs.botonBuscar}" action="#{docIngresoMB.obtenerFiltroDocIngresoBanco()}"
+                                             update=":frmDatosMov:pnlTablaMov,msg,:frmDatosFiltroMov:panel,cmdPrintPdf"/>
+                            <p:commandButton actionListener="#{docIngresoMB.limpiarDocFiltroDocIng()}" 
+                                             update="msg,:frmDatosMov:pnlTablaMov,msg,pnlFiltro,:frmDatosFiltroMov:panel"  
+                                             value="#{msgs.botonLimpiar}" process="@this">
+                            </p:commandButton>
+                            <h:commandLink rendered="false" id="cmdPrintPdf" action="#{docIngresoMB.imprimirRecBanco(docIng,2)}" target="_blank" style="float: left;">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                            <p:tooltip id="toolTipMav" for="cmdPrintPdf" value="#{msgs.tooltipImprCtaMav}" />
+                        </h:panelGrid>
+                        <p:messages autoUpdate="false" id="msg" />
+                    </p:panel>
+                    <p:panel style="width: 320px" header="#{msgs.etiquetaTotales}" toggleable="false" toggleSpeed="500" closeSpeed="500"> 
+                        <br></br>
+                        <br></br>
+                        <p:panelGrid id="panel" styleClass="centrado">
+                            <p:row>
+                                <p:column styleClass="ui-widget-header centrado-derecha">
+                                    <h:outputText value="#{msgs.etiquetaMontoCobrado} :"  
+                                                  style="font-size: 1.1em ;text-align: left !important;font-weight: bold" />
+                                </p:column>
+                                <p:column styleClass="centrado-derecha ">
+                                    <h:outputText value="#{docIngresoMB.totSoles}"  style="font-size: 1.25em ;text-align: left !important;font-weight: bold" >
+                                        <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                    </h:outputText>
+                                </p:column> 
+                            </p:row>     
+                        </p:panelGrid> 
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                    </p:panel>
+                </h:panelGrid>
+            </h:form>
+            <h:panelGrid styleClass="centrado" >
+                <h:form id="frmDatosMov">
+                    <h:panelGrid  id="pnlTablaMov">
+                        <p:dataTable id="tblMov" value="#{docIngresoMB.listDocIngresoBean}" widgetVar="tblMov"
+                                     paginator="true" paginatorPosition="bottom"
+                                     selection="#{docIngresoMB.docIngresoBean}"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                     var="docIng" rowKey="#{docIng.idDocIngreso}" rowIndexVar="n"
+                                     rows="#{docIngresoMB.numRegistrosTablasLista}" 
+                                     rendered="#{not empty docIngresoMB.listDocIngresoBean}" 
+                                     style="width: #{docIngresoMB.anchoTablasExtraGrande}; font-size: 10px;font-size:14px !important;">
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloMovBanco}" /> 
+
+                            </f:facet>
+                            <f:facet name="{Exporters}">
+                                <h:commandLink id="cmdPrintXls" > 
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                    <p:dataExporter type="xls" target="tblMov" fileName="cobranza" />
+                                </h:commandLink>
+                                <p:tooltip for="cmdPrintXls" value="#{msgs.etiquetaExportar}" />
+                                <h:commandLink id="cmdPrintPdf" actionListener="#{docIngresoMB.imprimirRepBanco()}" target="_blank">
+                                    <h:graphicImage value="/resources/images/icons/exportarpdf.png" />
+                                </h:commandLink>
+                                <p:tooltip for="cmdPrintPdf" value="#{msgs.etiquetaImprimir}" />
+                            </f:facet>
+                            <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <h:outputText value="#{n+1}"  /> 
+                            </p:column>    
+                            <p:column sortBy="#{docIng.codDiscente}" headerText="#{msgs.etiquetaNroDoc}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.codDiscente}" />
+                            </p:column> 
+                            <p:column sortBy="#{docIng.codigo}" headerText="#{msgs.etiquetaCodColegio}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.codigo}" />
+                            </p:column> 
+                            <p:column sortBy="#{docIng.nombreDiscente}" headerText="#{msgs.etiquetaDisce}" filterMatchMode="contains" width="23%" styleClass="nombreFiltro8 siseFont1 centrado-izq">
+                                <h:outputText value="#{docIng.nombreDiscente}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.grado}" headerText="#{msgs.etiquetaGradoAcademico}" filterMatchMode="contains" width="4%" styleClass="nombreFiltro8 siseFont1 centrado-izq">
+                                <h:outputText value="#{docIng.grado}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.fechaPagoVista}" headerText="#{msgs.etiquetaFechaPago}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.fechaPagoVista}" />
+                            </p:column>
+                          <!--  <p:column sortBy="#{docIng.tipoMoneda}" headerText="#{msgs.etiquetaMoneda}" filterMatchMode="contains" width="8%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.tipoMoneda}" />
+                            </p:column>-->
+                            <p:column sortBy="#{docIng.tipoStatusDocIng.codigo}" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.tipoStatusDocIng.codigo}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.idTipoModoPago.codigo}" headerText="#{msgs.etiquetaModali}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.idTipoModoPago.codigo}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.concepto}" headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.concepto}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.mesVista}" headerText="#{msgs.etiquetaMes}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.mesVista}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.anioRep}" headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="10%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.anioRep}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.flgMasivo}" headerText="#{msgs.etiquetaEstado}" filterMatchMode="contains" width="5%" styleClass="nombreFiltro8 siseFont1 centrado-texto">
+                                <h:outputText value="#{docIng.flgMasivo}" />
+                            </p:column>
+                            <p:column sortBy="#{docIng.etiquetaMontoPagado}" headerText="#{msgs.etiquetaSoles}" filterMatchMode="contains" width="7%" styleClass="nombreFiltro8 siseFont1 centrado-derecha" >
+                                <h:outputLabel    value="#{docIng.montoPagadoSol}">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputLabel> 
+                            </p:column>  
+                            <p:column sortBy="#{docIng.montoPagado}" headerText="#{msgs.etiquetaMontoPagado}" filterMatchMode="contains" width="7%" styleClass="nombreFiltro8 siseFont1 centrado-derecha" rendered="false">
+                                <h:outputLabel    value="#{docIng.montoPagado}">
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputLabel> 
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaAcciones}" style="text-align:center;width: 80px" exportable="false">
+                                <p:commandLink actionListener="#{docIngresoMB.obtenerDocIngresoPorId(docIng,'discente')}" id="cam"  
+                                               oncomplete="PF('popCambiaDat').show();" process="@this"
+                                               update=":frmCambiaDat:pnlDatosDat">
+                                    <h:graphicImage value="/resources/images/icons/rendir.png" style="border:0; cursor:pointer;" width="20%"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTip3" for="cam" value="#{msgs.tooltipCamDat}" />
+                                <h:commandLink action="#{docIngresoMB.imprimirRecBanco(docIng,1)}" target="_blank" id="imprimir" >
+                                    <h:graphicImage value="/resources/images/impresora.png" style="border:0; cursor:pointer;" width="20%"/>
+                                </h:commandLink>
+                                <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" />
+                            </p:column>
+                        </p:dataTable> 
+                        <p:growl id="msgsAddPro" showDetail="false" showSummary="true"/>
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGrid>
+
+            <h:form id="frmCambiaDat">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popCambiaDat" resizable="false" modal="true">
+                    <h:panelGrid columns="2"> 
+                        <h:panelGrid columns="1" id="pnlDatosDat"  >  
+                            <h:panelGrid columns="2" >
+                                <h:outputLabel value="#{msgs.etiquetaTipoDoc}:" class="black"/> 
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.idTipoDoc.codigo}" styleClass="negrita" />  
+                                <h:outputLabel value="#{msgs.etiquetaNroDocAbb}:" class="black"/> 
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.serieNroDoc}" styleClass="negrita" />  
+
+                                <h:outputLabel value="#{msgs.etiquetaApePat}"/> 
+                                <p:inputText value="#{docIngresoMB.docIngresoBean.idDiscente.apepat}" size="28" maxlength="30">  
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaApeMat}"/> 
+                                <p:inputText value="#{docIngresoMB.docIngresoBean.idDiscente.apemat}" size="28" maxlength="30">
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaNombre}"/> 
+                                <p:inputText value="#{docIngresoMB.docIngresoBean.idDiscente.nombre}" size="28" maxlength="30"> 
+                                </p:inputText> 
+
+                                <h:outputLabel value="#{msgs.etiquetaFecPago}:" class="black"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.fechaPagoVista}" styleClass="negrita" /> 
+                                <h:outputLabel value="#{msgs.etiquetaModali}:" class="black"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.idTipoModoPago.codigo}" styleClass="negrita" /> 
+                                <h:outputLabel value="#{msgs.etiquetaMontoEfecSol}:" class="black"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.montoEfectivoSol}" styleClass="negrita" >
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputLabel> 
+                                <h:outputLabel value="#{msgs.etiquetaMontoEfecDol}:" class="black"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.montoEfectivoDol}" styleClass="negrita" >
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaSimVisa}:" class="black"/> 
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.montoPos1}" styleClass="negrita" >
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputLabel> 
+                                <h:outputLabel value="#{msgs.etiquetaSimMC}:" class="black"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.montoPos2}" styleClass="negrita" >
+                                    <f:convertNumber pattern="#,##0.00" />
+                                </h:outputLabel>
+                                <h:outputLabel value="-------------------------"/>  
+                                <h:outputLabel value="-------------------------"/>
+                                <h:outputLabel value="#{msgs.etiquetaSimSoles}:" class="black"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.montoPagadoSol}" styleClass="negrita" >
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaSimDol}:" class="black"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.montoPagadoDol}" styleClass="negrita" >
+                                    <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                </h:outputLabel>
+                            </h:panelGrid>
+                            <h:panelGrid columns="3" >
+                                <h:outputLabel value="#{msgs.etiquetaEstadoDocIng}:" class="black"/>
+                                <h:outputLabel value=" " class="requerido"/>
+                                <h:outputLabel value="#{docIngresoMB.docIngresoBean.tipoStatusDocIng.codigo}" styleClass="requerido" />
+
+                                <h:outputText value="#{msgs.etiquetaMotivo}" styleClass="negrita" class="black"/> 
+                                <h:outputLabel value="*" class="requerido"/>
+                                <p:inputTextarea styleClass="negrita"  value="#{docIngresoMB.docIngresoBean.obs}" cols="50" rows="2" maxlength="50" required="false"
+                                                 label="#{msgs.etiquetaMotivo}"/>
+                            </h:panelGrid>  
+                            <h:outputLabel value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                            <h:inputHidden value="#{docIngresoMB.docIngresoBean.idDocIngreso}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado"> 
+                        <p:commandButton value="#{msgs.botonGrabar}" action="#{docIngresoMB.cambiarDatDocIngreso()}" 
+                                         oncomplete="if(args.operacionCorrecta){PF('popCambiaDat').hide();PF('popDone').show();}"
+                                         update=":frmDatosMov:pnlTablaMov,:frmDatosFiltroMov:panel,msgsCam"/>
+                        <p:commandButton value="#{msgs.botonCerrar}" 
+                                         oncomplete="PF('popCambiaDat').hide();"/>
+                    </h:panelGrid>
+                    <p:messages id="msgsCam"/>
+                </p:dialog>
+            </h:form>
+
+        </h:body>
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,115 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>
+            <p:panel header="#{msgs.tituloRepGen}" style="width: 1000px" styleClass="centrado">
+                <h:form id="frmDatosMatricula"> 
+                    <h:panelGrid  id="pnlTablaFiltroNoMatri" styleClass="centrado">
+                        <p:fieldset  styleClass="centrado" toggleable="true" toggleSpeed="500" collapsed="false" legend="#{msgs.etiquetaBuscadorEst}" style="width: 670px">
+                            <h:panelGrid columns="1">
+                                <h:panelGrid columns="1">
+                                    <h:panelGrid id="pnlTodos" columns="3"> 
+                                        <h:outputLabel value="#{msgs.etiquetaUsuario}" styleClass="negrita"/>
+                                        <h:outputText value="" styleClass="black"/>
+                                        <p:inputText  value="#{estudianteMB.matriculaBean.creaPor}" required="false" label="#{msgs.etiquetaUsuario}" size="25" maxlength="25"/> 
+                                        <h:outputLabel value="#{msgs.etiquetaFechaMatri}" styleClass="negrita" /> 
+                                        <h:outputText value="" styleClass="black"/> 
+                                        <p:calendar  value="#{estudianteMB.matriculaBean.fechaMatricula}"  label="#{msgs.etiquetaNaci}" mode="popup"
+                                                     pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30"/> 
+                                        <h:outputLabel value="#{msgs.etiquetaPeriodo}" styleClass="negrita" /> 
+                                        <h:outputText value="" styleClass="black"/>
+                                        <p:selectOneMenu value="#{estudianteMB.matriculaBean.anio}"    label="#{msgs.etiquetaPeriodo}" style="width: 125px" panelStyle="width: 125px" styleClass="resetSelect">
+                                            <f:selectItems value="#{estudianteMB.listaAnioFiltroMatricula}" var="anio" itemLabel="#{anio}" itemValue="#{anio}"/>
+                                        </p:selectOneMenu>  
+
+                                    </h:panelGrid>   
+                                </h:panelGrid>
+                            </h:panelGrid> 
+                            <p:separator/>
+                            <h:panelGrid styleClass="centrado" columns="2">
+                                <p:commandButton value="#{msgs.botonBuscar}" action="#{estudianteMB.obtenerFiltroMatriculadosPorUsuario()}" update="pnlTablaMatricula,msg,toPdf"/>
+                                <p:commandButton value="#{msgs.botonLimpiar}" action="#{estudianteMB.limpiarEstudianteMatriculaMasivo()}" update="pnlTablaFiltroNoMatri,pnlTablaMatricula,msg"/>
+                            </h:panelGrid>  
+                            <p:messages autoUpdate="false" id="msg"/>
+                        </p:fieldset>
+                    </h:panelGrid>  
+                    <br></br>
+                    <h:panelGrid  id="pnlTablaMatricula" styleClass="centrado" >
+                        <p:dataTable id="tblMatricula" value="#{estudianteMB.listaEstudianteBean}" widgetVar="tblMatricula"
+                                     paginator="true" selectionMode="single"  paginatorPosition="bottom" rowIndexVar="n" var="estudiante" rowKey="#{estudiante}"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                     rows="#{estudianteMB.numRegistrosTablasPorFiltro}" 
+                                     rendered="#{not empty estudianteMB.listaEstudianteBean}" 
+                                     style="width:800px; font-size: 10px;font-size:14px !important;">  
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaEstPosMatri}" />   
+                            </f:facet>
+                            <f:facet name="{Exporters}">
+                                <h:commandLink> 
+                                    <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                    <p:dataExporter type="xls" target="tblMatricula" fileName="cobranza" />
+                                </h:commandLink>  
+                            </f:facet>
+                            <p:column  headerText="N" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                <center>
+                                    <h:outputText value="#{n+1}" />
+                                </center>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.estudianteBean.codigo}" >
+                                <h:outputText value="#{estudiante.codigo}"/>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaUsuario}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.creaPor}" >
+                                <h:outputText value="#{estudiante.creaPorAyuda}"/>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaFechaMatri}" filterMatchMode="contains" width="8%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.fechaMatricula}" >
+                                <h:outputText value="#{estudiante.fechaMatricula}">
+                                    <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}" />
+                                </h:outputText>
+                            </p:column>   
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.personaBean.nombreCompleto}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.viaDomi}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.idDistritoDomi.nombre}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.refeDomi}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.telefono1Domi}"/>
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.telefono2Domi}"/>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.personaBean.idPersona}"/>
+                            </p:column>  
+                            <p:column headerText="#{msgs.etiquetaNombreCompleto}" filterMatchMode="contains" width="23%" styleClass="siseFontTable3 " sortBy="#{estudiante.estudianteBean.personaBean.nombreCompleto}" >
+                                <h:outputText value="#{estudiante.tipoSeguro}"/>
+                            </p:column>  
+                        </p:dataTable>
+                        <br></br> 
+                    </h:panelGrid>
+                    <h:panelGroup id="toPdf">
+                        <div align="center"> 
+                            <h:commandLink id="pdfPres2" action="#{estudianteRepMB.imprimirEstudianteGenPdf()}" target="_blank"
+                                           rendered="#{not empty estudianteRepMB.listaMatriculaEstudianteMasivoBean}">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                        </div>
+                        <p:tooltip for="pdfPres2" value="#{msgs.etiquetaImprimir}" />
+                    </h:panelGroup>
+                </h:form>
+            </p:panel>
+        </h:body>
+    </ui:define>
+</ui:composition>

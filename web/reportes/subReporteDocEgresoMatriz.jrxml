@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="subReporteDocEgreso" language="groovy" pageWidth="595" pageHeight="842" columnWidth="593" leftMargin="1" rightMargin="1" topMargin="1" bottomMargin="1" uuid="83f03434-bfdd-471d-b8e4-c8fe4b526ee0">
+	<property name="ireport.zoom" value="1.7715610000000044"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="docIngreso" class="java.lang.Integer"/>
+	<queryString>
+		<![CDATA[         SELECT
+         (case
+        when docE.idtipodocegreso = 'R' then
+        (detRC.descripcion)
+        when docE.idtipodocegreso = 'A' then
+        (sol.motivo)
+        end) as  descripcion
+
+        FROM MT_CajaGen cajGen
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal
+
+		INNER JOIN MT_DocEgreso docE on docE.idcajagen=cajGen.idcajagen
+		INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docE.idtipomoneda
+		INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docE.idtipopago
+
+		--detalle  RC
+		left join ML_RegistroCompra regC on docE.idregistrocompra=regC.idregistrocompra
+		left join ML_DetRegistroCompra detRC on regC.idregistrocompra=detRC.idregistrocompra
+		left join ML_Catalogo cat on detRC.idcatalogo= cat.idcatalogo
+
+		left JOIN MT_ConceptoUniNeg conUN2 on detRC.idconcepto=conUN2.idconcepto and detRC.unineg=conUN2.unineg
+		left Join MT_Concepto con2 on conUN2.idconcepto=con2.idconcepto
+		--caja chica
+		left join MT_SolicitudCajaCh sol on docE.idsolicitudcajach=sol.idsolicitudcajach
+		]]>
+	</queryString>
+	<field name="descripcion" class="java.lang.String"/>
+	<variable name="montoTotal" class="java.math.BigDecimal" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[]]></variableExpression>
+	</variable>
+	<columnHeader>
+		<band height="22" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="8687981b-54cf-4251-aa7f-7c033cb7984a" x="58" y="2" width="100" height="20"/>
+				<textElement/>
+				<text><![CDATA[descripcion]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement uuid="1a12689c-f570-4172-9829-b3e0f36cc743" x="58" y="0" width="100" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{descripcion}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="22"/>
+	</columnFooter>
+</jasperReport>

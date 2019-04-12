@@ -1,0 +1,2876 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+<mapper namespace="pe.marista.sigma.dao.CajaGenDAO">
+    <sql id="consultaCampos">
+        SELECT
+        cajGen.uniNeg
+        ,uni.nombreUniNeg
+        ,cajGen.idCajaGen
+        ,cajGen.idCaja
+        ,caj.nombre
+        ,cajGen.usuario
+        ,per.idPersonal
+        ,per.nombre as nombrePersonal
+        ,per.apePat
+        ,per.apeMat
+        ,cajGen.anio
+        ,cajGen.idSuperviza
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaSol as aperturaSolAnt
+        ,cajGen.aperturaDol as aperturaDolAnt
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        <!--,cajGen.saldoSol
+        ,cajGen.saldoDol
+        ,cajGen.diferenciaSol
+        ,cajGen.diferenciaDol-->
+       
+        ,(CASE WHEN cajGen.saldoSol IS NULL THEN ISNULL(cajGen.montodepositosol,0)-ISNULL(saldoSol,0)
+        ELSE cajGen.saldoSol
+        END) AS saldoSol
+        ,(CASE WHEN cajGen.saldoDol IS NULL THEN   ISNULL(cajGen.montodepositoDol,0)-ISNULL(saldodol,0)
+        ELSE cajGen.saldoDol
+        END) AS saldoDol
+
+        ,(CASE WHEN cajGen.diferenciasol IS NULL THEN ISNULL(cajGen.montodepositosol,0)-ISNULL(saldoSol,0)
+        ELSE cajGen.diferenciasol 
+        END) AS diferenciaSol
+
+        ,(CASE WHEN cajGen.diferenciadol IS NULL THEN ISNULL(cajGen.montodepositoDol,0)-ISNULL(saldodol,0)
+        ELSE cajGen.diferenciaDol
+        END) AS diferenciaDol
+        ,cajGen.fecApertura 
+        , (CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        , (CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,datePart(YEAR,cajGen.fecApertura)          as fecAperturaAnio
+        ,datePart(MONTH,cajGen.fecApertura)         as fecAperturaMes
+        ,datePart(DAY,cajGen.fecApertura)           as fecAperturaDia
+        ,cajGen.fecCierre
+        ,cajGen.fecDeposito
+        ,cajGen.rucBanco as rucBanco
+        ,cajGen.rucBancoCongre
+        ,cajGen.numCuentaSol
+        ,cajGen.numCuentaDol
+        ,cajGen.numOperacionSol
+        ,cajGen.numOperacionDol
+        ,cajGen.montoDepositoSol
+        ,cajGen.montoDepositoDol
+        ,cajGen.creaPor
+        ,cajGen.creaFecha
+        ,cajGen.modipor
+        
+        ,cajGen.ingresoCongreEfectivoSol
+        ,cajGen.ingresoCongreEfectivoDol
+        ,cajGen.numCuentaCongreSol
+        ,cajGen.numCuentaCongreDol
+        ,cajGen.numOperacionCongreSol
+        ,cajGen.numOperacionCongreDol
+        ,cajGen.montoDepositoCongreSol
+        ,cajGen.montoDepositoCongreDol
+        
+        ,perSup.idpersonal as idPersonalSup
+        ,perSup.nombre as nombrePersonalSup
+        ,perSup.apePat as apePatSup
+        ,perSup.apeMat as apeMatSup
+        ,EN.nombre AS nombreBanco
+        ,ENT.nombre as nombreBancoCongre
+        
+        FROM MT_CajaGen cajGen
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja  and caj.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario and usu.unineg=cajGen.uniNeg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=cajGen.unineg
+        LEFT JOIN MO_Personal perSup ON cajGen.idsuperviza = perSup.idpersonal and cajGen.unineg = perSup.unineg 
+        
+        LEFT JOIN MO_ENTIDAD EN ON EN.RUC=cajGen.rucBanco AND EN.UNINEG=cajGen.UNINEG
+        LEFT JOIN MO_ENTIDAD ENT ON ENT.RUC=cajGen.rucbancocongre  AND ENT.UNINEG=cajGen.UNINEG
+    </sql>
+    <resultMap id="cajaGenResultado" type="pe.marista.sigma.bean.CajaGenBean">
+        <id property="idCajaGen" column="idCajaGen"/>
+        <result property="anio" column="anio"/>
+        <result property="aperturaSol" column="aperturaSol"/>
+        <result property="aperturaSol" column="aperturaSolAnt"/>
+        <result property="aperturaSol" column="aperturaDolAnt"/>
+        <result property="aperturaDol" column="aperturaDol"/>
+        <result property="ingresoSol" column="ingresoSol"/>
+        <result property="ingresoDol" column="ingresoDol"/>
+        <result property="ingresoPos1" column="ingresoPos1"/>
+        <result property="ingresoPos2" column="ingresoPos2"/>
+        <result property="egresoSol" column="egresoSol"/>
+        <result property="egresoDol" column="egresoDol"/>
+        <result property="saldoSol" column="saldoSol"/>
+        <result property="saldoDol" column="saldoDol"/>
+        <result property="diferenciaSol" column="diferenciaSol"/>
+        <result property="diferenciaDol" column="diferenciaDol"/>
+        <result property="fecApertura" column="fecApertura"/>
+        <result property="fecAperturaAnio" column="fecAperturaAnio"/>
+        <result property="fecAperturaMes" column="fecAperturaMes"/>
+        <result property="fecAperturaDia" column="fecAperturaDia"/>
+        <result property="fecCierre" column="fecCierre"/>
+        <result property="fecDeposito" column="fecDeposito"/>
+        <result property="rucBanco" column="rucBanco"/>
+        <result property="nombreBanco" column="nombreBanco"/>
+        <result property="rucBancoCongre" column="rucBancoCongre"/>
+        <result property="nombreBancoCongre" column="nombreBancoCongre"/>
+        <result property="numCuentaSol" column="numCuentaSol"/>
+        <result property="numCuentaDol" column="numCuentaDol"/>
+        <result property="numOperacionSol" column="numOperacionSol"/>   
+        <result property="numOperacionDol" column="numOperacionDol"/>      
+        <result property="montoDepositoSol" column="montoDepositoSol"/>
+        <result property="montoDepositoDol" column="montoDepositoDol"/>
+        <result property="fechaAperturaView" column="fechaAperturaView"/>
+        <result property="fechaCierreView" column="fechaCierreView"/>
+        <result property="fechaDepositoView" column="fechaDepositoView"/>
+        
+        <result property="ingresoCongreEfectivoSol" column="ingresoCongreEfectivoSol"/>
+        <result property="ingresoCongreEfectivoDol" column="ingresoCongreEfectivoDol"/>
+        <result property="numCuentaCongreSol" column="numCuentaCongreSol"/>
+        <result property="numCuentaCongreDol" column="numCuentaCongreDol"/>
+        <result property="numOperacionCongreSol" column="numOperacionCongreSol"/>
+        <result property="numOperacionCongreDol" column="numOperacionCongreDol"/>
+        <result property="montoDepositoCongreSol" column="montoDepositoCongreSol"/>
+        <result property="montoDepositoCongreDol" column="montoDepositoCongreDol"/>
+        
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="uniNeg" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="cajaBean" column="idCaja"
+                     javaType="pe.marista.sigma.bean.CajaBean"
+                     resultMap="cajaResultado"/>
+        <association property="usuarioBean" column="usuario"
+                     javaType="pe.marista.sigma.bean.UsuarioBean"
+                     resultMap="usuarioResultado"/>
+        <association property="idSupervisa" column="idPersonalSup"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultadoSup"/> 
+    </resultMap>
+      
+    <resultMap id="personalResultadoSup" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonalSup" />
+        <result property="nombre" column="nombrePersonalSup" />
+        <result property="apepat" column="apePatSup" />
+        <result property="apemat" column="apeMatSup" />
+    </resultMap>  
+    
+    <!--cajaResultado-->
+    <resultMap id="cajaResultado" type="pe.marista.sigma.bean.CajaBean">
+        <id property="idCaja" column="idCaja"/>
+        <result property="nombre" column="nombre"/>
+    </resultMap>
+    <!--usuarioResultado-->
+    <resultMap id="usuarioResultado" type="pe.marista.sigma.bean.UsuarioBean">
+        <id property="usuario" column="usuario" />
+        <association property="personalBean" column="idPersonal" 
+                     javaType="pe.marista.sigma.bean.PersonalBean" 
+                     resultMap="personalResultado"/>
+    </resultMap>
+    <!--unidadNegocioResultado-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+    </resultMap>
+    <!--personalResultado-->
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal" />
+        <result property="nombre" column="nombrePersonal" />
+        <result property="apepat" column="apePat" />
+        <result property="apemat" column="apeMat" />
+    </resultMap>  
+    
+    <select id="verificarApertura" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        SELECT top 1
+        cajGen.uniNeg
+        ,uni.nombreUniNeg
+        ,cajGen.idCajaGen
+        ,cajGen.idCaja
+        ,caj.nombre
+        ,cajGen.usuario
+        ,per.idPersonal
+        ,per.nombre as nombrePersonal
+        ,per.apePat
+        ,per.apeMat
+        ,cajGen.anio
+        ,cajGen.idSuperviza
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol  
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,cajGen.saldoSol
+        ,cajGen.saldoDol
+        ,cajGen.diferenciaSol
+        ,cajGen.diferenciaDol
+        ,cajGen.fecApertura 
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,datePart(YEAR,cajGen.fecApertura)          as fecAperturaAnio
+        ,datePart(MONTH,cajGen.fecApertura)         as fecAperturaMes
+        ,datePart(DAY,cajGen.fecApertura)           as fecAperturaDia
+        ,cajGen.fecCierre
+        ,cajGen.fecDeposito
+        ,cajGen.rucBanco
+        ,cajGen.rucBancoCongre
+        ,cajGen.numCuentaSol
+        ,cajGen.numCuentaDol
+        ,cajGen.numOperacionSol
+        ,cajGen.numOperacionDol
+        ,cajGen.montoDepositoSol
+        ,cajGen.montoDepositoDol
+        ,cajGen.creaPor
+        ,cajGen.creaFecha
+        ,cajGen.modipor
+        
+        ,cajGen.ingresoCongreEfectivoSol
+        ,cajGen.ingresoCongreEfectivoDol
+        ,cajGen.numCuentaCongreSol
+        ,cajGen.numCuentaCongreDol
+        ,cajGen.numOperacionCongreSol
+        ,cajGen.numOperacionCongreDol
+        ,cajGen.montoDepositoCongreSol
+        ,cajGen.montoDepositoCongreDol 
+        
+        FROM MT_CajaGen cajGen 
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario and usu.unineg=cajGen.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=usu.unineg
+        WHERE cajGen.uniNeg= #{uniNeg.uniNeg}
+        and cajGen.idCaja = #{cajaBean.idCaja} 
+        and cajGen.usuario=#{usuarioBean.usuario} 
+        and cajGen.anio= #{anio} and datePart(YEAR,cajGen.fecApertura) = datePart(YEAR,getDate())
+        and cajGen.fecCierre is  null and cajGen.fecdeposito is null 
+        and isnull(cajGen.flgTipoCajaGen,1) = 1
+        <!--
+        and cajGen.flgTipocajagen <![CDATA[ <> ]]> 0
+        and datePart(MONTH,cajGen.fecApertura) = datePart(MONTH,getDate())
+        and datePart(DAY,cajGen.fecApertura)=datePart(DAY,getDate())
+        -->
+        <!-- and  fecCierre is null and fecdeposito is null--> 
+    </select>
+    
+    <select id="verificarCierreCajaGen" resultMap="cajaGenResultado" parameterType="map">
+        select uniNeg, idCajaGen,fecCierre from MT_CajaGen
+        where idcajagen=#{idCajaGen} and unineg=#{uniNeg} and fecCierre is not null 
+        and isnull(flgTipoCajaGen,1) = 1
+    </select>
+    
+    <select id="verificarCierre" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        SELECT top 1 
+        cajGen.uniNeg
+        ,uni.nombreUniNeg
+        ,cajGen.idCajaGen
+        ,cajGen.idCaja
+        ,caj.nombre
+        ,cajGen.usuario
+        ,per.idPersonal
+        ,per.nombre as nombrePersonal
+        ,per.apePat
+        ,per.apeMat
+        ,cajGen.anio
+        ,cajGen.idSuperviza
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,cajGen.saldoSol
+        ,cajGen.saldoDol
+        ,cajGen.diferenciaSol
+        ,cajGen.diferenciaDol
+        ,cajGen.fecApertura
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,datePart(YEAR,cajGen.fecApertura)          as fecAperturaAnio
+        ,datePart(MONTH,cajGen.fecApertura)         as fecAperturaMes
+        ,datePart(DAY,cajGen.fecApertura)           as fecAperturaDia
+        ,cajGen.fecCierre 
+        
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+    
+        ,cajGen.fecDeposito
+        ,cajGen.rucBanco
+        ,cajGen.rucBancoCongre
+        ,cajGen.numCuentaSol
+        ,cajGen.numCuentaDol
+        ,cajGen.numOperacionSol
+        ,cajGen.numOperacionDol
+        ,cajGen.montoDepositoSol
+        ,cajGen.montoDepositoDol
+        ,cajGen.creaPor
+        ,cajGen.creaFecha
+        ,cajGen.modipor
+        
+        ,cajGen.ingresoCongreEfectivoSol
+        ,cajGen.ingresoCongreEfectivoDol
+        ,cajGen.numCuentaCongreSol
+        ,cajGen.numCuentaCongreDol
+        ,cajGen.numOperacionCongreSol
+        ,cajGen.numOperacionCongreDol
+        ,cajGen.montoDepositoCongreSol
+        ,cajGen.montoDepositoCongreDol
+        
+        FROM MT_CajaGen cajGen
+        left JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja
+        left JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        left JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario
+        left JOIN MO_Personal per ON per.idpersonal = usu.idpersonal
+        WHERE cajGen.uniNeg= #{uniNeg.uniNeg} and cajGen.idCaja = #{cajaBean.idCaja} 
+        and cajGen.usuario=#{usuarioBean.usuario} and cajGen.anio= #{anio} 
+        and feccierre is not null  
+        and idcajagen =
+        (select max(idcajagen)from MT_CajaGen where  uniNeg= #{uniNeg.uniNeg} and  idCaja = #{cajaBean.idCaja}  and  usuario=#{usuarioBean.usuario}
+        and  flgTipoCajaGen=#{flgTipoCajaGen})
+        <!--
+        and datePart(YEAR,cajGen.fecApertura) = datePart(YEAR,getDate()) 
+        and datePart(MONTH,cajGen.fecApertura) = datePart(MONTH,getDate()) 
+        and datePart(DAY,cajGen.fecApertura)=datePart(DAY,getDate()) 
+        and datePart(YEAR,cajGen.fecCierre) = datePart(YEAR,getDate())
+        and datePart(MONTH,cajGen.fecCierre) = datePart(MONTH,getDate())
+        and datePart(DAY,cajGen.fecCierre)=datePart(DAY,getDate())
+        -->
+        order by cajGen.idCajaGen desc
+    </select>
+    <select id="verificarRegistrosCajaDocIng" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        select idcajagen,unineg from MT_CajaGen
+        where idcajagen=#{idCajaGen} 
+        and  idcajagen  in
+        (SELECT idcajagen FROM MT_CajaGen cajGen 
+        where idcajagen
+        not in (select distinct idcajagen from MT_DocIngreso where  idcaja=#{cajaBean.idCaja} and unineg=#{uniNeg.uniNeg})
+        and idcaja=#{cajaBean.idCaja}
+        and  isnull(flgTipoCajaGen,1)=1) 
+    </select>
+    <select id="verificarRegistrosCajaDocEgre" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        select idcajagen,unineg from MT_CajaGen
+        where idcajagen=#{idCajaGen} 
+        and  #{idCajaGen}  in
+        (SELECT idcajagen FROM MT_CajaGen cajGen 
+        where idcajagen
+        not in (select distinct idcajagen from MT_DocEgreso where  idcaja=#{cajaBean.idCaja} and unineg=#{uniNeg.uniNeg})
+        and idcaja=#{cajaBean.idCaja}
+        and  isnull(flgTipoCajaGen,1)=1) 
+    </select>
+     
+    <select id="obtenerPorId" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        <include refid="consultaCampos" />
+        WHERE cajGen.idCajaGen=#{idCajaGen} and cajGen.uniNeg= #{uniNeg.uniNeg}
+    </select>
+    
+    <insert id="insertarCajaGen" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Insert Into MT_CajaGen (unineg,idcaja,usuario,idsuperviza,anio,aperturasol,aperturadol,ingresosol,ingresodol,egresosol,egresodol,saldosol,saldodol
+        ,diferenciasol,diferenciadol,fecapertura,feccierre,fecdeposito,rucbanco,numcuentasol,numcuentadol,numoperacionSol,numoperacionDol,montodepositosol,montodepositodol,creapor,creafecha,
+        ingresoPos1,ingresoPos2,rucBancoCongre,flgTipoCajaGen)
+        Values (#{uniNeg.uniNeg},#{cajaBean.idCaja},#{usuarioBean.usuario},#{idSupervisa.idPersonal},#{anio},#{aperturaSol},#{aperturaDol},#{ingresoSol},#{ingresoDol},#{egresoSol},#{egresoDol},#{saldoSol},#{saldoDol},
+        #{diferenciaSol},#{diferenciaDol},#{fecApertura},#{fecCierre},#{fecDeposito},#{rucBanco},#{numCuentaSol},#{numCuentaDol},#{numOperacionSol},#{numOperacionDol},#{montoDepositoSol},#{montoDepositoDol},#{creaPor},getDate()
+        ,#{ingresoPos1},#{ingresoPos2},#{rucBancoCongre},#{flgTipoCajaGen})
+        <selectKey keyProperty="idCajaGen" order="AFTER" resultType="Integer">
+            SELECT max(idCajaGen) FROM MT_CajaGen WHERE uniNeg= #{uniNeg.uniNeg} and idCaja = #{cajaBean.idCaja} and usuario=#{usuarioBean.usuario} and anio= #{anio}
+        </selectKey>
+    </insert>
+        
+    <update id="modificarCierre" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        fecCierre = #{fecCierre}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg} 
+        <!--and idtipocajagen <![CDATA[ <> ]]> 26202 
+        and flgTipocajagen <![CDATA[ <> ]]> 0 -->
+    </update>  
+    <update id="actualizarCajaGenAuto" parameterType="map">
+        declare @idcajaen int ,@unineg varchar(6)
+        set @idcajaen=#{idCajaGen}
+        set @unineg=#{uniNeg} 
+
+        declare  @montoefesol money = (select  sum(isnull(montoefectivosol,0)) from MT_DocIngreso where  idcajagen=@idcajaen and unineg=@unineg and idtipomodopago in (15803,15806))
+        declare  @montoefeDol money = (select  sum(isnull(montoefectivodol,0)) from MT_DocIngreso where  idcajagen=@idcajaen and unineg=@unineg)
+        declare  @montoPos1 money = (select  sum(isnull(montopos1,0)) from MT_DocIngreso where  idcajagen=@idcajaen and unineg=@unineg)
+        declare  @montoPos2 money = (select  sum(isnull(montopos2,0)) from MT_DocIngreso where  idcajagen=@idcajaen and unineg=@unineg)
+
+        update MT_CajaGen set ingresosol=@montoefesol,ingresodol=@montoefeDol,ingresopos1=@montoPos1,ingresopos2=@montoPos2 where idcajagen=@idcajaen and unineg=@unineg
+    </update>  
+    <update id="modificarApertura" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        fecapertura = #{fecApertura},
+        idsuperviza = #{idSupervisa.idPersonal},
+        aperturasol = #{aperturaSol}, 
+        aperturadol = #{aperturaDol}, 
+        modiPor=#{modiPor}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg}
+    </update>  
+
+    <select id="obtenerCajaGeneralDelDia" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        <include refid="consultaCampos" />
+        WHERE cajGen.uniNeg= #{uniNeg.uniNeg} and cajGen.idCaja = #{cajaBean.idCaja} 
+        and cajGen.usuario=#{usuarioBean.usuario} and cajGen.anio= #{anio} and datePart(YEAR,cajGen.fecApertura) = datePart(YEAR,getDate())
+        and datePart(MONTH,cajGen.fecApertura) = datePart(MONTH,getDate()) and datePart(DAY,cajGen.fecApertura)=datePart(DAY,getDate())
+    </select>
+    
+    <update id="modificarIngresoSolYDol" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        ingresoSol = #{ingresoSol},
+        ingresoDol = #{ingresoDol},
+        ingresoPos1= #{ingresoPos1},
+        ingresoPos2= #{ingresoPos2}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg}
+    </update>  
+    <update id="modificarEgresoSolYDol" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        egresoSol = #{egresoSol},
+        egresoDol = #{egresoDol} 
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg} and usuario=#{usuarioBean.usuario} and anio= #{anio} 
+    </update>  
+    
+    <update id="modificarDepSoles" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        saldoSol = #{saldoSol},
+        diferenciaSol = #{diferenciaSol},
+        fecDeposito = #{fecDeposito},
+        rucBanco = #{rucBanco},
+        numCuentaSol = #{numCuentaSol},
+        numOperacionSol = #{numOperacionSol},
+        montoDepositoSol = #{montoDepositoSol}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg}
+    </update>  
+    
+    <update id="modificarDepDolares" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        saldoDol = #{saldoDol},
+        diferenciaDol = #{diferenciaDol},
+        fecDeposito = #{fecDeposito},
+        rucBanco = #{rucBanco},
+        numCuentaDol = #{numCuentaDol},
+        numOperacionDol = #{numOperacionDol},
+        montoDepositoDol = #{montoDepositoDol}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg}
+    </update>    
+    
+    <update id="modificarDepCongreSoles" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set 
+        fecDeposito = #{fecDeposito},
+        ingresoCongreEfectivoSol = #{ingresoCongreEfectivoSol},
+        rucBancoCongre=#{rucBancoCongre},
+        numCuentaCongreSol = #{numCuentaCongreSol},
+        numOperacionCongreSol = #{numOperacionCongreSol},
+        montoDepositoCongreSol = #{montoDepositoCongreSol}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg}
+    </update>  
+    <update id="modificarDepCongreDolares" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set 
+        fecDeposito = #{fecDeposito},
+        ingresoCongreEfectivoDol = #{ingresoCongreEfectivoDol},
+        numCuentaCongreDol = #{numCuentaCongreDol},
+        rucBancoCongre=#{rucBancoCongre},
+        numOperacionCongreDol = #{numOperacionCongreDol},
+        montoDepositoCongreDol = #{montoDepositoCongreDol}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg}
+    </update>  
+    
+    <select id="obtenerBancosDeposito" resultMap="entidadResultado" >
+        SELECT distinct em.unineg
+        ,em.ruc
+        ,em.nombre   
+        ,em.flgFinanciera 
+        FROM MO_Entidad em
+        where em.flgFinanciera = 1 
+        <if test="ayudaBanco == 0">
+            and ruc in (select distinct rucbanco from MT_CuentaBanco where flgctacongre=1 and unineg=#{uniNeg.uniNeg}) and em.unineg=#{uniNeg.uniNeg}
+        </if>
+        <if test="ayudaBanco == 1">
+            and ruc in (select distinct rucbanco from MT_CuentaBanco where flgctacongre=0  and unineg=#{uniNeg.uniNeg})  and em.unineg=#{uniNeg.uniNeg}
+        </if>
+        and em.unineg=#{uniNeg.uniNeg}
+    </select>
+     
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc" />
+        <result property="nombre" column="nombre" />
+        <result property="direccion" column="direccion" />
+        <result property="telefono" column="telefono" />
+        <result property="correo" column="correo" />
+        <result property="contacto" column="contacto" />
+        <result property="url" column="url" />
+        <result property="flgProveedor" column="flgproveedor" />
+        <result property="flgPrevisional" column="flgPrevisional" />
+        <result property="flgSalud" column="flgSalud" />
+        <result property="flgEduSup" column="flgEduSup" />
+        <result property="flgFinanciera" column="flgFinanciera" />     
+    </resultMap>
+    
+    <select id="obtenerUltimaCajaAbierta" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        <include refid="consultaCampos" />
+        WHERE cajGen.uniNeg= #{uniNeg.uniNeg} and cajGen.idCaja = #{cajaBean.idCaja} and cajGen.usuario=#{usuarioBean.usuario} and
+        cajGen.anio= #{anio} and cajGen.idcajagen = (Select max(idCajaGen)
+        FROM MT_CajaGen where uniNeg= #{uniNeg.uniNeg} and idCaja = #{cajaBean.idCaja} 
+        and usuario=#{usuarioBean.usuario} and anio=#{anio}
+        and feccierre is NULL 
+        and fecdeposito is null
+        and flgTipoCajaGen=#{flgTipoCajaGen}
+        )   
+    </select>
+    <select id="obtenerUltimaCajaAbiertaApertura" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        <include refid="consultaCampos" />
+        WHERE cajGen.uniNeg= #{uniNeg.uniNeg} and cajGen.idCaja = #{cajaBean.idCaja} and cajGen.usuario=#{usuarioBean.usuario} and
+        cajGen.anio= #{anio} and cajGen.idcajagen = (Select max(idCajaGen)
+        FROM MT_CajaGen where uniNeg= #{uniNeg.uniNeg} and idCaja = #{cajaBean.idCaja} 
+        and usuario=#{usuarioBean.usuario} and anio=#{anio}
+        and feccierre is not NULL
+        and fecdeposito is not null
+        and flgTipoCajaGen=#{flgTipoCajaGen}
+        ) 
+    </select>
+    
+    <select id="obtenerCajaDepositoDiaAnterior" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        <include refid="consultaCampos" />
+        WHERE cajGen.uniNeg= #{uniNeg.uniNeg} and cajGen.idCaja = #{cajaBean.idCaja}
+        and cajGen.usuario=#{usuarioBean.usuario} and cajGen.anio= #{anio}
+        and idCajaGen = (Select max(idCajaGen) FROM MT_CajaGen where uniNeg= #{uniNeg.uniNeg} and 
+        idCaja = #{cajaBean.idCaja} and usuario=#{usuarioBean.usuario} and anio= #{anio} 
+        and fecApertura is not null and fecCierre is not null and fecdeposito is null
+        and flgTipoCajaGen=#{flgTipoCajaGen}
+        )
+    </select>     
+    
+    <select id="obtenerCajaGen" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        SELECT docI.fechapago,
+        upper(uni.nombreUniNeg) as nombreUniNeg
+        ,caj.nombre as nomCaja
+        ,cajGen.usuario
+        ,concat(per.apePat+' ',per.apeMat+' ',per.nombre) as nomCompletoPersonal
+        ,upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa
+        ,cajGen.fecApertura 
+        
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,(cajGen.ingresoSol-cajGen.egresoSol) AS		saldoSol
+        ,(cajGen.ingresoDol-cajGen.egresoDol) AS		saldoDol 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) then 'PAGO POR MATRÍCULA 2016' else upper(detDocI.referencia) end)
+        else '--'+tipSta.codigo+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto 
+        <!--,detDocI.montoSoles AS montoPagadoSol 
+        ,detDocI.montoDolares AS montoPagadoDol-->
+        ,(case when tpCon.idTipoConcepto in (100,101) then (detDocI.montopagado - (isnull(detDocI.mora,0))+(isnull(detDocI.dscto,0))) else detDocI.montoSoles end) AS montoPagadoSol  
+        ,(case when tpCon.idTipoConcepto not in (100,101) then (detDocI.montodolares)  else 0 end) as montoPagadoDol
+        ,doci.tc as tc
+        ,(select sum(isnull(det.montosoles,0)) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=#{uniNeg.uniNeg} and d.idCajaGen=#{idCajaGen} and d.idCaja=#{cajaBean.idCaja} and d.unineg=#{uniNeg.uniNeg} ) as sumTotSoles
+        ,(select sum(isnull(det.montodolares,0)) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=#{uniNeg.uniNeg} and d.idCajaGen=#{idCajaGen} and d.idCaja=#{cajaBean.idCaja} and d.unineg=#{uniNeg.uniNeg} ) as sumTotDolares
+        ,(select isnull(sum(isnull(det.montopagado,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=#{uniNeg.uniNeg} and d.idCajaGen=#{idCajaGen} and d.idCaja=#{cajaBean.idCaja} and d.unineg=#{uniNeg.uniNeg} and
+        d.idtipomodopago=(select idcodigo from MO_Codigo where codigo='banco' and idtipocodigo='tipomodopago')) as montoBanco
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc 
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docI.idtipomoneda
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=#{uniNeg.uniNeg} and cajGen.idCajaGen=#{idCajaGen} and cajGen.idCaja=#{cajaBean.idCaja}
+        and docI.unineg=#{uniNeg.uniNeg}
+        <!-- mora -->
+        UNION ALL
+        SELECT docI.fechapago,
+        upper(uni.nombreUniNeg) as nombreUniNeg
+        ,caj.nombre as nomCaja
+        ,cajGen.usuario
+        ,concat(per.apePat+' ',per.apeMat+' ',per.nombre) as nomCompletoPersonal
+        ,upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa
+        ,cajGen.fecApertura 
+        
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,(cajGen.ingresoSol-cajGen.egresoSol) AS		saldoSol
+        ,(cajGen.ingresoDol-cajGen.egresoDol) AS		saldoDol 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,772211 as cuentaD
+        ,(select nombre from MT_PlanContable where cuenta=772211) as nomConcepto
+        <!--,detDocI.montoSoles AS montoPagadoSol 
+        ,detDocI.montoDolares AS montoPagadoDol-->
+        ,(case when tpCon.idTipoConcepto in (100,101) then (isnull(detDocI.mora,0)-isnull(detDocI.dscto,0))  else 0 end) AS montoPagadoSol  
+        ,0 AS montoPagadoDol
+        ,doci.tc as tc
+        ,(select sum(isnull(det.montosoles,0)) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=#{uniNeg.uniNeg} and d.idCajaGen=#{idCajaGen} and d.idCaja=#{cajaBean.idCaja} and d.unineg=#{uniNeg.uniNeg} ) as sumTotSoles
+        ,(select sum(isnull(det.montodolares,0)) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=#{uniNeg.uniNeg} and d.idCajaGen=#{idCajaGen} and d.idCaja=#{cajaBean.idCaja} and d.unineg=#{uniNeg.uniNeg} ) as sumTotDolares
+        ,(select isnull(sum(isnull(det.montopagado,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=#{uniNeg.uniNeg} and d.idCajaGen=#{idCajaGen} and d.idCaja=#{cajaBean.idCaja} and d.unineg=#{uniNeg.uniNeg} and
+        d.idtipomodopago=(select idcodigo from MO_Codigo where codigo='banco' and idtipocodigo='tipomodopago')) as montoBanco
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc 
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docI.idtipomoneda
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=#{uniNeg.uniNeg} and cajGen.idCajaGen=#{idCajaGen} and cajGen.idCaja=#{cajaBean.idCaja}
+        and docI.unineg=#{uniNeg.uniNeg} AND  tpCon.idTipoConcepto in (100,101) AND detDocI.mora>0
+        order by 1,23,30 desc, 29 DESC 
+    </select>
+    <select id="obtenerCajaGenPorDetalleFor" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Declare @unineg varchar(6) 
+        SET @unineg = #{uniNeg}
+        Declare 
+        @sumTotSoles   money  = (select isnull(sum(isnull(det.montosoles,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=@uniNeg and d.idCajaGen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>),
+        @sumTotDolares money  = (select isnull(sum(isnull(det.montodolares,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=@uniNeg and d.idCajaGen in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>),  
+        @montoBanco    money = (select isnull(sum(isnull(montosoles,0)),0) from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where doc.idcajagen in  <foreach item="item" index="index" collection="list" 
+                                         open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and  doc.unineg=@uniNeg 
+        and doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago'))
+		 
+        SELECT  docI.fechapago as fechapago,
+        upper(uni.nombreUniNeg) as nombreUniNeg
+        ,caj.nombre as nomCaja
+        ,cajGen.usuario
+        ,concat(per.apePat+' ',per.apeMat+' ',per.nombre) as nomCompletoPersonal
+        ,upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa
+        ,cajGen.fecApertura                 
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,(cajGen.ingresoSol-cajGen.egresoSol) AS		saldoSol
+        ,(cajGen.ingresoDol-cajGen.egresoDol) AS		saldoDol 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) then 'PAGO POR MATRÍCULA '+ CONVERT(VARCHAR(4),ctacte.ANIO) else upper(detDocI.referencia) end)
+        else '--'+UPPER(tipSta.codigo)+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto           
+        ,(case when tpCon.idTipoConcepto in (100,101) then (detDocI.montosoles - (isnull(detDocI.mora,0))+(isnull(detDocI.dscto,0))) else detDocI.montoSoles end) AS montoPagadoSol  
+        ,(case when tpCon.idTipoConcepto not in (100,101) then (detDocI.montodolares)  else (detDocI.montodolares) end) as montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc 
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docI.idtipomoneda
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and cajGen.idCajaGen in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and tipSta.codigo='Pagado' and docI.unineg=@unineg
+		 
+        UNION ALL
+		
+        SELECT  (case when tpCon.idTipoConcepto in(100,101) then docI.creaFechaStatus else docI.fechapago end) as fechapago,
+        upper(uni.nombreUniNeg) as nombreUniNeg
+        ,caj.nombre as nomCaja
+        ,cajGen.usuario
+        ,concat(per.apePat+' ',per.apeMat+' ',per.nombre) as nomCompletoPersonal
+        ,upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa
+        ,cajGen.fecApertura                 
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,(cajGen.ingresoSol-cajGen.egresoSol) AS		saldoSol
+        ,(cajGen.ingresoDol-cajGen.egresoDol) AS		saldoDol 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is not null and doci.idcajagenanulado is not null then '--ANULADO-- '+ upper(detDocI.referencia)
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) and idcajagenanulado is   null  then 'PAGO POR MATRÍCULA '+ CONVERT(VARCHAR(4),ctacte.ANIO) else upper(detDocI.referencia) end)
+        else '--'+UPPER(tipSta.codigo)+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto           
+        ,(case when tpCon.idTipoConcepto in (100,101) then (0) else detDocI.montoSoles end) AS montoPagadoSol  
+        ,(case when tpCon.idTipoConcepto not in (100,101) then (0)  else 0 end) as montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco	 
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagenanulado=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc 
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docI.idtipomoneda
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and docI.idcajagenanulado in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and docI.idcajagenanulado is not null and docI.unineg=@unineg         
+		 
+        UNION ALL
+        
+        SELECT docI.fechapago as fechapago,
+        upper(uni.nombreUniNeg) as nombreUniNeg
+        ,caj.nombre as nomCaja
+        ,cajGen.usuario
+        ,concat(per.apePat+' ',per.apeMat+' ',per.nombre) as nomCompletoPersonal
+        ,upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa
+        ,cajGen.fecApertura         
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView        
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,(cajGen.ingresoSol-cajGen.egresoSol) AS		saldoSol
+        ,(cajGen.ingresoDol-cajGen.egresoDol) AS		saldoDol 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,772211 as cuentaD
+        <!--,(select nombre from MT_PlanContable where cuenta=772211)+ ' ' +-->
+        ,'MORA POR PENS. VENC.'+ ' ' +
+        (case
+        when ctacte.mes=2 then 'MATRÍCULA'
+        when ctacte.mes=3 then  'MARZO'
+        when ctacte.mes=4 then   'ABRIL'
+        when ctacte.mes=5 then   'MAYO'
+        when ctacte.mes=6 then 'JUNIO'
+        when ctacte.mes=7 then  'JULIO'
+        when ctacte.mes=8 then   'AGOSTO'
+        when ctacte.mes=9 then   'SEPTIEMBRE'
+        when ctacte.mes=10 then   'OCTUBRE'
+        when ctacte.mes=11 then   'NOVIEMBRE'
+        when ctacte.mes=12 then 'DICIEMBRE'  else ''
+        END)+' '+convert(varchar(4),ctacte.anio) as nomConcepto
+        ,(case when tpCon.idTipoConcepto in (100,101) then (isnull(detDocI.mora,0)-isnull(detDocI.dscto,0))  else 0 end) AS montoPagadoSol  
+        ,0 AS montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc 
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docI.idtipomoneda
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and cajGen.idCajaGen in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  
+        and tpCon.idTipoConcepto in (100,101) AND (isnull(detDocI.mora,0)-isnull(detDocI.dscto,0))>0 
+        order by 1,24,30 desc, 29 DESC 
+    </select>
+    
+    <select id="obtenerCajaGeneralPorDetalleFor" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Declare @unineg varchar(6) 
+        SET @unineg = #{uniNeg}
+        Declare 
+        @sumTotSoles   money  = (select isnull(sum(isnull(det.montosoles,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=@uniNeg and d.idCajaGen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>),
+        @sumTotDolares money  = (select isnull(sum(isnull(det.montodolares,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=@uniNeg and d.idCajaGen in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>),  
+        @montoBanco    money = (select isnull(sum(isnull(montosoles,0)),0) from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where doc.idcajagen in  <foreach item="item" index="index" collection="list" 
+                                         open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and  doc.unineg=@uniNeg 
+        and doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago'))
+        ,@sumIngresoSol money = (select isnull(sum(isnull(ingresosol,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+        , @sumIngresoDol money = (select isnull(sum(isnull(ingresodol,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+        , @sumIngresoPos1 money = (select isnull(sum(isnull(ingresopos1,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+        , @sumIngresoPos2 money = (select isnull(sum(isnull(ingresopos2,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+		 
+        SELECT  docI.fechapago as fechapago,
+        convert(varchar,docI.fechapago,103) as fechaPagoStr,
+        upper(uni.nombreUniNeg) as nombreUniNeg 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) then 'PAGO POR MATRÍCULA '+ CONVERT(VARCHAR(4),ctacte.ANIO) else upper(detDocI.referencia) end)
+        else '--'+UPPER(tipSta.codigo)+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto           
+        ,(case when tpCon.idTipoConcepto in (100,101) then (detDocI.montosoles - (isnull(detDocI.mora,0))+(isnull(detDocI.dscto,0))) else detDocI.montoSoles end) AS montoPagadoSol  
+        ,(case when tpCon.idTipoConcepto not in (100,101) then (detDocI.montodolares)  else 0 end) as montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco
+        ,(isnull(@sumIngresoSol,0)) as ingresoSol
+        ,(isnull(@sumIngresoDol,0)) as ingresoDol
+        ,(isnull(@sumIngresoPos1,0)) as ingresoPos1 
+        ,(isnull(@sumIngresoPos2,0)) as ingresoPos2
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc  
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and cajGen.idCajaGen in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and tipSta.codigo='Pagado' and docI.unineg=@unineg
+		 
+        UNION ALL
+		
+        SELECT  (case when tpCon.idTipoConcepto in(100,101) then docI.creaFechaStatus else docI.fechapago end) as fechapago,
+        (case when tpCon.idTipoConcepto in(100,101) then  convert(varchar,docI.creaFechaStatus,103) else convert(varchar,docI.fechapago,103) end)  as fechaPagoStr,
+        upper(uni.nombreUniNeg) as nombreUniNeg 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is not null and doci.idcajagenanulado is not null then '--ANULADO-- '+ upper(detDocI.referencia)
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) and idcajagenanulado is   null  then 'PAGO POR MATRÍCULA '+ CONVERT(VARCHAR(4),ctacte.ANIO) else upper(detDocI.referencia) end)
+        else '--'+UPPER(tipSta.codigo)+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto           
+        ,(case when tpCon.idTipoConcepto in (100,101) then (0) else detDocI.montoSoles end) AS montoPagadoSol  
+        ,(case when tpCon.idTipoConcepto not in (100,101) then (0)  else 0 end) as montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco	 
+        ,(isnull(@sumIngresoSol,0)) as ingresoSol
+        ,(isnull(@sumIngresoDol,0)) as ingresoDol
+        ,(isnull(@sumIngresoPos1,0)) as ingresoPos1 
+        ,(isnull(@sumIngresoPos2,0)) as ingresoPos2
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagenanulado=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc  
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and docI.idcajagenanulado in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and docI.idcajagenanulado is not null and docI.unineg=@unineg         
+		 
+        UNION ALL
+        
+        SELECT docI.fechapago as fechapago,
+        convert(varchar,docI.fechapago,103) as fechaPagoStr,
+        upper(uni.nombreUniNeg) as nombreUniNeg 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,772211 as cuentaD
+        <!--,(select nombre from MT_PlanContable where cuenta=772211)+ ' ' +-->
+        ,'MORA POR PENS. VENC.'+ ' ' +
+        (case
+        when ctacte.mes=2 then 'MATRÍCULA'
+        when ctacte.mes=3 then  'MARZO'
+        when ctacte.mes=4 then   'ABRIL'
+        when ctacte.mes=5 then   'MAYO'
+        when ctacte.mes=6 then 'JUNIO'
+        when ctacte.mes=7 then  'JULIO'
+        when ctacte.mes=8 then   'AGOSTO'
+        when ctacte.mes=9 then   'SEPTIEMBRE'
+        when ctacte.mes=10 then   'OCTUBRE'
+        when ctacte.mes=11 then   'NOVIEMBRE'
+        when ctacte.mes=12 then 'DICIEMBRE'  else ''
+        END)+' '+convert(varchar(4),ctacte.anio) as nomConcepto
+        ,(case when tpCon.idTipoConcepto in (100,101) then (isnull(detDocI.mora,0)-isnull(detDocI.dscto,0))  else 0 end) AS montoPagadoSol  
+        ,0 AS montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco
+        ,(isnull(@sumIngresoSol,0)) as ingresoSol
+        ,(isnull(@sumIngresoDol,0)) as ingresoDol
+        ,(isnull(@sumIngresoPos1,0)) as ingresoPos1 
+        ,(isnull(@sumIngresoPos2,0)) as ingresoPos2
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc  
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and cajGen.idCajaGen in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  
+        and tpCon.idTipoConcepto in (100,101) AND isnull(detDocI.mora,0)>0 
+        order by 1,6,12 desc, 11 DESC 
+    </select>
+    <select id="obtenerCajaGeneralPorDetalleForIncMora" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Declare @unineg varchar(6) 
+        SET @unineg = #{uniNeg}
+        Declare 
+        @sumTotSoles   money  = (select isnull(sum(isnull(det.montosoles,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=@uniNeg and d.idCajaGen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>),
+        @sumTotDolares money  = (select isnull(sum(isnull(det.montodolares,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=@uniNeg and d.idCajaGen in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>),  
+        @montoBanco    money = (select isnull(sum(isnull(montosoles,0)),0) from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where doc.idcajagen in  <foreach item="item" index="index" collection="list" 
+                                         open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and  doc.unineg=@uniNeg 
+        and doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago'))
+        ,@sumIngresoSol money = (select isnull(sum(isnull(ingresosol,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+        , @sumIngresoDol money = (select isnull(sum(isnull(ingresodol,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+        , @sumIngresoPos1 money = (select isnull(sum(isnull(ingresopos1,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+        , @sumIngresoPos2 money = (select isnull(sum(isnull(ingresopos2,0)),0) from MT_CajaGen gen 
+        where gen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and gen.unineg=@uniNeg) 
+		 
+        SELECT  docI.fechapago as fechapago,
+        convert(varchar,docI.fechapago,103) as fechaPagoStr,
+        upper(uni.nombreUniNeg) as nombreUniNeg 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) then 'PAGO POR MATRÍCULA '+ CONVERT(VARCHAR(4),ctacte.ANIO) else upper(detDocI.referencia) end)
+        else '--'+UPPER(tipSta.codigo)+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto           
+        ,detDocI.montoSoles   AS montoPagadoSol  
+        ,detDocI.montodolares as montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco
+        ,(isnull(@sumIngresoSol,0)) as ingresoSol
+        ,(isnull(@sumIngresoDol,0)) as ingresoDol
+        ,(isnull(@sumIngresoPos1,0)) as ingresoPos1 
+        ,(isnull(@sumIngresoPos2,0)) as ingresoPos2
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc  
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and cajGen.idCajaGen in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and tipSta.codigo='Pagado' and docI.unineg=@unineg
+		 
+        UNION ALL
+		
+        SELECT  (case when tpCon.idTipoConcepto in(100,101) then docI.creaFechaStatus else docI.fechapago end) as fechapago,
+        (case when tpCon.idTipoConcepto in(100,101) then  convert(varchar,docI.creaFechaStatus,103) else convert(varchar,docI.fechapago,103) end)  as fechaPagoStr,
+        upper(uni.nombreUniNeg) as nombreUniNeg 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente
+        ,detDocI.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is not null and doci.idcajagenanulado is not null then '--ANULADO-- '+ upper(detDocI.referencia)
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) and idcajagenanulado is   null  then 'PAGO POR MATRÍCULA '+ CONVERT(VARCHAR(4),ctacte.ANIO) else upper(detDocI.referencia) end)
+        else '--'+UPPER(tipSta.codigo)+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto           
+        ,(case when tpCon.idTipoConcepto in (100,101) then (0) else detDocI.montoSoles end) AS montoPagadoSol  
+        ,(case when tpCon.idTipoConcepto not in (100,101) then (0)  else 0 end) as montoPagadoDol
+        ,doci.tc as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco	 
+        ,(isnull(@sumIngresoSol,0)) as ingresoSol
+        ,(isnull(@sumIngresoDol,0)) as ingresoDol
+        ,(isnull(@sumIngresoPos1,0)) as ingresoPos1 
+        ,(isnull(@sumIngresoPos2,0)) as ingresoPos2
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagenanulado=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc  
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=@unineg and docI.idcajagenanulado in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and docI.idcajagenanulado is not null and docI.unineg=@unineg               
+        order by 1,6,12 desc, 11 DESC 
+    </select>
+    <select id="obtenerCajaGenDesglosadoTop1" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="map">
+        SELECT top 1 
+        upper(uni.nombreUniNeg) as nombreUniNeg
+        ,caj.nombre as nomCaja
+        ,cajGen.usuario
+        ,concat(per.apePat+' ',per.apeMat+' ',per.nombre) as nomCompletoPersonal
+        ,upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa
+        ,cajGen.fecApertura 
+        
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,(cajGen.ingresoSol-cajGen.egresoSol) AS		saldoSol
+        ,(cajGen.ingresoDol-cajGen.egresoDol) AS		saldoDol  
+        ,doci.tc as tc 
+        ,(select sum(montosoles) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotSoles
+        ,(select sum(montodolares) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotDolares 
+        ,(select isnull(sum(isnull(det.montopagado,0)),0) from MT_DocIngreso d
+        inner join MT_DetDocIngreso det on det.iddocingreso=d.iddocingreso and det.unineg=d.unineg
+        where d.uniNeg=#{uniNeg} and d.idCajaGen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and d.idCaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach> and d.unineg=#{uniNeg} and
+        d.idtipomodopago=(select idcodigo from MO_Codigo where codigo='banco' and idtipocodigo='tipomodopago')) as montoBanco
+
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg 
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=UNI.unineg 
+        where cajGen.uniNeg=#{uniNeg} and  
+        cajGen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and cajGen.idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach> 
+        and docI.unineg=#{uniNeg} 
+    </select>
+    <select id="obtenerCajaGenDesglosado" resultType="pe.marista.sigma.bean.reporte.DocIngresoRepBeanDesglosado" parameterType="map">
+        select
+        (case 
+        when ( select isnull(sum(isnull(det.montoSoles,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Efectivo' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoSoles,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Efectivo' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalSol, 
+
+        (case 
+        when ( select isnull(sum(isnull(det.montoDolares,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Efectivo' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoDolares,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Efectivo' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalDol,
+        'Efectivo' as modo 
+ 
+        union all
+        select
+        (case 
+        when ( select isnull(sum(isnull(det.montoSoles,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='POS'  and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoSoles,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='POS' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalSol, 
+
+        (case 
+        when ( select isnull(sum(isnull(det.montoDolares,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='POS' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoDolares,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='POS' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalDol,
+        'POS' as modo 
+
+        union all
+        select
+        (case 
+        when ( select isnull(sum(isnull(det.montoSoles,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Ambos' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoSoles,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Ambos' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalSol, 
+
+        (case 
+        when ( select isnull(sum(isnull(det.montoDolares,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Ambos' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoDolares,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Ambos' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalDol,
+        'Ambos' as modo 
+ 
+        union all
+        select
+        (case 
+        when ( select isnull(sum(isnull(det.montoSoles,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Banco' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoSoles,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Banco' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalSol, 
+
+        (case 
+        when ( select isnull(sum(isnull(det.montoDolares,0)),0)  from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Banco' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo)>0 then (select isnull(sum(isnull(det.montoDolares,0)),0)  
+        from mt_docingreso doc
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and cajGen.unineg=doc.unineg
+        inner join MT_DetDocIngreso det on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        left join MO_Codigo cod on cod.idcodigo=doc.idtipomodopago
+        where doc.unineg=#{uniNeg} and idtipomodopago is not null  and cod.codigo='Banco' and cajGen.idCajaGen in <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> #{item} </foreach>
+        group by cod.codigo) else 0 end  ) as subTotalDol,
+        'Banco' as modo 
+    </select>
+    <select id="obtenerDetalleCajaGenDesglosado" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="map">
+        SELECT 
+        (case when tpCon.idTipoConcepto in (100,101) then detDocI.cuentaD else detDocI.cuentaH  end) as cuentaD
+        ,tipPag.codigo AS codTipPag
+        <!--,(case when tipDoc.codigo = 'Recibo' then 'Rec' when tipDoc.codigo = 'Factura' then 'Fac' when tipDoc.codigo = 'Boleta' then 'Bol.' else '-' end) as codTipDoc-->
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idDiscente
+        ,docI.discente 
+        
+        ,(case
+        when tipSta.codigo='Pagado' AND ctacte.idctasxcobrar is null then upper(detDocI.referencia)
+        when tipSta.codigo='Pagado'  AND ctacte.idctasxcobrar is not null then (case when tpCon.idTipoConcepto in (100) then 'PAGO POR MATRÍCULA 2016' else upper(detDocI.referencia) end)
+        else '--'+tipSta.codigo+'-- '+ detDocI.referencia
+        end
+        ) as nomConcepto 
+        ,detDocI.montoSoles AS montoPagadoSol 
+        ,detDocI.montoDolares AS montoPagadoDol 
+        FROM MT_CajaGen cajGen 
+        inner JOIN MT_DocIngreso docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=docI.unineg
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc  
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusdocing
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_DetDocIngreso detDocI on detDocI.iddocingreso=docI.iddocingreso and detDocI.unineg=docI.unineg
+        LEFT JOIN MT_ConceptoUniNeg conUN on detDocI.idconcepto=conUN.idconcepto and conUN.unineg=docI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        LEFT join MT_CtasxCobrar ctacte on ctacte.idctasxcobrar=detDocI.idctasxcobrar and ctacte.unineg=detDocI.unineg
+        where cajGen.uniNeg=#{uniNeg} and  
+        cajGen.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and cajGen.idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach> 
+        and docI.unineg=#{uniNeg} and   tipPag.codigo=#{modo}
+        order by docI.fechaPago
+    </select>
+    <select id="obtenerCajaGenPorCta" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="map">
+        SELECT distinct 
+        upper(uni.nombreUniNeg) as nombreUniNeg,
+        caj.nombre as nomCaja,
+        concat(per.apePat+' ',per.apeMat+' ',per.nombre,' (',cajGen.usuario,')') as nomCompletoPersonal, 
+        upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa,
+        cajGen.fecApertura,
+        cajGen.fecCierre, 
+        cajGen.aperturaSol,
+        cajGen.aperturaDol,
+        cajGen.ingresoSol,
+        cajGen.ingresoDol,
+        cajGen.ingresoPos1,
+        cajGen.ingresoPos2, 
+        (select isnull(sum(montosoles),0) from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where det.iddocingreso in (select iddocingreso from MT_DocIngreso 
+        where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and det.unineg=#{uniNeg} and
+        doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='banco' and idtipocodigo='tipomodopago')) as montoBanco,
+        
+        (case when tc.idTipoConcepto in (100,101) then pcd.cuenta else pch.cuenta  end) as cuenta,  
+        (case when tc.idTipoConcepto in (100) then pcd.nombre+ ' (MATRICULA)' WHEN tc.idTipoConcepto in (101) then pcd.nombre+ ' (PENSIÓN)'  else pch.nombre  end) as nombreCta,
+        (case when tc.idTipoConcepto in (100,101) then sum(det.montopagado-isnull(det.mora,0)+isnull(det.dscto,0))else sum(det.montosoles) end) as montoPorCtaSoles,
+        sum(det.montodolares) as montoPorCtaDolares,
+        (select sum(montosoles) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotSoles,
+        (select sum(montodolares) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotDolares,
+        (select top 1 tc from MT_DocIngreso where idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg} order by creafecha desc) as tc
+        FROM MT_DetDocIngreso det
+        
+        inner join MT_DocIngreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja  AND CAJ.unineg=UNI.unineg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg
+
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_TipoConcepto tc on con.idtipoconcepto=tc.idTipoConcepto
+        INNER JOIN MT_PlanContable pcd on pcd.cuenta=det.cuentad
+        INNER JOIN MT_PlanContable pch on pch.cuenta=det.cuentah
+        WHERE  doc.iddocingreso IN (SELECT DISTINCT iddocingreso FROM MT_DocIngreso WHERE 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  AND idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and doc.unineg=#{uniNeg}
+        group by tc.idTipoConcepto,pcd.cuenta,pch.cuenta,pcd.nombre,pch.nombre,uni.nombreUniNeg,caj.nombre,per.apePat,per.apeMat,per.nombre,cajGen.usuario,
+        perSup.apePat,perSup.apeMat,perSup.nombre,cajGen.fecApertura,cajGen.feccierre,cajGen.aperturaSol,cajGen.aperturaDol
+        ,cajGen.ingresoSol, cajGen.ingresoDol,cajGen.ingresoPos1,cajGen.ingresoPos2
+        union all 
+        SELECT distinct 
+        upper(uni.nombreUniNeg) as nombreUniNeg,
+        caj.nombre as nomCaja,
+        concat(per.apePat+' ',per.apeMat+' ',per.nombre,' (',cajGen.usuario,')') as nomCompletoPersonal,
+        upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa,
+        cajGen.fecApertura,
+        cajGen.fecCierre, 
+        cajGen.aperturaSol,
+        cajGen.aperturaDol, 
+        cajGen.ingresoSol,
+        cajGen.ingresoDol,
+        cajGen.ingresoPos1,
+        cajGen.ingresoPos2,
+        
+        (select isnull(sum(montosoles),0) from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where det.iddocingreso in (select iddocingreso from MT_DocIngreso 
+        where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and det.unineg=#{uniNeg} and
+        doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='banco' and idtipocodigo='tipomodopago')) as montoBanco,
+        
+        772211 as cuenta, 
+        (select nombre from MT_PlanContable where cuenta=772211) as nombreCta,
+        (select isnull(sum(isnull(mora,0)-isnull(dscto,0)),0)  from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as montoPorCtaSoles,
+        0.0 as montoPorCtaDolares,
+        (select sum(montosoles) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotSoles,
+        (select sum(montodolares) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotDolares, 
+        (select top 1 tc from MT_DocIngreso where idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg} order by creafecha desc) as tc
+        FROM MT_DetDocIngreso det
+        
+        inner join MT_DocIngreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja  AND CAJ.unineg=UNI.unineg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg
+
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_TipoConcepto tc on con.idtipoconcepto=tc.idTipoConcepto
+        INNER JOIN MT_PlanContable pcd on pcd.cuenta=det.cuentad
+        INNER JOIN MT_PlanContable pch on pch.cuenta=det.cuentah
+        WHERE  doc.iddocingreso IN (SELECT DISTINCT iddocingreso FROM MT_DocIngreso WHERE 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and doc.unineg=#{uniNeg}
+        group by tc.idTipoConcepto,pcd.cuenta,pch.cuenta,pcd.nombre,pch.nombre,uni.nombreUniNeg,caj.nombre,per.apePat,per.apeMat,per.nombre,cajGen.usuario,
+        perSup.apePat,perSup.apeMat,perSup.nombre,cajGen.fecApertura,cajGen.feccierre,cajGen.aperturaSol,cajGen.aperturaDol
+        ,cajGen.ingresoSol, cajGen.ingresoDol,cajGen.ingresoPos1,cajGen.ingresoPos2 
+    </select>
+    <select id="obtenerCajaGenPorCtaGen" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="map">
+        SELECT distinct 
+        upper(uni.nombreUniNeg) as nombreUniNeg, 
+        (case when tc.idTipoConcepto in (100,101) then pcd.cuenta else pch.cuenta  end) as cuenta,  
+        (case when tc.idTipoConcepto in (100) then pcd.nombre+ ' (MATRICULA)' WHEN tc.idTipoConcepto in (101) then pcd.nombre+ ' (PENSIÓN)'  else pch.nombre  end) as nombreCta,
+        (case when tc.idTipoConcepto in (100,101) then sum(det.montopagado-isnull(det.mora,0)+isnull(det.dscto,0) )else sum(det.montosoles) end) as montoPorCtaSoles,
+        sum(det.montodolares) as montoPorCtaDolares,
+        (select sum(montosoles) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotSoles,
+        (select sum(montodolares) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotDolares,
+        (select top 1 tc from MT_DocIngreso where idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg} order by creafecha desc) as tc
+        FROM MT_DetDocIngreso det
+        
+        inner join MT_DocIngreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja  AND CAJ.unineg=UNI.unineg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg
+
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_TipoConcepto tc on con.idtipoconcepto=tc.idTipoConcepto
+        INNER JOIN MT_PlanContable pcd on pcd.cuenta=det.cuentad
+        INNER JOIN MT_PlanContable pch on pch.cuenta=det.cuentah
+        WHERE  doc.iddocingreso IN (SELECT DISTINCT iddocingreso FROM MT_DocIngreso WHERE 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>  AND idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and doc.unineg=#{uniNeg}
+        group by tc.idTipoConcepto,pcd.cuenta,pch.cuenta,pcd.nombre,pch.nombre,uni.nombreUniNeg
+        union all 
+        SELECT distinct 
+        upper(uni.nombreUniNeg) as nombreUniNeg,
+         
+        772211 as cuenta, 
+        (select nombre from MT_PlanContable where cuenta=772211) as nombreCta,
+        (select isnull(sum(mora-dscto),0)  from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as montoPorCtaSoles,
+        0.0 as montoPorCtaDolares,
+        (select sum(montosoles) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotSoles,
+        (select sum(montodolares) from MT_DetDocIngreso where iddocingreso in (select iddocingreso from MT_DocIngreso where
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and unineg=#{uniNeg}) as sumTotDolares,
+        (select top 1 tc from MT_DocIngreso where idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg} order by creafecha desc) as tc
+        FROM MT_DetDocIngreso det
+        
+        inner join MT_DocIngreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        inner join MT_CajaGen cajGen on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja  AND CAJ.unineg=UNI.unineg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg
+
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_TipoConcepto tc on con.idtipoconcepto=tc.idTipoConcepto
+        INNER JOIN MT_PlanContable pcd on pcd.cuenta=det.cuentad
+        INNER JOIN MT_PlanContable pch on pch.cuenta=det.cuentah
+        WHERE  doc.iddocingreso IN (SELECT DISTINCT iddocingreso FROM MT_DocIngreso WHERE 
+        idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND idcaja in 
+        <foreach item="item2" index="index2" collection="lista" 
+                 open="(" separator="," close=")">
+            #{item2}
+        </foreach>
+        and unineg=#{uniNeg}) and doc.unineg=#{uniNeg}
+        group by tc.idTipoConcepto,pcd.cuenta,pch.cuenta,pcd.nombre,pch.nombre,uni.nombreUniNeg 
+    </select>
+    <select id="consulta" resultType="pe.marista.sigma.bean.reporte.PruebaRepBean">
+        SELECT 
+        cajGen.uniNeg  
+        ,cajGen.idCajaGen
+        ,cajGen.idCaja
+        ,caj.nombre
+        ,cajGen.usuario 
+        ,per.nombre as nombrePersonal
+        ,per.apePat
+        ,per.apeMat
+        ,cajGen.idSuperviza
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag 
+        ,docE.iddocegreso
+        ,docE.idtipodocegreso
+        ,(case 
+        when docE.idtipodocegreso = 'R' then 
+        (regC.idregistrocompra)
+        when docE.idtipodocegreso = 'A' then 
+        (sol.idsolicitudcajach) 
+        end) as  idSolicitudGeneral
+        ,(case 
+        when docE.idtipodocegreso = 'R' then 
+        (detRC.descripcion)
+        when docE.idtipodocegreso = 'A' then 
+        (sol.motivo) 
+        end) as  descripcion
+        ,(case 
+        when docE.idtipodocegreso = 'R' then 
+        (con2.cuentad)
+        when docE.idtipodocegreso = 'A' then 
+        (con.cuentad) 
+        end) as  cuentaD
+        ,(case 
+        when docE.idtipodocegreso = 'R' then 
+        (con2.nombre)
+        when docE.idtipodocegreso = 'A' then 
+        (con.nombre) 
+        end) as  concepto
+        ,(case 
+        when docE.idtipodocegreso = 'R' then  
+        (concat(CONVERT(varchar(7),detRC.cantidad)+'  ',cat.item))
+        when docE.idtipodocegreso = 'A' then 
+        (null) 
+        end) as  cantItem
+			
+        ,docE.montopagado
+        FROM MT_CajaGen cajGen
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        LEFT JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario
+        LEFT JOIN MO_Personal per ON per.idpersonal = usu.idpersonal
+
+        INNER JOIN MT_DocEgreso docE on docE.idcajagen=cajGen.idcajagen
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docE.idtipomoneda
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docE.idtipopago
+		
+        
+        left join ML_RegistroCompra regC on docE.idregistrocompra=regC.idregistrocompra
+        left join ML_DetRegistroCompra detRC on regC.idregistrocompra=detRC.idregistrocompra
+        left join ML_Catalogo cat on detRC.idcatalogo= cat.idcatalogo
+
+        left JOIN MT_ConceptoUniNeg conUN2 on detRC.idconcepto=conUN2.idconcepto and detRC.unineg=conUN2.unineg	
+        left Join MT_Concepto con2 on conUN2.idconcepto=con2.idconcepto 
+          
+        left join MT_SolicitudCajaCh sol on docE.idsolicitudcajach=sol.idsolicitudcajach
+		
+
+        left JOIN MT_ConceptoUniNeg conUN on sol.idconcepto=conUN.idconcepto and sol.unineg=conUN.unineg	
+        left Join MT_Concepto con on conUN.idconcepto=con.idconcepto 
+        where cajGen.idcajagen=216
+        ORDER BY DOCE.iddocegreso DESC
+    </select> 
+    <select id="obtenerAperturasCajaPorCajero" resultMap="cajaGenResultado"  resultType="map">
+        SELECT  
+        CJ.idCajaGen
+        ,CJ.fecApertura 
+        ,CJ.fecCierre
+        ,CJ.aperturaSol
+        ,CJ.aperturaDol 
+        
+        ,(CASE WHEN cj.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.fecApertura, 103) + ' '  + convert(VARCHAR(8), cj.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cj.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.feccierre, 103) + ' '  + convert(VARCHAR(8), cj.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cj.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cj.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        
+        ,caj.nombre
+        ,caj.idCaja
+        ,perSup.idpersonal as idPersonalSup
+        ,perSup.nombre as nombrePersonalSup
+        ,perSup.apePat as apePatSup
+        ,perSup.apeMat as apeMatSup
+        FROM MT_CajaGen CJ
+       
+        INNER JOIN MT_Caja caj ON caj.idcaja = cj.idcaja and caj.unineg=cj.unineg
+        LEFT JOIN MO_Personal perSup ON cj.idsuperviza = perSup.idpersonal and cj.unineg = perSup.unineg 
+        where CJ.usuario=#{usuario} and CJ.unineg=#{uniNeg} and flgTipoCajaGen = #{flgTipoCajaGen}
+        order by idcajagen desc 
+    </select>
+    <select id="obtenerCierresCajaPorCajero" resultMap="cajaGenResultado" resultType="map" >
+        SELECT  
+        CJ.idCajaGen
+        ,CJ.fecApertura   
+        ,CJ.fecCierre
+        
+        ,(CASE WHEN cj.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.fecApertura, 103) + ' '  + convert(VARCHAR(8), cj.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cj.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.feccierre, 103) + ' '  + convert(VARCHAR(8), cj.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cj.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cj.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        
+        
+        ,CJ.fecDeposito
+        ,CJ.anio
+        ,CJ.montoDepositoSol
+        ,CJ.numCuentaSol
+        ,CJ.numOperacionSol
+        ,CJ.montoDepositoDol
+        ,CJ.numCuentaDol
+        ,CJ.numOperacionDol
+        ,CJ.rucBanco
+        ,EN.nombre AS nombreBanco
+        ,CJ.montoDepositoCongreSol
+        ,CJ.numCuentaCongreSol
+        ,CJ.numOperacionCongreSol
+        ,CJ.montoDepositoCongreDol
+        ,CJ.numCuentaCongreDol
+        ,CJ.numOperacionCongreDol 
+        ,CJ.rucBancoCongre 
+        ,ENT.nombre as rucBancoCongre
+         
+        ,caj.nombre
+        ,caj.idCaja
+        ,perSup.idpersonal as idPersonalSup
+        ,perSup.nombre as nombrePersonalSup
+        ,perSup.apePat as apePatSup
+        ,perSup.apeMat as apeMatSup
+        ,cj.usuario as usuario
+        FROM MT_CajaGen CJ
+        LEFT JOIN MO_ENTIDAD EN ON EN.RUC=CJ.rucBanco AND EN.UNINEG=CJ.UNINEG
+        LEFT JOIN MO_ENTIDAD ENT ON ENT.RUC=CJ.rucbancocongre  AND ENT.UNINEG=CJ.UNINEG
+        
+        INNER JOIN MT_Caja caj ON caj.idcaja = cj.idcaja and caj.unineg=cj.unineg
+        LEFT JOIN MO_Personal perSup ON cj.idsuperviza = perSup.idpersonal and cj.unineg = perSup.unineg 
+        <where>
+            CJ.unineg=#{uniNeg}  <!-- and cj.flgTipocajagen <![CDATA[ <> ]]> 0-->
+            and isnull(cj.flgTipoCajaGen,1) = 1
+            <if test="usuario != null and usuario != ''">
+                and CJ.usuario=#{usuario}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and ( CJ.fecApertura  >= #{fechaInicio})
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and ( CJ.fecApertura  <= #{fechaFin})
+                ]]>
+            </if>
+        </where>
+        order by idcajagen desc 
+    </select>
+    
+    <select  id="obtenerCierresCajaPorFechaTop1" parameterType="map" resultType="pe.marista.sigma.bean.reporte.CajaGenCierreRepBean">
+        DECLARE 
+        @montoSoles money = (select SUM(ISNULL(ingresosol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @montoDolares money = (select SUM(ISNULL(ingresodol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @montoVisa money = (select SUM(ISNULL(ingresopos1,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @montoMC money = (select SUM(ISNULL(ingresopos2,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and isnull(cajgen.flgTipoCajaGen,1) = 1),
+
+        @montoDepositadoSol money = (select SUM(ISNULL(montodepositosol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        AND cajgen.fecdeposito IS NOT NULL and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @montoPorDepositarSol money = (select SUM(ISNULL(ingresosol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        AND cajgen.fecdeposito IS NULL and isnull(cajgen.flgTipoCajaGen,1) = 1),
+
+        @montoDepositadoDol money = (select SUM(ISNULL(montodepositodol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        AND cajgen.fecdeposito IS NOT NULL and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @montoPorDepositarDol money = (select SUM(ISNULL(ingresodol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        AND cajgen.fecdeposito IS NULL and isnull(cajgen.flgTipoCajaGen,1) = 1),
+ 
+        @montoDiferenciaSol money = (select SUM(ISNULL(diferenciasol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @montoDiferenciaDol money = (select SUM(ISNULL(diferenciadol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and isnull(cajgen.flgTipoCajaGen,1) = 1)
+        
+        ,
+
+        @totCajaAperturadas int = (select count(*) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @totCajaCerradas int = (select count(*) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and cajgen.feccierre is not null and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @totCajaPorCerrar int = (select count(*) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and cajgen.feccierre is null and isnull(cajgen.flgTipoCajaGen,1) = 1),
+        @totCajaFecDeposito int = (select count(*) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and cajgen.fecdeposito is not null and isnull(cajgen.flgTipoCajaGen,1) = 1),
+
+        @totCajaPorDepositar int = (select count(*) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg} and cajgen.fecdeposito is  null 
+        and ( isnull(cajgen.ingresosol,0) > 0 or  isnull(cajgen.ingresodol,0) > 0) and isnull(cajgen.flgTipoCajaGen,1) = 1 )
+        select top 1
+        un.nombreUniNeg,
+        'R.U.C.: '+un.ruc as ruc,
+        cajgen.usuario,
+        cajgen.idCaja as idCaja,
+        
+        CONVERT(varchar, CAST(isnull(@montoSoles,0) AS money), 1)   as montoSoles,
+        CONVERT(varchar, CAST(isnull(@montoDolares,0) AS money), 1) as montoDolares,
+        CONVERT(varchar, CAST(isnull(@montoVisa,0) AS money), 1) as montoVisa,
+        CONVERT(varchar, CAST(isnull(@montoMC,0) AS money), 1) as montoMC,
+
+        CONVERT(varchar, CAST(isnull(@montoDepositadoSol,0) AS money), 1)   as montoDepositadoSol,
+        CONVERT(varchar, CAST(isnull(@montoPorDepositarSol,0) AS money), 1) as montoPorDepositarSol,
+        CONVERT(varchar, CAST(isnull(@montoDepositadoDol,0) AS money), 1) as montoDepositadoDol,
+        CONVERT(varchar, CAST(isnull(@montoPorDepositarDol,0) AS money), 1) as montoPorDepositarDol,
+        CONVERT(varchar, CAST(isnull(@montoDiferenciaSol,0) AS money), 1) as montoDiferenciaSol,
+        CONVERT(varchar, CAST(isnull(@montoDiferenciaDol,0) AS money), 1) as montoDiferenciaDol,
+        
+        @totCajaAperturadas as totCajaAperturadas,
+        @totCajaCerradas as totCajaCerradas,
+        @totCajaPorCerrar as totCajaPorCerrar,
+        @totCajaFecDeposito as totCajaFecDeposito,
+        @totCajaPorDepositar as totCajaPorDepositar
+        
+        from mt_cajagen cajgen
+        inner join MO_UnidadNegocio un on un.unineg=cajgen.unineg
+        inner join MM_Usuario usu on usu.usuario=cajgen.usuario and usu.unineg=cajgen.unineg
+        inner join MO_Personal per on per.idpersonal=usu.idpersonal and usu.unineg=per.unineg
+        left join MT_Caja caj on caj.idCaja=cajgen.idCaja and caj.unineg=cajgen.unineg
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 ))  and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and isnull(cajgen.flgTipoCajaGen,1) = 1
+    </select>
+    <select  id="obtenerCierresCajaPorFecha" parameterType="map" resultType="pe.marista.sigma.bean.reporte.CajaGenCierreRepBean">
+        select distinct
+        un.nombreUniNeg,
+        un.ruc,
+        cajgen.usuario,
+        cajgen.idCaja as idCaja
+        from mt_cajagen cajgen
+        inner join MO_UnidadNegocio un on un.unineg=cajgen.unineg
+        inner join MM_Usuario usu on usu.usuario=cajgen.usuario and usu.unineg=cajgen.unineg
+        inner join MO_Personal per on per.idpersonal=usu.idpersonal and usu.unineg=per.unineg
+        left join MT_Caja caj on caj.idCaja=cajgen.idCaja and caj.unineg=cajgen.unineg
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 ))  and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and isnull(cajgen.flgTipoCajaGen,1) = 1        
+    </select>
+    <select  id="obtenerCierresCajaPorFechaUsu" parameterType="map" resultType="pe.marista.sigma.bean.reporte.DetCajaGenCierreRepBean">
+        DECLARE 
+        @montoSoles money = (select SUM(ISNULL(ingresosol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja}  and isnull(cajgen.flgTipoCajaGen,1) = 1 ),
+        @montoDolares money = (select SUM(ISNULL(ingresodol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja}  and isnull(cajgen.flgTipoCajaGen,1) = 1 ),
+        @montoVisa money = (select SUM(ISNULL(ingresopos1,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja}  and isnull(cajgen.flgTipoCajaGen,1) = 1  ),
+        @montoMC money = (select SUM(ISNULL(ingresopos2,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja}  and isnull(cajgen.flgTipoCajaGen,1) = 1  ),
+
+        @montoDepositadoSol money = (select SUM(ISNULL(montodepositosol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja} AND cajgen.fecdeposito IS NOT NULL  and isnull(cajgen.flgTipoCajaGen,1) = 1   ),
+        @montoPorDepositarSol money = (select SUM(ISNULL(ingresosol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja} AND cajgen.fecdeposito IS NULL  and isnull(cajgen.flgTipoCajaGen,1) = 1  ),
+
+        @montoDepositadoDol money = (select SUM(ISNULL(montodepositodol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja} AND cajgen.fecdeposito IS NOT NULL  and isnull(cajgen.flgTipoCajaGen,1) = 1  ),
+        @montoPorDepositarDol money = (select SUM(ISNULL(ingresodol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja} AND cajgen.fecdeposito IS NULL  and isnull(cajgen.flgTipoCajaGen,1) = 1  ),
+ 
+        @montoDiferenciaSol money = (select SUM(ISNULL(diferenciasol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja}  and isnull(cajgen.flgTipoCajaGen,1) = 1  ),
+        @montoDiferenciaDol money = (select SUM(ISNULL(diferenciadol,0)) FROM  mt_cajagen cajgen 
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja}  and isnull(cajgen.flgTipoCajaGen,1) = 1  )
+        
+        select  
+        caj.nombre as nombreCaja,
+        per.apepat+ ' '+ per.apemat+ ' '+per.nombre as nombrePersonal,
+        (case when cajgen.fecapertura is null then '-' else (SELECT CONVERT(VARCHAR(10), cajgen.fecapertura, 103))  end) as fecApertura, 
+        (case when cajgen.feccierre is null then '-' else (SELECT CONVERT(VARCHAR(10), cajgen.feccierre, 103))  end) as fecCierre, 
+        CONVERT(varchar, CAST(isnull(cajgen.ingresosol,0) AS money), 1) as ingresoSol, 
+        CONVERT(varchar, CAST(isnull(cajgen.ingresodol,0) AS money), 1) as ingresoDol,
+        CONVERT(varchar, CAST(isnull(cajgen.ingresopos1,0) AS money), 1) as ingresoPos1,
+        CONVERT(varchar, CAST(isnull(cajgen.ingresopos2,0) AS money), 1) as ingresoPos2,
+        (case when cajgen.fecdeposito is null     then '-' else (SELECT CONVERT(VARCHAR(10), cajgen.fecdeposito, 103))  end) as fecDeposito, 
+        CONVERT(VARCHAR,isnull(cajgen.numoperacionsol,'-')) as numOperacionSol, 
+        CONVERT(VARCHAR,isnull(cajgen.numoperaciondol,'-')) as numOperacionDol,
+        CONVERT(varchar, CAST(isnull(cajgen.montodepositosol,0) AS money), 1)as montoDepositoSol,
+        CONVERT(varchar, CAST(isnull(cajgen.montodepositodol,0) AS money), 1) as montoDepositoDol,
+        CONVERT(varchar, CAST(isnull(cajgen.diferenciasol,0) AS money), 1) as diferenciaSol,
+        CONVERT(varchar, CAST(isnull(cajgen.diferenciadol,0) AS money), 1) as diferenciaDol,
+        
+        
+        CONVERT(varchar, CAST(isnull(@montoSoles,0) AS money), 1)   as montoSoles,
+        CONVERT(varchar, CAST(isnull(@montoDolares,0) AS money), 1) as montoDolares,
+        CONVERT(varchar, CAST(isnull(@montoVisa,0) AS money), 1) as montoVisa,
+        CONVERT(varchar, CAST(isnull(@montoMC,0) AS money), 1) as montoMC,
+
+        CONVERT(varchar, CAST(isnull(@montoDepositadoSol,0) AS money), 1)   as montoDepositadoSol,
+        CONVERT(varchar, CAST(isnull(@montoPorDepositarSol,0) AS money), 1) as montoPorDepositarSol,
+        CONVERT(varchar, CAST(isnull(@montoDepositadoDol,0) AS money), 1) as montoDepositadoDol,
+        CONVERT(varchar, CAST(isnull(@montoPorDepositarDol,0) AS money), 1) as montoPorDepositarDol,
+        CONVERT(varchar, CAST(isnull(@montoDiferenciaSol,0) AS money), 1) as montoDiferenciaSol,
+        CONVERT(varchar, CAST(isnull(@montoDiferenciaDol,0) AS money), 1) as montoDiferenciaDol
+        from mt_cajagen cajgen
+        inner join MO_UnidadNegocio un on un.unineg=cajgen.unineg
+        inner join MM_Usuario usu on usu.usuario=cajgen.usuario and usu.unineg=cajgen.unineg
+        inner join MO_Personal per on per.idpersonal=usu.idpersonal and usu.unineg=per.unineg
+        left join MT_Caja caj on caj.idCaja=cajgen.idCaja and caj.unineg=cajgen.unineg
+        where (cajgen.fecapertura  BETWEEN (CONVERT(VARCHAR(10), #{fechaInicio}, 112 )) 
+        and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))) and cajgen.unineg=#{uniNeg}
+        and cajgen.usuario=#{usuario} and cajgen.idCaja=#{idCaja}   and isnull(cajgen.flgTipoCajaGen,1) = 1
+        order by cajgen.fecapertura
+    </select>
+    
+    <select id="obtenerCajaGeneralPorCtaFor" resultType="pe.marista.sigma.bean.reporte.CajaGeneralRepBean" parameterType="map">
+        declare @unineg varchar(6)
+        set @uniNeg=#{uniNeg}
+        declare @montoBanco money = (select isnull(sum(isnull(montosoles,0)),0) 
+        from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where doc.idcajagen in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and
+        doc.unineg=@uniNeg and
+        doc.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago')),
+        @sumTotSoles  money = (select isnull(sum(isnull(montosoles,0)),0)  
+        from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg),
+        @sumTotDolares  money = (select isnull(sum(isnull(montodolares,0)),0)  
+        from MT_DetDocIngreso det 
+        inner join mt_docingreso doc on doc.iddocingreso=det.iddocingreso and doc.unineg=det.unineg
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg) ,
+        @tc money = (select top 1 tc from MT_DocIngreso
+        where idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> 
+        and unineg=@uniNeg order by creafecha desc),
+        @mora money = (select isnull(sum(isnull(mora,0)-isnull(dscto,0)),0)
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg 
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg)   
+        <if test="flgGen==1" >
+            , @sumIngresoSol money = (select isnull(sum(isnull(ingresosol,0)),0) from MT_CajaGen gen 
+            where gen.idcajagen in 
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach> and gen.unineg=@uniNeg) 
+            , @sumIngresoDol money = (select isnull(sum(isnull(ingresodol,0)),0) from MT_CajaGen gen 
+            where gen.idcajagen in 
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach> and gen.unineg=@uniNeg) 
+            , @sumIngresoPos1 money = (select isnull(sum(isnull(ingresopos1,0)),0) from MT_CajaGen gen 
+            where gen.idcajagen in 
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach> and gen.unineg=@uniNeg) 
+            , @sumIngresoPos2 money = (select isnull(sum(isnull(ingresopos2,0)),0) from MT_CajaGen gen 
+            where gen.idcajagen in 
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach> and gen.unineg=@uniNeg) 
+        </if>     
+        SELECT distinct 
+        upper(uni.nombreUniNeg) as nombreUniNeg,
+        <if test="flgGen==0" >
+            upper(caj.nombre) as nomCaja,
+            upper((concat(per.apePat+' ',per.apeMat+' ',per.nombre))) as nomCompletoPersonal, 
+            cajGen.usuario AS usuario,
+            upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa,
+            convert(varchar,cajGen.fecApertura,103) as fecApertura, 
+            convert(varchar,cajGen.fecCierre,103) as fecCierre, 
+            CONVERT(varchar, CAST(isnull(cajGen.aperturaSol,0) AS money), 1)  as aperturaSol,
+            CONVERT(varchar, CAST(isnull(cajGen.aperturaDol,0) AS money), 1)  as aperturaDol,
+            CONVERT(varchar, CAST(isnull(cajGen.ingresoSol,0) AS money), 1)   as ingresoSol,  
+            CONVERT(varchar, CAST(isnull(cajGen.ingresoDol,0) AS money), 1)   as ingresoDol, 
+            CONVERT(varchar, CAST(isnull(cajGen.ingresoPos1,0) AS money), 1)  as ingresoPos1, 
+            CONVERT(varchar, CAST(isnull(cajGen.ingresoPos2,0) AS money), 1)  as ingresoPos2,
+        </if>
+        <if test="flgGen==1" >
+            CONVERT(varchar, CAST(isnull(@sumIngresoSol,0) AS money), 1) as ingresoSol, 
+            CONVERT(varchar, CAST(isnull(@sumIngresoDol,0) AS money), 1) as ingresoDol, 
+            CONVERT(varchar, CAST(isnull(@sumIngresoPos1,0) AS money), 1) as ingresoPos1, 
+            CONVERT(varchar, CAST(isnull(@sumIngresoPos2,0) AS money), 1) as ingresoPos2, 
+        </if>        
+        CONVERT(varchar, CAST(isnull(@montoBanco,0) AS money), 1)  as montoBanco,
+        CONVERT(varchar, CAST(isnull(@sumTotSoles,0) AS money), 1)  as sumTotSoles,
+        CONVERT(varchar, CAST(isnull(@sumTotDolares,0) AS money), 1)  as sumTotDolares,
+        <!--CONVERT(varchar, CAST(isnull(@tc,0) AS money), 1)  as tc,		-->
+        convert(varchar, CONVERT(decimal(8,3), CAST(isnull(@tc,0) AS money),1)) as tc,
+        (case when @mora>0 then 1 else 0 end) as mora			  
+        FROM MT_CajaGen cajGen
+        INNER join MT_DocIngreso doc on cajGen.idcajagen=doc.idcajagen and doc.unineg=cajGen.unineg  
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja AND CAJ.unineg=UNI.unineg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario AND USU.unineg=UNI.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal AND PER.unineg=UNI.unineg 
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza AND perSup.unineg=UNI.unineg						   
+        WHERE doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg
+    </select>
+    <select id="obtenerDetCajaGeneralPorCtaFor" resultType="pe.marista.sigma.bean.reporte.CajaGeneralCtaRepBean" parameterType="map">
+        declare @unineg varchar(6)
+        set @uniNeg=#{uniNeg}
+        declare @mora money = (select isnull(sum(isnull(mora,0)-isnull(dscto,0)),0)
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg 
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg)  
+        select distinct 
+        (case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end ) as cuenta , 
+        (case when con.idTipoConcepto in (100)   then pc.nombre+ '(MATRICULA)'  else pc.nombre end) as nombreCta,
+        (case when con.idTipoConcepto in (100,101) 
+        then 
+        sum(isnull(det.montopagado,0)-isnull(det.mora,0)+isnull(det.dscto,0))
+        else 
+        sum(isnull(det.montosoles,0)) end) as montoPorCtaSoles, 
+
+        sum(isnull(det.montodolares,0)) as montoPorCtaDolares
+
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta=(case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end )
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg
+        group by con.idtipoconcepto,pc.nombre,det.cuentad,det.cuentah 
+        
+        UNION ALL
+        SELECT 
+        772211 as cuenta, 
+        (select nombre from MT_PlanContable where cuenta=772211) as nombreCta,
+        <!--CONVERT(varchar, CAST(isnull(@mora,0) AS money), 1)  as montoPorCtaSoles,-->
+        isnull(@mora,0)   as montoPorCtaSoles,
+        0 AS montoPorCtaDolares 
+    </select>
+    <select id="obtenerCuentasCajaGeneralFor" resultType="pe.marista.sigma.bean.reporte.CajaGeneralCtasRepBean" parameterType="map">
+        declare @unineg varchar(6),@cuentaMora int
+        set @cuentaMora=772211
+        set @uniNeg=#{uniNeg}
+         
+        select distinct 
+        (case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end ) as cuenta , 
+        pc.nombre  as nombreCta		 
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta=(case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end )
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg
+        group by con.idtipoconcepto,pc.nombre,det.cuentad,det.cuentah 
+        
+        UNION ALL
+        SELECT 
+        @cuentaMora as cuenta, 
+        (select nombre from MT_PlanContable where cuenta=@cuentaMora) as nombreCta        
+        
+        order by 1
+    </select>
+    <select id="obtenerDetallePorCtaFor" resultType="pe.marista.sigma.bean.reporte.CajaGeneralCtaRepBean" parameterType="map">
+        declare @unineg varchar(6),@cuenta int,@tipo varchar(1)
+        set @uniNeg=#{uniNeg}
+        set @cuenta=#{cta}
+        set @tipo= CASE WHEN @cuenta in (121211,121311) THEN 'D' ELSE 'H' END
+        
+        declare
+        @nomCuenta varchar(150)=((select nombre from MT_PlanContable where cuenta=@cuenta)),
+        @montoSol money=(
+        select   
+        (case
+        when @cuenta  in (121211,121311) then sum(isnull(det.montosoles,0)-isnull(det.mora,0)+isnull(det.dscto,0))
+        <!--when @cuenta  in (121211,121311) then sum(isnull(det.montopagado,0)-isnull(det.mora,0)+isnull(det.dscto,0))-->
+        else 
+        sum(isnull(det.montosoles,0)) end) 
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta= det.cuentad  
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg and (case when @tipo='D' then det.cuentad else det.cuentah end) in (@cuenta)
+        ),
+        @montodol money =(
+        select   
+        (case
+        when @cuenta  in (121211,121311) then sum(isnull(det.montodolares,0)) 
+        else 
+        sum(isnull(det.montodolares,0)) end) 
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta= det.cuentad  
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg  and (case when @tipo='D' then det.cuentad else det.cuentah end) in (@cuenta)
+        ),
+        @mora money = (select isnull(sum(isnull(mora,0)-isnull(dscto,0)),0)
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on det.iddocingreso=doc.iddocingreso and det.unineg=doc.unineg 
+        where doc.idcajagen in 
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and doc.unineg=@uniNeg and idconcepto in (select idconcepto from MT_Concepto where idtipoconcepto in (100,101) ))   
+        select
+        @cuenta as cuenta, 
+        @nomCuenta as nombreCta,
+        (CASE WHEN @cuenta=772211 THEN isnull(@mora,0) ELSE isnull(@montoSol,0) END) as montoPorCtaSoles,
+        (CASE WHEN @cuenta=772211 THEN 0 ELSE isnull(@montodol,0) END) as montoPorCtaDolares 
+    </select>
+     
+    <!-- VERIFICAR APERTURA CAJA GEN EVENTO --> 
+    <select id="verificarAperturaCajaEvento" resultMap="cajaGenResultado" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        SELECT top 1
+        cajGen.uniNeg
+        ,uni.nombreUniNeg
+        ,cajGen.idCajaGen
+        ,cajGen.idCaja
+        ,caj.nombre
+        ,cajGen.usuario
+        ,per.idPersonal
+        ,per.nombre as nombrePersonal
+        ,per.apePat
+        ,per.apeMat
+        ,cajGen.anio
+        ,cajGen.idSuperviza
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol  
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,cajGen.saldoSol
+        ,cajGen.saldoDol
+        ,cajGen.diferenciaSol
+        ,cajGen.diferenciaDol
+        ,cajGen.fecApertura 
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,datePart(YEAR,cajGen.fecApertura)          as fecAperturaAnio
+        ,datePart(MONTH,cajGen.fecApertura)         as fecAperturaMes
+        ,datePart(DAY,cajGen.fecApertura)           as fecAperturaDia
+        ,cajGen.fecCierre
+        ,cajGen.fecDeposito
+        ,cajGen.rucBanco
+        ,cajGen.rucBancoCongre
+        ,cajGen.numCuentaSol
+        ,cajGen.numCuentaDol
+        ,cajGen.numOperacionSol
+        ,cajGen.numOperacionDol
+        ,cajGen.montoDepositoSol
+        ,cajGen.montoDepositoDol
+        ,cajGen.creaPor
+        ,cajGen.creaFecha
+        ,cajGen.modipor
+        
+        ,cajGen.ingresoCongreEfectivoSol
+        ,cajGen.ingresoCongreEfectivoDol
+        ,cajGen.numCuentaCongreSol
+        ,cajGen.numCuentaCongreDol
+        ,cajGen.numOperacionCongreSol
+        ,cajGen.numOperacionCongreDol
+        ,cajGen.montoDepositoCongreSol
+        ,cajGen.montoDepositoCongreDol
+        
+        FROM MT_CajaGen cajGen
+        INNER JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=cajGen.unineg
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario and usu.unineg=cajGen.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=usu.unineg
+        WHERE cajGen.uniNeg= #{uniNeg.uniNeg}
+        and cajGen.idCaja = #{cajaBean.idCaja} 
+        and cajGen.usuario=#{usuarioBean.usuario} 
+        and cajGen.anio= #{anio} and datePart(YEAR,cajGen.fecApertura) = datePart(YEAR,getDate()) 
+        and cajGen.fecCierre is  null and cajGen.fecdeposito is null 
+        <!--and idtipocajagen = (SELECT idcodigo FROM MO_Codigo WHERE idtipocodigo=#{tipoCajaGen.tipoCodigoBean.descripcion} AND CODIGO=#{tipoCajaGen.codigo})-->
+        and flgtipocajagen = #{flgTipoCajaGen}
+    </select>
+    
+    <!-- MODIFICAR CAJA GEN EVENTO -->
+    <update id="modificarIngresoSolYDolEvento" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        ingresoSol = ISNULL(ingresoSol,0) + #{ingresoSol},
+        ingresoDol = #{ingresoDol},
+        ingresoPos1= #{ingresoPos1},
+        ingresoPos2= #{ingresoPos2}        
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg} and flgTipocajagen = #{flgTipoCajaGen}
+    </update>
+    
+    <!-- CAJA CIERRE EVENTO -->
+    <select id="obtenerCierresCajaPorCajeroEvento" resultMap="cajaGenResultado" resultType="map" >
+        SELECT  
+        CJ.idCajaGen
+        ,CJ.fecApertura   
+        ,CJ.fecCierre
+        
+        ,(CASE WHEN cj.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.fecApertura, 103) + ' '  + convert(VARCHAR(8), cj.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cj.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.feccierre, 103) + ' '  + convert(VARCHAR(8), cj.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cj.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cj.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cj.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        
+        
+        ,CJ.fecDeposito
+        ,CJ.anio
+        ,CJ.montoDepositoSol
+        ,CJ.numCuentaSol
+        ,CJ.numOperacionSol
+        ,CJ.montoDepositoDol
+        ,CJ.numCuentaDol
+        ,CJ.numOperacionDol
+        ,CJ.rucBanco
+        ,EN.nombre AS nombreBanco
+        ,CJ.montoDepositoCongreSol
+        ,CJ.numCuentaCongreSol
+        ,CJ.numOperacionCongreSol
+        ,CJ.montoDepositoCongreDol
+        ,CJ.numCuentaCongreDol
+        ,CJ.numOperacionCongreDol 
+        ,CJ.rucBancoCongre 
+        ,ENT.nombre as rucBancoCongre
+         
+        ,caj.nombre
+        ,caj.idCaja
+        ,perSup.idpersonal as idPersonalSup
+        ,perSup.nombre as nombrePersonalSup
+        ,perSup.apePat as apePatSup
+        ,perSup.apeMat as apeMatSup
+        FROM MT_CajaGen CJ
+        LEFT JOIN MO_ENTIDAD EN ON EN.RUC=CJ.rucBanco AND EN.UNINEG=CJ.UNINEG
+        LEFT JOIN MO_ENTIDAD ENT ON ENT.RUC=CJ.rucbancocongre  AND ENT.UNINEG=CJ.UNINEG
+        
+        INNER JOIN MT_Caja caj ON caj.idcaja = cj.idcaja and caj.unineg=cj.unineg
+        LEFT JOIN MO_Personal perSup ON cj.idsuperviza = perSup.idpersonal and cj.unineg = perSup.unineg 
+        <where>
+            CJ.unineg=#{uniNeg} and cj.flgTipocajagen = 0
+            <if test="usuario != null and usuario != ''">
+                and CJ.usuario=#{usuario}
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                and ( CJ.fecApertura  >= #{fechaInicio})
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and ( CJ.fecApertura  <= #{fechaFin})
+                ]]>
+            </if>
+        </where>
+        order by idcajagen desc 
+    </select>
+    <update id="modificarCierreEvento" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Update MT_CajaGen 
+        set
+        fecCierre = #{fecCierre}
+        WHERE idCajaGen=#{idCajaGen} and uniNeg= #{uniNeg.uniNeg} and flgTipocajagen = 0
+    </update>
+    
+    <select id="obtenerCajaGenPorDetalleForEvento" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="pe.marista.sigma.bean.CajaGenBean">
+        Declare @unineg varchar(6) 
+        SET @unineg = #{uniNeg}
+        Declare 
+        @sumTotSoles   money  = (select isnull(sum(isnull(d.montopagado,0)),0) from MT_Ficha d
+        where d.uniNeg=@uniNeg and d.idCajaGen in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and d.idtipomoneda = 14901),
+        @sumTotDolares money  = (select isnull(sum(isnull(d.montopagado,0)),0) from MT_Ficha d
+        where d.uniNeg=@uniNeg and d.idCajaGen in
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and d.idtipomoneda = 14902),  
+        @montoBanco money = (select isnull(sum(isnull(det.montopagado,0)),0) from MT_Ficha det 
+        where det.idcajagen in  <foreach item="item" index="index" collection="list" 
+                                         open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and  det.unineg=@uniNeg 
+        and det.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago')
+        and det.idtipomoneda = 14901)
+		 
+        
+        SELECT  docI.fechapago as fechapago,
+        upper(uni.nombreUniNeg) as nombreUniNeg
+        ,caj.nombre as nomCaja
+        ,cajGen.usuario
+        ,concat(per.apePat+' ',per.apeMat+' ',per.nombre) as nomCompletoPersonal
+        ,upper(concat(perSup.apePat+' ',perSup.apeMat+' ',perSup.nombre)) as nomCompletoSupervisa
+        ,cajGen.fecApertura                 
+        ,(CASE WHEN cajGen.fecApertura IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecApertura, 103) + ' '  + convert(VARCHAR(8), cajGen.fecApertura, 14) ELSE ' /  /' END) as  fechaAperturaView
+        ,(CASE WHEN cajGen.feccierre IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.feccierre, 103) + ' '  + convert(VARCHAR(8), cajGen.feccierre, 14) ELSE ' /  /' END) as  fechaCierreView
+        ,(CASE WHEN cajGen.fecDeposito IS NOT NULL THEN  CONVERT(VARCHAR(10), cajGen.fecDeposito, 103) + ' '  + convert(VARCHAR(8), cajGen.fecDeposito, 14) ELSE ' /  /' END) as  fechaDepositoView
+        ,cajGen.aperturaSol
+        ,cajGen.aperturaDol
+        ,cajGen.ingresoSol
+        ,cajGen.ingresoDol
+        ,cajGen.ingresoPos1
+        ,cajGen.ingresoPos2
+        ,cajGen.egresoSol
+        ,cajGen.egresoDol
+        ,(cajGen.ingresoSol-cajGen.egresoSol) AS		saldoSol
+        ,(cajGen.ingresoDol-cajGen.egresoDol) AS		saldoDol 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag
+        ,concat(docI.serie+'-',right(replicate('0', 7) + rtrim(docI.nrodoc), 7)) as serieNroDoc
+        ,docI.idpagante
+        ,p.nompagante as discente
+        ,docI.montoPagado  
+        ,con.cuentad as cuentaD
+        ,(doci.referencia) as nomConcepto           
+        ,docI.montopagado AS montoPagadoSol  
+        ,0 as montoPagadoDol
+        ,(select top 1 tc.tccompra from MT_TipoCambio tc order by tc.fechatc desc) as tc
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco
+        FROM MT_CajaGen cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        inner JOIN MT_Caja caj ON caj.idcaja = cajGen.idcaja and caj.unineg=UNI.unineg 
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.usuario  and usu.unineg=caj.unineg
+        INNER JOIN MO_Personal per ON per.idpersonal = usu.idpersonal and per.unineg=UNI.unineg
+        LEFT JOIN MO_Personal perSup ON perSup.idpersonal = cajGen.idsuperviza and perSup.unineg=UNI.unineg
+        inner JOIN MT_Ficha docI on docI.idcajagen=cajGen.idcajagen and cajGen.unineg=UNI.unineg
+        inner join MT_Pagante p on doci.idpagante = p.idpagante and docI.unineg = p.unineg and docI.idtipopagante = p.idtipopagante
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=docI.idtipodoc 
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=docI.idtipomoneda
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=docI.idtipostatusficha
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=docI.idtipomodopago  
+        LEFT JOIN MT_ConceptoUniNeg conUN on docI.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        where cajGen.uniNeg=@unineg and cajGen.idCajaGen in  
+        <foreach item="item" index="index" collection="list" 
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach> and tipSta.codigo='Pagada' and docI.unineg=@unineg
+    </select>
+    <select id="obtenerCajaGenPorDetalleForTaller" resultType="pe.marista.sigma.bean.reporte.CajaGenRepBean" parameterType="map">
+        Declare @unineg varchar(6) = #{uniNeg}
+        declare @fecIni date = convert(date,#{fecIni})
+        declare @fecFin date = convert(date,#{fecFin})
+        Declare 
+        @sumTotSoles   money  = (select isnull(sum(isnull(cajGen.montosoles,0)),0) from MT_PagoBanco cajGen
+        where cajGen.uniNeg=@uniNeg and cajGen.idtipostatuspagobanco = 21202 
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni)
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin)),
+        @sumTotDolares money  = (select isnull(sum(isnull(cajGen.montodolares,0)),0) from MT_PagoBanco cajGen
+        where cajGen.uniNeg=@uniNeg and cajGen.idtipostatuspagobanco = 21202 
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni)
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin)), 
+        @montoBanco    money = (select isnull(sum(isnull(montosoles,0)),0) from MT_PagoBanco cajGen
+        where cajGen.uniNeg=@uniNeg and cajGen.idtipostatuspagobanco = 21202 
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni)
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin)
+        and  cajGen.unineg=@uniNeg and cajGen.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago'))
+        
+        SELECT
+        convert(varchar,@fecIni,103) as fechaIniVista,
+        convert(varchar,@fecFin,103) as fechaFinVista,  
+        convert(varchar,cajGen.fechapago,103) as fechaPagoVista,
+        upper(uni.nombreUniNeg) as nombreUniNeg 
+        ,substring(isnull(tipDoc.codigo,'Recibo'),1,3) as codTipDoc
+        ,tipMon.codigo as codTipMon
+        ,tipPag.codigo as codTipPag
+        ,concat(cajGen.serie+'-',right(replicate('0', 7) + rtrim(cajGen.nrodoc), 7)) as serieNroDoc
+        ,cajGen.idDiscente
+        ,cajGen.discente
+        ,cajGen.montoPagado  
+        ,(case when tpCon.idTipoConcepto in (100,101) then con.cuentaD else con.cuentaH  end) as cuentaD
+        ,('--'+UPPER(tipSta.codigo)+'-- '+ cajGen.referencia) as nomConcepto           
+        ,(case when tpCon.idTipoConcepto in (100,101) then (cajGen.montopagado +(isnull(cajGen.dscto,0))) else cajGen.montoSoles end) AS montoPagadoSol  
+        ,(case when tpCon.idTipoConcepto not in (100,101) then (cajGen.montodolares)  else 0 end) as montoPagadoDol 
+        ,@sumTotSoles as sumTotSoles
+        ,@sumTotDolares as sumTotDolares
+        ,@montoBanco  as montoBanco
+        FROM MT_PagoBanco cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg 
+        INNER JOIN MO_Codigo tipDoc on tipDoc.idcodigo=cajGen.idtipodoc 
+        INNER JOIN MO_Codigo tipMon on tipMon.idcodigo=cajGen.idtipomoneda
+        INNER JOIN MO_Codigo tipSta on tipSta.idcodigo=cajGen.idtipostatuspagobanco
+        INNER JOIN MO_Codigo tipPag on tipPag.idcodigo=cajGen.idtipomodopago  
+        LEFT JOIN MT_ConceptoUniNeg conUN on cajGen.idconcepto=conUN.idconcepto and conUN.unineg=UNI.unineg
+        LEFT Join MT_Concepto con on conUN.idconcepto=con.idconcepto
+        LEFT join MT_TipoConcepto tpCon on tpCon.idTipoConcepto=con.idtipoconcepto
+        where cajGen.uniNeg=@unineg  
+        and cajGen.idtipostatuspagobanco = 21202 
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni)
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin) 
+    </select>
+    <select id="obtenerCajaGenPorDetalleCtaForTaller" resultType="pe.marista.sigma.bean.reporte.CajaGeneralRepBean" parameterType="map">
+        Declare @unineg varchar(6) = #{uniNeg}
+        Declare @fecIni date = convert(date,#{fecIni})
+        Declare @fecFin date = convert(date,#{fecFin})
+
+        declare 
+        @montoBanco money = (select isnull(sum(isnull(montosoles,0)),0) from MT_PagoBanco det 
+        where CONVERT(date,det.fechapago) <![CDATA[ >= ]]> @fecIni
+        and CONVERT(date,det.fechapago) <![CDATA[ <= ]]> @fecFin 
+        and det.unineg=@uniNeg 
+        and det.idtipostatuspagobanco = 21202 
+        and det.idtipomodopago=(select idcodigo from MO_Codigo where codigo='Banco' and idtipocodigo='tipoModoPago')),
+
+        @sumTotSoles  money = (select isnull(sum(isnull(montosoles,0)),0)  
+        from MT_PagoBanco det 
+        where CONVERT(date,det.fechapago) <![CDATA[ >= ]]> @fecIni
+        and CONVERT(date,det.fechapago) <![CDATA[ <= ]]> @fecFin 
+        and det.idtipostatuspagobanco = 21202 
+        and det.unineg=@uniNeg),
+
+        @sumTotDolares  money = (select isnull(sum(isnull(montodolares,0)),0)  
+        from MT_PagoBanco det 
+        where CONVERT(date,det.fechapago) <![CDATA[ >= ]]> @fecIni
+        and CONVERT(date,det.fechapago) <![CDATA[ <= ]]> @fecFin 
+        and det.idtipostatuspagobanco = 21202 
+        and det.unineg=@uniNeg) 
+
+        SELECT distinct 
+        convert(varchar,@fecIni,103) as fechaIniVista,
+        convert(varchar,@fecFin,103) as fechaFinVista,  
+        upper(uni.nombreUniNeg) as nombreUniNeg,
+        CONVERT(varchar, CAST(isnull(@montoBanco,0) AS money), 1)  as montoBanco,
+        CONVERT(varchar, CAST(isnull(@sumTotSoles,0) AS money), 1)  as sumTotSoles,
+        CONVERT(varchar, CAST(isnull(@sumTotDolares,0) AS money), 1)  as sumTotDolares
+        FROM MT_PagoBanco cajGen
+        INNER JOIN MO_UnidadNegocio uni ON uni.uniNeg = cajGen.uniNeg
+        INNER JOIN MM_Usuario usu ON usu.usuario = cajGen.creapor AND USU.unineg=UNI.unineg
+        WHERE cajGen.unineg=@uniNeg 
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni) 
+        and CONVERT(date,cajGen.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin) 
+        and cajGen.idtipostatuspagobanco = 21202 
+    </select>
+    <select id="obtenerCuentasCajaGeneralForTaller" resultType="pe.marista.sigma.bean.reporte.CajaGeneralCtasRepBean" parameterType="map">
+        Declare @unineg varchar(6) = #{uniNeg}
+        Declare @fecIni date = convert(date,#{fecIni})
+        Declare @fecFin date = convert(date,#{fecFin})
+        Declare @cuentaMora int = 772211
+         
+        select distinct 
+        (case when  con.idtipoconcepto in (100,101) then det.cuentad else det.cuentah end ) as cuenta , 
+        tp.nombre  as nombreCta			 
+        from MT_PagoBanco det
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join mt_tipoconcepto tp on con.idtipoconcepto = tp.idtipoconcepto
+        where CONVERT(date,det.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni) 
+        and CONVERT(date,det.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin) 
+        and det.idtipostatuspagobanco = 21202 
+        and det.unineg=@uniNeg
+        group by con.idtipoconcepto,tp.nombre,det.cuentad,det.cuentah 
+    </select>
+    <select id="obtenerDetallePorCtaForTaller" resultType="pe.marista.sigma.bean.reporte.CajaGeneralCtaRepBean" parameterType="map">
+        Declare @unineg varchar(6) = #{uniNeg}
+        Declare @fecIni date = convert(date,#{fecIni})
+        Declare @fecFin date = convert(date,#{fecFin})
+        DECLARE @cuenta int = #{cuenta}
+        
+        DECLARE @cuentaMora int = 772211
+        DECLARE @tipo varchar(1) = (CASE WHEN @cuenta in (121211,121311) THEN 'D' ELSE 'H' END)
+        
+        DECLARE
+        @nomCuenta varchar(150)=((select tp.nombre  from MT_TipoConcepto tp where tp.idTipoConcepto = 149)),
+        @montoSol money=(
+        select   
+        (case
+        when @cuenta  in (121211,121311) then sum(isnull(det.montosoles,0)+isnull(det.dscto,0))
+        else 
+        sum(isnull(det.montosoles,0)) end) 
+        from MT_PagoBanco det
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta= det.cuentad  
+        where CONVERT(date,det.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni) 
+        and CONVERT(date,det.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin) 
+        and det.idtipostatuspagobanco = 21202 
+        and det.unineg=@uniNeg and (case when @tipo='D' then det.cuentad else det.cuentah end) in (@cuenta)),
+        
+        @montodol money = (
+        select   
+        (case
+        when @cuenta  in (121211,121311) then sum(isnull(det.montosoles,0)+isnull(det.dscto,0))
+        else 
+        sum(isnull(det.montoDolares,0)) end) 
+        from MT_PagoBanco det
+        inner join MT_Concepto con on con.idconcepto=det.idconcepto
+        inner join MT_PlanContable pc on pc.cuenta= det.cuentad  
+        where CONVERT(date,det.fechapago) <![CDATA[ >= ]]> CONVERT(date,@fecIni) 
+        and CONVERT(date,det.fechapago) <![CDATA[ <= ]]> CONVERT(date,@fecFin) 
+        and det.idtipostatuspagobanco = 21202 
+        and det.unineg=@uniNeg and (case when @tipo='D' then det.cuentad else det.cuentah end) in (@cuenta))
+
+        select
+        @cuenta as cuenta, 
+        @nomCuenta as nombreCta,
+        isnull(@montoSol,0) as montoPorCtaSoles,
+        (CASE WHEN @cuenta=772211 THEN 0 ELSE isnull(@montodol,0) END) as montoPorCtaDolares 
+    </select>
+</mapper>

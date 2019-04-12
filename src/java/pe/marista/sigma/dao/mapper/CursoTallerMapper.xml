@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.CursoTallerDAO">  
+    <sql id="consultaCursoTaller">
+        SELECT 
+        cur.uniNeg as curUniNeg,
+        cur.idCursoTaller,
+        cur.idPersona,
+        con.idConcepto,
+        con.nombre as nombreConcepto, 
+        per.idPersona as idPer,
+        per.nombre,
+        per.apePat,
+        per.apeMat,
+        cur.idProgramacion,
+        pro.unineg as proUniNeg,
+        proce.anio as anioProgra,
+        proce.descripcion as descripcionPro,
+        cur.unineg,
+        cur.anio,
+        cur.fechaInscripcion,
+        cur.creaPor,
+        cur.creaFecha,
+        cur.modiPor,
+        cur.modiVer
+        FROM MX_CursoTaller cur
+        Left Join MX_Programacion pro On cur.idProgramacion=pro.idProgramacion and cur.unineg=pro.unineg
+        Left Join MT_Concepto con ON pro.idConcepto=con.idConcepto
+        Left Join MT_TipoConcepto cat ON con.idTipoConcepto = cat.idTipoConcepto
+        Left Join MX_Persona per On cur.idPersona=per.idPersona and per.unineg=cur.unineg
+        Left Join MX_Proceso proce On proce.idProceso=pro.idProceso and pro.unineg=proce.unineg
+    </sql>
+    <select id="obtenerCursoTaller" resultMap="cursoTallerResultado">
+        <include refid="consultaCursoTaller"/>
+    </select>
+    <select id="obtenerCursoTallerPorId" resultMap="cursoTallerResultado" parameterType="map">
+        <include refid="consultaCursoTaller"/>Where cur.idCursoTaller = #{idCursoTaller} and cur.unineg=#{uniNeg}  
+    </select>
+    <resultMap id="cursoTallerResultado" type="pe.marista.sigma.bean.CursoTallerBean"> 
+        <id property="unidadNegocioBean.uniNeg" column="curUniNeg"/>
+        <id property="idCursoTaller" column="idCursoTaller"/>
+        <result property="anio" column="anio"/>
+        <result property="fechaInscripcion" column="fechaInscripcion"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="modiVer" column="modiVer"/>
+        <result property="idConcepto" column="idConcepto"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+        <association property="programacionBean" column="idProgramacion"
+                     javaType="pe.marista.sigma.bean.ProgramacionBean"
+                     resultMap="programacionResultado"/>
+        <association property="unidadNegocioBean" column="curUniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idPer"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+    </resultMap> 
+    <!--Programacion-->
+    <resultMap id="programacionResultado" type="pe.marista.sigma.bean.ProgramacionBean">
+        <id property="idProgramacion" column="idProgramacion"/>
+        <result property="anio" column="anioProgra"/>
+        <result property="precio" column="precio"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="max" column="max"/>
+        <result property="min" column="min"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="horario" column="horario"/>
+        <result property="status" column="status"/>
+        <result property="seccion" column="seccion"/>
+        <result property="grupo" column="grupo"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="nombreProgramacion" column="nombreProgramacion"/>
+        <association property="unidadNegocioBean" column="proUniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioProResultado"/>
+        <association property="procesoBean" column="idProceso"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="procesoResultado"/>
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniNegBeanResultado"/>
+    </resultMap>
+    <!--ConceptoUniNeg-->
+    <resultMap id="conceptoUniNegBeanResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean">
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <!--Concepto-->
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcepto"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <result property="descrip" column="descrip"/>  
+    </resultMap>
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBean">
+        <id property="idProceso" column="idProceso"/>
+        <result property="descripcion" column="descripcionPro"/>
+        <result property="anio" column="anioProceso"/>
+        <result property="fecIni" column="fecIni"/> 
+        
+    </resultMap>
+    <!--uniNeg-->
+    <resultMap id="unidadNegocioProResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="proUniNeg"/>  
+    </resultMap>
+    <!--uniNeg-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="curUniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <result property="ruc" column="ruc"/>
+    </resultMap>
+    <insert id="insertarCursoTaller" parameterType="pe.marista.sigma.bean.CursoTallerBean"
+            useGeneratedKeys="true" keyProperty="idCursoTaller" keyColumn="idCursoTaller">
+        INSERT INTO MX_CursoTaller (idPersona,idProgramacion,uniNeg,anio,fechaInscripcion,creaPor,creaFecha,idConcepto)
+        Values (#{personaBean.idPersona},#{programacionBean.idProgramacion},#{unidadNegocioBean.uniNeg},#{programacionBean.anio},#{fechaInscripcion},#{creaPor},getDate(),#{idConcepto})
+    </insert> 
+    <update id="modificarCursoTaller" parameterType="pe.marista.sigma.bean.CursoTallerBean">
+        UPDATE MX_CursoTaller
+        SET 
+        idPersona=#{personaBean.idPersona},
+        idProgramacion = #{programacionBean.idProgramacion},
+        anio = #{programacionBean.anio},
+        fechaInscripcion = #{fechaInscripcion}
+        Where idCursoTaller = #{idCursoTaller} and  uniNeg = #{unidadNegocioBean.uniNeg}
+    </update>
+    <delete id="eliminarCursoTaller" parameterType="Integer">
+        Delete From MX_CursoTaller Where idCursoTaller = #{idCursoTaller}
+    </delete>
+    
+    <select id="obtenerFiltroCursoTaller" resultMap="cursoTallerResultado" parameterType="pe.marista.sigma.bean.CursoTallerBean">
+        <include refid="consultaCursoTaller" />  
+        <where> 
+            cur.uniNeg = #{unidadNegocioBean.uniNeg}  
+            <if test="personaBean.idPersona != null and personaBean.idPersona != ''">
+                and cur.idPersona = #{personaBean.idPersona} 
+            </if> 
+            <if test="personaBean.apepat != null and personaBean.apepat != ''">
+                and upper(per.apepat) like concat('%',#{personaBean.apepat},'%')
+            </if>
+            <if test="personaBean.apemat != null and personaBean.apemat != ''">
+                and upper(per.apemat) like concat('%',#{personaBean.apemat},'%')
+            </if>
+            <if test="personaBean.nombre != null and personaBean.nombre != ''">
+                and upper(per.nombre) like concat('%',#{personaBean.nombre},'%')
+            </if>  
+            <if test="anio != null and anio != 0">
+                and cur.anio = #{anio}
+            </if>
+        </where>
+    </select> 
+    <select id="obtenerTalleresRep" resultType="pe.marista.sigma.bean.reporte.CursoTallerRepBean" parameterType="map">
+        declare @unineg varchar(6), @fechaini date,@fechafin date
+        set @unineg=#{uniNeg} 
+        set @fechaini = convert(date,#{fechaIni}) 
+        set @fechafin = convert(date,#{fechaFin})  
+        
+        Declare @totalSol money = (SELECT sum(isnull(montopagado,0))
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        where det.idprogramacion is not null and det.idprogramacion!=0   
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and convert(date,doc.fechapago) <![CDATA[ <= ]]> @fechafin
+        and det.unineg=#{uniNeg} 
+        <if test="flg == 1">
+            and det.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and doc.idtipostatusdocing <![CDATA[ <> ]]> 20602)
+        select distinct
+        upper(ent.nombre) as nombreUniNeg,
+        'R.U.C.:'+ ent.ruc as rucUniNeg, 
+        CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_DetDocIngreso det
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        inner join MO_UnidadNegocio uni on uni.unineg=pro.unineg
+        inner join MO_Entidad ent on ent.ruc=uni.RUC and ent.unineg=uni.unineg
+        where det.idprogramacion is not null and det.idprogramacion!=0 
+        order by 1
+  
+    </select>
+    
+    <select id="obtenerTalleresRepId" resultType="pe.marista.sigma.bean.reporte.CursoTallerRepBean" parameterType="map">
+        declare @unineg varchar(6), @fechaini date,@fechafin date
+        set @unineg=#{uniNeg} 
+        set @fechaini = convert(date,#{fechaIni}) 
+        set @fechafin = convert(date,#{fechaFin})  
+        
+        Declare @totalSol money = (SELECT sum(isnull(montopagado,0))
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        where det.idprogramacion is not null and det.idprogramacion!=0 
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and convert(date,doc.fechapago) <![CDATA[ <= ]]> @fechafin
+        and det.unineg=#{uniNeg} and det.idprogramacion = #{idProgramacion} )
+        select distinct
+        upper(ent.nombre) as nombreUniNeg,
+        'R.U.C.:'+ ent.ruc as rucUniNeg, 
+        CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_DetDocIngreso det
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        inner join MO_UnidadNegocio uni on uni.unineg=pro.unineg
+        inner join MO_Entidad ent on ent.ruc=uni.RUC and ent.unineg=uni.unineg
+        where det.idprogramacion is not null and det.idprogramacion!=0 
+        order by 1
+  
+    </select>
+    <select id="obtenerDetalleTallerRep" resultType="pe.marista.sigma.bean.reporte.DetCursoTallerRepBean" parameterType="map">
+        declare @unineg varchar(6), @fechaini date,@fechafin date
+        set @unineg=#{uniNeg} 
+        set @fechaini = convert(date,#{fechaIni}) 
+        set @fechafin = convert(date,#{fechaFin})  
+        
+        Declare @totalSol money = (SELECT sum(isnull(montopagado,0))
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        where det.idprogramacion is not null and det.idprogramacion!=0 
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and convert(date,doc.fechapago) <![CDATA[ <= ]]> @fechafin
+        and det.unineg=#{uniNeg} 
+        <if test="flg ==1">
+            and det.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and doc.idtipostatusdocing <![CDATA[ <> ]]> 20602)
+        select  
+        pro.idprogramacion as idProgramacion,
+        upper(pro.descripprogramacion) as taller, 
+        CONVERT(varchar, CAST(isnull(sum(isnull(det.montopagado,0)),0) AS money), 1)  as montoPagadoPorTaller,
+        'TOTAL S/. '+CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        where det.idprogramacion is not null and det.idprogramacion!=0
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and convert(date,doc.fechapago) <![CDATA[ <= ]]> @fechafin
+        and det.unineg=#{uniNeg}
+        and doc.idtipostatusdocing <![CDATA[ <> ]]> 20602
+        <if test="flg ==1">
+            and pro.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by  pro.descripprogramacion,pro.idprogramacion
+        order by 2
+    </select>
+    <select id="obtenerDetalleTallerRepDesc" resultType="pe.marista.sigma.bean.reporte.DetCursoTallerRepBean" parameterType="map">
+        declare @unineg varchar(6), @fechaini date,@fechafin date
+        set @unineg=#{uniNeg} 
+        set @fechaini = convert(date,#{fechaIni}) 
+        set @fechafin = convert(date,#{fechaFin}) 
+        
+        declare @descripcion varchar (100) 
+        set @descripcion=#{descripcion}
+        
+        Declare @totalSol money = (SELECT sum(isnull(montopagado,0))
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        where det.idprogramacion is not null 
+        and det.idprogramacion!=0 
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and convert(date,doc.fechapago) <![CDATA[ <= ]]> @fechafin
+        and det.unineg=@unineg
+        <if test="descripcion != null and descripcion != '' " >
+            and det.referencia like CONCAT('%',@descripcion,'%') 
+        </if>
+        <if test="flg ==1">
+            and det.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>)        
+        select  
+        pro.idprogramacion as idProgramacion,
+        upper(pro.descripprogramacion) as taller, 
+        CONVERT(varchar, CAST(isnull(sum(isnull(det.montopagado,0)),0) AS money), 1)  as montoPagadoPorTaller,
+        'TOTAL S/. '+CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        where det.idprogramacion is not null 
+        and det.idprogramacion!=0 
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and  convert(date,doc.fechapago) <![CDATA[ <= ]]> @fechafin
+        and det.unineg=@unineg
+        and doc.idtipostatusdocing <![CDATA[ <> ]]> 20602
+        <if test="descripcion != null and descripcion != '' " >
+            and det.referencia like CONCAT('%',@descripcion,'%') 
+        </if>
+        <if test="flg ==1">
+            and pro.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if> 
+        group by  pro.descripprogramacion,pro.idprogramacion
+        order by 2 
+    </select>
+    <select id="obtenerInscritosTalleresRep" resultType="pe.marista.sigma.bean.reporte.DetDetCursoTallerRepBean" parameterType="map">
+        declare @unineg varchar(6), @fechaini date,@fechafin date
+        set @unineg=#{uniNeg} 
+        set @fechaini = convert(date,#{fechaIni}) 
+        set @fechafin = convert(date,#{fechaFin}) 
+        select 
+        row_number() over (order by doc.fechapago) as nroItem,  
+        upper(doc.discente) as discente,
+        convert(varchar,doc.fechapago,103) as fecha, 
+        CONVERT(varchar, CAST(isnull(det.montopagado,0) AS money), 1)  as montoPagado,
+        '0' as montoPagadoPorTaller
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        where det.idprogramacion=#{idProgramacion}  
+        and convert(date,doc.fechapago) <![CDATA[  >= ]]>  @fechaini 
+        and  convert(date,doc.fechapago) <![CDATA[ <= ]]>  @fechafin
+        and doc.idtipostatusdocing <![CDATA[ <> ]]> 20602
+        and det.unineg=@unineg
+    </select>
+    
+    <!-- CAMBIO REPORTE CURSO DE TALLER -->
+    <select id="obtenerDetalleTallerRepId" resultType="pe.marista.sigma.bean.reporte.DetCursoTallerRepBean" parameterType="map">
+        declare @unineg varchar(6), @fechaini date,@fechafin date
+        set @unineg=#{uniNeg} 
+        set @fechaini = convert(date,#{fechaIni}) 
+        set @fechafin = convert(date,#{fechaFin}) 
+        
+        Declare @totalSol money = (SELECT sum(isnull(montopagado,0))
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+ 
+        where det.idprogramacion is not null and det.idprogramacion!=0 
+        and convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and  convert(date,doc.fechapago) <![CDATA[ <=  ]]> @fechafin
+        and det.unineg=#{uniNeg})
+  
+        select  
+        pro.idprogramacion as idProgramacion,
+        upper(pro.descripprogramacion) as taller, 
+        CONVERT(varchar, CAST(isnull(sum(isnull(det.montopagado,0)),0) AS money), 1)  as montoPagadoPorTaller,
+        'TOTAL S/. '+CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_DetDocIngreso det
+        inner join MT_DocIngreso doc on doc.iddocingreso = det.iddocingreso and det.unineg=doc.unineg
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        where det.idprogramacion is not null and det.idprogramacion!=0
+        and  convert(date,doc.fechapago) <![CDATA[ >= ]]> @fechaini 
+        and  convert(date,doc.fechapago) <![CDATA[ <= ]]> @fechafin
+        and det.unineg=#{uniNeg} and det.idprogramacion = #{idProgramacion} 
+        group by  pro.descripprogramacion,pro.idprogramacion
+        order by 2
+    </select>
+    
+    <!-- REPORTE TALLERES WEB -->
+    <select id="obtenerDetalleTallerWebRepDesc" resultType="pe.marista.sigma.bean.reporte.DetCursoTallerRepBean" parameterType="map">
+        Declare @totalSol money = (SELECT sum(isnull(det.montopagado,0))
+        from MT_PagoBanco det
+        where det.idprogramacion is not null and det.idprogramacion!=0 and det.idtipostatuspagobanco = 21202
+        and det.fechapago  BETWEEN 
+        (CONVERT(VARCHAR(10), #{fechaIni}, 112 )) and 
+        (CONVERT(VARCHAR(10), #{fechaFin}, 112 )) and 
+        det.unineg=#{uniNeg} 
+        <if test="descripcion != null and descripcion != '' " >
+            and det.referencia like CONCAT('%',#{descripcion},'%') 
+        </if>
+        <if test="flg ==1">
+            and det.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>)
+        select  
+        pro.idprogramacion as idProgramacion,
+        upper(pro.descripprogramacion) as taller, 
+        CONVERT(varchar, CAST(isnull(sum(isnull(det.montopagado,0)),0) AS money), 1)  as montoPagadoPorTaller,
+        'TOTAL S/. '+CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_PagoBanco det
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        where det.idprogramacion is not null and det.idprogramacion!=0 and det.idtipostatuspagobanco = 21202
+        and det.fechapago BETWEEN (CONVERT(VARCHAR(10), #{fechaIni}, 112 )) and (CONVERT(VARCHAR(10), #{fechaFin}, 112 )) and det.unineg=#{uniNeg}
+        <!--and det.idtipostatuspagobanco <![CDATA[ <> ]]> 20602-->
+        <if test="descripcion != null and descripcion != '' " >
+            and det.referencia like CONCAT('%',#{descripcion},'%') 
+        </if>
+        <if test="flg ==1">
+            and pro.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by  pro.descripprogramacion,pro.idprogramacion
+        order by 2
+    </select>
+    
+    <select id="obtenerTalleresRepWeb" resultType="pe.marista.sigma.bean.reporte.CursoTallerRepBean" parameterType="map">
+        Declare @totalSol money = (SELECT sum(isnull(montopagado,0))
+        from MT_PagoBanco det
+        where det.idprogramacion is not null and det.idprogramacion!=0 and det.idtipostatuspagobanco = 21202
+        and det.fechapago  BETWEEN 
+        (CONVERT(VARCHAR(10), #{fechaIni}, 112 )) and 
+        (CONVERT(VARCHAR(10), #{fechaFin}, 112 )) and 
+        det.unineg=#{uniNeg} 
+        <if test="flg == 1">
+            and det.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>)
+        select distinct
+        upper(ent.nombre) as nombreUniNeg,
+        'R.U.C.:'+ ent.ruc as rucUniNeg, 
+        CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_PagoBanco det
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        inner join MO_UnidadNegocio uni on uni.unineg=pro.unineg
+        inner join MO_Entidad ent on ent.ruc=uni.RUC and ent.unineg=uni.unineg
+        where det.idprogramacion is not null and det.idprogramacion!=0 and det.idtipostatuspagobanco = 21202
+        order by 1
+    </select>
+    <select id="obtenerDetalleTallerRepWeb" resultType="pe.marista.sigma.bean.reporte.DetCursoTallerRepBean" parameterType="map">
+        Declare @totalSol money = (SELECT sum(isnull(montopagado,0))
+        from MT_PagoBanco det
+        where det.idprogramacion is not null and det.idprogramacion!=0 and  
+        det.fechapago  BETWEEN 
+        (CONVERT(VARCHAR(10), #{fechaIni}, 112 )) and 
+        (CONVERT(VARCHAR(10), #{fechaFin}, 112 )) and 
+        det.unineg=#{uniNeg} and det.idtipostatuspagobanco = 21202
+        <if test="flg ==1">
+            and det.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>)
+        select  
+        pro.idprogramacion as idProgramacion,
+        upper(pro.descripprogramacion) as taller, 
+        CONVERT(varchar, CAST(isnull(sum(isnull(det.montopagado,0)),0) AS money), 1)  as montoPagadoPorTaller,
+        'TOTAL S/. '+CONVERT(varchar, CAST(isnull(@totalSol,0) AS money), 1)  as total
+        from MT_PagoBanco det
+        INNER JOIN MX_PROGRAMACION pro on pro.idprogramacion=det.idprogramacion and det.unineg=pro.unineg 
+        where det.idprogramacion is not null and det.idprogramacion!=0
+        and det.fechapago  BETWEEN (CONVERT(VARCHAR(10), #{fechaIni}, 112 )) and (CONVERT(VARCHAR(10), #{fechaFin}, 112 )) and det.unineg=#{uniNeg}
+        and det.idtipostatuspagobanco = 21202
+        <!--and doc.idtipostatusdocing <![CDATA[ <> ]]> 20602-->
+        <if test="flg ==1">
+            and pro.idprogramacion in  
+            <foreach item="item" index="index" collection="list" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by  pro.descripprogramacion,pro.idprogramacion
+        order by 2
+    </select>
+    <select id="obtenerInscritosTalleresRepWeb" resultType="pe.marista.sigma.bean.reporte.DetDetCursoTallerRepBean" parameterType="map">
+        select 
+        row_number() over (order by det.fechapago) as nroItem,
+        concat(det.anio,det.nrodoc) as nrodoc,
+        upper(det.discente) as discente,
+        convert(varchar,det.fechapago,103) as fecha, 
+        CONVERT(varchar, CAST(isnull(det.montopagado,0) AS money), 1)  as montoPagado,
+        '0' as montoPagadoPorTaller
+        from MT_PagoBanco det
+        where det.idprogramacion=#{idProgramacion} and det.idtipostatuspagobanco = 21202
+        and det.fechapago BETWEEN (CONVERT(VARCHAR(10),#{fechaIni}, 112 )) and (CONVERT(VARCHAR(10), #{fechaFin}, 112 ))
+    </select>
+    
+    <!-- OBTENIENDO TOTAL DE INSCRITOS BORRAR -->
+    <select id="obtenerNroIns" parameterType="map" resultType="Integer" >
+        select count(*) from mx_cursotaller where idprogramacion = #{idProgramacion} and idpersona = #{idPersona} and unineg = #{uniNeg}
+    </select>
+</mapper>

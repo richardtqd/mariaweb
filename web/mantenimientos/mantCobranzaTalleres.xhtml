@@ -1,0 +1,482 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml">
+    <ui:define name="content"> 
+        <h:body onload="#{pagoBancoMB.autenticar()}"> 
+            <center>
+                <h:outputText value="#{msgs.etiquetaInscripcionTaller}" class="tituloPantalla"/>
+                <br></br>
+                <br></br>
+                <div style="display: inline-block">
+                    <div style="float: left">
+                        <p:panel style="width: 665px ; text-align: left"> 
+                            <h:panelGrid columns="1">                      
+                                <h:form id="fmrTblAlumno">
+                                    <h:panelGrid  id="pnlTablaPostulante" style="width: 500PX;padding: 5px"  >
+
+                                        <h:panelGrid columns="3" >
+                                            <h:outputLabel value="#{msgs.etiquetaNombre}" />
+                                            <p:inputText value="#{pagoBancoMB.personaFiltroBean.nombreFiltro}" size="55" maxlength="70"> 
+                                                <p:ajax event="blur" listener="#{pagoBancoMB.buscarPersona()}" update=":fmrTblAlumno:pnlTablaPostulante2,msg"/>
+                                            </p:inputText> 
+                                            <h:panelGrid columns="2"  >    
+                                                <h:panelGrid styleClass="centrado" columns="2">
+                                                    <p:commandButton value="#{msgs.botonBuscar}" action="#{pagoBancoMB.buscarPersona()}" 
+                                                                     update=":fmrTblAlumno:pnlTablaPostulante2,msg" process="@this"/>
+                                                </h:panelGrid>
+                                            </h:panelGrid> 
+                                        </h:panelGrid> 
+                                        <p:messages autoUpdate="false" id="msg"  />
+
+                                    </h:panelGrid>
+                                    <h:panelGrid id="pnlTablaPostulante2" styleClass="centrado"> 
+                                        <p:dataTable id="dgPostulante" value="#{pagoBancoMB.listaPersonaBean}" widgetVar="dgPostulante" 
+                                                     paginator="false"  
+                                                     scrollable="true" scrollHeight="60"  
+                                                     selectionMode="single" 
+                                                     paginatorPosition="bottom" rowIndexVar="n" selection="#{pagoBancoMB.personaBean}" 
+                                                     var="estudiante" rowKey="#{estudiante}"   
+                                                     rendered="#{not empty pagoBancoMB.listaPersonaBean}" 
+                                                     style="width: 615px;font-size:14px !important;margin-bottom:0">
+                                            <p:ajax event="rowSelect" listener="#{pagoBancoMB.rowSelect}" 
+                                                    update=":frmDetCobranza,:frmCobranza,:fmrTblAlumno,:frmSerGen"/>
+                                            <f:facet name="header" >
+                                                <h:outputText value="#{msgs.tituloPersonas}" />  
+                                            </f:facet>
+                                            <p:column  headerText="#{msgs.numero}" footerText="#{msgs.etiquetaEspacio}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto">
+                                                <center>
+                                                    <h:outputText value="#{n+1}" />
+                                                </center>
+                                            </p:column>
+                                            <p:column headerText="#{msgs.etiquetaCodigo}" footerText="#{msgs.etiquetaEspacio}" filterMatchMode="contains" width="10%" styleClass="siseFontTable3 centrado-texto" sortBy="#{estudiante.personaBean.idPersona}" >
+                                                <h:outputText value="#{estudiante.idPersona}"/>
+                                            </p:column>
+                                            <p:column headerText="#{msgs.etiquetaNombreCompleto}"  footerText="#{msgs.etiquetaEspacio}" filterMatchMode="contains" width="35%" styleClass="siseFontTable3 " sortBy="#{estudiante.personaBean.nombreCompletoDesdeApellidos}">
+                                                <h:outputText value="#{estudiante.nombreCompletoDesdeApellidos}"/>
+                                            </p:column> 
+                                        </p:dataTable>
+                                    </h:panelGrid>
+                                </h:form> 
+                                <h:form id="frmSerGen"  >
+                                    <h:panelGrid id="pnlSerGen"> 
+                                        <h:outputLabel value="#{msgs.etiquetaFiltroConcepto}" />
+                                        <p:inputText value="#{pagoBancoMB.nombreConcepto}" size="55" maxlength="70"> 
+                                            <p:ajax event="blur" listener="#{pagoBancoMB.buscarTalleres()}" update=":frmSerGen:pnlSerGen"/>
+                                        </p:inputText> 
+                                        <p:fieldset legend="#{msgs.etiquetaCursoTalleres}" toggleSpeed="500" toggleable="false" style="width: 600px" collapsed="false"  
+                                                    rendered="#{not empty pagoBancoMB.listaConceptoUniNegBean}">
+                                            <p:dataGrid id="tblSerGen"  widgetVar="tblSerGen" value="#{pagoBancoMB.listaConceptoUniNegBean}" columns="2" layout="grid"
+                                                        rows="9" paginator="true"   var="serGen" 
+                                                        paginatorPosition="bottom"
+                                                        rowsPerPageTemplate="6,9,12,16">
+                                                <f:facet name="header"> 
+                                                </f:facet>  
+                                                <p:panel id="opcion" header="#{serGen.conceptoBean.tipoConceptoBean.nombre}" styleClass="centrado" style="text-align:center">
+                                                    <h:panelGrid columns="1" style="width:100%"  > 
+                                                        <h:panelGrid columns="1"     > 
+                                                            <h:outputText value="#{serGen.conceptoBean.nombre}" styleClass="negrita" style="font-size: 0.85em" />
+                                                        </h:panelGrid>
+                                                        <h:panelGrid columns="2"     > 
+                                                            <h:outputText value="#{serGen.importe}" >
+                                                                <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                            </h:outputText>
+                                                            <p:commandLink  id="cmdAgregar" action="#{pagoBancoMB.agregarConcepto(serGen.conceptoBean.idConcepto)}" disabled="#{serGen.flgDisable}"
+                                                                            update=":frmDetCobranza,:frmCobranza:pnlDatosPB,:frmDatosProgramacion:pnlTablaProgramacion"
+                                                                            oncomplete="if(args.abrirProgramcion){PF('popProgramacion').show();}"  >
+                                                                <h:graphicImage value="/resources/images/icons/search2.png"  width="15" style="border:0; cursor:pointer;"/> 
+                                                            </p:commandLink> 
+                                                        </h:panelGrid>
+                                                    </h:panelGrid>
+                                                    <p:tooltip id="toolTipAdd" for="cmdAgregar" value="#{msgs.etiquetaAgregar}" />
+                                                </p:panel> 
+
+                                            </p:dataGrid> 
+                                        </p:fieldset>
+                                        <br></br>
+                                    </h:panelGrid> 
+                                </h:form>
+                            </h:panelGrid>
+                        </p:panel>
+                    </div>
+                    <div style="float: right;display: inline-block" > 
+                        <p:panel style="width: 650px ; text-align: left" >
+                            <center>
+                                <h:panelGrid columns="1" style="width: 650px ; text-align: left">
+                                    <h:form id="frmCobranza">  
+                                        <h:panelGrid   id="pnlCobranza" columns="1"> 
+                                            <p:panelGrid columns="1">                                                  
+                                                <h:panelGrid columns="10">               
+                                                    <h:outputText value="#{msgs.etiquetaDisce}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                    <p:inputText id="txtApePat" value="#{pagoBancoMB.personaBean.apepat}" style="font-size: 1.1em"  class="black" size="15">                                                    
+                                                        <p:ajax event="change"   listener="#{pagoBancoMB.generarCodigoPersona()}" update="txtCodigo"/>
+                                                    </p:inputText>
+                                                    <p:inputText id="txtApeMat" value="#{pagoBancoMB.personaBean.apemat}" style="font-size: 1.1em"  class="black" size="15">
+                                                        <p:ajax event="change"   listener="#{pagoBancoMB.generarCodigoPersona()}" update="txtCodigo"/>
+                                                    </p:inputText>
+                                                    <p:inputText id="txtNomt" value="#{pagoBancoMB.personaBean.nombre}" style="font-size: 1.1em"  class="black" size="15">   
+                                                        <p:ajax event="change"   listener="#{pagoBancoMB.generarCodigoPersona()}" update="txtCodigo"/>
+                                                    </p:inputText>
+                                                    <p:watermark for="txtApePat" value="#{msgs.etiquetaApePat}" id="watermark1"/>
+                                                    <p:watermark for="txtApeMat" value="#{msgs.etiquetaApeMat}" id="watermark2"/>
+                                                    <p:watermark for="txtNomt" value="#{msgs.EtiquetaNombre}" id="watermark3" />                                                                     
+                                                </h:panelGrid>
+                                                <h:panelGrid columns="10" id="pnlDatosPB"> 
+                                                    <h:outputText value="#{msgs.etiquetaCodigo}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                    <p:inputText disabled="#{pagoBancoMB.flgGenCod}" id="txtCodigo" value="#{pagoBancoMB.personaBean.idPersona}" style="font-size: 1em"  class="black" size="10"/>   
+                                                    <p:selectBooleanCheckbox  value="#{pagoBancoMB.flgGenCod}" styleClass="titulo" disabled="#{pagoBancoMB.flgDisableGenCod}"> 
+                                                        <p:ajax event="change"   listener="#{pagoBancoMB.generarCodigoPersona()}" update="txtCodigo"/>
+                                                    </p:selectBooleanCheckbox>
+                                                    <p:spacer width="10"/>
+                                                    <p:selectOneRadio  value="#{pagoBancoMB.personaBean.sexo}" label="#{msgs.etiquetaSexo}">
+                                                        <f:selectItem itemValue="1" itemLabel="#{msgs.comboAbbMasculino}"/>
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                                        <f:selectItem itemValue="0" itemLabel="#{msgs.comboAbbFemenino}"/>
+                                                        <p:ajax event="change"   listener="#{pagoBancoMB.verSexo()}"/>
+                                                    </p:selectOneRadio>
+                                                    <h:panelGrid columns="2"> 
+                                                        <h:outputText value="#{msgs.etiquetaTipoDoc}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />                                                                                                           
+                                                        <h:outputText   value="#{pagoBancoMB.pagoBancoBean.idTipoDoc.codigo}"   id="cmbTipDoc"  />   
+                                                    </h:panelGrid>
+                                                    &nbsp;&nbsp; 
+                                                    <h:panelGrid columns="2"> 
+                                                        <h:outputText value="#{msgs.etiquetaMoneda}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                        <h:outputText value="#{pagoBancoMB.pagoBancoBean.idTipoMoneda.codigo}"   id="cmbMon" />
+                                                    </h:panelGrid> 
+                                                </h:panelGrid>       
+
+                                                <h:panelGrid columns="10">     
+                                                    <h:outputText value="#{msgs.etiquetaObs}:" style="font-size: 0.9em ;text-align: left !important;font-weight: bold" />
+                                                    <p:inputTextarea value="#{pagoBancoMB.pagoBancoBean.obs}" maxlength="55" cols="55" rows="2"/>
+                                                </h:panelGrid>   
+                                            </p:panelGrid>   
+                                        </h:panelGrid> 
+                                    </h:form>
+                                    <h:form id="frmDetCobranza">  
+                                        <h:panelGrid id="pnlDetCobranza"  style="float: left;display: inline-block" >
+                                            <p:dataTable id="tblDetCobranza"  widgetVar="tblDetCobranza"    scrollable="true"  
+                                                         value="#{pagoBancoMB.listaDetPagoBancoBean}" var="detDoc"   rowIndexVar="n"
+                                                         style="width: 625px"    editable="true" editMode="cell" > 
+                                                <p:ajax event="cellEdit" listener="#{pagoBancoMB.onCellEdit}" update=":frmDetCobranza:tblDetCobranza" />
+                                                <p:column style="text-align:center;font-size: 0.65em " width="3%" headerText="#{msgs.etiquetaAcci}">
+                                                    <p:commandLink id="cmdEliminar" action="#{pagoBancoMB.quitarConcepto(detDoc)}" update=":frmDetCobranza">
+                                                        <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                                    </p:commandLink>
+                                                    <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.etiquetaDelConcepto}" />
+                                                </p:column>  
+                                                <p:column headerText="#{msgs.etiquetaRef}"  width="25%" style="font-size: 0.85em" > 
+                                                    <p:cellEditor>
+                                                        <f:facet name="output"> <h:outputText value="#{detDoc.referencia}" /></f:facet>
+                                                        <f:facet name="input"> <p:inputTextarea value="#{detDoc.referencia}" cols="65" rows="3"  maxlength="100"/> </f:facet>
+                                                    </p:cellEditor>
+                                                </p:column> 
+                                                <p:column  headerText="#{msgs.etiquetaDscto}"  width="7%" style="font-size: 0.85em; text-align: right;" visible="#{docIngresoMB.flgPension==false}">
+                                                    <p:cellEditor>
+                                                        <f:facet name="output"> 
+                                                            <h:outputText value="#{detDoc.dscto}" >
+
+                                                            </h:outputText>
+                                                        </f:facet>
+                                                        <f:facet name="input">
+                                                            <p:inputText value="#{detDoc.dscto}"    >
+                                                                <p:ajax listener="#{pagoBancoMB.obtenerDsctoDet(n)}" update=":frmDetCobranza"></p:ajax>
+                                                            </p:inputText> 
+                                                        </f:facet>
+                                                    </p:cellEditor>
+                                                </p:column>  
+                                                <p:column  headerText="#{msgs.etiquetaImporte}"  width="10%" style="font-size: 0.85em; text-align: right;" >
+                                                    <h:outputText value="#{detDoc.montoPagado}" >
+                                                        <f:convertNumber pattern="#,##0.00" locale="en_US"/>
+                                                    </h:outputText>
+                                                </p:column>  
+                                                <p:columnGroup type="footer" >
+                                                    <p:column colspan="3"  style="font-size: 0.9em; text-align: right;" footerText="#{msgs.etiquetaTotal}:" />
+                                                    <p:column  footerText="Dscto: #{pagoBancoMB.dscto}" style="font-size: 1em; text-align: right;" >
+
+                                                    </p:column>
+                                                    <p:column footerText="#{pagoBancoMB.totalDouble}" style="font-size: 1em; text-align: right;" id="prueba"> 
+
+                                                    </p:column>
+                                                </p:columnGroup>
+                                            </p:dataTable>   
+                                            <h:panelGrid id="botones" class="centrado" style="font-size: 0.95em" columns="1"  >
+                                                <h:panelGrid columns="2" class="centrado">
+                                                    <p:commandButton actionListener="#{pagoBancoMB.guardarPagoBanco()}" disabled="#{pagoBancoMB.pagoBancoBean.idPagoBanco!=null}" id="grabar" 
+                                                                     oncomplete="if(args.operacionCorrecta){PF('popDone').show();}if(args.errorMontos){PF('popErrorMon').show()}if(args.operacionSinCupos){PF('popCupos').show()}" 
+                                                                     update=":frmCobranza:pnlCobranza,val,grabar,:frmDetCobranza,:frmSerGen," value="#{msgs.botonGrabar}">
+                                                    </p:commandButton>
+                                                    <p:commandButton actionListener="#{pagoBancoMB.limpiarPagoBanco()}" value="#{msgs.botonNuevo}" 
+                                                                     update=":frmCobranza:pnlCobranza,:frmDetCobranza,:frmSerGen,:fmrTblAlumno" >
+                                                    </p:commandButton>
+                                                </h:panelGrid>     
+                                                <p:messages id="val"></p:messages> 
+                                            </h:panelGrid>
+                                            <h:panelGrid columns="1" id="impr" class="centrado" >
+                                                <h:commandLink action="#{pagoBancoMB.imprimirFormatoPdf()}" target="_blank" id="imprimir" >
+                                                    <h:graphicImage value="/resources/images/impresora.png" />
+                                                </h:commandLink>
+                                                <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" />
+                                            </h:panelGrid>
+                                        </h:panelGrid>  
+                                    </h:form>
+                                </h:panelGrid>
+                            </center>
+                        </p:panel>
+                    </div>
+                </div>
+            </center>
+            <h:form id="frm">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton  
+                            oncomplete="{PF('popDone').hide();PF('popPersona').hide();}"
+                            value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmObs">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popObserv" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+                    <p:panelGrid columns="2">     
+                        <h:outputText value="#{msgs.etiquetaObs}:" style="font-size: 1em" />
+                        <p:inputTextarea value="#{pagoBancoMB.pagoBancoBean.obs}" maxlength="50" cols="30" rows="5"/>
+                    </p:panelGrid>
+                    <br/>
+                    <p:commandButton oncomplete="PF('popObserv').hide();" value="#{msgs.botonAgregar}" >
+                    </p:commandButton> 
+                </p:dialog>
+            </h:form>
+            <h:form id="frmStatus">
+                <p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()" />
+                <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+                    <h:graphicImage value="/resources/images/ajaxloader.gif"/>
+                </p:dialog>
+            </h:form>
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popErrorMon" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.etiquetaMontoIngInc}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popErrorMon').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmDatosProgramacion">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popProgramacion"  styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode"
+                          modal="true" closable="false" > 
+                    <h:panelGrid  id="pnlTablaProgramacion" >
+                        <p:dataTable id="tblProgramacion" value="#{pagoBancoMB.listaProgramacionBean}" widgetVar="tblProgramacion"
+                                     selectionMode="single"  scrollable="true" scrollHeight="200"  
+                                     selection="#{pagoBancoMB.programacionBean}"
+                                     var="programacion" rowKey="#{programacion.idProgramacion}" 
+                                     rendered="#{not empty pagoBancoMB.listaProgramacionBean}" 
+                                     style="width: #{pagoBancoMB.anchoTablasGrande}; font-size: 14px;font-size:14px !important;">
+
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloProgramaciones}" />  
+                            </f:facet>
+                            <p:column filterBy="#{programacion.descripProgramacion}" sortBy="#{programacion.descripProgramacion}" headerText="#{msgs.etiquetaConcepto}" filterMatchMode="contains" width="40%" styleClass="nombreFiltro7 siseFont3">
+                                <h:outputText value="#{programacion.descripProgramacion}" />
+                            </p:column> 
+                            <p:column sortBy="#{programacion.mesProg}" headerText="#{msgs.etiquetaMes}" filterMatchMode="contains" width="8%" styleClass="nombreFiltrom1 siseFont3 centrado-texto">
+                                <h:outputText value="#{programacion.mesProg}" />
+                            </p:column> 
+                            <p:column sortBy="#{programacion.grupo}" filterBy="#{programacion.grupo}" headerText="#{msgs.etiquetaGrupo}" filterMatchMode="contains" width="115" styleClass="nombreFiltro3 siseFont3 centrado-texto">
+
+                                <h:outputText value="#{programacion.grupo}" />
+                            </p:column> 
+                            <p:column sortBy="#{programacion.horario}" filterBy="#{programacion.horario}" headerText="#{msgs.etiquetaHorario}" filterMatchMode="contains" width="15%" styleClass="nombreFiltro3 siseFont3 centrado-texto">
+                                <h:outputText value="#{programacion.horario}" />
+                            </p:column>
+                            <p:column    sortBy="#{programacion.seccVista}" headerText="#{msgs.etiquetaSeccAbr}" filterMatchMode="contains" width="8%" styleClass="nombreFiltrom1 siseFont3 centrado-texto" >
+                                <h:outputText value="#{programacion.seccVista}" />
+                            </p:column> 
+                            <p:column sortBy="#{programacion.cupos}" headerText="#{msgs.etiquetaDisponiblesAbb}" style="font-weight: bolder;background-color: gold" filterMatchMode="contains" width="8%" styleClass="nombreFiltro3 siseFont3 centrado-texto">
+                                <h:outputText value="#{programacion.cupos}" />
+                            </p:column>  
+                            <p:column    headerText="#{msgs.etiquetaSeleccionar}" filterMatchMode="contains" width="8%" styleClass="nombreFiltro3 siseFont3">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaSeleccionar}"/><br/>
+                                    <p:selectBooleanCheckbox value="#{pagoBancoMB.valAdmTodos}">
+                                        <p:ajax event="change" listener="#{pagoBancoMB.noSeleccionarProgra}" update=":frmDatosProgramacion:pnlTablaProgramacion"/>
+                                    </p:selectBooleanCheckbox>
+                                </f:facet>
+                                <center>
+                                    <p:selectBooleanCheckbox value="#{programacion.flgInscrito}" disabled="#{programacion.flgBloqueado==true}" >
+                                        <p:ajax event="change" listener="#{pagoBancoMB.validarProgramacion(programacion.idProgramacion)}" update=":frmDatosProgramacion:pnlTablaProgramacion"/>
+                                    </p:selectBooleanCheckbox>
+                                </center>    
+                            </p:column> 
+                        </p:dataTable>
+                        <br></br>  
+                        <h:panelGrid styleClass="centrado">
+                            <p:commandButton actionListener="#{pagoBancoMB.obtenerProgramacionRegistro()}" 
+                                             update=":frmDetCobranza:pnlDetCobranza"  value="#{msgs.botonCerrar}"  
+                                             oncomplete="if(args.operacionError){PF('popErrorProg').show();}else if(args.operacionCorrecta){PF('popProgramacion').hide()}"
+                                             /> 
+                        </h:panelGrid> 
+                        <p:messages id="growlFiltro" showDetail="false"   autoUpdate="false"/> 
+                    </h:panelGrid> 
+                </p:dialog>
+            </h:form>  
+            <h:form id="frmPersona" >
+                <p:dialog id="persona" header="#{msgs.tituloInserModPersona}" widgetVar="popPersona" styleClass="autoWidthDialog" showEffect="fade" hideEffect="explode"
+                          modal="true" closable="false" closeOnEscape="true" >
+                    <h:panelGrid styleClass="centrado" id="pnlDatosPersona" style="text-align: center !important ; font-weight: bold ">
+                        <h:panelGrid columns="3" id="pnlPersona" cellpadding="3" styleClass="centrado siseFontGrid4">
+                            <h:panelGrid columns="3" style="font-size: 1em;padding: 5px;width: 405px" >
+                                <h:panelGrid columns="3">
+                                    <p:selectBooleanCheckbox  value="#{personaMB.flgGenCod}" styleClass="titulo" > 
+                                        <p:ajax event="change"   listener="#{personaMB.generarCodigoPersona()}" update="idPersona"/>
+                                    </p:selectBooleanCheckbox>
+                                    <h:outputLabel value="#{msgs.etiquetaCodigo} " />
+                                    <h:outputLabel value=" (#{msgs.etiquetaDocId})" style="color: red"/>
+                                </h:panelGrid>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  id="idPersona" value="#{personaMB.personaBean.idPersona}"    label="#{msgs.etiquetaCodigo} (#{msgs.etiquetaDocId})" maxlength="15">
+                                </p:inputText> 
+                                <h:outputLabel value="#{msgs.etiquetaApepat}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{personaMB.personaBean.apepat}"    label="#{msgs.etiquetaApepat}" size="30" maxlength="29"> 
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaApemat}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{personaMB.personaBean.apemat}"    label="#{msgs.etiquetaApemat}" size="30" maxlength="29">
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{personaMB.personaBean.nombre}"    label="#{msgs.etiquetaNombre}" size="30" maxlength="29"> 
+                                    <f:validateLength minimum="2" maximum="30"/> 
+                                </p:inputText>
+                                <h:outputLabel value="#{msgs.etiquetaFecNac}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:calendar id="fecIni" value="#{personaMB.personaBean.fecNac}" label="#{msgs.etiquetaNaci}" mode="popup" size="10"
+                                            pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true" yearRange="c-90:c+30">
+                                </p:calendar> 
+                            </h:panelGrid>
+                            <p:separator style="width:5px;height:215px" />
+                            <h:panelGrid columns="3" style="font-size: 1em;padding: 5px;width: 515px">
+                                <h:outputLabel value="#{msgs.etiquetaSexo}" class="negrita"/>
+                                <h:outputText value=""  class="requerido"/>
+                                <p:selectOneRadio  value="#{personaMB.personaBean.sexo}" label="#{msgs.etiquetaSexo}">
+                                    <f:selectItem itemValue="1" itemLabel="#{msgs.comboMasculino}"/>
+                                    <f:selectItem itemValue="0" itemLabel="#{msgs.comboFemenino}"/>
+                                </p:selectOneRadio>
+                                <h:outputLabel value="#{msgs.etiquetaContactoPer}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputTextarea  value="#{personaMB.personaBean.contacto}"  label="#{msgs.etiquetaContactoPer}" cols="45" rows="3" maxlength="99"> 
+                                </p:inputTextarea>  
+                                <br></br> 
+                            </h:panelGrid> 
+                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                            <h:inputHidden />
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{personaMB.comprobarPersonaDocIng('desc4')}" 
+                                             update=":frmDetCobranza,:frmSerGen,msgsAddPer,:frmError:pnlDatosError,:fmrTblAlumno"
+                                             oncomplete="if(args.error){PF('popError').show();}else if(args.operacionCorrecta){PF('popDone').show();PF('popPersona').hide()}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton> 
+                            <p:commandButton oncomplete="PF('popPersona').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages id="msgsAddPer" showDetail="false" showSummary="true" autoUpdate="false"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmError">
+                <p:dialog header="#{msgs.appTitulo}" width="600" showEffect="fade" hideEffect="explode" widgetVar="popError" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png" style="padding-right: 20px"/>
+                        <h:panelGrid columns="1" id="pnlDatosError" >
+                            <h:panelGrid columns="1">
+                                <h:outputText value="#{msgs.errorDNIDupBack}" class="requerido"/>
+                            </h:panelGrid>
+                            <h:panelGrid columns="2">
+                                <h:outputLabel value="#{msgs.etiquetaDNI}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.idPersona}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaNombre}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.nombre}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaApepat}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.apepat}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaApemat}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.apemat}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaFecNac}: " />
+                                <h:outputLabel value="#{personaMB.personaVista.fecNac}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                </h:outputLabel>
+                                <h:outputLabel value="#{msgs.etiquetaCorreoPer}: " />
+                                <h:outputLabel  value="#{personaMB.personaVista.correo}" />
+                            </h:panelGrid>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado"> 
+                        <h:panelGrid columns="2" class="centrado">
+                            <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{personaMB.modificarPersona('persona')}" 
+                                             styleClass="ui-confirmdialog-yes" icon="ui-icon-check"  
+                                             update=":frmDetCobranza,:frmCobranza,:frmSerGen,msgsDelProc,:frmError:pnlDatosError,:fmrTblAlumno"
+                                             oncomplete="if(args.error){PF('popError').show();}else if(args.operacionCorrecta){PF('popDone').show();PF('popPersona').hide()}"/>
+                            <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                             icon="ui-icon-close" oncomplete="PF('popError').hide();"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <p:messages id="msgsDelProc" showDetail="false" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmErrorProg">
+                <p:dialog header="#{msgs.appTitulo}" width="600" showEffect="fade" hideEffect="explode" widgetVar="popErrorProg" resizable="false" modal="true">
+                    <h:panelGrid columns="1" styleClass="centrado">
+                        <h:panelGrid columns="2" id="pnlDatosErrorProg" > 
+                            <h:graphicImage value="/resources/images/icons/warning.png" style="padding-right: 20px"/> 
+                            <h:outputLabel value="#{msgs.etiquetaMsjProgReq} " /> 
+                        </h:panelGrid>
+                        <h:panelGrid columns="3" styleClass="centrado">  
+                            <p:commandButton oncomplete="PF('popErrorProg').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{pagoBancoMB.quitarUltimoConceptoProgramacion()}" 
+                                             oncomplete="PF('popErrorProg').hide();PF('popProgramacion').hide();" 
+                                             update=":frmCobranza,:frmDetCobranza,:frmSerGen,:fmrTblAlumno" 
+                                             value="#{msgs.etiquetaEliminarUltProgr}" >
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{pagoBancoMB.limpiarDocIngreso()}" value="#{msgs.botonNuevo}" 
+                                             update=":frmCobranza,:frmDetCobranza,:frmSerGen,:fmrTblAlumno" 
+                                             oncomplete="PF('popErrorProg').hide();PF('popProgramacion').hide();" 
+                                             >
+                            </p:commandButton>
+                        </h:panelGrid>
+                    </h:panelGrid> 
+                </p:dialog>
+            </h:form>
+            <h:form id="frmCupo">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popCupos" width="400" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="se acabaron los cupos... vuelva a intentarlo. "/>                     
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popCupos').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

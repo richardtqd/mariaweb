@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.RecuperacionBcoDAO">
+    
+    <resultMap id="recuperacionBcoResultado" type="pe.marista.sigma.bean.RecuperacionBcoBean">
+        <id property="uniNeg" column="uniNeg" />
+        <id property="idCtasXcobrar" column="idCtasXcobrar" />
+        <result property="codigo" column="codigo" />
+        <result property="nombre" column="nombre" />
+        <result property="fechaPago" column="fechaPago" />
+        <result property="fechaVenc" column="fechaVenc" />
+        <result property="mora" column="mora" />
+        <result property="montoPension" column="montoPension" /> 
+        <result property="idDocIngreso" column="idDocIngreso" /> 
+        <result property="codigoError" column="codigoError" />         
+        <result property="txt" column="txt" /> 
+        <result property="idTipoErrorBanco;" column="idTipoErrorBanco;" /> 
+        <result property="codigoError" column="codigoError" /> 
+        <result property="mesPension" column="mesPension" />  
+        <result property="NGS" column="NGS" />   
+        <result property="anio" column="anio" />   
+    </resultMap>
+     
+    <select id="obtenerCamposRecuperacion" resultMap="recuperacionBcoResultado" resultType="map"> 
+        declare @txt varchar(1000), @unineg varchar(6), @idprocesobanco int
+        set @unineg='champs'
+        set @idprocesobanco=1178
+        set @txt=#{txt}
+        <!-- se obtiene del txt
+        /*
+        select * from codigo('tipodefecto')
+        idcodigo	codigo	flgdefault
+        20404	Codigo Estudiante	
+        20407	Nombres de Estudiante
+        20403	Fecha de Pago 
+        20405	Fecha de Vencimiento
+        20401	Monto de mora	 
+        20402	Monto de Importe	  
+        */-->
+        declare 
+        @codigo varchar(20),<!--codigo del alumno-->
+        @nombre varchar(200),<!--nombre del alumno-->
+        @fechapago date, <!--fecha de pago-->
+        @fechavenc date, <!--fecha de venc. de la pension-->
+        @mora money,	<!--mora-->
+        @montopension money,	<!--monto de la pension-->
+        @idctasxcobrar int
+ 
+        set @codigo=(select SUBSTRING(@txt,posicionini,longitud) from MT_ProcesoFile where idfilepadre=@idprocesobanco and flgproceso=1 and idDefecto=20404)
+        set @nombre=(select SUBSTRING(@txt,posicionini,longitud) from MT_ProcesoFile where idfilepadre=@idprocesobanco and flgproceso=1 and idDefecto=20407)
+        set @fechapago=(select SUBSTRING(@txt,posicionini,longitud) from MT_ProcesoFile where idfilepadre=@idprocesobanco and flgproceso=1 and idDefecto=20403)
+        set @fechavenc=(select SUBSTRING(@txt,posicionini,longitud) from MT_ProcesoFile where idfilepadre=@idprocesobanco and flgproceso=1 and idDefecto=20405)
+        set @mora=(select SUBSTRING(@txt,posicionini,longitud) from MT_ProcesoFile where idfilepadre=@idprocesobanco and flgproceso=1 and idDefecto=20401)
+        set @montopension=(select SUBSTRING(@txt,posicionini,longitud) from MT_ProcesoFile where idfilepadre=@idprocesobanco and flgproceso=1 and idDefecto=20402)
+ 
+        set @idctasxcobrar = 
+        (select c.idctasxcobrar from MT_CtasxCobrar c 
+        inner join MX_Estudiante e on e.idestudiante=c.idestudiante and c.unineg=e.unineg
+        where e.codigo=ltrim(rtrim(@codigo)) and convert(date,c.fechavenc)=convert(date,@fechavenc) and c.unineg=@unineg )
+        
+        
+        declare @fechaPagoCta date,@montopensioncta money,@pagomesant int,@mesPens int,@anioPens int,@idctapensant int
+        set @fechaPagoCta = (case when @idctasxcobrar is not null then (select convert(date,ltrim(rtrim(@fechapago))) from MT_CtasxCobrar where idctasxcobrar=@idctasxcobrar) else null end) 
+        set @montopensioncta = (case when @idctasxcobrar is not null then (select  isnull(monto,0) - isnull(dsctobeca,0) from MT_CtasxCobrar where idctasxcobrar=@idctasxcobrar) else null end) 
+
+        set @mesPens = (case when @idctasxcobrar is not null then (select mes from MT_CtasxCobrar where idctasxcobrar=@idctasxcobrar) else null end) 
+        set @anioPens = (case when @idctasxcobrar is not null then (select anio from MT_CtasxCobrar where idctasxcobrar=@idctasxcobrar) else null end) 
+
+        set @idctapensant  = (case when @idctasxcobrar is not null then (select idctasxcobrar from MT_CtasxCobrar where mes=@mesPens and anio=@anioPens and idestudiante=(select idestudiante from MT_CtasxCobrar where idctasxcobrar=@idctasxcobrar)) else null end) 
+
+        <!--1:ya pagó, 0:no ha pagado-->
+        set @pagomesant  = (case when @idctasxcobrar is not null then (case when (select mes from MT_CtasxCobrar where idctasxcobrar=@idctapensant)!=2 then ((select (case when fechapago is not null then 1 else 0 end ) from MT_CtasxCobrar where idctasxcobrar=@idctapensant)) else 1 end ) else 9 end) 
+        
+        select
+        UPPER(@unineg) as uniNeg ,
+        convert(varchar(15),ltrim(rtrim(@codigo))) as codigo,
+        convert(varchar(150),ltrim(rtrim(@nombre))) as nombre,
+        convert(date,ltrim(rtrim(@fechapago))) as fechaPago,
+        convert(date,ltrim(rtrim(@fechavenc))) as fechaVenc,
+        convert(decimal(8,2),ltrim(rtrim(@mora))) as mora,
+        convert(decimal(8,2),ltrim(rtrim(@montopension))) as montoPension,
+        convert(int,@idctasxcobrar) as idCtasXcobrar,
+        
+        convert(date,ltrim(rtrim(@fechaPagoCta)))  as fechaPagoCta,
+        convert(decimal(8,2),ltrim(rtrim(@montopensioncta))) as montoPensionCta,
+        @mesPens as mesPens,
+        @idctapensant as  idCtaPensAnt,
+        @pagomesant as  pagoMesAnt
+    </select>  
+    <!-- PRO-BLOQUEOS -->
+    <select id="SP_obtenerCamposRecuperacion" resultMap="recuperacionBcoResultado" resultType="Object" parameterType="map" >
+        exec PROCESO_RECUPERACION2017
+        @txt = #{txt,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @unineg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN}
+        <!--,@idprocesobanco = #{idProcesoBanco,javaType=Integer,jdbcType=VARCHAR,mode=IN} -->
+    </select>
+     <select id="validarCabeceraRecepcion"  resultType="Integer" parameterType="map" >
+        select (case when count(*) <![CDATA[ > ]]> 0 then 1 else 0 end) as flg from MT_ProcesoFile  
+        where flgproceso=1 
+        and idfilepadre=(select TOP 1 idfile from MT_ProcesoFile where idfilepadre=0 and unineg=#{uniNeg}) 
+        and idtipofile=20001 and unineg=#{uniNeg}
+    </select>
+    <select id="validarPieRecepcion"  resultType="Integer" parameterType="map" >
+        select (case when count(*) <![CDATA[ > ]]> 0 then 1 else 0 end) as flg from MT_ProcesoFile  
+        where flgproceso=1 
+        and idfilepadre=(select TOP 1 idfile from MT_ProcesoFile where idfilepadre=0 and unineg=#{uniNeg}) 
+        and idtipofile=20004 and unineg=#{uniNeg}
+    </select>  
+   
+    <select id="SP_ActualizarCtaCte"  resultType="Object" parameterType="map" >
+        exec ACTUALIZAR_CTA_CTE2017
+        @idctasxcobrar = #{recuperacionBcoBean.idCtasXcobrar,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @iddocingreso=#{recuperacionBcoBean.idDocIngreso,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @codigo = #{recuperacionBcoBean.codigo,javaType=String,jdbcType=VARCHAR,mode=IN},        
+        @monto = #{recuperacionBcoBean.montoPension,javaType=Double,jdbcType=VARCHAR,mode=IN},        
+        @mora = #{recuperacionBcoBean.mora,javaType=Double,jdbcType=VARCHAR,mode=IN},        
+        @fechapago=#{recuperacionBcoBean.fechaPago,javaType=Date,jdbcType=VARCHAR,mode=IN},
+        @unineg = #{recuperacionBcoBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},        
+        @idprocesobanco = #{idProcesoBanco,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @usuario = #{usuario,javaType=String,jdbcType=VARCHAR,mode=IN}         
+    </select> 
+    <insert id="SP_insertarLogProcesoBanco" parameterType="map">
+        exec INSERT_LOG_PROCESOBANCO 
+        @unineg=#{recuperacionBcoBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},        
+        @idprocesobanco=#{idProcesoBanco,javaType=Integer,jdbcType=VARCHAR,mode=IN},
+        @txt=#{recuperacionBcoBean.txt,javaType=String,jdbcType=VARCHAR,mode=IN},        
+        @codigo=#{recuperacionBcoBean.codigo,javaType=String,jdbcType=VARCHAR,mode=IN},  
+        @nombre=#{recuperacionBcoBean.nombre,javaType=String,jdbcType=VARCHAR,mode=IN},  
+        @fechapago=#{recuperacionBcoBean.fechaPago,javaType=Date,jdbcType=VARCHAR,mode=IN},
+        @fechavenc=#{recuperacionBcoBean.fechaVenc,javaType=Date,jdbcType=VARCHAR,mode=IN},
+        @monto=#{recuperacionBcoBean.montoPension,javaType=Double,jdbcType=VARCHAR,mode=IN},    
+        @mora=#{recuperacionBcoBean.mora,javaType=Double,jdbcType=VARCHAR,mode=IN},    
+        @codigoerror=#{recuperacionBcoBean.idTipoErrorBanco,javaType=Integer,jdbcType=VARCHAR,mode=IN},    
+        @usuario=#{usuario,javaType=String,jdbcType=VARCHAR,mode=IN}, 
+        @idctasxcobrar=#{recuperacionBcoBean.idCtasXcobrar,javaType=Integer,jdbcType=VARCHAR,mode=IN}
+    </insert>
+    <select id="obtenerListaRecuperacionPorId"  resultMap="recuperacionBcoResultado" parameterType="map" >
+        SELECT   
+        det.[codigo] as codigo
+        ,det.[nombre] as nombre
+        ,det.[fechaVenc] as fechaVenc
+        ,det.[monto] as montoPension
+        ,det.[mora] as mora
+        ,det.[fechaPago]  fechaPago  
+        ,cod.codigo as codigoError
+        ,det.idCtasXcobrar as idCtasXcobrar
+        ,det.uniNeg as uniNeg
+        , (case 
+        when det.idctasxcobrar is not null 
+        THEN ( 
+        case when c.mes=2 then 'MATRÍCULA' 
+        when c.mes=3 then 'MARZO' 
+        when c.mes=4 then 'ABRIL' 
+        when c.mes=5 then 'MAYO' 
+        when c.mes=6 then 'JUNIO' 
+        when c.mes=7 then 'JULIO' 
+        when c.mes=8 then 'AGOSTO' 
+        when c.mes=9 then 'SEPTIEMBRE' 
+        when c.mes=10 then 'OCTUBRE'  
+        when c.mes=11 then 'NOVIEMBRE' 
+        when c.mes=12 then 'DICIEMBRE' 
+        ELSE ''
+        END  ) ELSE ''  END) as mesPension 
+        ,c.mes
+       
+        ,(case when det.idctasxcobrar is not null 
+        then (
+        (select top 1 CONCAT((CASE 
+        WHEN G.idgradoacademico IN (23,24,25) THEN 'I' 
+        WHEN G.idgradoacademico IN (1,2,3,4,5,6)THEN 'P'
+        WHEN G.idgradoacademico IN (7,8,9,10,11,12,13) THEN 'S'
+        ELSE '' END),
+        (CASE 
+        WHEN G.idgradoacademico = 23 THEN '3' 
+        WHEN G.idgradoacademico = 24 THEN '4'  
+        WHEN G.idgradoacademico = 25 THEN '5' 
+
+        WHEN G.idgradoacademico = 1 THEN '1' 
+        WHEN G.idgradoacademico = 2 THEN '2'  
+        WHEN G.idgradoacademico = 3 THEN '3' 
+        WHEN G.idgradoacademico = 4 THEN '4' 
+        WHEN G.idgradoacademico = 5 THEN '5'  													
+        WHEN G.idgradoacademico = 6 THEN '6' 
+
+        WHEN G.idgradoacademico = 7 THEN '1'  
+        WHEN G.idgradoacademico = 8 THEN '2' 
+        WHEN G.idgradoacademico = 9 THEN '3' 
+        WHEN G.idgradoacademico = 10 THEN '4'  
+        WHEN G.idgradoacademico = 11 THEN '5' 
+        WHEN G.idgradoacademico = 12 THEN '4' 
+        WHEN G.idgradoacademico = 13 THEN '5' 
+        ELSE ''
+
+        END),ISNULL(m.seccion,'')) from MX_Matricula m INNER JOIN MX_GradoAcademico G ON G.idgradoacademico=M.idgradoacademico where m.idestudiante=c.idestudiante and m.anio=c.anio and m.unineg=c.unineg)) else '' end) AS NGS
+        ,(case when det.idctasxcobrar is not null THEN ( convert(varchar(4),c.anio))  END) as anio 
+        
+        FROM  MT_DetProcesoBanco det
+        left join MT_ProcesoBanco pb on pb.idprocesobanco=det.idprocesobanco and det.unineg=pb.unineg
+        left join mo_codigo cod on cod.idcodigo=det.idtipoerrorbanco
+        left join mt_ctasxcobrar c on c.idCtasXcobrar=det.idCtasXcobrar and c.unineg=pb.unineg
+        where pb.idprocesobanco=#{idProcesoBanco} and det.unineg=#{uniNeg}  
+        order by det.idtipoerrorbanco desc,det.iddetprocesobanco
+    </select>
+</mapper>

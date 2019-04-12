@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.JefeUniOrgDAO">
+    
+    <sql id="consultaCampos">
+        select
+        juo.unineg as uniNeg
+        ,juo.iduniorg as idUniOrg
+        ,juo.idpersonal as idPersonal
+        ,pe.idpersonal as idPer
+        ,pe.codper as codPer
+        ,pe.apepat as apepat
+        ,pe.apemat as apemat
+        ,pe.nombre as nombre
+        ,concat(pe.apepat+' ',pe.apemat+', ',pe.nombre) as nombreCompleto
+        ,juo.idjefeuniorg as idJefeUniOrg
+        ,juo.idcargo	as idCargo
+        ,juo.fecini	as fecIni
+        ,juo.fecter	as fecTer
+        ,juo.status as status
+        ,juo.obs as obs
+        ,juo.creapor as creaPor
+        ,juo.creafecha as creaFecha
+        ,juo.modipor as modiPor
+        ,uo.iduniorg as idUO
+        ,uo.nombreUniOrg as nombreUniOrg 
+        ,uoPer.iduniorg as idUOPer
+        ,uoPer.nombreUniOrg as nombreUniOrgPer
+        ,car.idcargo	as idCar
+        ,car.nombre as nombreCargo 
+        FROM MO_JefeUniOrg juo
+        left Join  MO_Personal          pe  on juo.idPersonal = pe.idPersonal and juo.unineg=pe.unineg  
+        left Join  MO_UnidadOrganica    uo  on juo.idUniOrg = uo.idUniOrg 
+        left Join  MO_UnidadOrganica    uoPer  on uoPer.idUniOrg = pe.idUniOrg  
+        left Join  MO_Cargo             car on juo.idCargo = car.idCargo 
+       
+    </sql>
+    <resultMap id="jefeUniOrgResultado" type="pe.marista.sigma.bean.JefeUniOrgBean">
+        <id property="idJefeUniOrg" column="idJefeUniOrg" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg" /> 
+        <result property="fecIni" column="fecIni" />
+        <result property="fecTer" column="fecTer" />
+        <result property="status" column="status" />
+        <result property="obs" column="obs" /> 
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="creaPor" />
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/> 
+        <!--2 idUniOrg-->
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="uniOrgResultado"/> 
+        <!--3 uniNeg-->                
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="uniNegResultado"/> 
+        <!--4 idCargo-->
+        <association property="cargoBean" column="idCargo"
+                     javaType="pe.marista.sigma.bean.CargoBean"
+                     resultMap="cargoResultado"/>       
+    </resultMap> 
+    <!--1 idPersonal-->         
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPer"/>
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+        <result property="nombreCompleto" column="nombreCompleto" />
+        <!--2 idUniOrg-->
+        <association property="unidadOrganicaBean" column="idUOPer"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="uniOrgResultadoPer"/> 
+        <!--3 uniNeg-->  
+    </resultMap> 
+    <resultMap id="uniOrgResultadoPer" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUOPer"/>
+        <result property="nombreUniOrg" column="nombreUniOrgPer" />
+    </resultMap>
+    <!--2 idUniOrg-->
+    <resultMap id="uniOrgResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUO"/>
+        <result property="nombreUniOrg" column="nombreUniOrg" />
+    </resultMap>
+     
+    <!--3 uniNeg-->                
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+     
+    <!--4 idCargo-->
+    <resultMap id="cargoResultado" type="pe.marista.sigma.bean.CargoBean">
+        <id property="idCargo" column="idCar"/>
+        <result property="nombre" column="nombreCargo" /> 
+    </resultMap>
+     
+    <select id="obtenerJefeUniOrgPorUniNegPorEstado" resultMap="jefeUniOrgResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        where juo.unineg=#{uniNeg} 
+        <if test="status != null ">
+            and juo.status = #{status}
+        </if>
+        order by juo.idjefeuniorg desc
+    </select>
+    <select id="obtenerJefeUniOrgPorUniOrg" resultMap="jefeUniOrgResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        where juo.iduniorg=#{idUniOrg} and juo.unineg=#{uniNeg} 
+        order by juo.idjefeuniorg desc
+    </select>
+    <select id="obtenerIdUniOrgPorNombre" resultMap="jefeUniOrgResultado" parameterType="map">
+        <include refid="consultaCampos" />
+        where uo.nombreUniOrg like concat('%',#{uniOrg},'%')  and juo.unineg=#{uniNeg}  and   juo.status = 1
+    </select>
+    <select id="obtenerJefeUniOrgPorId" resultMap="jefeUniOrgResultado" parameterType="pe.marista.sigma.bean.JefeUniOrgBean">
+        <include refid="consultaCampos" />
+        where juo.idjefeuniorg=#{idJefeUniOrg} and juo.unineg=#{unidadNegocioBean.uniNeg}
+        order by juo.idjefeuniorg desc
+    </select> 
+    <insert id="insertarJefeUniOrg" parameterType="pe.marista.sigma.bean.JefeUniOrgBean">
+        INSERT INTO  MO_JefeUniOrg
+        (unineg, iduniorg, idpersonal,
+        idcargo,
+        fecini, fecter, status, creapor, creafecha, obs) 
+        Values 
+        (#{unidadNegocioBean.uniNeg}, #{unidadOrganicaBean.idUniOrg},#{personalBean.idPersonal},
+        
+        #{cargoBean.idCargo},
+        #{fecIni},#{fecTer},#{status},#{creaPor},getDate(),#{obs})
+    </insert>                                                                                                       
+     
+    <update id="modificarJefeUniOrg" parameterType="pe.marista.sigma.bean.JefeUniOrgBean">
+        Update MO_JefeUniOrg
+        set 
+        iduniorg=#{unidadOrganicaBean.idUniOrg},
+        idpersonal=#{personalBean.idPersonal},
+        idcargo=#{cargoBean.idCargo},
+        fecini=#{fecIni},
+        fecter=#{fecTer}, 
+        status=#{status},
+        obs=#{obs},
+        modipor=#{modiPor}
+        where unineg=#{unidadNegocioBean.uniNeg} and idjefeuniorg=#{idJefeUniOrg} 
+    </update>
+     
+    <delete id="eliminarJefeUniOrg" parameterType="pe.marista.sigma.bean.JefeUniOrgBean">
+        Delete from  MO_JefeUniOrg 
+        where unineg=#{unidadNegocioBean.uniNeg} and idjefeuniorg=#{idJefeUniOrg} 
+    </delete> 
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.JefeUniOrgBean">
+        Update MO_JefeUniOrg
+        set  
+        status=#{status}, 
+        modipor=#{modiPor}
+        where unineg=#{unidadNegocioBean.uniNeg} and idjefeuniorg=#{idJefeUniOrg} 
+    </update>
+    <update id="cambiarEstadoAllInactivo" parameterType="map">
+        Update MO_JefeUniOrg
+        set  
+        status=0,
+        modipor=#{modiPor}
+        where unineg=#{uniNeg} and idJeFeUniOrg=#{idJeFeUniOrg}  
+    </update>
+     
+</mapper>

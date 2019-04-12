@@ -1,0 +1,183 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core"> 
+    <ui:define name="content">
+        <h:body onload="#{legajoMB.cargarDatos()}">
+            <div style="text-align: center;height: 750px"> 
+                <h:panelGrid styleClass="centrado" style="display: inline-block;" columns="4">
+                    <h:form id="frmDatosLegajo">         
+                        <h:panelGrid styleClass="centrado" style="display: inline-block;" columns="4">
+                            <h:panelGrid styleClass="centrado" id="pnlTablaLegajo" >
+                                <p:dataTable id="tblLegajo"  value="#{legajoMB.listaPersonalPorUniNegBean}" widgetVar="tblLegajo" 
+                                             paginator="true"
+                                             paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                             selectionMode="single"
+                                             paginatorPosition="bottom" rowIndexVar="n"
+                                             selection="#{legajoMB.personalBean}"
+                                             var="legajo"  rowKey="#{legajo}"
+                                             rows="20" 
+                                             rendered="#{not empty legajoMB.listaPersonalPorUniNegBean}" 
+                                             style="width: 600px;font-size: 0.8em">                          
+                                    <p:ajax event="rowSelect" listener="#{legajoMB.rowSelectPlanillaCentro}" update=":cr"  /> 
+                                    <p:column  headerText="#{msgs.numero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable2 centrado-texto">
+                                        <center>
+                                            <h:outputText value="#{n+1}" />
+                                        </center>
+                                    </p:column>
+                                    <p:column filterBy="#{legajo.codPer}" class="nombre0Filtro" filterMatchMode="exact" width="6%" >
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.etiquetaCodigo}" style="font-size: 0.8em"/>  
+                                        </f:facet>
+                                        <center><h:outputText value="#{legajo.codPer}" style="font-size: 0.8em"/></center> 
+                                    </p:column>
+                                    <p:column filterBy="#{legajo.nombreCompleto}" class="nombre13Filtro" filterMatchMode="contains" width="25%">
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.etiquetaNombreCompleto}" style="font-size: 0.8em"/> 
+                                        </f:facet>
+                                        <h:outputText value="#{legajo.nombreCompleto}" style="font-size: 0.75em" />
+                                    </p:column> 
+                                    <p:column filterBy="#{legajo.tipoNivelInsBean.idCodigo}"  headerText="#{msgs.etiquetaTipoNivelPlanilla}" filterMatchMode="exact" width="15%" >
+                                        <f:facet name="filter">
+                                            <p:selectOneMenu id="cmboUniOrg" onchange="PF('tblLegajo').filter()" style="width: 125px"  >
+                                                <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                <f:selectItems value="#{legajoMB.listaNivelIns}" var="UNUO" itemLabel="#{UNUO.codigo}" itemValue="#{UNUO.idCodigo}"/> 
+                                            </p:selectOneMenu>
+                                        </f:facet> 
+                                        <h:outputText value="#{legajo.tipoNivelInsBean.codigo}"/>
+                                    </p:column>
+
+                                </p:dataTable>
+                                <p:growl id="growlFiltro" showDetail="false" life="5000" />
+                            </h:panelGrid> 
+                        </h:panelGrid>
+                    </h:form>
+                    <h:form id="cr">
+                        <h:panelGrid id="panelcr">
+                            <p:fieldset legend="#{msgs.etiquetaOtros}" style="margin-bottom:1px;width: 600px" toggleable="true" toggleSpeed="500" collapsed="false">
+                                <h:panelGrid columns="3" cellspacing="0">
+                                    <h:outputLabel value="#{msgs.etiquetaPersonal}: " styleClass="negrita"/>
+                                    <h:outputText value="" styleClass="requerido"/>
+                                    <p:inputText value="#{legajoMB.personalBean.idPersonal}" readonly="true" size="2" maxlength="100"
+                                                 required="true" style="background-color: #f5f5f5" /> 
+                                    <h:outputLabel value="#{msgs.etiquetaNombreCompleto}: " styleClass="negrita"/>
+                                    <h:outputText value="" styleClass="requerido"/>
+                                    <p:inputText value="#{legajoMB.personalBean.nombreCompleto}" readonly="true" size="40" maxlength="100"
+                                                 required="true" style="background-color: #f5f5f5" /> 
+                                    <h:outputLabel value="#{msgs.etiquetaCodigoPersonal}: " styleClass="negrita"/>
+                                    <h:outputText value="" styleClass="requerido"/>
+                                    <p:inputText value="#{legajoMB.personalBean.codPer}"  size="8" maxlength="11"
+                                                 required="false"   />  
+                                    <h:outputLabel value="#{msgs.etiquetaEstado}: " class="negrita" />
+                                    <h:outputText value=" " class="requerido"/>
+                                    <p:inputSwitch value="#{legajoMB.personalBean.statusVista}" onLabel="#{msgs.etiquetaActivo}" offLabel="#{msgs.etiquetaBaja}" >
+                                        <p:ajax event="change" listener="#{legajoMB.obtenerGrabar()}" update="cr:boton2,cr:boton,cr:centros,msg"/>
+                                    </p:inputSwitch> 
+                                </h:panelGrid>
+                                <h:panelGrid  id="centros"  cellpadding="1" columns="1" style="font-size: 1em"  >
+                                    <h:panelGrid rendered="#{legajoMB.flgGrabarStatus!=true}" columns="7">
+                                        <h:outputLabel value="#{msgs.etiquetaCR1}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:selectOneMenu id="advancedCr1"  panelStyle="width:200px" value="#{legajoMB.personalBean.cr1.cr}" class="resetSelect"  label="#{msgs.etiquetaCR1}"
+                                                         effect="fade" style="width:250px" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <f:selectItem itemLabel="#{msgs.comboSinCR}" itemValue="#{null}" noSelectionOption="true" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                            <f:selectItems value="#{legajoMB.listaCR1}" var="cr1" itemLabel="#{cr1.cr} - #{cr1.nombre}" itemValue="#{cr1.cr}" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:selectOneMenu>
+                                        <br></br>
+                                        <h:outputLabel value="#{msgs.etiquetaPorcCr1}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}" />
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:inputText  value="#{legajoMB.personalBean.cr1Porc}" label="#{msgs.etiquetaPorcentaje}" size="2" maxlength="11" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <p:ajax event="change" listener="#{legajoMB.sumaPorcentaje()}" update="suma,msg,cr:boton" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:inputText>
+                                        <h:outputLabel value="#{msgs.etiquetaCR2}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}" />
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:selectOneMenu id="advancedCr2"  panelStyle="width:305px" value="#{legajoMB.personalBean.cr2.cr}" class="resetSelect"  label="#{msgs.etiquetaCR2}"
+                                                         effect="fade" style="width:250px" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <f:selectItem itemLabel="#{msgs.comboSinCR}" itemValue="#{null}" noSelectionOption="true" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                            <f:selectItems value="#{legajoMB.listaCR2}" var="cr2" itemLabel="#{cr2.cr} - #{cr2.nombre}" itemValue="#{cr2.cr}" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:selectOneMenu>
+                                        <br></br>
+                                        <h:outputLabel value="#{msgs.etiquetaPorcCr2}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/> 
+                                        <p:inputText  value="#{legajoMB.personalBean.cr2Porc}" label="#{msgs.etiquetaPorcentaje}" size="2" maxlength="11" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <p:ajax event="change" listener="#{legajoMB.sumaPorcentaje()}" update="suma,msg,cr:boton" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:inputText>
+                                        <h:outputLabel value="#{msgs.etiquetaCR3}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:selectOneMenu id="advancedCr3"  panelStyle="width:305px" value="#{legajoMB.personalBean.cr3.cr}" class="resetSelect"  label="#{msgs.etiquetaCR3}"
+                                                         effect="fade" style="width:250px" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <f:selectItem itemLabel="#{msgs.comboSinCR}" itemValue="#{null}" noSelectionOption="true" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                            <f:selectItems value="#{legajoMB.listaCR3}" var="cr3" itemLabel="#{cr3.cr} - #{cr3.nombre}" itemValue="#{cr3.cr}" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:selectOneMenu>
+                                        <br></br>
+                                        <h:outputLabel value="#{msgs.etiquetaPorcCr3}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:inputText  value="#{legajoMB.personalBean.cr3Porc}" label="#{msgs.etiquetaPorcentaje}" size="2" maxlength="11" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <p:ajax event="change" listener="#{legajoMB.sumaPorcentaje()}" update="suma,msg,cr:boton" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:inputText>  
+                                        <h:outputLabel value="#{msgs.etiquetaCR4}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:selectOneMenu id="advancedCr4"  panelStyle="width:305px" value="#{legajoMB.personalBean.cr4.cr}" class="resetSelect"  label="#{msgs.etiquetaCR4}"
+                                                         effect="fade" style="width:250px" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <f:selectItem itemLabel="#{msgs.comboSinCR}" itemValue="#{null}" noSelectionOption="true" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                            <f:selectItems value="#{legajoMB.listaCR4}" var="cr4" itemLabel="#{cr4.cr} - #{cr4.nombre}" itemValue="#{cr4.cr}" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:selectOneMenu> 
+                                        <br></br>
+                                        <h:outputLabel value="#{msgs.etiquetaPorcCr4}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:inputText  value="#{legajoMB.personalBean.cr4Porc}" label="#{msgs.etiquetaPorcentaje}" size="2" maxlength="11" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <p:ajax event="change" listener="#{legajoMB.sumaPorcentaje()}" update="suma,msg,cr:boton" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:inputText> 
+                                        <h:outputLabel value="#{msgs.etiquetaCR5}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:selectOneMenu id="advancedCr5"  panelStyle="width:305px" value="#{legajoMB.personalBean.cr5.cr}" class="resetSelect"  label="#{msgs.etiquetaCR4}"
+                                                         effect="fade" style="width:250px" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <f:selectItem itemLabel="#{msgs.comboSinCR}" itemValue="#{null}" noSelectionOption="true" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                            <f:selectItems value="#{legajoMB.listaCR5}" var="cr5" itemLabel="#{cr5.cr} - #{cr5.nombre}" itemValue="#{cr5.cr}" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:selectOneMenu> 
+                                        <br></br>
+                                        <h:outputLabel value="#{msgs.etiquetaPorcCr5}: " class="negrita" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:inputText  value="#{legajoMB.personalBean.cr5Porc}" label="#{msgs.etiquetaPorcentaje}" size="2" maxlength="11" rendered="#{legajoMB.flgGrabarStatus!=true}">
+                                            <p:ajax event="change" listener="#{legajoMB.sumaPorcentaje()}" update="suma,msg,cr:boton" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        </p:inputText>  
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="7"> 
+                                        <h:outputLabel value="#{msgs.etiquetaTipoNivelPlanilla}: " class="negrita" />
+                                        <h:outputText value="" class="requerido"/>
+                                        <p:selectOneMenu effect="fold" value="#{legajoMB.personalBean.tipoNivelInsBean.idCodigo}" style="width:265px" panelStyle="width:225px">
+                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true" />
+                                            <f:selectItems value="#{legajoMB.listaNivelIns}" var="codigo" itemLabel="#{codigo.codigo}" itemValue="#{codigo.idCodigo}"/>
+                                        </p:selectOneMenu> 
+                                        <br></br> 
+                                        <h:outputLabel value="#{msgs.etiquetaTotal}: " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}" />
+                                        <h:outputText value=" " class="requerido" rendered="#{legajoMB.flgGrabarStatus!=true}"/>
+                                        <p:inputText  id="suma" value="#{legajoMB.sumaPorcentaje}" label="#{msgs.etiquetaTotal}" size="2" maxlength="11" rendered="#{legajoMB.flgGrabarStatus!=true}" readonly="true" /> 
+                                    </h:panelGrid>
+                                </h:panelGrid>
+                                <h:panelGrid class="centrado"  id="boton">
+                                    <p:commandButton actionListener="#{legajoMB.guardarPlanillaCentros(legajoMB.personalBean.idPersonal)}" rendered="#{legajoMB.flgGrabar==true}"
+                                                     oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"  update="msg,:frmDatosLegajo:pnlTablaLegajo" 
+                                                     value="#{msgs.botonGrabar}">
+                                    </p:commandButton>  
+                                </h:panelGrid>
+                                <h:panelGrid class="centrado"  id="boton2">
+                                    <p:commandButton actionListener="#{legajoMB.guardarPlanillaCentros(legajoMB.personalBean.idPersonal)}" rendered="#{legajoMB.flgGrabarStatus==true}"
+                                                     oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"  update="msg,:frmDatosLegajo:pnlTablaLegajo"   
+                                                     value="#{msgs.botonGrabar}">
+                                    </p:commandButton>  
+                                </h:panelGrid>  
+                                <p:messages autoUpdate="false" id="msg" style="width:305px"/>  
+                            </p:fieldset>   
+                        </h:panelGrid>
+                    </h:form> 
+                </h:panelGrid>
+            </div>   
+        </h:body> 
+    </ui:define>
+</ui:composition>

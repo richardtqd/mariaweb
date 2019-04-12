@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>  
+            <h:form id="frmAnios" >
+                <h:panelGrid columns="1" style="margin: 0 auto;" >
+                    <p:panel id="toggleable" header="#{msgs.etiquetaFiltro} #{msgs.etiquetaPresu} #{msgs.etiquetaUniOrg}" toggleable="true" toggleSpeed="500" closeSpeed="500" widgetVar="panel" style="margin-bottom:20px;width: 400px;">
+                        <h:panelGrid columns="4" >
+                            <p:outputLabel value="#{msgs.etiquetaAnio}:"/> 
+                            <p:spinner id="minMax" value="#{presupuestoUniOrgMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaPeriodo}" size="1">
+                            </p:spinner> 
+                        </h:panelGrid>
+                        <p:messages id="msg" showDetail="true" closable="true" />
+                    </p:panel>
+                    <h:panelGrid styleClass="centrado" id="pnlTablaJefeUO" >
+                        <p:dataTable id="tblUniOrg" value="#{presupuestoUniOrgMB.listaUnidadOrganicaPorUniNeg}" widgetVar="tblUniOrgs"
+                                     paginator="true"  scrollable="true" 
+                                     paginatorPosition="bottom"
+                                     var="uniOrg" rowKey="#{uniOrg}" rows="15" 
+                                     rendered="#{not empty presupuestoUniOrgMB.listaUnidadOrganicaPorUniNeg}" 
+                                     style="width: 400px; overflow-x: auto;font-size:14px !important;"  >
+                            <p:column filterBy="#{uniOrg.unidadOrganicaBean.nombreUniOrg}" sortBy="#{uniOrg.unidadOrganicaBean.nombreUniOrg}" headerText="#{msgs.etiquetaUniOrg}" filterMatchMode="contains" width="50%" styleClass="nombre2Filtro siseFontTable4">
+                                <h:outputText value="#{uniOrg.unidadOrganicaBean.nombreUniOrg}"/>
+                            </p:column> 
+                            <p:column class="centrado" filterMatchMode="contains" width="10%" styleClass="siseFont1">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaSelAbb}"/><br/>
+                                    <p:selectBooleanCheckbox value="#{presupuestoUniOrgMB.valSelTodos}">
+                                        <p:ajax event="change" listener="#{presupuestoUniOrgMB.cambiarSelecTodos}" update=":frmAnios:pnlTablaJefeUO"/>
+                                    </p:selectBooleanCheckbox>
+                                </f:facet>
+                                <center>
+                                    <p:selectBooleanCheckbox value="#{uniOrg.flgSeleccionar}"/>
+                                </center>
+                            </p:column> 
+                        </p:dataTable>
+                        <p:messages id="growlFiltro" showDetail="false"   />
+                    </h:panelGrid>
+                    <h:panelGroup  >
+                        <div align="center"> 
+                            <h:commandLink action="#{presupuestoUniOrgMB.validar()}" target="_blank" id="imprimir">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                            <p:tooltip id="toolTip" for="imprimir" value="#{msgs.tooltipImpr}" />
+                        </div>
+                    </h:panelGroup>  
+                    <h:panelGroup  >
+                        <div align="center"> 
+                            <h:commandLink action="#{presupuestoUniOrgMB.validar2()}" target="_blank" id="imprimir2">
+                                <h:graphicImage value="/resources/images/icons/docx1.png" />
+                            </h:commandLink>
+                            <p:tooltip id="toolTip2" for="imprimir2" value="#{msgs.tooltipImpr}" />
+                        </div>
+                    </h:panelGroup>  
+                </h:panelGrid>
+            </h:form> 
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popDone').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmStatus">
+                <p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()" />
+                <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+                    <h:graphicImage value="/resources/images/ajaxloader.gif"/>
+                </p:dialog>
+            </h:form> 
+
+            <p:dialog id="popResponse" widgetVar="popResponse" width="400" height="150" showEffect="fade" hideEffect="explode"
+                      modal="true" >
+                <h:form>
+                    <h:graphicImage value="/resources/images/icons/warning.png" />
+                    <h:outputText value="#{msgs.notificacionPresupuestoUo}" style="text-align: right;"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popResponse').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </h:form>
+            </p:dialog>
+            <script type="text/javascript">
+                function pieExtender() {
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltipLocation: 'n',
+                        useAxesFormatters: false,
+                        formatString: '%s = %d'
+                    };
+                }
+            </script>
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+

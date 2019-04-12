@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+<mapper namespace="pe.marista.sigma.dao.DetRegistroCompraDAO">   
+    <sql id="consultaCampos">
+        SELECT detreg.unineg as idUniNeg
+        ,detreg.idRegistroCompra
+        ,detreg.idDetRegistroCompra
+        ,detreg.anio
+        ,detreg.ruc 
+        ,detreg.idOrdenCompra
+        ,detreg.idDetordenCompra
+        ,detreg.cantidad
+        ,detreg.precio
+        ,detreg.importe
+        ,detreg.idTipoInventario
+        ,detreg.cuentad
+        ,detreg.cuentah 
+        ,detreg.cantidadRecibida 
+        ,detreg.descripcion
+        ,detreg.creapor
+        ,detreg.creafecha
+        ,detreg.modipor
+        ,detreg.modiver 
+        ,uni.nombreUniNeg
+        ,uni.uniNeg 
+        ,reg.glosa   AS glosaRC
+        ,reg.idRegistroCompra as regCompra
+        ,reg.anio as anioCompra
+        ,reg.fechaemision
+        ,deto.cantidad as cantidadDetOrden
+        ,deto.importe as importeDetOrden
+        ,doc.codigo as documento
+        ,moneda.codigo as moneda,
+        (case when ca.idcatalogo is not null then ca.idcatalogo else cb.idcatalogo end) as catalogo,
+        (case when ca.idcatalogo is not null then upper(ca.item) else upper(isnull(cb.item,'')) end) as item
+        ,ord.idordencompra as ordenCompra
+        ,ord.fechaorden
+        ,ord.idtipocategoria
+        ,cat.codigo as categoria
+        ,deto.iddetordencompra as detalleOrden
+        ,en.nombre as nombreENT
+        ,re.idRequerimiento ,
+        (case when care.idcatalogo is not null then care.idcatalogo else cb.idcatalogo end) as idCatalogo,
+        (case when care.idcatalogo is not null then upper(care.item) else upper(isnull(cb.item,'')) end) as item
+        ,ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as distritoUnidad,
+        pais.nombre as paisUnidad
+        ,factre.idfacturacompra
+        ,factre.seriedoc as SerieRE 
+        ,factre.nrodoc as nroRE
+        ,factre.valorDetraccion
+        ,factre.obsVenc
+        ,factre.uniNeg as uniNegRE
+        ,factre.montopago as montoPagoRE
+        ,factre.importe as importeFact
+        ,factre.valordetraccion as valorDetraccionFac
+        ,concat(factre.seriedoc+'-',factre.nrodoc) as serieNroDoc
+        ,(detreg.importe*detreg.cantidadrecibida)   as montoCadaUnoMate  
+        ,(SELECT
+        SUM(FACT.montopago)
+        FROM ML_FacturaCompra FACT WHERE FACT.uniNeg=DETR.uniNeg) AS montoGeneralRegistro
+        ,detR.cuentad as cuentaDebeSoli
+        ,detR.cuentah as cuentaHaberSoli
+        ,detR.idconcepto as idConceptoReq 
+        ,co.idconcepto as idConcep,
+        co.nombre as nombreConcepto,
+        catD.idTipoConcepto,
+        co.cuentad as cuentad1,
+        plnD.nombre as nombreCuentaD,
+        co.cuentah as cuentah1,
+        plnH.nombre as nombreCuentaH
+        ,factre.igv
+        ,(factre.importe *factre.igv)/100 as igvResultado,
+        (((factre.importe+((factre.importe *factre.igv)/100))*factre.valordetraccion)/100) as detraccion,
+	comed.idcodigo as idUnidadMedida,
+	comed.codigo as unidadMedida,
+        reg.obsVenc as obsVenc
+	,(SELECT
+	SUM(FACT.montopago)
+        FROM ML_FacturaCompra FACT WHERE FACT.uniNeg=DETR.uniNeg and FACT.idfacturacompra=detreg.idfacturacompra) AS montoGeneralRegistro
+        FROM ML_DetRegistroCompra detreg
+        left join ML_FacturaCompra factre on factre.idfacturacompra = detreg.idfacturacompra  and factre.uniNeg=detreg.uniNeg
+        left join MO_UnidadNegocio uni on detreg.unineg = uni.unineg
+        left join MO_Entidad ent on uni.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        left join ML_RegistroCompra reg on detreg.idRegistroCompra = reg.idRegistroCompra and reg.uniNeg=detreg.uniNeg
+        left join MO_Codigo doc on reg.idtipodoc = doc.idcodigo
+        left join MO_Codigo moneda on factre.idtipomoneda = moneda.idcodigo
+        left join ML_Catalogo ca on detreg.idcatalogo = ca.idcatalogo
+        left join ML_OrdenCompra ord on detreg.idordencompra = ord.idordencompra and ord.uniNeg=detreg.uniNeg
+        left join MO_Codigo cat on ord.idtipocategoria = cat.idcodigo
+        left join ML_DetOrdenCompra deto on detreg.iddetordencompra = deto.iddetordencompra and detreg.uniNeg=detreg.uniNeg
+        left join ML_Requerimiento re on re.idrequerimiento = deto.idrequerimiento and re.uniNeg=detreg.uniNeg
+        LEFT JOIN ML_Catalogo care on care.idcatalogo = deto.idcatalogo  
+	LEFT JOIN ML_CatalogoBlock cb on cb.idcatalogo = deto.idcatalogo  
+        left join MO_Entidad en on detreg.ruc = en.ruc
+        left join ML_DetRequerimiento detR on detR.iddetrequerimiento = deto.iddetrequerimiento and detR.uniNeg=detreg.uniNeg
+        left join ML_Requerimiento d on d.idrequerimiento = detR.idrequerimiento and D.uniNeg=detreg.uniNeg
+        left join MO_UnidadNegocio uniDet on detR.unineg = uniDet.unineg
+        left join MT_ConceptoUniNeg unic on unic.idconcepto = detR.idconcepto and unic.uniNeg=detreg.uniNeg
+        left join MT_Concepto co on unic.idconcepto = co.idconcepto  
+        Left Join MT_TipoConcepto catD ON co.idTipoConcepto = catD.idTipoConcepto  
+        Left Join MT_PlanContable plnD ON co.cuentad = plnD.cuenta  
+        Left Join MT_PlanContable plnH ON co.cuentah = plnH.cuenta 
+	left join MO_Codigo comed on comed.idcodigo = detreg.idtipounimed    
+    </sql>
+    
+    <resultMap id="detRegistroResultado" type="pe.marista.sigma.bean.DetRegistroCompraBean">
+        <id property="idDetRegistroCompra" column="idDetRegistroCompra"/>
+        <result property="anio" column="anio"/>
+        <result property="cantidad" column="cantidad"/>
+        <result property="precio" column="precio"/>
+        <result property="sumaFact" column="sumaFact"/>
+        <result property="importe" column="importe"/>
+        <result property="cantidadRecibida" column="cantidadRecibida"/>
+        <result property="descripcion" column="descripcion"/> 
+        <result property="montoCadaUnoMate" column="montoCadaUnoMate"/>
+         <result property="montoCadaUno" column="montoCadaUno"/>
+        <result property="montoTotalDocE" column="montoTotalDocE"/>
+        <result property="docRef" column="docRef"/>
+        <result property="creaPor" column="creaPor"/> 
+        <result property="creaFecha" column="creaFecha"/>     
+        <result property="modiPor" column="modiPor"/>
+        <association property="unidadNegocioBean" column="idUniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="registroCompraBean" column="idRegistroCompra"
+                     javaType="pe.marista.sigma.bean.RegistroCompraBean"
+                     resultMap="registroResultado"/>
+        <association property="catalogoBean" column="idcatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultado"/>
+        <association property="ordenCompraBean" column="idOrdenCompra"
+                     javaType="pe.marista.sigma.bean.OrdenCompraBean"
+                     resultMap="ordenResultado"/>
+        <association property="ordenCompraDetalleBean" column="idDetOrdenCompra"
+                     javaType="pe.marista.sigma.bean.OrdenCompraDetalleBean"
+                     resultMap="ordenDetalleResultado"/>
+        <association property="tipoUniMedBean" column="idUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoUniMedResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/> 
+        <association property="facturaCompraBean" column="idFacturaCompra"
+                     javaType="pe.marista.sigma.bean.FacturaCompraBean"
+                     resultMap="facturaCompraResultado"/> 
+        <association property="planContableCuentaDSoliBean" column="cuentad1"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultadoSoliC"/>
+        <association property="planContableCuentaHSoliBean" column="cuentah1"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultadoSoliC"/>
+         <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoReResultado"/>
+    </resultMap>
+    <resultMap id="planContableDResultadoSoliC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentad1"/>
+        <result property="nombre" column="nombreCuentaD1"/>
+    </resultMap>
+    <resultMap id="planContableHResultadoSoliC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentah1"/>
+        <result property="nombre" column="nombreCuentaH1"/>
+    </resultMap>
+     <resultMap id="conceptoReResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcep"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/> 
+     </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNIResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucUnidad"/>
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultado"/>
+    </resultMap>
+    <resultMap id="distritoUNIDADENTResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distritoUnidad"/>
+    </resultMap>    
+    <resultMap id="paisUNIDADENTResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>
+    <resultMap id="registroResultado" type="pe.marista.sigma.bean.RegistroCompraBean">
+        <id property="idRegistroCompra" column="regCompra"/>
+        <result property="anio" column="anioCompra"/>
+        <result property="glosa" column="glosaRC"/>
+        <result property="obsVenc" column="obsVenc"/>
+        <result property="montoGeneralRegistro" column="montoGeneralRegistro"/>
+        <association property="tipoDocBean" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"    
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoMonedaResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadRegistroResultado"/>
+    </resultMap>
+    <resultMap id="entidadRegistroResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombreENT"/>
+    </resultMap>
+    <resultMap id="tipoDocResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDoc"/>
+        <result property="codigo" column="documento"/>
+    </resultMap>
+    <resultMap id="tipoMonedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="moneda"/>
+    </resultMap>
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="catalogo"/>
+        <result property="item" column="item"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="precioRef" column="importe"/>
+        <association property="tipoUnidadMedidaBean" column="idUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="unidadMedResultado"/>
+    </resultMap>
+    <resultMap id="unidadMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idUnidadMedida"/>
+        <result property="codigo" column="unidadMedida"/>
+    </resultMap>
+    <resultMap id="ordenResultado" type="pe.marista.sigma.bean.OrdenCompraBean">
+        <id property="idOrdenCompra" column="ordenCompra"/>
+        <result property="fechaOrden" column="fechaOrden"/>
+        <result property="montoCadaUnoMate" column="montoCadaUnoMate"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaResultado"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="categoria"/>
+    </resultMap>
+    <resultMap id="ordenDetalleResultado" type="pe.marista.sigma.bean.OrdenCompraDetalleBean">
+        <id property="idDetOrdenCompra" column="detalleOrden"/>
+        <result property="cantidad" column="cantidadDetOrden"/>
+        <result property="importe" column="importeDetOrden"/>
+        <result property="importe" column="importeDetOrden"/> 
+        <association property="solicitudLogisticoBean" column="idRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solResultado"/>
+        <association property="catalogoBean" column="idcatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoORResultado"/>
+        <association property="solicitudLogDetalleBean" column="idDetRequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogDetalleBean"
+                     resultMap="solicitudDetResultado"/>
+    </resultMap>
+    <resultMap id="solResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/>
+    </resultMap>
+    <resultMap id="solicitudDetResultado" type="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        <id property="idDetRequerimiento" column="idDetRequerimiento"/>
+        <association property="solicitudLogisticoBean" column="idrequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solDetResultado"/>
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniNegBeanResultado"/>
+    </resultMap>
+    <resultMap id="solDetResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <id property="idRequerimiento" column="idRequerimiento"/> 
+    </resultMap> 
+    <resultMap id="conceptoUniNegBeanResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean">
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioDETResultado"/>
+     <!--   <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>   -->
+    </resultMap>
+ 
+    <resultMap id="unidadNegocioDETResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>   
+    <!--<resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcep"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <result property="descrip" column="descrip"/>
+        <association property="planContableCuentaDBean" column="cuentad1"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultadoC"/>
+        <association property="planContableCuentaHBean" column="cuentah1"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultadoC"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultadoC"/>
+    </resultMap>
+    <resultMap id="planContableDResultadoC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentad"/>
+        <result property="nombre" column="nombreCuentaD"/>
+    </resultMap>
+    <resultMap id="planContableHResultadoC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentah"/>
+        <result property="nombre" column="nombreCuentaH"/>
+    </resultMap>
+  
+    <resultMap id="tipoConceptoResultadoC" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+    </resultMap>
+    -->
+    <resultMap id="catalogoORResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="precioRef" column="importe"/>
+    </resultMap>
+    <resultMap id="tipoUniMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idUnidadMedida"/>
+        <result property="codigo" column="unidadMedida"/>
+    </resultMap>
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="ruc"/>
+        <result property="nombre" column="nombre"/>
+    </resultMap>
+    
+    <resultMap id="facturaCompraResultado" type="pe.marista.sigma.bean.FacturaCompraBean">
+        <id property="idFacturaCompra" column="idFacturaCompra"/>
+        <result property="serieDoc" column="serieRE"/>
+        <result property="nroDoc" column="nroRE"/>
+        <result property="serieNroDoc" column="serieNroDoc"/>
+        <result property="importe" column="importeFact"/>
+        <result property="igv" column="igv"/>  
+        <result property="igvResultado" column="igvResultado"/>  
+        <result property="detraccion" column="detraccion"/>  
+        <result property="valorDetraccion" column="valorDetraccion"/>
+        <result property="montoPago" column="montoPagoRE"/> 
+        <result property="fechProg" column="fechProg"/>
+        <result property="obsVenc" column="obsVenc"/> 
+        <result property="valorDetraccion" column="valorDetraccionFac"/> 
+        <association property="unidadNegocioBean" column="uniNegRE"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultadoFact"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultadoFact" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegRE"/> 
+    </resultMap>
+    
+    <select id="obtenerUltimo" resultMap="detRegistroResultado" parameterType="map" >
+        select isnull((max(idRegistroCompra)),0) from ML_DetRegistroCompra re
+        WHERE re.idRegistroCompra = #{idRegistroCompra} and re.uniNeg = #{uniNeg}  
+    </select> 
+    <select id="obtenerPorRegistro" resultMap="detRegistroResultado" parameterType="map">
+        <include refid="consultaCampos" />where detreg.idRegistrocompra = #{idRegistroCompra} and detreg.uniNeg = #{uniNeg} 
+    </select>
+    <select id="obtenerTodos" resultMap="detRegistroResultado" parameterType="String">
+        <include refid="consultaCampos" />where detreg.uniNeg = #{unidadNegocioBean.uniNeg}  
+    </select>
+    <select id="obtenerDetalleDocEgreso2" resultMap="detRegistroResultado" parameterType="map">
+        Select distinct
+        concat(fac.seriedoc+'-',fac.nrodoc) as docRef, 
+        cat.item, 
+        reg.cantidadrecibida, 
+        reg.importe,
+        (reg.cantidadrecibida*reg.importe) as montoCadaUno,
+        reg.cuentad as cuentaD,
+        (select sum(doc2.montoPagado)  from MT_DOCEGRESO doc2 where doc2.nrodocegreso=doc.nrodocegreso and doc.unineg=doc2.unineg) as montoTotalDocE
+        from ML_DetRegistroCompra reg 
+        Inner Join ML_RegistroCompra rc on reg.idregistrocompra=rc.idregistrocompra and rc.unineg=reg.unineg
+        Inner Join MT_DocEgreso doc On rc.idregistrocompra=doc.idcompra and doc.unineg=rc.unineg
+        Inner Join ML_FacturaCompra fac On reg.idfacturacompra=fac.idfacturacompra and doc.unineg=fac.unineg
+        Inner Join ML_Catalogo cat On cat.idcatalogo=reg.idcatalogo 
+        where doc.nroDocEgreso=#{nroDocEgreso} and reg.uniNeg = #{uniNeg}  
+    </select>
+    <select id="obtenerPorFactura" resultMap="detRegistroResultado" parameterType="pe.marista.sigma.bean.DetRegistroCompraBean">
+        <include refid="consultaCampos" />
+        where factre.idFacturaCompra = #{idFacturaCompra} and factre.uniNeg=#{unidadNegocioBean.uniNeg}
+    </select> 
+    <select id="obtenerPorOrden" resultMap="detRegistroResultado" parameterType="map">
+        <include refid="consultaCampos" />where detreg.idRegistroCompra = #{idRegistroCompra} and detreg.unineg = #{uniNeg}
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.DetRegistroCompraBean">
+        insert into ML_DetRegistroCompra
+        (uniNeg,idRegistroCompra,anio,ruc,idcatalogo,idOrdenCompra,iddetordencompra,cantidad,precio,
+        importe,descripcion,creapor,creafecha,idfacturacompra,cantidadRecibida,cuentad,cuentah,idconcepto,idtipounimed)   
+        values
+        (#{unidadNegocioBean.uniNeg},#{registroCompraBean.idRegistroCompra},#{registroCompraBean.anio},#{registroCompraBean.entidadBean.ruc},
+        #{catalogoBean.idCatalogo},#{ordenCompraBean.idOrdenCompra},#{ordenCompraDetalleBean.idDetOrdenCompra}
+        ,#{cantidad},#{precio},#{importe},#{descripcion},#{creaPor},getDate(),#{facturaCompraBean.idFacturaCompra},#{cantidadRecibida},
+        #{planContableCuentaDSoliBean.cuenta},#{planContableCuentaHSoliBean.cuenta},#{conceptoBean.idConcepto},#{catalogoBean.tipoUnidadMedidaBean.idCodigo}) 
+    </insert>
+    <delete id="eliminar" parameterType="Integer">
+        delete from ML_DetRegistroCompra 
+        where idregistrocompra = #{idRegistroCompra}
+    </delete>
+    <select id="obtenerDetFacturaCompra" resultType="pe.marista.sigma.bean.reporte.DetRegistroCompraRepBean" parameterType="map">
+        SELECT  
+        (select convert(varchar,reg.fechaemision,103)) as fecha 
+        ,deto.cantidad as cantidadDetOrden
+        ,(case when ca.idcatalogo is not null then upper(ca.item) else upper(isnull(cb.item,'')) end) as item,
+        (case when ca.idcatalogo is not null then ca.idcatalogo else cb.idcatalogo end) as catalogo
+        ,isnull(comed.codigo,'-') as tipoUniMed,
+        (case when ca.idcatalogo is not null then convert(varchar,convert(decimal(8,2),deto.importe)) else convert(varchar,convert(decimal(8,2),deto.importe)) end) as importe
+        FROM ML_DetRegistroCompra detreg
+        left join ML_FacturaCompra fact on fact.idfacturacompra = detreg.idfacturacompra and fact.unineg=detreg.unineg 
+        left join ML_RegistroCompra reg on detreg.idRegistroCompra = reg.idRegistroCompra 
+        left join ML_Catalogo ca on detreg.idcatalogo = ca.idcatalogo 
+        left join ML_CatalogoBlock cb on detreg.idcatalogo = cb.idcatalogo 
+        left join ML_DetOrdenCompra deto on detreg.iddetordencompra = deto.iddetordencompra 
+        left join MO_Codigo comed on comed.idcodigo = detreg.idtipounimed
+        where  fact.idfacturacompra=#{idFacturaCompra} and detreg.unineg=#{uniNeg}  
+    </select>
+</mapper>

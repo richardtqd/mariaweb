@@ -1,0 +1,108 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{docEgresoMB.obtenerChequeLPM()}">  
+            <h:form id="frmDatosFiltroChequeLPM" styleClass="centrado">
+                <p:panel style="width: 700px" class="centrado">
+                    <p:fieldset  class="centrado">
+                        <h:panelGrid columns="1" >   
+                            <h:panelGrid columns="1">
+                                <h:panelGrid columns="4">
+                                    <p:outputLabel value="#{msgs.etiquetaMes}: "  style="font-weight:bold"  />
+                                    <p:selectOneMenu id="cboMes" value="#{docEgresoMB.mes}" required="false"  >                                
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{docEgresoMB.listaMesAll}" var="mes" itemLabel="#{mes.descripcion}" itemValue="#{mes.valor}" />
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="#{msgs.etiquetaPeriodo}:"  style="font-weight:bold" /> 
+                                    <p:spinner id="txtAnio" value="#{docEgresoMB.anio}" min="#{msgs.anioIniEst}" max="#{msgs.anioFinEst}" label="#{msgs.etiquetaAnio}" size="8"/>
+                                </h:panelGrid>
+                                <h:panelGrid columns="4">
+                                    <h:outputLabel value="#{msgs.etiquetaTipoMoneda}: " style="font-weight:bold" />
+                                    <p:selectOneRadio value="#{docEgresoMB.docEgresoBean.tipoMonedaBean.idCodigo}"  style="width: 150px" > 
+                                        <f:selectItems value="#{docEgresoMB.listaTipoMonedaBean}" var="mon" 
+                                                       itemLabel="#{mon.codigo}" itemValue="#{mon.idCodigo}"/>
+                                    </p:selectOneRadio>  
+                                    <h:outputLabel value="#{msgs.etiquetaModali}"   style="font-weight:bold" />
+                                    <p:selectOneRadio value="#{docEgresoMB.docEgresoBean.tipoPagoBean.idCodigo}" required="true"  label="#{msgs.etiquetaModali}" > 
+                                        <f:selectItems value="#{docEgresoMB.listaTipoPagoBeanLpm}" var="tipP" itemLabel="#{tipP.codigo}" itemValue="#{tipP.idCodigo}"/>  
+                                    </p:selectOneRadio>
+                                </h:panelGrid>
+                                <center> 
+                                    <h:commandLink action="#{docEgresoMB.imrprimirChequesLPM()}" target="_blank">
+                                        <h:graphicImage value="/resources/images/icons/pdf.png" width="25"/>
+                                    </h:commandLink>
+                                </center>
+                            </h:panelGrid>
+
+                            <!--<h:panelGrid class="centrado" columns="2"> 
+                                <p:commandButton value="#{msgs.botonBuscar}" action="#{docEgresoMB.obtenerExcelFormatoLpmCheque()}"
+                                                 update="msg,:cheque:pnlSolicitudes"/> 
+                            </h:panelGrid>
+                            <p:messages autoUpdate="false" id="msg" />-->
+                        </h:panelGrid>
+
+                    </p:fieldset>
+                </p:panel>
+            </h:form>
+            <h:form id="cheque">
+                <h:panelGrid id="pnlSolicitudes">
+                    <p:dataTable id="cuenta" value="#{docEgresoMB.listaChequeEmitidosLPM}" paginator="true" 
+                                 widgetVar="cuenta"  selectionMode="single" 
+                                 var="cuenta"   rowIndexVar="n" paginatorPosition="bottom"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                 rows="10"  rowKey="#{cuenta}"
+                                 rendered="#{not empty docEgresoMB.listaChequeEmitidosLPM}" 
+                                 style="width: 1800px; font-size: 10px">
+
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.tituloSolicitudes}" />  
+                        </f:facet>
+                        <f:facet name="{Exporters}">
+                            <h:commandLink> 
+                                <p:graphicImage value="/resources/images/icons/exportarexcel.png" width="24"/>
+                                <p:dataExporter type="xls" target="cuenta" fileName="saldoPensiones" />
+                            </h:commandLink> 
+                        </f:facet>
+                        <p:column exportable="false"  styleClass="siseFontTable3 centrado-texto" width="1%" headerText="#{msgs.numero}">
+                            <h:outputText value="#{n+1}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaFecAcc}" class="nombre11Filtro" filterMatchMode="contains" style="width: 4px">
+                            <h:outputText value="#{cuenta.fechaOperacion}" /> 
+                        </p:column>  
+                        <p:column  headerText="#{msgs.etiquetaTipoFormaPago}" class="nombre11Filtro" filterMatchMode="contains" width="1%">
+                            <h:outputText value="#{cuenta.tipoMedioPago}" />
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaNumeroCheque}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.numCheque}" />  
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaRazSoc}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.razonSocial}" />
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMotivo}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.descripcion}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaNumDoc}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.documento}" /> 
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMontoApro}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.monto}" />
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMontoDevuelto}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.devuelto}" />
+                        </p:column>   
+                        <p:column  headerText="#{msgs.etiquetaMontoPagado}" class="nombre11Filtro" filterMatchMode="contains" style="width: 5px">
+                            <h:outputText value="#{cuenta.montopagado}" />
+                        </p:column>   
+                    </p:dataTable>
+                </h:panelGrid> 
+            </h:form>
+        </h:body> 
+
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,125 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+
+    <ui:define name="content">
+        <h:body onload="#{moduloMB.obtenerTodos()}">
+            <h:form id="frmModulo">
+                <h:outputText value="#{msgs.tituloMantoMudlo}" class="tituloPantalla"/>
+                <br/>
+                <h:panelGrid styleClass="centrado" id="pnlTablaPerfil" >
+                    <p:tree id="tree" value="#{moduloMB.root}" var="node" selectionMode="single" selection="#{moduloMB.selectedNode}" animate="true" widgetVar="prueba" 
+                            draggable="true" droppable="true" dragdropScope="demo" style="width: 700px" dynamic="true">
+                        <p:ajax event="dragdrop" listener="#{moduloMB.moverModulo}" update="tree" oncomplete="PF('popDone').show();" />
+                        <p:treeNode>
+                            <h:outputText value="#{node.nodo}" />
+                        </p:treeNode>
+                    </p:tree>
+                </h:panelGrid>
+                <p:contextMenu for="tree">
+                    <p:menuitem value="#{msgs.botonAgregar}" update="tree,:frmMantModulo:pnlDatosModulo" actionListener="#{moduloMB.limpiarModuloBean()}" oncomplete="PF('popNewModulo').show();" icon="ui-icon-plus"/>
+                    <p:menuitem value="#{msgs.botonModificar}" update="tree,:frmMantModulo:pnlDatosModulo" actionListener="#{moduloMB.obtenerPorId()}" oncomplete="PF('popNewModulo').show();" icon="ui-icon-plus"/>
+                    <p:menuitem value="#{msgs.botonEliminar}" update="tree" oncomplete="PF('popEliModulo').show();" icon="ui-icon-close"/>
+                </p:contextMenu>
+                <p:growl id="msgs" showDetail="true" />
+            </h:form>
+            <h:form id="frmMantModulo">
+                <p:dialog header="#{msgs.tituloMantoMudlo}" widgetVar="popNewModulo" width="570" resizable="false" modal="true">
+                    <h:panelGrid columns="3" id="pnlDatosModulo">   
+                        <h:outputLabel value="#{msgs.etiquetaNomModulo}"/>
+                        <h:outputText value="*" class="requerido"/>
+                        <h:inputText  value="#{moduloMB.moduloBean.nodo}" required="true" label="#{msgs.etiquetaNomModulo}"/>
+                        <h:outputLabel value="#{msgs.etiquetaTipoModulo}"/>
+                        <h:outputText value="*" class="requerido"/>
+                        <h:selectOneRadio value="#{moduloMB.moduloBean.idTipoNodo}" converter="javax.faces.Integer">
+                            <f:selectItem itemLabel="#{msgs.etiquetaNodo}" itemValue="88"/>
+                            <f:selectItem itemLabel="#{msgs.etiquetaFormulario}" itemValue="89"/>
+                            <f:selectItem itemLabel="#{msgs.etiquetaLink}" itemValue="90"/>
+                        </h:selectOneRadio>
+                        <h:outputLabel value="#{msgs.etiquetaDescripcion}"/>
+                        <h:outputText value="*" class="requerido"/>
+                        <h:inputText value="#{moduloMB.moduloBean.descrip}" required="true" label="#{msgs.etiquetaDescripcion}"/>                       
+                        <h:outputLabel value="#{msgs.etiquetaUrl}"/>
+                        <h:outputText value="*" class="requerido"/>
+                        <h:inputText value="#{moduloMB.moduloBean.url}" required="true" label="#{msgs.etiquetaFormulario}"/>
+                        <h:outputLabel value="#{msgs.etiquetaFolder}"/>
+                        <h:inputHidden value="*" class="requerido"/>
+                        <h:inputText value="#{moduloMB.moduloBean.folder}"  label="#{msgs.etiquetaFolder}"/>
+                        <h:outputLabel value="#{msgs.etiquetaIcono}"/>
+                        <h:inputHidden value="*" class="requerido"/>
+                        <h:inputText value="#{moduloMB.moduloBean.icono}"  label="#{msgs.etiquetaIcono}"/>
+                        <h:outputLabel value="#{msgs.etiquetaEstado}"/>
+                        <h:outputText value="*" class="requerido"/>
+                        <h:selectOneRadio value="#{moduloMB.moduloBean.status}" required="true" label="#{msgs.etiquetaEstado}"
+                                          converter="javax.faces.Integer">
+                            <f:selectItem itemLabel="#{msgs.etiquetaEstadoAct}" itemValue="0"/>
+                            <f:selectItem itemLabel="#{msgs.etiqeutaEstadoInac}" itemValue="1"/>
+                        </h:selectOneRadio>
+                        <h:outputText value="(*) Requerido" class="requerido"/>
+                        <h:inputHidden value="#{moduloMB.moduloBean.idModulo}"/>
+                        <h:inputHidden/>
+                    </h:panelGrid>
+                    <br/><br/>
+                    <h:panelGrid class="centrado">
+                        <p:commandButton actionListener="#{moduloMB.guardarModulo()}" update=":frmModulo:tree,msgsAdd" 
+                                         oncomplete="if(args.operacionCorrecta){PF('popNewModulo').hide();PF('popDone').show();}"
+                                         value="#{msgs.botonGrabar}">
+                        </p:commandButton>
+                    </h:panelGrid>
+                    <p:growl id="msgsAdd" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form>
+                <p:dialog  header="#{msgs.appTitulo}" widgetVar="popEliModulo"  minHeight="40" modal="true" width="400" resizable="false">
+                    <table style="border-collapse: collapse;width: 380px;">
+                        <tr>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td valign="top">
+                                            <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                                        </td>
+                                        <td style="padding: 5px;">
+                                            <h:outputText value="#{msgs.panelEliminacionFisica}"/> <br/>
+                                            <h:inputHidden value="#{moduloMB.moduloBean.idModulo}"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="lineaMsg">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center">
+                                <table style="border-collapse: collapse">
+                                    <tr>
+                                        <td>  
+                                            <p:commandButton actionListener="#{moduloMB.eliminarModulo()}"                                               
+                                                             value="&nbsp;&nbsp;#{msgs.botonAceptar}&nbsp;&nbsp;" style="cursor:pointer;"
+                                                             oncomplete="if(args.operacionCorrecta){PF('popEliModulo').hide();PF('popDone').show();}"
+                                                             update=":frmModulo:tree" /> 
+                                            &nbsp;&nbsp;&nbsp;
+                                            <p:commandButton oncomplete="PF('popEliModulo').hide();"
+                                                             value="&nbsp;&nbsp;#{msgs.botonCancelar}&nbsp;&nbsp;" style="cursor:pointer;"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                    <p:growl id="growlManto" showDetail="true" life="5000"/>
+                </p:dialog>
+            </h:form>
+            <!-- Modals -->
+        </h:body>
+    </ui:define>
+</ui:composition>

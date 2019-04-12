@@ -1,0 +1,146 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{tipoCambioMB.obtenerTodos()}">
+            <h:form id="frmDatosTipoCambio">
+                <h:panelGrid styleClass="centrado" id="pnlDatosTipoCambio" style="text-align: center !important ; font-weight: bold; font-size:0.9em ; width: 500px" >
+                    <p:panel header="#{msgs.tituloMantTipoCambio}" style="text-align: center !important">
+                        <h:panelGrid columns="2" class="siseFontGrid4">
+                             <h:outputLabel value="Tipo cambio oficial" class="negrita"/>
+                            <p:link id="linkSunat" href="http://www.sunat.gob.pe/cl-at-ittipcam/tcS01Alias" target="_blank" >
+                                <h:graphicImage value="/resources/images/icons/search.png" style="border:0; cursor:pointer;"  width=""/>
+                            </p:link> 
+                        </h:panelGrid>
+                        <h:panelGrid columns="1" id="DatosTipoCambio" class="siseFontGrid4" cellpadding="3">
+                            <h:panelGrid columns="6" class="siseFontGrid4" cellpadding="3">
+                                <h:outputLabel value="#{msgs.etiquetaFecha}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:calendar value="#{tipoCambioMB.tipoCambioBean.fechaTc}" required="true" label="#{msgs.etiquetaFecha}"/>                            
+                                <h:outputLabel value="#{msgs.etiquetaStatus}" class="negrita"/>
+                                <h:outputText value="" class="requerido"/>
+                                <p:inputSwitch id="radioEstado" required="true" value="#{tipoCambioMB.tipoCambioBean.status}" label="#{msgs.etiquetaEstado}" onLabel="#{msgs.etiquetaActivo}" offLabel="#{msgs.etiquetaInactivo}"/>   
+                                <h:outputLabel value="#{msgs.etiquetaTCCompra}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <h:inputText value="#{tipoCambioMB.tipoCambioBean.tcCompra}" required="true" label="#{msgs.etiquetaTCCompra}"/>
+                                <h:outputLabel value="#{msgs.etiquetaTCVenta}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <h:inputText value="#{tipoCambioMB.tipoCambioBean.tcVenta}" required="true" label="#{msgs.etiquetaTCVenta}"/>  
+                            </h:panelGrid>
+                            <h:outputText value="( ) Requerido" class="requerido"/>                            
+                            <h:inputHidden value="#{tipoCambioMB.tipoCambioBean.idTipoMoneda}"/>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2" style="font-size: 0.9em" >
+                            <p:commandButton actionListener="#{tipoCambioMB.guardarTipoCambio()}" 
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             update=":frmDatosTipoCambio:pnlDatosTipoCambio,msgsAddProc,:frmTablaTipoCambio:tblTipoCambio"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{tipoCambioMB.limpiarTipoCambio()}" 
+                                             update=":frmDatosTipoCambio:pnlDatosTipoCambio,msgsAddProc,:frmTablaTipoCambio:tblTipoCambio"                                                                 
+                                             value="#{msgs.botonNuevo}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:messages id="msgsAddProc"   showSummary="true"/>
+                    </p:panel> 
+                </h:panelGrid>
+            </h:form>  
+            <h:form id="frmTablaTipoCambio">
+                <h:panelGrid styleClass="centrado" id="pnlTblTipoCambio" style="text-align: center !important ; font-weight: bold; font-size: 0.9em" >
+                    <p:dataTable id="tblTipoCambio" value="#{tipoCambioMB.listaTipoCambioBean}" widgetVar="tblTipoCambio"
+                                 paginator="true" selectionMode="single" 
+                                 selection="#{tipoCambioMB.tipoCambioBean}"
+                                 var="tipoCambio" rowKey="#{tipoCambio.idTipoMoneda}"
+                                 rows="#{tipoCambioMB.numRegistrosTablas}" 
+                                 rendered="#{not empty tipoCambioMB.listaTipoCambioBean}" 
+                                 style="width: #{tipoCambioMB.anchoTablasBig}; font-size: 0.8em">
+                        <p:ajax event="rowSelect" listener="#{tipoCambioMB.rowSelect}" update=":frmDatosTipoCambio:pnlDatosTipoCambio"/>
+                        <f:facet name="header" >
+                            <h:outputText value="#{msgs.etiquetaTipoCambio}" />  
+                        </f:facet>
+                        <p:column class="centrado-texto" filterBy="#{tipoCambio.fechaTc}" headerText="#{msgs.etiquetaFecha}" filterMatchMode="contains" width="20%" styleClass="nombre1Filtro" >
+                            <f:facet name="filter">
+                                <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                    <p:ajax event="dateSelect" oncomplete="PF('tblTipoCambio').filter()"/>
+                                </p:calendar> 
+                            </f:facet>
+                            <h:outputText value="#{tipoCambio.fechaTc}">
+                                <f:convertDateTime pattern="dd/MM/yyyy"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column filterBy="#{tipoCambio.tcCompra}" headerText="#{msgs.etiquetaTCCompra}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{tipoCambio.tcCompra}" />
+                        </p:column>   
+                        <p:column filterBy="#{tipoCambio.tcVenta}" headerText="#{msgs.etiquetaTCVenta}" filterMatchMode="contains" width="20%" >
+                            <h:outputText value="#{tipoCambio.tcVenta}" />
+                        </p:column>                                             
+                        <p:column width="20%">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaCambiarEstado}" />
+                            </f:facet>
+                            <center>
+                                <p:inputSwitch id="swCambio" value="#{tipoCambio.status}">
+                                    <p:ajax listener="#{tipoCambioMB.ponerTipoCambio(tipoCambio)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </center>
+                        </p:column>
+                        <p:column style="text-align:center;width: 80px">
+                            <f:facet name="header">
+                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                            </f:facet>
+                            <p:commandLink id="cmdEliminar" action="#{tipoCambioMB.obtenerPorId(tipoCambio.idTipoMoneda)}" update=":frmElimina:pnlDatosElimina"
+                                           oncomplete="PF('popEliminar').show();" process="@this">
+                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                            </p:commandLink>
+                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.mensajeDelTipCam}" />
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaTipoCambio}: #{tipoCambioMB.tipoCambioBean.tcCompra}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoCambioMB.eliminarTipoCambio()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmTablaTipoCambio:pnlTblTipoCambio"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaTipoCambio}: #{tipoCambioMB.tipoCambioBean.tcCompra}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoCambioMB.cambiarEstadoTipoCambio()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosTipoCambio:radioEstado"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.EnfermedadDAO">
+    <sql id="consultaCampos">
+        SELECT
+        ENF.idEnfermedad
+        ,ENF.enfermedad as nombreEnfermedad
+        ,ENF.idTipoEnfermedad
+        ,CO.codigo as nombreTipoEnfermedad 
+        FROM MO_Enfermedad ENF
+        INNER JOIN MO_Codigo CO on enf.idtipoenfermedad = CO.idcodigo
+    </sql>
+    <resultMap id="enfermedadResultado" type="pe.marista.sigma.bean.EnfermedadBean">
+        <id property="idEnfermedad" column="idEnfermedad" />
+        <result property="enfermedad" column="nombreEnfermedad" />
+        <association property="tipoEnfermedadBean" column="idTipoEnfermedad" 
+                     javaType="pe.marista.sigma.bean.CodigoBean" 
+                     resultMap="tipoEnfermedadResultado"/>
+    </resultMap> 
+    <resultMap id="tipoEnfermedadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoEnfermedad"/>
+        <result property="codigo" column="nombreTipoEnfermedad"/>
+    </resultMap>  
+    
+    <select id="obtenerEnfermedad" resultMap="enfermedadResultado">
+        <include refid="consultaCampos" />
+    </select>
+    <select id="obtenerEnfermedadPorTipo" resultMap="enfermedadResultado" parameterType="String" >
+        <include refid="consultaCampos" />
+        where ENF.idTipoEnfermedad=#{idTipoEnfermedad}
+    </select>
+    <select id="obtenerEnfermedadPorId" resultMap="enfermedadResultado" parameterType="Integer">
+        <include refid="consultaCampos" /> Where ENF.idEnfermedad = #{idEnfermedad}
+    </select>
+    <insert id="insertarEnfermedad" parameterType="pe.marista.sigma.bean.EnfermedadBean">
+        Insert Into MO_Enfermedad (enfermedad,idTipoEnfermedad,creaPor) 
+        Values (#{enfermedad},#{tipoEnfermedadBean.idCodigo},#{creaPor})
+    </insert> 
+    <update id="modificarEnfermedad" parameterType="pe.marista.sigma.bean.EnfermedadBean">
+        Update MO_Enfermedad set
+        enfermedad = #{enfermedad},
+        idTipoEnfermedad = #{tipoEnfermedadBean.idCodigo},
+        modiPor = #{modiPor}
+        Where idEnfermedad = #{idEnfermedad}   
+    </update>
+    <delete id="eliminarEnfermedad" parameterType="Integer">
+        Delete from MO_Enfermedad Where idEnfermedad = #{idEnfermedad}  
+    </delete>
+     
+</mapper>

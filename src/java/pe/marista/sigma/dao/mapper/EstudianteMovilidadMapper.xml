@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteMovilidadDAO">
+    <sql id="consultaCampos">
+        select em.idEstudiante , em.idmovilidad , p.idpersona , em.idmovilidad , em.obs from MX_EstudianteMovilidad em
+        inner join MX_Movilidad m on em.idmovilidad = m.idmovilidad
+        inner join MX_Estudiante e on em.idEstudiante = e.idestudiante
+        inner join MX_Persona p on e.idestudiante = p.idpersona
+        
+        <!--select (select distinct em.idEstudiante),em.idmovilidad,em.obs,m.idmovilidad,m.color,e.idestudiante from MX_EstudianteMovilidad em 
+        INNER join MX_Estudiante e on em.idEstudiante = em.idEstudiante
+        INNER join MX_Movilidad m on em.idmovilidad = m.idmovilidad   
+        inner join MX_Persona p on e.idestudiante = p.idpersona-->
+        
+        <!--select em.idEstudiante,em.idmovilidad,em.obs,m.idmovilidad,m.color,e.idestudiante from MX_EstudianteMovilidad em
+        INNER join MX_Estudiante e on em.idEstudiante = em.idEstudiante
+        INNER join MX_Movilidad m on em.idmovilidad = m.idmovilidad-->
+        
+        <!-- select em.idEstudiante,em.idmovilidad,em.obs,m.idmovilidad,m.color,e.idestudiante from MX_EstudianteMovilidad em
+        INNER join MX_Estudiante e on em.idEstudiante = em.idEstudiante
+        INNER join MX_Movilidad m on em.idmovilidad = m.idmovilidad
+        INNER join MX_Persona per on e.idestudiante = e.idestudiante-->
+        <!--
+        select em.idEstudiante,em.idmovilidad,em.obs,m.idmovilidad,m.nroautorizacion,m.color,e.idestudiante from MX_EstudianteMovilidad em
+        left join MX_Estudiante e on em.idEstudiante = em.idEstudiante
+        left join MX_Movilidad m on em.idmovilidad = m.idmovilidad
+        left join MX_Persona per on e.idestudiante = e.idestudiante-->
+    </sql>
+    
+    <sql id="consultaPlaca">
+        SELECT DISTINCT idmovilidad FROM MX_EstudianteMovilidad
+    </sql>
+    
+    <sql id="consultaEstudiante">
+        SELECT DISTINCT idEstudiante FROM MX_EstudianteMovilidad
+    </sql>
+    
+    <select id="obtenerMFiltro" resultType="pe.marista.sigma.bean.EstudianteMovilidadBean" parameterType="pe.marista.sigma.bean.EstudianteMovilidadBean" >
+        <include refid="consultaCampos" />
+        <where>
+            <if test="movilidadBean.idmovilidad != null and movilidadBean.idmovilidad != '' ">
+                upper(em.idmovilidad) like CONCAT('%',#{movilidadBean.idmovilidad} ,'%')
+            </if>    
+        </where>
+    </select>
+    
+    <resultMap id="autoesResultado" type="pe.marista.sigma.bean.EstudianteMovilidadBean">
+        <id property="estudianteBean.idEstudiante" column="idEstudiante"/>
+        <id property="movilidadBean.idmovilidad" column="idmovilidad"/>
+        <result property="obs" column="obs"/>
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="movilidadBean" column="idmovilidad"
+                     javaType="pe.marista.sigma.bean.MovilidadBean"
+                     resultMap="movilidadResultado"/>
+    </resultMap>
+    
+    <resultMap id="movilidadResultado" type="pe.marista.sigma.bean.MovilidadBean"> 
+        <id  property="idmovilidad" column="idmovilidad" />
+        <result property="nroautorizacion" column="nroautorizacion" />
+        <result property="color" column="color" />
+    </resultMap>
+        
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idestudiante"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+    </resultMap>
+    
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean" >
+        <id property="idPersona" column="idpersona" />
+        <result property="nombre" column="nombre" />
+        <result property="apePat" column="apepat" />
+        <result property="apeMat" column="apemat" />
+    </resultMap>
+    
+    <select id="obtenerEstudianteMovilidad" resultMap="autoesResultado" parameterType="String">
+        <include refid="consultaCampos" /> Where em.idEstudiante = #{idEstudiante}
+    </select>
+    
+    <select id="obtenerEstudiante" resultMap="autoesResultado">
+        <include refid="consultaEstudiante"/>
+    </select>
+    
+    <select id="obtenerMovilidad" resultMap="autoesResultado">
+        <include refid="consultaPlaca"/>
+    </select>
+    
+    <select id="obtenerPorId" resultMap="autoesResultado" parameterType="pe.marista.sigma.bean.EstudianteMovilidadBean">
+        <include refid="consultaCampos" />
+        WHERE em.idEstudiante=#{estudianteBean.idEstudiante} and em.idmovilidad=#{movilidadBean.idmovilidad}
+    </select>
+    
+    <select id="obtenerEstudiantePorId" resultMap="autoesResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        Where idmovilidad=#{movilidadBean.idmovilidad}
+    </select>
+    
+    <select id="obtenerMovilidadPorId" resultMap="autoesResultado" parameterType="String">
+        <include refid="consultaCampos" />
+        Where idmovilidad=#{movilidadBean.idmovilidad}
+    </select>
+    
+    <insert id="insertarEstudianteMovilidad" parameterType="pe.marista.sigma.bean.EstudianteMovilidadBean">
+        INSERT INTO MX_EstudianteMovilidad(idEstudiante,idmovilidad,obs)
+        VALUES (#{estudianteBean.personaBean.idPersona},#{movilidadBean.idmovilidad},#{obs})
+    </insert>
+    
+    <update id="actualizarEstudianteMovilidad" parameterType="pe.marista.sigma.bean.EstudianteMovilidadBean">
+        UPDATE MX_EstudianteMovilidad
+        SET idEstudiante = #{estudianteBean.personaBean.idPersona}
+        ,idmovilidad = #{movilidadBean.idmovilidad}
+        ,obs = #{obs}
+        WHERE idEstudiante=#{estudianteBean.idEstudiante} and idmovilidad=#{movilidadBean.idmovilidad}
+    </update>
+    
+    <delete id="eliminarEstudianteMovilidad" parameterType="pe.marista.sigma.bean.EstudianteMovilidadBean">
+        DELETE FROM MX_EstudianteMovilidad
+        WHERE idEstudiante = #{estudianteBean.personaBean.idPersona} and idmovilidad=#{movilidadBean.idmovilidad}
+    </delete>
+    
+</mapper>
+

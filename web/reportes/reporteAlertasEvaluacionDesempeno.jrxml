@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteAlertasEvaluacionDesempeno" language="groovy" pageWidth="683" pageHeight="842" columnWidth="643" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d9b20ecf-721a-4195-a9c0-cc940b5de358">
+	<property name="ireport.zoom" value="1.5394743546921197"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="rutaImagen" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[declare @anio int,@unineg varchar(6)
+        set @anio=2018
+        set @unineg='sector'
+        ;WITH lista(titulo,usuario,periodo,nombreUniNeg,idEvaluadoEvaluador,nombreEvaluador,cargoEvaluador,nombreEvaluado,cargoEvaluado,respuesta0,respuesta1,respuesta4)
+        AS
+        (select distinct 'ALERTAS EVALUACIÓN DE DESEMPEÑO' as titulo,'' as usuario,
+        ('Periodo: '+convert(varchar(10),e.anio)) as periodo,
+        ent.nombrecomercial as nombreUniNeg,
+        idEvaluadoEvaluador,
+        concat(pevaluador.apepat,' '+pevaluador.apemat,', '+pevaluador.nombre) as nombreEvaluador,
+        carevaluador.nombre as cargoEvaluador,
+        concat(pevaluado.apepat,' '+pevaluado.apemat,', '+pevaluado.nombre) as nombreEvaluado,
+        carevaluado.nombre as cargoEvaluado,
+        (((select count(en2.idpregunta)
+        from ED_Encuesta  en2  where en2.respuesta=0 and en2.idevaluadoevaluador=e.idEvaluadoEvaluador
+        and anio=@anio and en2.unineg=@unineg
+        group by en2.idevaluadoevaluador
+        having count(en2.idevaluadoevaluador)>0)*100)/
+        (select count(en.idpregunta)
+        from ED_Encuesta en where en.idevaluadoevaluador=e.idEvaluadoEvaluador
+        and anio=@anio and en.unineg=@unineg
+        group by en.idevaluadoevaluador
+        having count(en.idevaluadoevaluador)>1)
+        ) respuesta0,
+        (((select count(en2.idpregunta)
+        from ED_Encuesta  en2  where en2.respuesta=1 and en2.idevaluadoevaluador=e.idEvaluadoEvaluador
+        and anio=@anio and en2.unineg=@unineg
+        group by en2.idevaluadoevaluador
+        having count(en2.idevaluadoevaluador)>0)*100)/
+        (select count(en.idpregunta)
+        from ED_Encuesta en where en.idevaluadoevaluador=e.idEvaluadoEvaluador
+        and anio=@anio and en.unineg=@unineg
+        group by en.idevaluadoevaluador
+        having count(en.idevaluadoevaluador)>1)
+        ) respuesta1,
+        (((select count(en2.idpregunta)
+        from ED_Encuesta  en2  where en2.respuesta=4 and en2.idevaluadoevaluador=e.idEvaluadoEvaluador
+        and anio=@anio and en2.unineg=@unineg
+        group by en2.idevaluadoevaluador
+        having count(en2.idevaluadoevaluador)>0)*100)/
+        (select count(en.idpregunta)
+        from ED_Encuesta en where en.idevaluadoevaluador=e.idEvaluadoEvaluador
+        and anio=@anio and en.unineg=@unineg
+        group by en.idevaluadoevaluador
+        having count(en.idevaluadoevaluador)>1)
+        ) respuesta4
+        from ED_EvaluadoEvaluador e
+        inner join MO_UnidadNegocio uni on uni.unineg=e.unineg
+        inner join MO_Entidad ent on ent.ruc=uni.ruc
+        inner join ED_Personal pevaluador on pevaluador.codper=e.codigoEvaluador
+        inner join MO_Cargo carevaluador on carevaluador.idcargo=e.idCargoEvaluador
+        inner join ED_Personal pevaluado on pevaluado.codper=e.codigoEvaluado
+        inner join MO_Cargo carevaluado on carevaluado.idcargo=e.idCargoEvaluado
+        where e.anio=@anio and uni.unineg=@unineg
+        )
+        select * from lista
+        where 1=(case when respuesta0>=75 or respuesta1>=75 or respuesta4>75 then 1  else 0 end)]]>
+	</queryString>
+	<field name="titulo" class="java.lang.String"/>
+	<field name="usuario" class="java.lang.String"/>
+	<field name="periodo" class="java.lang.String"/>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="idEvaluadoEvaluador" class="java.lang.Integer"/>
+	<field name="nombreEvaluador" class="java.lang.String"/>
+	<field name="cargoEvaluador" class="java.lang.String"/>
+	<field name="nombreEvaluado" class="java.lang.String"/>
+	<field name="cargoEvaluado" class="java.lang.String"/>
+	<field name="respuesta0" class="java.lang.Integer"/>
+	<field name="respuesta1" class="java.lang.Integer"/>
+	<field name="respuesta4" class="java.lang.Integer"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="130" splitType="Stretch">
+			<textField>
+				<reportElement uuid="0d76c6e1-8a6d-4fb5-8e26-c6fa73a0f412" x="0" y="78" width="643" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{titulo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="afbc4300-f171-45a4-bffc-a124fadaad08" x="0" y="49" width="643" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="0be1c947-b4a3-4717-8455-560a4d3538c5" x="0" y="105" width="643" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{periodo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="faeae041-4a90-445b-b2c0-036c95cc122b" x="563" y="13" width="80" height="11"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="cae00d92-5108-4b48-884f-2837ee24ecf2" x="563" y="1" width="80" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FECHA Y HORA:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="6f3ce7b5-7703-493e-a233-053366140a34" x="563" y="40" width="80" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{usuario}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="a8c3e357-366e-4045-8c61-59a50f4c949d" x="563" y="28" width="40" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[USUARIO:]]></text>
+			</staticText>
+			<image>
+				<reportElement uuid="6d3ba7c3-11d8-4ae2-b16f-b3da01a17f01" x="46" y="0" width="64" height="49"/>
+				<imageExpression><![CDATA[$P{rutaImagen}+"\\resources\\images\\logosanluis.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="20" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="267e1718-aeb2-4462-8bb5-29f14562623d" x="24" y="0" width="137" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NOMBRE EVALUADOR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2f82423b-0a50-4649-a3c6-db43786beccd" x="301" y="0" width="136" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NOMBRE EVALUADO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7d6e75b0-55a9-4bcb-8479-2570ca01bde6" x="439" y="0" width="136" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CARGO EVALUADO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d26b389a-d5b7-4e80-8822-a8aae89657b0" x="164" y="0" width="133" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CARGO EVALUADOR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1cbf6a01-46c5-4f47-b898-4ce7325ef713" x="575" y="0" width="23" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[0]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a053255b-1c33-475f-b0cf-cc5cc6ea5c61" x="598" y="0" width="23" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[1]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="33192277-54ee-4539-a044-e9419cfc6b3e" x="621" y="0" width="23" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[4]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="1ca532a4-0477-4ce7-942a-0e1cf0d0183e" x="1" y="0" width="642" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="d8e1b4a6-4fc1-45d1-93b6-e33884b23162" x="0" y="19" width="644" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="7b4f52cd-3143-4b79-99cd-70b25ba4c07f" x="22" y="0" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="be042562-c141-44c6-a0d0-cca76bd15231" x="161" y="0" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="13342d58-f892-4a66-94e2-09288f23fb47" x="297" y="0" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="b93b40c4-0be5-46ee-9a89-41af973da139" x="436" y="0" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="4fc95059-2333-4259-a75e-b4fba43e297d" x="575" y="0" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="0c263bb0-7987-448f-bd41-673f357c0e9c" x="597" y="0" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="f08e9cb2-4341-43a3-8231-61bb7fee4f96" x="620" y="0" width="1" height="20"/>
+			</line>
+			<line>
+				<reportElement uuid="a651d616-33e4-4b14-8211-dbe4cd3ed688" x="643" y="0" width="1" height="20"/>
+			</line>
+			<staticText>
+				<reportElement uuid="2fd6b5fe-2e9e-4b31-8c85-9fdf5369918f" x="0" y="1" width="22" height="18"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[N°]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="10f2b3de-6a12-49d5-b624-950c8fa5dccc" x="0" y="0" width="1" height="19"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="11" splitType="Stretch">
+			<textField>
+				<reportElement uuid="4231b085-f9c7-4c75-9dad-a93eb38a49a9" x="25" y="0" width="136" height="10" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreEvaluador}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e129c620-6481-4b46-b1ea-c66842fe740f" x="165" y="0" width="132" height="10" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cargoEvaluador}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="2d536d02-021f-4b08-acd8-e856166f1291" x="302" y="0" width="135" height="10" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreEvaluado}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b0a566e2-23ad-47ab-b582-0b47d576b7c7" x="440" y="0" width="135" height="10" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cargoEvaluado}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a9109931-e36e-450f-bc27-2933522a4403" x="575" y="0" width="23" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{respuesta0}>=75?$F{respuesta0}:""]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="2983e615-09a2-4621-9f37-a1326c7bc0f1" x="598" y="0" width="23" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{respuesta1}>=75?$F{respuesta1}:""]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="bbb3641e-dbe0-4235-9ad1-2fc0e62a47a4" x="621" y="0" width="23" height="10"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{respuesta4}>=75?$F{respuesta4}:""]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="1c09224a-e73a-494f-9de5-5185c331b129" x="1" y="10" width="643" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="7e3e9490-b999-494b-8777-7c3c541d9db7" x="436" y="0" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="48c0c4c7-5712-480b-ae0b-139f865f7a91" x="575" y="0" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="8389bf76-6e63-42e5-95ee-1b6f95ba2fdf" x="597" y="0" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="42abf6d3-47da-41cf-b168-6f263a2bd6e0" x="620" y="0" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="5a176095-33a0-4438-b4e8-d04c374d2cce" x="643" y="0" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="7e87b489-5f66-426b-8091-ab567db79fa2" x="297" y="0" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="f6e4228a-39a3-471b-81d5-48418a063934" x="161" y="0" width="1" height="10"/>
+			</line>
+			<line>
+				<reportElement uuid="973370a1-81fe-4644-b2e5-78d6187b1267" x="22" y="0" width="1" height="10"/>
+			</line>
+			<textField>
+				<reportElement uuid="b3fac884-a14d-4855-b1b9-3e4d56929c92" x="1" y="0" width="21" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{REPORT_COUNT}.toString()+"."]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="6c23c658-a08e-463b-a3eb-eb8f0c659864" x="0" y="-1" width="1" height="12"/>
+			</line>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="17">
+			<textField>
+				<reportElement uuid="6ae40a41-0a79-4b4e-a75c-3285ecd74f82" x="30" y="6" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2c3157c5-41f2-46c4-9c0b-ed60f9b92dc9" x="43" y="6" width="12" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<textField evaluationTime="Report">
+				<reportElement uuid="eeeab48b-2d57-4d82-8844-d6bc49592f49" x="58" y="6" width="12" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="8c0f2863-a1a6-413f-9c07-bc183d13c41d" x="10" y="6" width="20" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+</jasperReport>

@@ -1,0 +1,408 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{procesoMB.obtenerProcesoPorUniNeg()}">
+            <center>
+                <h:outputText value="#{msgs.tituloProc}" class="tituloPantalla" style="margin: auto !important;font-size: 16px"/>
+            </center>
+            <br/>
+            <h:panelGrid styleClass="centrado">
+                <h:form id="frmMantProceso">
+                    <p:panel header="#{msgs.tituloInserModProceso}" style="width: 600px" styleClass="centrado">
+                        <h:panelGrid columns="3" id="pnlDatosProceso" cellpadding="3" class="siseFontGrid5">
+                            <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <p:inputTextarea  value="#{procesoMB.procesoBean.descripcion}"    label="#{msgs.etiquetaDescripcion}" cols="40" rows="3" maxlength="100"/> 
+                            <h:outputLabel value="#{msgs.etiquetaPeriodo}" class="negrita"/>
+                            <h:outputText value=" "  class="requerido"/>
+                            <p:selectOneMenu value="#{procesoMB.procesoBean.anio}" required="true"  label="#{msgs.etiquetaPeriodo}">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                <f:selectItems value="#{procesoMB.listaAnios}" var="fila" itemLabel="#{fila}" itemValue="#{fila}"/>
+                            </p:selectOneMenu>
+                            <h:outputLabel value="#{msgs.etiquetaTipoProc}" class="negrita"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <p:selectOneMenu value="#{procesoMB.procesoBean.codigoBean.idCodigo}" required="true"  label="#{msgs.etiquetaTipoProc}" filter="true">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                <f:selectItems value="#{procesoMB.listaCodigoBean}" var="codigo" itemLabel="#{codigo.codigo}" itemValue="#{codigo.idCodigo}"/>
+                            </p:selectOneMenu>
+                            <h:outputLabel value="#{msgs.etiquetaFecIni}" class="negrita"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <p:calendar id="fecIni" value="#{procesoMB.procesoBean.fecIni}" required="true"  label="#{msgs.etiquetaFecIni}" mode="popup"
+                                        pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true">
+                                <p:ajax event="dateSelect" update="fecFin" />
+                            </p:calendar> 
+                            <h:outputLabel value="#{msgs.etiquetaFecFin}" class="negrita"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <p:calendar id="fecFin" value="#{procesoMB.procesoBean.fecFin}" required="true"  label="#{msgs.etiquetaFecIni}" mode="popup"
+                                        pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn" showOn="button" readonlyInput="true"
+                                        mindate="#{procesoMB.procesoBean.fecIni}" />  
+                            <h:outputLabel value="#{msgs.etiquetaEstado}" class="negrita"/>
+                            <h:outputText value=" " class="requerido"/>
+                            <h:selectOneRadio value="#{procesoMB.procesoBean.status}" label="#{msgs.etiquetaEstado}">
+                                <f:selectItem itemLabel="#{msgs.etiquetaEstadoAct}" itemValue="1"/>
+                                <f:selectItem itemLabel="#{msgs.etiqeutaEstadoInac}" itemValue="0"/>
+                            </h:selectOneRadio>
+                            <h:outputText value="#{msgs.etiquetaRequerido}" class="requerido"/>
+                            <h:inputHidden value="#{procesoMB.procesoBean.idProceso}"/>
+                            <h:inputHidden />
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{procesoMB.guardarProceso()}" 
+                                             update=":frmDatosProceso:pnlTablaProceso,msgsAddProc,:frmDatosProceso:tblProceso"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{procesoMB.limpiarProceso()}" 
+                                             update=":frmMantProceso:pnlDatosProceso,msgsAddProc,:frmDatosProceso:tblProceso"                                                                 
+                                             value="#{msgs.botonNuevo}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAddProc" showDetail="true" showSummary="true"/>
+                    </p:panel>
+                </h:form>
+                <h:form id="frmDatosProceso">
+                    <h:panelGrid  id="pnlTablaProceso" class="siseFontGrid5">
+                        <p:dataTable id="tblProceso" value="#{procesoMB.listaProcesoBean}" widgetVar="tblProceso"
+                                     paginator="true" selectionMode="single" 
+                                     selection="#{procesoMB.procesoBean}"
+                                     var="proceso" rowKey="#{proceso.idProceso}"
+                                     rows="#{procesoMB.numRegistrosTablas}" 
+                                     rendered="#{not empty procesoMB.listaProcesoBean}" 
+                                     style="width: 1100px; font-size: 10px;font-size:14px !important;">
+                            <p:ajax event="rowSelect" listener="#{procesoMB.rowSelect}" update=":frmMantProceso:pnlDatosProceso,:frmMantCheckList:pnlCheck" />
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloProcesos}" />  
+                            </f:facet>
+                            <p:column filterBy="#{proceso.descripcion}" headerText="#{msgs.etiquetaDescripcion}" filterMatchMode="contains" width="178" styleClass="nombreFiltro7 siseFont1">
+                                <h:outputText value="#{proceso.descripcion}" />
+                            </p:column>
+                            <p:column filterBy="#{proceso.anio}" headerText="#{msgs.etiquetaPeriodo}" filterMatchMode="exact" width="80" styleClass="nombreFiltro centrado-texto siseFont1">
+                                <f:facet name="filter">
+                                    <p:selectOneMenu  onchange="PF('tblProceso').filter()" style="width: 95px" filter="true" panelStyle="width: 95px">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                        <f:selectItems value="#{procesoMB.listaAnios}" var="fila" itemLabel="#{fila}" itemValue="#{fila}"/>
+                                    </p:selectOneMenu>
+                                </f:facet>
+                                <h:outputText value="#{proceso.anio}"/>
+                            </p:column>
+                            <p:column filterBy="#{proceso.codigoBean.codigo}"  headerText="#{msgs.etiquetaTipoProc}" filterMatchMode="contains" width="100" styleClass="nombreFiltro siseFont1">
+                                <f:facet name="filter">
+                                    <p:selectOneMenu  onchange="PF('tblProceso').filter()" style="width: 100px" filter="true">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                        <f:selectItems value="#{procesoMB.listaCodigoBean}" var="codigoView" itemLabel="#{codigoView.codigo}" itemValue="#{codigoView.codigo}"/>
+                                    </p:selectOneMenu>
+                                </f:facet>
+                                <h:outputText value="#{proceso.codigoBean.codigo}"/>
+                            </p:column>
+                            <p:column class="centrado-texto" filterBy="#{proceso.fecIni}" headerText="#{msgs.etiquetaFecIni}" filterMatchMode="contains" width="70" styleClass="nombreFiltro3 centrado-texto  siseFont1" >
+                                <f:facet name="filter">
+                                    <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                        <p:ajax event="dateSelect" oncomplete="PF('tblProceso').filter()"/>
+                                    </p:calendar> 
+                                </f:facet>
+                                <h:outputText value="#{proceso.fecIni}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column class="centrado-texto" filterBy="#{proceso.fecFin}"  headerText="#{msgs.etiquetaFecFin}" filterMatchMode="contains" width="70" styleClass="nombreFiltro3 centrado-texto  siseFont1">
+                                <f:facet name="filter">
+                                    <p:calendar mode="popup" pattern="dd/MM/yyyy" locale="es" navigator="true" effect="fadeIn">
+                                        <p:ajax event="dateSelect" oncomplete="PF('tblProceso').filter()"/>
+                                    </p:calendar> 
+                                </f:facet>
+                                <h:outputText value="#{proceso.fecFin}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column class="centrado-texto"  headerText="#{msgs.etiquetaEstado}" width="50" styleClass="nombreFiltro3 centrado-texto siseFont1">
+                                <p:inputSwitch id="swCambio" value="#{proceso.estado}">
+                                    <p:ajax listener="#{procesoMB.ponerPorceso(proceso)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </p:column> 
+                            <p:column style="text-align:center;width: 80px">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                </f:facet>
+                                <p:commandLink id="cmdConf" actionListener="#{procesoMB.obtenerPorId(proceso)}" update=":frmMantCheckList"
+                                               oncomplete="PF('popNewCheckList').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/edit.gif" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolcmdConf" for="cmdConf" value="#{msgs.tolTipConfDocumentos}" />
+                                &nbsp;&nbsp;&nbsp;
+                                <p:commandLink id="cmdEliminarCod" action="#{procesoMB.ponerPorceso(proceso)}" update=":frmElimina:pnlDatosElimina"
+                                               oncomplete="PF('popEliminar').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip id="toolCodDel" for="cmdEliminarCod" value="#{msgs.mensajeDelCod}" />
+                            </p:column>
+
+                        </p:dataTable>
+                        <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGrid>
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaProceso}: #{procesoMB.procesoBean.descripcion}"/>
+                            <h:inputHidden value="#{procesoMB.procesoBean.estado}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoMB.cambiarEstado()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosProceso:pnlTablaProceso,msgsConfirma"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update=":frmDatosProceso:pnlTablaProceso,msgsConfirma"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsConfirma" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{procesoMB.procesoBean.descripcion}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoMB.eliminarProceso()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosProceso:pnlTablaProceso,msgsDelProc,:frmDatosProceso:tblProceso"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmEliminaCheckL">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarCheckL" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosEliminaCheckL">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{procesoMB.checkListBean.documento}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{procesoMB.eliminarCheckList()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmMantCheckList:pnlDatosCheckList,msgsDelProcCheck,:frmMantCheckList:tblCheckList,:frmMantCheckList:checkAll"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarCheckL').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarCheckL').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProcCheck" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            <h:form id="frmMantCheckList">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popNewCheckList" resizable="false" modal="true" styleClass="autoWidthDialog" position="top">
+                    <h:panelGrid columns="10" cellpadding="0" styleClass="centrado">
+                        <h:outputLabel value="#{msgs.etiquetaProceso}:" class="negrita"/>
+                        <h:outputText  value="#{procesoMB.procesoBean.descripcion}" class="black siseFontGrid5"/> 
+                        <p:spacer width="50"/>
+                        <h:outputLabel value="#{msgs.etiquetaEstado}:" class="negrita"/> 
+                        <h:outputText value="#{procesoMB.procesoBean.statusVista}" class="siseFontGrid5"/>
+
+                        <h:inputHidden value="#{procesoMB.procesoBean.idProceso}"/>
+                        <h:inputHidden />
+                    </h:panelGrid>
+                    <p:panel id="pnlCheck" header="#{msgs.tituloConfCheckList}" style="margin-bottom:1px;width: 655px" toggleable="true" toggleSpeed="500" closeSpeed="500" collapsed="#{procesoMB.checkListBean.collapsed}" styleClass="centrado">
+                        <h:panelGrid columns="1" id="pnlDatosCheckList" cellpadding="1" styleClass="centrado">
+                            <h:panelGrid columns="3" style="width: 435px"  class="siseFont1">
+                                <h:outputLabel value="#{msgs.etiquetaDocumento}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputText  value="#{procesoMB.checkListBean.documento}" required="true"  label="#{msgs.etiquetaDocumento}" size="35" maxlength="30"/>   
+
+                                <h:outputLabel value="#{msgs.etiquetaObligatorio}" class="negrita" style="width: 100px"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:inputSwitch value="#{procesoMB.checkListBean.flgObligatorio}" onLabel="#{msgs.etiquetaSi}" offLabel="#{msgs.etiquetaNo}" required="true" />
+
+                                <h:outputLabel value="#{msgs.etiquetaCategoria}" class="negrita"/>
+                                <h:outputText value="*" class="requerido"/>
+                                <p:selectOneRadio value="#{procesoMB.checkListBean.tipoCopiaBean.idCodigo}" required="true"  label="#{msgs.etiquetaTipoCopia}" style="width: 305px"> 
+                                    <f:selectItems value="#{procesoMB.listaTipoCopiaBean}" var="copia" itemValue="#{copia.idCodigo}" itemLabel="#{copia.codigo}"/>
+                                </p:selectOneRadio >
+                            </h:panelGrid>
+                            <h:panelGrid columns="3" id="checks">
+                                <p:fieldset legend="#{msgs.etiquetaInicial}" style="width: 125px">
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgIni3anios}" value="#{procesoMB.checkListBean.flg23}"/>
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgIni4anios}" value="#{procesoMB.checkListBean.flg24}"/>
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgIni5anios}" value="#{procesoMB.checkListBean.flg25}"/>
+                                     
+                                </p:fieldset> 
+                                <p:fieldset legend="#{msgs.etiquetaPrimaria}" style="width: 125px">
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgPri01}" value="#{procesoMB.checkListBean.flg01}" />
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgPri02}" value="#{procesoMB.checkListBean.flg02}"/>
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgPri03}" value="#{procesoMB.checkListBean.flg03}"/>
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgPri04}" value="#{procesoMB.checkListBean.flg04}"/>
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgPri05}" value="#{procesoMB.checkListBean.flg05}"/>
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgPri06}" value="#{procesoMB.checkListBean.flg06}"/> 
+                                </p:fieldset> 
+                                <p:fieldset legend="#{msgs.etiquetaSecundaria}" style="width: 125px">
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgSec07}" value="#{procesoMB.checkListBean.flg07}" />
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgSec08}" value="#{procesoMB.checkListBean.flg08}"/>
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgSec09}" value="#{procesoMB.checkListBean.flg09}" />
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgSec10}" value="#{procesoMB.checkListBean.flg10}" />
+                                    <p:selectBooleanCheckbox itemLabel="#{msgs.flgSec11}" value="#{procesoMB.checkListBean.flg11}" /> 
+                                </p:fieldset> 
+                            </h:panelGrid>
+                            <h:panelGrid columns="2" style="position: relative;left: 85%" id="checkAll"> 
+                                <p:selectBooleanCheckbox value="#{procesoMB.checkTodos}"> 
+                                    <p:ajax event="change" listener="#{procesoMB.cambiarCheckTodos()}" update=":frmMantCheckList:checks,:frmMantCheckList:checkAll"/> 
+                                </p:selectBooleanCheckbox> 
+                                <h:outputText value="#{msgs.etiquetaMarTodos}" class="negrita siseFontGrid4" rendered="#{procesoMB.checkTodos==false}"/>
+                                <h:outputText value="#{msgs.etiquetaDesTodos}" class="negrita siseFontGrid4" rendered="#{procesoMB.checkTodos==true}"/>
+                            </h:panelGrid>
+                            <h:outputText value="(*) Requerido" class="requerido"/>
+                            <h:inputHidden value="#{procesoMB.checkListBean.idCheckList}"/>
+                            <h:inputHidden/>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado">
+                            <p:commandButton actionListener="#{procesoMB.guardarCheckList()}" 
+                                             update=":frmMantCheckList:pnlTblCL,:frmMantCheckList:pnlDatosCheckList,:frmMantCheckList:tblCheckList,msgsAdd,:frmMantCheckList:checkAll"
+                                             oncomplete="if(args.operacionCorrecta){PF('popNewCheckList').show();PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{procesoMB.limpiarCheckList()}" 
+                                                    update=":frmMantCheckList:pnlTblCL,:frmMantCheckList:pnlDatosCheckList,:frmMantCheckList:tblCheckList,msgsAdd"
+                                                     value="#{msgs.botonNuevo}" process="@this">
+                                    </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAdd" showDetail="true" showSummary="true"/>
+                    </p:panel>
+                    <br></br>
+                    <h:panelGrid class="centrado" id="pnlTblCL">
+                        <p:growl id="msgs" showDetail="true"/>
+                        <p:dataTable id="tblCheckList" value="#{procesoMB.listaCheckListBean}" widgetVar="tblCheckList"
+                                     paginator="true" selectionMode="single" scrollable="true"  rowIndexVar="n"
+                                     paginatorPosition="bottom" editable="true"
+                                     var="check" rowKey="#{check}" rows="5" 
+                                     rendered="#{not empty procesoMB.listaCheckListBean}" 
+                                     style="width: 1350px;overflow-x: auto;font-size:14px !important;">
+                            <p:ajax event="rowSelect" listener="#{procesoMB.rowSelectCheckList}" update=":frmMantCheckList:pnlCheck" /> 
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.tituloConfCheckList}"/>  
+                            </f:facet>
+                            <p:columnGroup type="header">
+                                <p:row>
+                                    <p:column rowspan="2"  headerText="#{msgs.numero}" width="5%" styleClass="nombre2Filtro centrado-texto siseFont1"/>
+                                    <p:column rowspan="2" filterBy="#{check.documento}"  headerText="#{msgs.etiquetaDocumento}" filterMatchMode="contains" sortBy="#{check.documento}" width="25%" styleClass="nombre2Filtro centrado-texto siseFont1"/>
+                                    <p:column rowspan="2"  sortBy="#{check.tipoCopiaBean.codigo}" filterMatchMode="in" headerText="#{msgs.etiquetaTipoCopia}" width="70"  styleClass="nombreFiltro centrado-texto siseFont1"/>
+                                    <p:column colspan="3" class="nombre2Filtro" headerText="#{msgs.etiquetaInicial}"  width="15%" styleClass="nombreFiltro centrado-texto siseFont1"/>
+                                    <p:column colspan="6" class="nombre2Filtro" headerText="#{msgs.etiquetaPrimaria}"  width="25%" styleClass="nombreFiltro centrado-texto siseFont1"/>
+                                    <p:column colspan="5" class="nombre2Filtro" headerText="#{msgs.etiquetaSecundaria}"  width="25%" styleClass="nombreFiltro centrado-texto siseFont1"/>
+                                    <p:column rowspan="2" headerText="#{msgs.etiquetaObligatorio}" width="10%" styleClass="nombreFiltro centrado-texto siseFont1"/>
+                                    <p:column rowspan="2" headerText="#{msgs.etiquetaAcciones}" width="10%" styleClass="nombreFiltro centrado-texto siseFont1"/>
+                                </p:row>
+                                <p:row>
+                                    <p:column colspan="1" sortBy="#{check.flg23}" headerText="#{msgs.flgIni3aniosAbre}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg24}" headerText="#{msgs.flgIni4aniosAbre}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg25}" headerText="#{msgs.flgIni5aniosAbre}" width="5%" styleClass="centrado-texto siseFont1" />
+
+                                    <p:column colspan="1" sortBy="#{check.flg01}" headerText="#{msgs.flgPri01}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg02}" headerText="#{msgs.flgPri02}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg03}" headerText="#{msgs.flgPri03}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg04}" headerText="#{msgs.flgPri04}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg05}" headerText="#{msgs.flgPri05}" width="5%" styleClass="centrado-texto siseFont1" />
+
+                                    <p:column colspan="1" sortBy="#{check.flg06}" headerText="#{msgs.flgPri06}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg07}" headerText="#{msgs.flgSec07}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg08}" headerText="#{msgs.flgSec08}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg09}" headerText="#{msgs.flgSec09}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg10}" headerText="#{msgs.flgSec10}" width="5%" styleClass="centrado-texto siseFont1" />
+                                    <p:column colspan="1" sortBy="#{check.flg11}" headerText="#{msgs.flgSec11}" width="5%" styleClass="centrado-texto siseFont1" />
+                                </p:row>
+                            </p:columnGroup>
+                            <p:column styleClass=" siseFontTable1">
+                                <h:outputText value="#{n+1}" />  
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.documento}"/>
+                            </p:column>
+                            <p:column styleClass="siseFontTable3 centrado-texto">
+                                <f:facet name="filter">
+                                    <p:selectCheckboxMenu label="#{msgs.comboSeleccionarLabel}" onchange="PF('tblCheckList').filter()" style="width: 150px" panelStyle="width:200px" scrollHeight="200">
+                                        <f:selectItems value="#{procesoMB.listaTipoCopiaBean}" var="filCop" itemLabel="#{filCop.codigo}" itemValue="#{filCop.codigo}"/>
+                                    </p:selectCheckboxMenu>
+                                </f:facet>
+                                <h:outputText value="#{check.tipoCopiaBean.codigo}" />
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable5">
+                                <h:outputText value="#{check.flg23Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg24Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg25Vista}"/>
+                            </p:column>
+
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg01Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg02Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg03Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg04Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg05Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg06Vista}"/>
+                            </p:column>
+
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg07Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg08Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg09Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg10Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flg11Vista}"/>
+                            </p:column>
+                            <p:column styleClass="nombre1Filtro siseFontTable3">
+                                <h:outputText value="#{check.flgObligatorioVista}"/>
+                            </p:column>
+                            <p:column style="text-align:center;width: 80px">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                </f:facet> 
+                                <p:commandLink id="cmdEliminarCheck" action="#{procesoMB.ponerCheckList(check)}" update=":frmEliminaCheckL:pnlDatosEliminaCheckL"
+                                               oncomplete="PF('popEliminarCheckL').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip id="cmdEliminarCheckL" for="cmdEliminarCheck" value="#{msgs.mensajeDelCod}" />
+                            </p:column> 
+                        </p:dataTable>
+                    </h:panelGrid>  
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

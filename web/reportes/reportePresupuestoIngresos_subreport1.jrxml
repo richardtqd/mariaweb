@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportePresupuestoIngresos_subreport1" language="groovy" pageWidth="765" pageHeight="802" columnWidth="765" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="8687f6b9-6381-4acc-9f3d-0b35cae41245">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[declare @uniNeg varchar(6)='champs'
+declare @anio int=2019
+declare @fechaIni date =(select convert(date,(select '01-01-'+convert(varchar(4),2019))))
+declare @fechaFin date='25-12-2019'
+;with listaPresupuesto (unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+        valoSoles,presupuestoProgramado) as(
+select uni.unineg,
+pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+(case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(dd.montopagado,0))   as valoSoles,
+pre.presupuestoprog
+from MT_DocIngreso d
+inner join MO_UnidadNegocio uni on uni.unineg=d.unineg
+inner join MT_DetDocIngreso dd on dd.iddocingreso=d.iddocingreso
+inner join MT_Concepto c on c.idconcepto=dd.idconcepto
+inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+inner join MO_Codigo moneda on moneda.idcodigo=d.idtipomoneda
+left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+where
+year(d.fechapago) =@anio
+and  pl.cuenta in(select cuenta from MT_PlanContable) and uni.unineg=@uniNeg
+and CONVERT(DATE,d.fechapago)>=@fechaIni and CONVERT(DATE,d.fechapago)<=@fechaFin AND PL.cuenta LIKE'7%'
+and idctasxcobrar is null
+group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+union all
+select uni.unineg,
+pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+(case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+pre.presupuestoprog
+from MT_CtasxCobrar ct
+inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg
+inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+where  ct.anio=@anio and  pl.cuenta in(select cuenta from MT_PlanContable) and uni.unineg=@uniNeg
+and CONVERT(DATE,ct.fechapago)>=@fechaIni and CONVERT(DATE,ct.fechapago)<=@fechaFin AND PL.cuenta LIKE'7%'
+group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+union all
+select uni.unineg,
+pl.cuenta, pl.nombre+' (Años Anteriores)' as nombreCuenta,@anio as anio,
+(case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(ct.monto,0)-isnull(ct.dsctobeca,0))   as valoSoles,
+pre.presupuestoprog
+from MT_CtasxCobrar ct
+inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg
+inner join MT_Concepto c on c.idconcepto=ct.idconcepto
+inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+where  ct.anio<@anio and  pl.cuenta in(select cuenta from MT_PlanContable) and uni.unineg=@uniNeg
+and CONVERT(DATE,ct.fechapago)>=@fechaIni and CONVERT(DATE,ct.fechapago)<=@fechaFin AND PL.cuenta LIKE'7%'
+group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog
+
+union all
+select uni.unineg,
+pl.cuenta, pl.nombre as nombreCuenta,@anio as anio,
+(case when moneda.codigo='Soles' then 'S'when moneda.codigo='Dolares' then 'D' end) as monedaOrigen,  sum(isnull(ct.montopagado,0)-(isnull(ct.monto,0)-isnull(ct.dsctobeca,0)))   as valoSoles,
+pre.presupuestoprog
+from MT_CtasxCobrar ct
+inner join MO_UnidadNegocio uni on uni.unineg=ct.unineg
+inner join MT_Concepto c on c.cuentah=772211
+inner join MT_PlanContable pl on pl.cuenta=c.cuentah
+inner join MO_Codigo moneda on moneda.idcodigo=ct.idtipomoneda
+left join MG_Presupuesto pre on pre.unineg=@uniNeg and pre.anio=@anio and pre.cuenta=pl.cuenta and tipocuenta='I'
+where  ct.anio=@anio and  pl.cuenta in(select cuenta from MT_PlanContable) and uni.unineg=@uniNeg
+and CONVERT(DATE,ct.fechapago)>=@fechaIni and CONVERT(DATE,ct.fechapago)<=@fechaFin AND PL.cuenta LIKE'7%'
+group by  uni.unineg,pl.cuenta,pl.nombre,moneda.codigo,moneda.idcodigo,pre.presupuestoprog)
+
+select unineg,cuenta,nombreCuenta,anio,monedaOrigen,
+valoSoles   as valorSoles,isnull(l.presupuestoProgramado,0) as presupuestoProgramado,
+(SELECT SUM(valoSoles) FROM listaPresupuesto  l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles)  as presupuestoEje,
+(isnull(l.presupuestoProgramado,0)-(SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles)) as saldo,
+isnull(convert(decimal(12,2),( (((SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles )*100)/l.presupuestoProgramado))),0) as porcEje ,
+isnull(convert(decimal(12,2),100-( ((SELECT SUM(valoSoles) FROM listaPresupuesto l2  where l2.cuenta=l.cuenta and l2.valoSoles=l.valoSoles)*100)/l.presupuestoProgramado)),0) as porcSaldo
+FROM listaPresupuesto l
+
+
+union all
+        select
+        @unineg as uniNeg,
+        pl.cuenta, pl.nombre as nombreCuenta, @anio as anio,
+        'S' as monedaOrigen
+        , 0 as valorsoles
+        ,isnull(p.presupuestoprog,0) as presupuestoProgramado
+        , 0 as presupuestoEje,
+        ( sum(isnull(P.presupuestoprog,0))-0) as saldo,
+        0 as porcEje ,
+        100 as porcSaldo
+        from MG_Presupuesto p
+        inner join MT_PlanContable pl on pl.cuenta=p.cuenta
+		where  tipocuenta='I'
+		and p.anio=@anio and p.unineg=@uniNeg
+		and  pl.cuenta in(select cuenta from MT_PlanContable)
+		and pl.cuenta not in (select cuenta from listaPresupuesto lista where lista.cuenta in(pl.cuenta) )
+	group by pl.cuenta,p.idpresupuesto,pl.nombre,p.creafecha,p.presupuestoprog
+
+ order by l.cuenta asc]]>
+	</queryString>
+	<field name="unineg" class="java.lang.String"/>
+	<field name="cuenta" class="java.lang.Integer"/>
+	<field name="nombreCuenta" class="java.lang.String"/>
+	<field name="anio" class="java.lang.Integer"/>
+	<field name="monedaOrigen" class="java.lang.String"/>
+	<field name="valorSoles" class="java.math.BigDecimal"/>
+	<field name="presupuestoProgramado" class="java.math.BigDecimal"/>
+	<field name="presupuestoEje" class="java.math.BigDecimal"/>
+	<field name="saldo" class="java.math.BigDecimal"/>
+	<field name="porcEje" class="java.math.BigDecimal"/>
+	<field name="porcSaldo" class="java.math.BigDecimal"/>
+	<variable name="presupuestoProgramado_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{presupuestoProgramado}]]></variableExpression>
+	</variable>
+	<variable name="presupuestoEje_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{presupuestoEje}]]></variableExpression>
+	</variable>
+	<variable name="porcEje_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{porcEje}]]></variableExpression>
+	</variable>
+	<variable name="saldo_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{saldo}]]></variableExpression>
+	</variable>
+	<variable name="porcSaldo_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{porcSaldo}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="20">
+			<staticText>
+				<reportElement uuid="c8a360f5-2a88-432d-8ffd-de740e790f39" x="0" y="0" width="764" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[EJECUCIÓN DETALLADA]]></text>
+			</staticText>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="13" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="c2d2dade-29f7-4b6e-b18e-9ac985e697a0" x="0" y="1" width="58" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CODIGO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e947a361-5a0f-429f-928c-854890dcbccc" x="58" y="1" width="256" height="11" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DESCRIPCIÓN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="77dfc37d-be19-498c-bb44-a11ad940c7d5" x="314" y="1" width="90" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRES. PROGRAMADO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b36b77f2-ac38-4c2d-aab4-2d8118c24ed3" x="404" y="1" width="90" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRES. EJECUTADO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2e1f1274-1672-4193-b09c-9944f1b13898" x="584" y="1" width="90" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SALDO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="40a54971-e9d3-418f-8bab-fbfea2205830" x="494" y="1" width="90" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PORC. EJE(%)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9e414d65-dcb1-421d-802c-5660ce6af5e2" x="674" y="1" width="90" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PORC. SALDO(%)]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="8da1c9a4-41c4-4c5e-8757-a69b6e0fccef" x="0" y="0" width="765" height="1"/>
+				<graphicElement>
+					<pen lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement uuid="ba767bfd-d277-4894-a83e-ef2c5598eeb0" x="0" y="12" width="765" height="1"/>
+				<graphicElement>
+					<pen lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="12" splitType="Stretch">
+			<textField>
+				<reportElement uuid="0ce96fad-b627-4791-8add-cb32e0fc4a54" x="0" y="1" width="58" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cuenta}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a3270def-81c2-4f0a-9973-16a2e98d568e" x="58" y="1" width="256" height="11" isPrintWhenDetailOverflows="true"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreCuenta}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="ac324e3b-fadf-414c-9e72-b22b6c535e70" x="314" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{presupuestoProgramado}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="98bed7d7-e811-41c7-869f-fce098117339" x="404" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{presupuestoEje}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="11370916-27d7-4d01-8af4-3393355546b2" x="584" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{saldo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="14551da8-3589-4b3b-9952-d01c0f047b7b" x="494" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcEje}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="838401e0-c26c-4e1b-81df-7df8c8d2c42c" x="674" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{porcSaldo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="13" splitType="Stretch">
+			<textField pattern="#,##0.00">
+				<reportElement uuid="d851c892-fe80-4c78-b855-1de17f923887" x="314" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{presupuestoProgramado_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="e4d72f36-4927-46ff-b091-4f4684c3d8bc" x="404" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{presupuestoEje_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="af1449df-a3c5-4fed-ab96-7844b8e5f4c1" x="494" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{porcEje_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="3c41cf5f-13ca-424a-8cf6-03d6269e865d" x="584" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{saldo_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement uuid="4062e8bc-65a9-43f5-9abe-cc206ffc5126" x="674" y="1" width="80" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{porcSaldo_1}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="b5f22398-d90f-4b5d-9b8f-8e8d393c2016" x="0" y="12" width="765" height="1"/>
+				<graphicElement>
+					<pen lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement uuid="a9dd3d2b-48cb-4a97-954b-f2f8666619da" x="0" y="1" width="314" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTALES]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="037bf259-22a4-4f11-b90f-38b71b50ac51" x="0" y="0" width="765" height="1"/>
+				<graphicElement>
+					<pen lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

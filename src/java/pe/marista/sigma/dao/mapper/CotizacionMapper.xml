@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.CotizacionDAO">  
+    
+    <sql id="consultaCampos">
+        select 
+        co.idcotizacion,
+        right(replicate('0', 3) + rtrim(isnull(((co.nroCotizacion)),0)),3) as nroCotizacion,
+        co.nroCotiPro as nroCotiPro,
+        un.unineg as uniNeg,
+        un.nombreUniNeg,
+        en.ruc as rucCotizacion,
+        en.nombre as nombreEntidad,
+        en.direccion as dirEnt,
+        tfp.idcodigo as idTipoFormaPago,
+        tfp.codigo as tipoFormaPago,
+        tor.idcodigo as idTipoCategoria,
+        tor.codigo as tipoCategoria,
+        co.obs,
+        co.fechacotizacion,
+        co.creaPor,
+        co.creafecha,
+        co.modiPor, 
+        co.flgAceptado,
+        co.nroCotizacion as nroCotizacion,
+        (select case
+        when tor.codigo = 'Activo Fijo' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Material' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Servicio' then sum(det.importe*det.cantidad)
+        end
+        from ML_DetCotizacion det 
+        where det.idcotizacion = co.idcotizacion and det.unineg = co.unineg) as montoRef,
+        CONCAT(SUBSTRING((REPLACE((det.importe*det.cantidad),'.','')),1,4),'.0')   as montoCadaUnoMate
+        ,ord.idordencompra as idOrdenCompra
+        ,tp.idcodigo as idTipoPrioridad
+        ,tp.codigo as tipoPrioridad,
+        co.igvcoti as igvCoti,
+        co.importeportodo as importePorTodo
+        from ML_Cotizacion co
+        left join MO_UnidadNegocio un on co.unineg = un.unineg
+        left join MO_Entidad en on co.ruc = en.ruc and en.unineg = un.unineg
+        left join MO_Codigo tfp on co.idtipopago = tfp.idcodigo  
+        left join MO_Codigo tor on co.idtipocategoria = tor.idcodigo 
+        left join ML_OrdenCompra ord on ord.idordencompra=co.idordencompra and un.unineg= ord.unineg
+        left join MO_Codigo tp on co.idtipoprioridad = tp.idcodigo 
+        left join ML_DetCotizacion det on det.idcotizacion = co.idcotizacion  and un.unineg= det.unineg
+    </sql>
+    <sql id="consultaReque">
+        select distinct
+        detC.idrequerimiento as idRequerimiento,
+        req.titulo as titulo ,
+        toror.codigo as categoria,
+        coti.nrocotizacion as nroCotizacion,
+        coti.nroCotiPro as nroCotiPro,
+        coti.igvcoti as igvCoti
+        ,coti.importeportodo as importePorTodo
+        from ML_Cotizacion coti
+        left join MO_UnidadNegocio un on un.uniNeg = coti.uniNeg        
+        inner join ML_DetCotizacion detC  on coti.idcotizacion = detC.idcotizacion and coti.unineg = detC.unineg        
+        left join MO_Codigo form on coti.idtipopago = form.idcodigo        
+        left join MO_Codigo toror on coti.idtipocategoria = toror.idcodigo      
+        left join MO_Entidad en on coti.ruc = en.ruc         and en.unineg=detc.unineg
+        left join MO_Entidad ent on un.ruc = ent.ruc       and ent.unineg=detc.unineg
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito      
+        left join MO_Pais pais on ent.idpais = pais.idpais    
+        inner join ML_DetRequerimiento dr on detC.iddetrequerimiento = dr.iddetrequerimiento and dr.unineg = detc.unineg       
+        inner join ML_Requerimiento req on detC.idrequerimiento = req.idrequerimiento and req.unineg = detc.unineg     
+        left join MO_Codigo tor on req.idtipocategoria = tor.idcodigo        
+        inner join ML_Catalogo c on detC.idcatalogo = c.idcatalogo    
+        left join MO_Entidad entidad on entidad.ruc = c.ruc         
+        left join MO_Codigo um on c.idtipounimed = um.idcodigo     
+        left join MO_Codigo tm on detC.idtipomoneda = tm.idcodigo        
+    </sql>
+    
+    <resultMap id="cotizacionResultado" type="pe.marista.sigma.bean.CotizacionBean">
+        <id property="idCotizacion" column="idCotizacion"/>  
+        <result property="obs" column="obs"/>
+        <result property="montoRef" column="montoRef"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="flgAceptado" column="flgAceptado"/>
+        <result property="fechaCotizacion" column="fechaCotizacion"/>
+        <result property="montoCadaUnoMate" column="montoCadaUnoMate"/> 
+        <result property="idRequerimiento" column="idRequerimiento"/> 
+        <result property="idCoti" column="idCoti"/> 
+        <result property="nroCotizacion" column="nroCotizacion"/> 
+        <result property="nroCotiPro" column="nroCotiPro"/> 
+        <result property="igvCoti" column="igvCoti"/> 
+        <result property="importePorTodo" column="importePorTodo"/> 
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"/>
+        <association property="tipoPagoBean" column="idTipoPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoFormaPagoResultado"/>
+        <association property="tipoCategoriaBean" column="idTipoCategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoCategoriaResultado"/>  
+        <association property="ordenCompraBean" column="idOrdenCompra"
+                     javaType="pe.marista.sigma.bean.OrdenCompraBean"
+                     resultMap="ordenResultado"/>  
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadResultado"/>
+    </resultMap> 
+    <resultMap id="ordenResultado" type="pe.marista.sigma.bean.OrdenCompraBean">
+        <id property="idOrdenCompra" column="idOrdenCompra"/> 
+    </resultMap> 
+    <resultMap id="negocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap> 
+    <resultMap id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucCotizacion"/>
+        <result property="nombre" column="nombreEntidad"/> 
+        <result property="direccion" column="dirEnt"/> 
+    </resultMap>
+    <resultMap id="tipoPrioridadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="tipoPrioridad"/>
+    </resultMap>
+    <resultMap id="tipoFormaPagoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoFormaPago"/>
+        <result property="codigo" column="tipoFormaPago"/>
+    </resultMap>
+    <resultMap id="tipoCategoriaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoCategoria"/>
+        <result property="codigo" column="tipoCategoria"/>
+    </resultMap>  
+    <select id="obtenerPorFiltro" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaCampos" />
+        <where>         
+            co.unineg =#{unidadNegocioBean.uniNeg} 
+            <if test="idCotizacion != null and idCotizacion != 0 ">
+                and co.idCotizacion = #{idCotizacion}
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and co.fechacotizacion >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and co.fechacotizacion <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by co.idcotizacion desc
+    </select>
+    <!--Listo todas las solicitudes de Servicio>-->
+    <select id="obtenerTodosSolDes" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaCampos" />
+        <where>         
+            co.unineg =#{unidadNegocioBean.uniNeg}  and  tor.idcodigo = 18203 
+            <if test="idCotizacion != null and idCotizacion != 0 ">
+                and co.idCotizacion = #{idCotizacion}
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and co.fechacotizacion >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and co.fechacotizacion <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by co.idCotizacion desc
+      
+    </select>
+    <select id="obtenerTodosMCotizacion" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaCampos" />
+        where tor.idcodigo = 18202 or tor.idcodigo = 18201  
+        order by co.idcotizacion desc
+    </select>
+    <select id="obtenerTodosMCotizacionAceptadas" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaCampos" />
+        where tor.idcodigo = 18202 and co.flgAceptado = 1 or tor.idcodigo = 18201  and co.flgAceptado = 1
+        order by co.idcotizacion desc
+    </select>
+    <!--Listo todas las solicitudes menos las de Servicio>-->
+    <select id="obtenerTodosM" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaReque" />
+        <where>         
+            coti.unineg =#{unidadNegocioBean.uniNeg} and toror.idcodigo in ( 18202,18201) 
+            <if test="idRequerimiento != null and idRequerimiento != 0 ">
+                and detC.idrequerimiento =#{idRequerimiento}  
+            </if> 
+            <if test="nroCotizacion != null and nroCotizacion != 0 ">
+                and coti.nroCotizacion = #{nroCotizacion}
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and coti.fechacotizacion >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and coti.fechacotizacion <= #{fechaFin}
+                ]]>
+            </if>
+        </where>
+        order by detC.idrequerimiento desc
+    </select>
+    <select id="obtenerTodosMSol" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.SolicitudLogisticoBean">
+        <include refid="consultaCampos" />
+        where co.unineg =#{unidadNegocioBean.uniNeg}  and tor.idcodigo = 18202 or tor.idcodigo = 18201
+        order by re.idrequerimiento desc
+    </select>
+    
+    <select id="obtenerTodosPorUniNeg" resultMap="cotizacionResultado" parameterType="String">
+        <include refid="consultaCampos" /> where co.unineg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerPorId" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaCampos" />where co.idCotizacion = #{idCotizacion} and co.unineg = #{unidadNegocioBean.uniNeg}
+    </select> 
+    
+    <select id="obtenerRucPorReq" resultMap="cotizacionResultado" parameterType="map">
+        SELECT top 1 co.flgaceptado flgAceptado,co.unineg as unineg,en.ruc as rucCotizacion, en.direccion as dirEnt,co.nroCotiPro as nroCotiPro, 
+        en.nombre as nombreEntidad,co.igvCoti as igvCoti, co.idcotizacion as idCotizacion,co.importePorTodo as importePorTodo
+        FROM  ML_Cotizacion co
+        left join MO_Entidad en on co.ruc = en.ruc
+        where co.idcotizacion in (SELECT distinct idcotizacion  FROM ML_DetCotizacion  where idrequerimiento=#{idRequerimiento})
+        and co.flgaceptado=1 and  co.unineg = #{uniNeg}
+    </select> 
+    
+    <select id="obtenerPorIdCotiParaOrden" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaCampos" />where co.idCotizacion = #{idCotizacion} 
+    </select> 
+    
+    <select id="obtenerListaPorId" resultMap="cotizacionResultado" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        <include refid="consultaCampos" />where co.idCotizacion = #{idCotizacion} and co.unineg = #{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerUltimo" resultType="Integer" parameterType="String" >
+        select isnull((max(nroCotizacion)),0) from ML_Cotizacion
+        WHERE uniNeg =#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerUltimoCoti" resultMap="cotizacionResultado" parameterType="map" >
+        select * from ML_Cotizacion
+        WHERE co.uniNeg =#{uniNeg} and  co.idcotizacion=#{idCotizacion}
+    </select>
+    
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.CotizacionBean"
+            useGeneratedKeys="true" keyProperty="idCotizacion" keyColumn="idCotizacion">
+        insert into ML_Cotizacion (idCotizacion,unineg,ruc,idtipopago,idtipoCategoria,
+        obs,creaPor,creafecha,fechacotizacion,flgaceptado,idordencompra,idtipoprioridad,nrocotizacion,nrocotipro,igvcoti,
+        importeportodo) 
+        values (0,#{unidadNegocioBean.uniNeg},#{entidadBean.ruc},
+        #{tipoPagoBean.idCodigo},#{tipoCategoriaBean.idCodigo},
+        #{obs},#{creaPor},getDate(),#{fechaCotizacion},#{flgAceptado},#{ordenCompraBean.idOrdenCompra},#{tipoPrioridadBean.idCodigo},#{nroCotizacion},#{nroCotiPro},
+        #{igvCoti},#{importePorTodo})
+        <selectKey keyProperty="idCotizacion" order="AFTER" resultType="Integer">
+            SELECT max(idCotizacion) FROM ML_Cotizacion WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.CotizacionBean">
+        update ML_Cotizacion
+        set 
+        ruc = #{entidadBean.ruc},
+        idtipopago = #{tipoPagoBean.idCodigo},
+        idtipoCategoria = #{tipoCategoriaBean.idCodigo}, 
+        obs = #{obs},
+        flgaceptado = #{flgAceptado},
+        idtipoprioridad =#{tipoPrioridadBean.idCodigo},
+        nrocotipro= #{nroCotiPro},
+        igvcoti=#{igvCoti},
+        importeportodo=#{importePorTodo},
+        modiPor = #{modiPor}
+        where idCotizacion = #{idCotizacion}
+    </update>
+    
+    <update id="changeStatusCoti" parameterType="map" >
+        update ML_Cotizacion
+        set  
+        flgaceptado = #{flgAceptado}, 
+        modiPor = #{modiPor}
+        where idCotizacion = #{idCotizacion} AND unineg=#{uniNeg}
+    </update>
+    <select id="obtenerUltimoCotizacion" resultType="String" parameterType="String" >
+        select
+        right(replicate('0', 3) + rtrim(isnull((max(nroCotizacion)),0)+1),3) as nroCotizacion from ML_Cotizacion
+        WHERE uniNeg=#{uniNeg} 
+    </select>  
+
+</mapper>

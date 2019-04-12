@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteOrdenCompraGeneral" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="9a67c25a-d68e-4f16-ae62-a3db2f3d2712">
+	<property name="ireport.zoom" value="1.5"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="rutaImagen" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select det.uniNeg,det.idordencompra as idOrdenCompra,det.cantidad as cantidad,
+			c.item,det.importe AS importe,tm.codigo tipoMoneda,
+			un.nombreUniNeg, tor.codigo as categoria,
+			form.codigo as formaPago, en.ruc as rucOrden,en.nombre as nombreOrden,en.direccion as direccionOrden,ent.ruc as rucUnidad,
+			ent.nombre as nombreUnidad,ent.url as webUnidad,
+			ent.correo as correoUnidad,ent.telefono as telefonoUnidad,ent.direccion as direccionUnidad,
+			dis.nombre as distritoUnidad,pais.nombre as paisUnidad,
+			(select sum(d.importe*d.cantidad) from ML_DetOrdenCompra d
+			where d.idOrdenCompra = (select max(idordencompra)from ML_OrdenCompra)) as sumaImporte,
+(select case
+        when tor.codigo = 'Activo Fijo' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Material' then sum(det.importe*det.cantidad)
+        when tor.codigo = 'Servicio' then sum(det.importe)
+        end
+        from ML_DetOrdenCompra det
+        where det.idOrdenCompra = orden.idOrdenCompra) as sumaImporteFinal,
+			 (det.importe*det.cantidad)  as montoRef,(det.importe*det.cantidad)   as montoCadaUnoMate,
+		(det.importe)  as montoCadaUnoSer,
+		(SELECT
+SUM(det.importe*det.cantidad)
+FROM ML_DetOrdenCompra det) AS montoGeneralOrden,
+		comed.codigo as tipoUniMed
+			from ML_DetOrdenCompra det
+			inner join ML_OrdenCompra orden on det.idordencompra = orden.idOrdenCompra
+			left join MO_Codigo form on orden.idtipoformapago = form.idcodigo
+			left join MO_Codigo tor on orden.idtipocategoria = tor.idcodigo
+			left join MO_Entidad en on orden.ruc = en.ruc
+			left join MO_UnidadNegocio un on un.uniNeg = det.uniNeg
+			left join MO_Entidad ent on un.ruc = ent.ruc
+			left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+			left join MO_Pais pais on ent.idpais = pais.idpais
+			inner join ML_DetRequerimiento dr on det.iddetrequerimiento = dr.iddetrequerimiento
+			inner join ML_Requerimiento req on det.idrequerimiento = req.idrequerimiento
+			inner join ML_Catalogo c on det.idcatalogo = c.idcatalogo
+			left join MO_Codigo um on c.idtipounimed = um.idcodigo
+			left join MO_Codigo tm on det.idtipomoneda = tm.idcodigo
+				left join MO_Codigo comed on comed.idcodigo = det.idtipounimed]]>
+	</queryString>
+	<field name="uniNeg" class="java.lang.String"/>
+	<field name="idOrdenCompra" class="java.lang.Integer"/>
+	<field name="cantidad" class="java.lang.Integer"/>
+	<field name="item" class="java.lang.String"/>
+	<field name="importe" class="java.math.BigDecimal"/>
+	<field name="tipoMoneda" class="java.lang.String"/>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="categoria" class="java.lang.String"/>
+	<field name="formaPago" class="java.lang.String"/>
+	<field name="rucOrden" class="java.lang.String"/>
+	<field name="nombreOrden" class="java.lang.String"/>
+	<field name="direccionOrden" class="java.lang.String"/>
+	<field name="rucUnidad" class="java.lang.String"/>
+	<field name="nombreUnidad" class="java.lang.String"/>
+	<field name="webUnidad" class="java.lang.String"/>
+	<field name="correoUnidad" class="java.lang.String"/>
+	<field name="telefonoUnidad" class="java.lang.String"/>
+	<field name="direccionUnidad" class="java.lang.String"/>
+	<field name="distritoUnidad" class="java.lang.String"/>
+	<field name="paisUnidad" class="java.lang.String"/>
+	<field name="sumaImporte" class="java.math.BigDecimal"/>
+	<field name="sumaImporteFinal" class="java.math.BigDecimal"/>
+	<field name="montoRef" class="java.math.BigDecimal"/>
+	<field name="montoCadaUnoMate" class="java.math.BigDecimal"/>
+	<field name="montoCadaUnoSer" class="java.math.BigDecimal"/>
+	<field name="montoGeneralOrden" class="java.math.BigDecimal"/>
+	<field name="tipoUniMed" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="154" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="066573fa-a2cf-4c87-a069-f103f8d29e13" x="131" y="114" width="296" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Times New Roman" size="24" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[ Orden de Compra General]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="599a054e-4746-40d7-b199-8982adf8247a" x="442" y="0" width="113" height="39"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Monto Total Pagado]]></text>
+			</staticText>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement uuid="c7257ceb-0a12-4a05-afb0-f65f3007303d" x="442" y="39" width="113" height="25"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoGeneralOrden}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e42e271f-1478-4dd9-b598-e4f26837cc10" x="2" y="77" width="421" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement uuid="c0cc26d9-6cdf-4396-90d3-61218fcf1589" x="74" y="10" width="74" height="67"/>
+				<imageExpression><![CDATA[$P{rutaImagen}+"\\resources\\images\\logosanluis.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="5" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="63" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="f2d2a1bf-a141-4b2b-9d4b-cc12540aa80e" x="39" y="47" width="455" height="15"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="aa754b50-792b-48d1-9b82-47df9abfe0b4" x="369" y="47" width="58" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[IMPORTE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="426819ae-d393-4186-8cc4-d0d2e076fb7a" x="427" y="47" width="67" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2ad251d0-2b81-4860-b862-b8531283d18c" x="39" y="47" width="175" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[ITEM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3895bb88-5be4-480a-9374-0527dbe2a8d3" x="314" y="47" width="55" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[CANTIDAD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="29b0e3e7-255c-4170-9e7a-a01682e703a1" x="30" y="16" width="113" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIPO DE MONEDA     :]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="a828f067-12ac-432f-9efa-09e68d3a929f" x="143" y="16" width="100" height="20"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{tipoMoneda}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="ff0d6e53-6083-4e0a-98ae-fbfe8465e864" x="214" y="47" width="100" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[tipoUniMed]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="9f060b27-26c6-458d-bfed-0b1b25002eef" x="39" y="-1" width="455" height="16"/>
+			</rectangle>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement uuid="1dbe150c-b623-41b6-b51a-23d56081323a" x="369" y="1" width="58" height="14"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{importe}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b02f0292-3f50-49cc-a429-1e6476459742" x="41" y="1" width="173" height="14"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{item}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement uuid="a6f4480e-5833-4965-890d-d92bc3ad9787" x="427" y="1" width="67" height="14"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{montoCadaUnoMate}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="02ab56a1-0154-46f9-b0b8-d6647f477372" x="314" y="1" width="55" height="14"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cantidad}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4324f397-228f-41b4-9ce2-e3c78cd3a039" x="214" y="1" width="100" height="14"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tipoUniMed}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="23" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="56" splitType="Stretch">
+			<textField>
+				<reportElement uuid="27b41364-22cd-464f-82ae-1e84bdf9f29d" x="243" y="13" width="184" height="20"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{distritoUnidad}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="186893a7-62f2-4914-8d7f-4828068b53df" x="200" y="12" width="43" height="21"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{paisUnidad}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="5cfd8a0b-08ac-4dba-b10c-a34af46bf921" x="78" y="33" width="53" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[e-mail.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="4c50b299-f951-451a-8ba6-fec1a5e72050" x="2" y="13" width="192" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{direccionUnidad}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="b3546bbf-0761-447a-96e5-040e27b2b4ed" x="423" y="13" width="33" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[Telf.:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f8e5efd2-c3f8-4806-88fc-54a247e741c1" x="290" y="33" width="60" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[web Site:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="7a86181a-fb51-4b95-b171-1824d2df5b12" x="131" y="33" width="169" height="20"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{correoUnidad}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="33adaffe-e632-4254-9505-ae396d6d6fb0" x="1" y="12" width="555" height="1"/>
+			</line>
+			<textField>
+				<reportElement uuid="96a52304-6e9b-4691-942b-eeb0bc68b263" x="456" y="13" width="100" height="20"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{telefonoUnidad}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="acaa13ba-e36e-436d-869d-471ac41c3a4e" x="350" y="33" width="158" height="20"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{webUnidad}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="7" splitType="Stretch"/>
+	</summary>
+</jasperReport>

@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.ReporteRechazoDAO">  
+    <sql id="consultaCampos" >
+        select 
+        rr.idReporteRechazo,
+        rr.idestudiante,
+        rr.idprocesobanco,
+        rr.idprocesorecup,
+        rr.idctasxcobrar,
+        rr.flgError,
+        rr.descripcion,
+        rr.creaFecha,
+        rr.creaPor,
+        rr.modiPor,
+        pb.idprocesobanco,
+        pb.nombre,
+        pb.montorecup,
+        pr.unineg,
+        pr.iddiscente,
+        pr.fechapago,
+        pr.monto,
+        pr.numoperacion,
+        pr.flgconcilia,
+        pr.creaFecha,
+        prb.idprocesobanco,
+        prb.nombre,
+        es.unineg,
+        es.idestudiante,
+        pe.idpersona,
+        pe.unineg,
+        pe.nombre			as nombreAlumno,
+        pe.apepat,
+        pe.apemat,
+        pe.correo,
+        pe.sexo,
+        cta.idctasxcobrar,
+        cta.fechaPago,
+        cta.monto,
+        cta.idconcepto,
+        cta.montopagado,
+        cta.fechavenc,
+        DAY(cta.fechavenc)		as dia,
+        MONTH(cta.fechavenc)            as mes,
+        YEAR(cta.fechavenc)		as anio,
+        con.idconcepto			as conceptoId,
+        con.nombre                      as nombreConcepto,
+        statusCod.idcodigo		as idTipoStatusCtaCte,
+        statusCod.codigo
+        from MT_ReporteRechazo rr
+        left join MX_Estudiante es on rr.idestudiante = es.idestudiante
+        left join MX_Persona pe on es.idestudiante = pe.idpersona
+        left join MT_ProcesoBanco pb on rr.idprocesobanco = pb.idprocesobanco
+        left join MT_ProcesoRecup pr on rr.idprocesorecup = pr.idprocesorecup
+        left join MT_ProcesoBanco prb on pr.idprocesobanco = prb.idprocesobanco
+        left join MT_CtasxCobrar cta on rr.idctasxcobrar = cta.idctasxcobrar
+        left join MO_Codigo statusCod on cta.idtipostatusctacte = statusCod.idcodigo
+        left join MT_Concepto con on cta.idconcepto = con.idconcepto
+    </sql>
+    
+    <!--ResultMap Rechazo-->
+    <resultMap id="rechazoResultado" type="pe.marista.sigma.bean.ReporteRechazoBean" >  
+        <id property="idReporteRechazo" column="idreporterechazo" />
+        <result property="flgError" column="flgError" />
+        <result property="descripcion" column="descripcion" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="creaPor" column="creaPor" />
+        <result property="modiPor" column="modiPor" />
+        <result property="dia" column="dia" />
+        <result property="mes" column="mes" />
+        <result property="anio" column="anio" />
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="procesoBancoBean" column="idprocesobanco"
+                     javaType="pe.marista.sigma.bean.ProcesoBancoBean"
+                     resultMap="bancoResultado"/>
+        <association property="cuentasPorCobrarBean" column="idctasxcobrar" 
+                     javaType="pe.marista.sigma.bean.CuentasPorCobrarBean"
+                     resultMap="cuentaResultado"/>
+        <association property="procesoRecuperacionBean" column="idprocesorecup"
+                     javaType="pe.marista.sigma.bean.ProcesoRecuperacionBean"
+                     resultMap="recuperacionResultado"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="uniNegResultado"/>
+    </resultMap>
+    
+    <!--ResultMap Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean" >
+        <id property="idEstudiante" column="idEstudiante" />
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/> 
+    </resultMap>
+    
+    <!--ResultMap Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean" >
+        <id property="idPersona" column="idPersona" />
+        <result property="nombre" column="nombreAlumno" />
+        <result property="apepat" column="apePat" />
+        <result property="apemat" column="apeMat" />
+        <result property="nroDoc" column="nroDoc" />
+    </resultMap>
+    
+    <!--ResultMap ProcesoBanco-->
+    <resultMap id="bancoResultado" type="pe.marista.sigma.bean.ProcesoBancoBean" >
+        <id property="idProcesoBanco" column="idProcesoBanco" />
+        <result property="nombre" column="nombre" />
+        <!--<result property="montorecup" column="montoRecup" />-->
+    </resultMap> 
+    
+    <!--ResultMap CuentasPorCobrar-->
+    <resultMap id="cuentaResultado" type="pe.marista.sigma.bean.CuentasPorCobrarBean"  >
+        <id property="idCtasXCobrar" column="idctasxcobrar" />
+        <result property="monto" column="monto"/>
+        <result property="tasaInteres" column="tasaInteres"/>
+        <result property="mora" column="mora"/>
+        <result property="tasaInteres" column="interes"/>        
+        <result property="dscto" column="dscto"/>
+        <result property="montoPagado" column="montoPagado"/>
+        <result property="deuda" column="deuda"/>  
+        <result property="fechaVenc" column="fechaVenc"/>
+        <result property="fechaPago" column="fechaPago"/>
+        <result property="dsctoBeca" column="dsctoBeca"/>
+        <association property="idTipoStatusCtaCte" column="idtipostatusctacte"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusCtaCteResultado"/>
+        <association property="estudianteBean" column="idestudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado2"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado2"/>
+    </resultMap>  
+    
+    <!--Estudiante/Cuenta-->
+    <resultMap id="estudianteResultado2" type="pe.marista.sigma.bean.EstudianteBean">
+        <id property="idEstudiante" column="idEstudiante"/>
+        <result property="codigo" column="codigo"/>
+        <result property="anioIngreso" column="anioIngreso"/>
+        <result property="fechaIngreso" column="fechaIngreso"/>
+        <result property="foto" column="foto"/>
+        <result property="refeLugarNaci" column="refeLugarNaci"/>
+        <result property="viaDomi" column="viaDomi"/>
+        <result property="nroDomi" column="nroDomi"/>
+        <result property="urbDomi" column="urbDomi"/>
+        <result property="refeDomi" column="refeDomi"/>
+        <result property="telefono1Domi" column="telefono1Domi"/>
+        <result property="telefono2Domi" column="telefono2Domi"/>        
+        <result property="factorSanguineo" column="factorSanguineo"/>
+        <result property="grupoSanguineo" column="grupoSanguineo"/>
+        <association property="personaBean" column="idPersona"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado2"/>
+    </resultMap>
+    
+    <!--Cuenta/Estudiante/Persona-->
+    <resultMap id="personaResultado2" type="pe.marista.sigma.bean.PersonaBean" >
+        <id property="idPersona" column="idPersona" />
+        <result property="nombre" column="nombreAlumno" />
+        <result property="apepat" column="apePat" />
+        <result property="apemat" column="apeMat" />
+        <result property="nroDoc" column="nroDoc" />
+    </resultMap>
+    
+    <!--Cuenta/Concepto-->
+    <resultMap id="conceptoResultado2" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="conceptoId"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultado2"/> 
+    </resultMap>
+    
+    <!--Cuenta/Concepto/TipoConcepto-->
+    <resultMap id="tipoConceptoResultado2" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+        <result property="nombre" column="nombreTipoCon"/>
+        <result property="flgIngreso" column="flgIngreso"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+    </resultMap>
+    
+    <!--Reporte StatusCuenta-->
+    <resultMap id="tipoStatusCtaCteResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusCtaCte"/>
+        <result property="codigo" column="codigoStatusCtaCte"/>
+    </resultMap>
+    
+    <!--ResultMap Recuperacion-->
+    <resultMap id="recuperacionResultado" type="pe.marista.sigma.bean.ProcesoRecuperacionBean">
+        <id property="idProcesoRecup" column="idProcesoRecup" /> 
+        <result property="monto" column="monto" />
+        <result property="mora" column="mora" />
+        <result property="montoRecup" column="montoRecup" />
+        <result property="montoEnv" column="montoEnv" />
+        <result property="fechaPago" column="fechaPago" />
+        <result property="cuentaAfiliada" column="cuentaAfiliada" />
+        <result property="datoAdicionalDep" column="datoadicional" />
+        <result property="fechaVen" column="fechaVen" />
+        <result property="agencia" column="agencia" />
+        <result property="numOperacion" column="numOperacion" />
+        <result property="referencia" column="referencia"/>
+        <result property="terminal" column="terminal"/>
+        <result property="flgConcilia" column="flgConcilia"/>
+        <result property="total" column="total"/>
+        <result property="medioAtencion" column="medioAtencion"/>
+        <result property="horaAtencion" column="horaAtencion"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <association property="procesoBancoBean" column="idProcesoBanco"
+                     javaType="pe.marista.sigma.bean.ProcesoBancoBean"
+                     resultMap="procesoResultado"/>
+    </resultMap>
+    
+    <!--ResultMap UnidadNegocio-->
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.UnidadNegocioBean" >
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <!--ResultMap ProcesoBanco-->
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBancoBean" >
+        <id property="idProcesoBanco" column="idProcesoBanco" />
+        <result property="nombre" column="nombre" />
+    </resultMap>
+    
+    <select id="obtenerReporteRechazo" resultMap="rechazoResultado" parameterType="String" > 
+        <include refid="consultaCampos" /> WHERE rr.uniNeg = #{unidadNegocioBean.uniNeg} and rr.flgError = 1 order by rr.idReporteRechazo
+    </select>
+    
+    <select id="obtenerReporteRechazoPorId" resultMap="rechazoResultado" parameterType="Integer" > 
+        <include refid="consultaCampos" /> WHERE rr.uniNeg = #{uniNeg} and rr.idReporteRechazo = #{idReporteRechazo}
+    </select>
+    
+    <select id="obtenerRechazoPorCuenta" resultMap="rechazoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" /> WHERE rr.uniNeg = #{uniNeg} and rr.idctasxcobrar = #{idCtasXCobrar}
+    </select>
+    
+    <select id="obtenerCantidadRechazos" resultType="Integer" parameterType="String" >
+        select count(*) from MT_ReporteRechazo
+        where idprocesobanco = #{idProcesoBanco} and unineg = #{uniNeg}
+    </select>
+    
+    <select id="obtenerMaxIdRechazo" resultType="Integer" parameterType="String" >
+        Select 
+        isnull(max(idreporterechazo),0) as idReporteRechazo
+        from MT_ReporteRechazo 
+        where unineg = #{unidadNegocioBean.uniNeg}
+    </select> 
+     
+    <select id="obtenerMinIdRechazo" resultType="Integer" parameterType="String" >
+        Select 
+        isnull(min(idreporterechazo),0) as idReporteRechazo
+        from MT_ReporteRechazo 
+        where unineg = #{unidadNegocioBean.uniNeg}
+    </select> 
+     
+    <insert id="insertarReporteRechazo" parameterType="pe.marista.sigma.bean.ReporteRechazoBean" >
+        INSERT INTO MT_ReporteRechazo
+        (unineg
+        ,idctasxcobrar
+        ,idprocesobanco
+        ,idestudiante
+        ,idprocesorecup
+        ,flgError
+        ,descripcion
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},
+        #{cuentasPorCobrarBean.idCtasXCobrar},
+        #{procesoRecuperacionBean.procesoBancoBean.idProcesoBanco},
+        #{cuentasPorCobrarBean.estudianteBean.idEstudiante},
+        #{procesoRecuperacionBean.idProcesoRecup},
+        #{flgError},
+        #{descripcion},
+        #{creaPor},
+        getDate()) 
+    </insert>
+     
+    <update id="modificarStatusError" parameterType="pe.marista.sigma.bean.ReporteRechazoBean" >
+        UPDATE MT_ReporteRechazo
+        SET 
+        flgError = #{flgError}
+        WHERE idreporterechazo = #{idReporteRechazo}
+    </update>
+    
+</mapper>

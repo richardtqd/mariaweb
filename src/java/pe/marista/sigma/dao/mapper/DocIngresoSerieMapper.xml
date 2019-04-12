@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.DocIngresoSerieDAO">  
+    <sql id="consultaCampos">
+        SELECT 
+        doc.uniNeg,
+        uni.nombreUniNeg,
+        doc.idTipoDoc,
+        cod.codigo,
+        doc.serie,
+        doc.inicio,
+        doc.fin,
+        doc.actual,
+        doc.status,
+        doc.creaPor,
+        doc.creaFecha,
+        doc.modiPor,
+        CONCAT(doc.serie,'.',doc.unineg,'.',doc.idtipodoc) as idCompleto
+        FROM MT_DocIngresoSerie doc
+        Inner Join MO_Codigo cod on doc.idTipoDoc = cod.idCodigo 
+        Inner Join MO_UnidadNegocio uni on uni.unineg = doc.unineg
+    </sql>
+    <resultMap id="docIngresoSerieResultado" type="pe.marista.sigma.bean.DocIngresoSerieBean">
+        <id property="serie" column="serie"/>
+        <id property="idTipoDoc.idCodigo" column="idTipoDoc"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>        
+        <result property="inicio" column="inicio"/>
+        <result property="fin" column="fin"/>
+        <result property="actual" column="actual"/>
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="idCompleto" column="idCompleto"/>
+        <association property="idTipoDoc" column="idTipoDoc"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoDocResultado"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <resultMap id="tipoDocResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoDoc"/>
+        <result property="codigo" column="codigo"/>
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>
+    <select id="obtenerTodos" resultMap="docIngresoSerieResultado" parameterType="String">
+        <include refid="consultaCampos" /> Where doc.uniNeg = #{uniNeg}
+    </select>
+    <select id="obtenerTodosActivos" resultMap="docIngresoSerieResultado" parameterType="String">
+        <include refid="consultaCampos" />Where doc.status = 1 and doc.uniNeg = #{uniNeg}
+    </select>
+    <select id="buscarPorId" resultMap="docIngresoSerieResultado" parameterType="pe.marista.sigma.bean.DocIngresoSerieBean">
+        <include refid="consultaCampos" />
+        WHERE doc.serie = #{serie} and doc.unineg = #{unidadNegocioBean.uniNeg} and doc.idTipoDoc = #{idTipoDoc.idCodigo}
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.DocIngresoSerieBean">
+        INSERT INTO MT_DocIngresoSerie (unineg,idTipoDoc,serie,inicio,fin,actual,status,creaPor,creaFecha)
+        Values (#{unidadNegocioBean.uniNeg},#{idTipoDoc.idCodigo},#{serie},#{inicio},#{fin},#{actual},#{status},#{creaPor},#{creaFecha})
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.DocIngresoSerieBean">
+        UPDATE MT_DocIngresoSerie
+        SET 
+        inicio = #{inicio},
+        fin = #{fin},
+        actual = #{actual},
+        status = #{status},
+        modiPor = #{modiPor}
+        WHERE 
+        serie = #{serie} 
+        and unineg = #{unidadNegocioBean.uniNeg}
+        and idTipoDoc = #{idTipoDoc.idCodigo}
+    </update>
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.DocIngresoSerieBean">
+        Delete From MT_DocIngresoSerie 
+        WHERE 
+        serie = #{serie} 
+        and unineg = #{unidadNegocioBean.uniNeg}
+        and idTipoDoc = #{idTipoDoc.idCodigo}
+    </delete>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.DocIngresoSerieBean">
+        UPDATE MT_DocIngresoSerie
+        SET 
+        status = #{status},
+        modiPor = #{modiPor}
+        WHERE 
+        serie = #{serie} 
+        and unineg = #{unidadNegocioBean.uniNeg}
+        and idTipoDoc = #{idTipoDoc.idCodigo}
+    </update>    
+    <select id="obtenerTipoDocumento" resultType="pe.marista.sigma.bean.CodigoBean">
+        SELECT 
+        idcodigo,
+        codigo,
+        valor
+        FROM MO_Codigo
+        WHERE idTipoCodigo = 'TipoDoc'
+    </select>   
+    <select id="obtenerActual" resultMap="docIngresoSerieResultado">
+        SELECT 
+        isnull(MAX(doc.serie),0) as serie,
+        isnull(MAX(doc.actual),0) as actual
+        FROM MT_DocIngresoSerie doc
+        Inner Join MO_Codigo cod on doc.idTipoDoc = cod.idCodigo 
+        Inner Join MO_UnidadNegocio uni on uni.unineg = doc.unineg
+
+    </select>
+</mapper>

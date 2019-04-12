@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reporteEstadisticaMatriculaInsc" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="14" bottomMargin="14" uuid="9308179e-ae25-4cd0-96ab-eb052b04808e">
+	<property name="ireport.zoom" value="1.6105100000000008"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\Gonzalo\\trunk\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[--0 Inicial,Primaria,Sec
+DECLARE
+@anio int ,@tipofor varchar(30),@unineg varchar(6)
+set @anio=2016
+set @tipofor='Básica'
+set @unineg='CHAMPS'
+declare
+@cantM int=(select count(*) as cant
+from MX_Matricula m
+inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+where anio=@anio  and flgmatricula=1 and tip.nombre=@tipofor and p.sexo=1 and m.unineg=@unineg ),
+@cantF int=(select count(*) as cant
+from MX_Matricula m
+inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+where anio=@anio  and flgmatricula=1 and tip.nombre=@tipofor and p.sexo=0 and m.unineg=@unineg),
+@cantTotal int=(select count(*) as cant
+from MX_Matricula m
+inner join MX_Estudiante e on e.idestudiante=m.idestudiante and m.unineg=e.unineg
+inner join MX_Persona p on p.idpersona=e.idestudiante and e.unineg=p.unineg
+inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+where anio=@anio  and flgmatricula=1 and tip.nombre=@tipofor and p.sexo in (0,1) and m.unineg=@unineg)
+,@nombreunineg varchar(60)=(select UPPER(nombreUniNeg) from MO_UnidadNegocio where unineg=@unineg)
+,@rucunineg varchar(60)=(select RUC from MO_UnidadNegocio where unineg=@unineg)
+
+select top 1 @nombreunineg as nombreUniNeg, @rucunineg as rucUniNeg, @cantM as cantM ,@cantF AS cantF,@cantTotal as cantTotal,'ESTADISTICAS '+convert(varchar,@anio)+' ALUMNOS MATRICULADOS ' as titulo
+from MX_Matricula m
+inner join MX_GradoAcademico gra on gra.idgradoacademico=m.idgradoacademico
+inner join MX_NivelAcademico niv on niv.idnivelacademico=gra.idnivelacademico
+inner join MX_TipoFormacion tip on tip.idtipoformacion=niv.idtipoformacion
+where anio=@anio  and flgmatricula=1 and tip.nombre=@tipofor and m.unineg=@unineg
+group by   niv.nombre  order by 1]]>
+	</queryString>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="rucUniNeg" class="java.lang.String"/>
+	<field name="cantM" class="java.lang.Integer"/>
+	<field name="cantF" class="java.lang.Integer"/>
+	<field name="cantTotal" class="java.lang.Integer"/>
+	<field name="titulo" class="java.lang.String"/>
+	<field name="listaNiveles" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<field name="pie" class="java.lang.String"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="53" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="4a85ed1d-0df6-420f-b918-28c97f522a3e" x="138" y="22" width="289" height="22"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{titulo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="eb981691-dd93-48dc-b9b8-e815edbab0b0" x="460" y="13" width="82" height="28"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="78fd7eca-d373-4e93-84e8-63e857059330" x="11" y="3" width="197" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ed357243-7bc5-4f65-a909-c7e9629b2e80" x="11" y="16" width="159" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{rucUniNeg}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2f27435c-f58b-4f8f-bb9d-fed24516ae8e" x="460" y="3" width="95" height="21"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FECHA DE IMPRESIÓN:]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="38">
+			<subreport>
+				<reportElement uuid="4ae4ceb2-6d21-4c73-9320-a59950dc33df" x="38" y="0" width="517" height="38"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaNiveles}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "reporteEstadisticaMatriculaInsc_subreport1.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="14">
+			<staticText>
+				<reportElement uuid="2cffbcc1-f53a-45bc-a14f-155654be14a6" x="10" y="3" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="20e175b2-185c-4347-b406-813720bae492" x="43" y="3" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<textField evaluationTime="Report">
+				<reportElement uuid="c158b5c8-8462-4562-9a42-90582fa9dad8" x="58" y="3" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="85ce8ac3-5ef6-4953-9bd6-f54b1ce634d8" x="30" y="3" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="30">
+			<textField>
+				<reportElement uuid="f63e22b9-60e0-44ff-88de-f8885d373f95" x="351" y="0" width="100" height="20"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cantTotal}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="73a655e3-60c2-4352-9615-999555427cd0" x="193" y="0" width="100" height="20"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cantM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="8f14c72b-d934-49be-b6dc-24e56f08b906" x="280" y="0" width="100" height="20"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cantF}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="22ff120d-71bb-4cde-8815-e4db19803853" x="43" y="0" width="127" height="30"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pie}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

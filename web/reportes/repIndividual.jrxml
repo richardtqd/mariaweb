@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="repIndividual" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="59a9b534-a85f-4abd-95b7-4cd5c6c81774">
+	<property name="ireport.zoom" value="1.5"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="rutaImagen" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\PROYECTO_CLIMA_INSTITUCIONAL_2018\\SIGMA2018\\SigmaVersionBR\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[select distinct en.unineg as unineg,
+v.valor as grupoOcupacional,
+cod_planilla.valor as tipoPlanilla,
+pe.codper as codper,
+ltrim(pe.nombre+' '+pe.apepat+' '+pe.apemat) as nombre,
+(case when en.idcompetencia>0 and en.idcompetencia<5 then 'COMPETENCIAS CARDINALES' else 'COMPETENCIAS ESPECIFÍCAS' END) as tipo,
+co.nombre as nombre_competencia,
+space(1)+pregunta.nombre as preguntas
+,cast(avg(cast(en.respuesta as decimal (8,2))) as decimal (8,2)) as promedio,
+cast(v.autoevaluacion as varchar(10)) as autoevaluacion,
+vprom.promedio as promedio_tab,
+vprom.ponderacion as ponderacion_tab
+ from view_reporte_autoevaluacion v
+inner join ED_EvaluadoEvaluador ev on v.codper=ev.codigoEvaluado
+inner join ED_Encuesta en on ev.idEvaluadoEvaluador=en.idevaluadoevaluador and ev.unineg=en.unineg
+inner join ED_Competencia co on en.idcompetencia=co.idcompetencia
+inner join ED_Personal pe on ev.codigoEvaluado=pe.codper and ev.unineg=pe.unineg
+inner join mo_unidadnegocio un on un.unineg=en.unineg
+inner join MO_Cargo c on pe.idcargo=c.idcargo and ev.idCargoEvaluado=c.idcargo
+inner join MO_Codigo cod on cod.idcodigo=c.idtipogrupoocupacional
+inner join MO_Codigo cod_planilla on cod_planilla.idcodigo=pe.idTipoNivelesColegio
+inner join ED_Pregunta pregunta on  en.idpregunta=pregunta.idpregunta
+inner join  ED_PreguntaxCompetencia  pc on pc.idpregunta=pregunta.idpregunta and pc.idcompetencia=co.idcompetencia and pc.idcodigo<>30906
+inner join view_resumen_promedios vprom on ev.codigoEvaluado=vprom.codper
+where pe.idcargo=ev.idCargoEvaluado  and ev.codigoEvaluador!=ev.codigoEvaluado and v.unineg=en.unineg and  en.respuesta>0  and  v.preguntas=pregunta.nombre
+group by en.unineg,v.valor,cod_planilla.valor,pe.codper,pe.nombre+' '+pe.apepat+' '+pe.apemat,
+(case when en.idcompetencia>0 and en.idcompetencia<5 then 'COMPETENCIAS CARDINALES' else 'COMPETENCIAS ESPECIFÍCAS' END),co.nombre,space(1)+pregunta.nombre,v.autoevaluacion,
+vprom.promedio,vprom.ponderacion
+union all
+select  distinct pe.unineg  as unineg,cod.valor as grupoOcupacional,cod_planilla.valor as tipoPlanilla,pe.codper  as codper,
+ltrim(pe.nombre+' '+pe.apepat+' '+pe.apemat) as nombre,'INDICADORES DE LOGRO' as tipo,
+'Indicadores de Logro' as nombre_competencia,' '+d.nombre as preguntas,cast(di.promedio as decimal(8,2)) as promedio, '' as autoevaluacion,0 as promedio_tab, 0 as ponderacion_tab
+from ED_EvaluadoEvaluador ev
+inner join ED_Personal pe on ev.codigoEvaluado=pe.codper and ev.unineg=pe.unineg
+inner join mo_unidadnegocio un on un.unineg=pe.unineg
+inner join MO_Cargo c on pe.idcargo=c.idcargo and ev.idCargoEvaluado=c.idcargo
+inner join MO_Codigo cod on cod.idcodigo=c.idtipogrupoocupacional and cod.idcodigo not in (30906)
+inner join MO_Codigo cod_planilla on cod_planilla.idcodigo=pe.idTipoNivelesColegio
+inner join ED_Detalle_Indicadores di on di.codPer=pe.codper  and di.unineg=pe.unineg and di.idTipoNivelesColegio=cod_planilla.idcodigo
+inner join ED_Indicadores_Logro d on di.idIndicador=d.idIndicador
+where di.uniNeg=pe.unineg and di.promedio>0]]>
+	</queryString>
+	<field name="unineg" class="java.lang.String"/>
+	<field name="nombreunineg" class="java.lang.String"/>
+	<field name="grupoOcupacional" class="java.lang.String"/>
+	<field name="tipoPlanilla" class="java.lang.String"/>
+	<field name="codper" class="java.lang.String"/>
+	<field name="nombre" class="java.lang.String"/>
+	<field name="tipo" class="java.lang.String"/>
+	<field name="nombre_competencia" class="java.lang.String"/>
+	<field name="preguntas" class="java.lang.String"/>
+	<field name="promedio" class="java.lang.String"/>
+	<field name="autoevaluacion" class="java.lang.String"/>
+	<field name="listaCargos" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<field name="listaResumen" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<group name="nombre">
+		<groupExpression><![CDATA[$F{nombre}]]></groupExpression>
+		<groupHeader>
+			<band height="198">
+				<staticText>
+					<reportElement uuid="5ed3ca23-cb68-4c37-8161-e6d2c3e8b24c" x="103" y="2" width="345" height="40" forecolor="#000000"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font size="14" isBold="true"/>
+					</textElement>
+					<text><![CDATA[FICHA INDIVIDUAL DE EVALUACIÓN DEL DESEMPEÑO 2018]]></text>
+				</staticText>
+				<textField>
+					<reportElement uuid="225d3a4a-abc5-40cf-9013-bb193cef7cef" x="448" y="14" width="80" height="11"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date())]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement uuid="34b8d1cb-23d0-4058-bc81-e92842f5fb6a" x="448" y="2" width="80" height="12" forecolor="#000000"/>
+					<textElement verticalAlignment="Middle">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[FECHA Y HORA:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement uuid="d754efce-bdf0-4680-a812-c147f4c30493" x="19" y="67" width="65" height="12" forecolor="#000000"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+						<font fontName="Arial" size="8" isBold="true" isStrikeThrough="false"/>
+					</textElement>
+					<text><![CDATA[Colaborador :]]></text>
+				</staticText>
+				<textField>
+					<reportElement uuid="6434481c-dffb-41d7-a731-4dc5c71938ec" x="86" y="67" width="215" height="12"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{nombre}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement uuid="0289200a-cce0-43dc-a978-4025879e2d8d" x="345" y="86" width="64" height="12" forecolor="#000000"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[G.O:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement uuid="0c94e0f0-6dc5-46cc-83bd-9ca5672bf860" x="19" y="86" width="65" height="12" forecolor="#000000"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+						<font fontName="Arial" size="8" isBold="true" isStrikeThrough="false"/>
+					</textElement>
+					<text><![CDATA[Cargo (s) :]]></text>
+				</staticText>
+				<subreport>
+					<reportElement uuid="118c23c5-7d87-4fb4-b239-194fbb06f1f9" x="19" y="134" width="508" height="50"/>
+					<subreportParameter name="SUBREPORT_DIR">
+						<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="rutaImagen">
+						<subreportParameterExpression><![CDATA[$P{rutaImagen}]]></subreportParameterExpression>
+					</subreportParameter>
+					<dataSourceExpression><![CDATA[$F{listaResumen}]]></dataSourceExpression>
+					<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "repIndividual_subreportResumen.jasper"]]></subreportExpression>
+				</subreport>
+				<textField>
+					<reportElement uuid="347c908c-9f23-46b9-9385-bbc4a8d1d461" x="411" y="87" width="116" height="24"/>
+					<textElement textAlignment="Left" verticalAlignment="Top">
+						<font fontName="Arial" size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{grupoOcupacional}]]></textFieldExpression>
+				</textField>
+				<subreport>
+					<reportElement uuid="230431ec-94b4-493b-8d40-de72b3fa62be" x="86" y="86" width="215" height="37"/>
+					<subreportParameter name="SUBREPORT_DIR">
+						<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="rutaImagen">
+						<subreportParameterExpression><![CDATA[$P{rutaImagen}]]></subreportParameterExpression>
+					</subreportParameter>
+					<dataSourceExpression><![CDATA[$F{listaCargos}]]></dataSourceExpression>
+					<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "repFichaRetroAlimentacion_subreportCargos.jasper"]]></subreportExpression>
+				</subreport>
+				<image>
+					<reportElement uuid="d4061b4a-69bc-45f6-ad87-4a0ab327e39c" x="22" y="4" width="49" height="47"/>
+					<imageExpression><![CDATA[$P{rutaImagen}+"\\resources\\images\\logoPeru.png"]]></imageExpression>
+				</image>
+				<textField isStretchWithOverflow="true">
+					<reportElement uuid="ac3df361-182c-4dc9-adcb-60f65412fc28" x="411" y="67" width="116" height="12"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{nombreunineg}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement uuid="f0db8610-d187-4454-9fac-6b2b4f8b51fa" x="345" y="67" width="64" height="12" forecolor="#000000"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Obra Marista:]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="titulo">
+		<groupExpression><![CDATA[$F{unineg}]]></groupExpression>
+		<groupHeader>
+			<band height="15">
+				<staticText>
+					<reportElement uuid="dccfddc8-be0b-4e8c-b7b6-25380183b68f" x="471" y="0" width="56" height="15" forecolor="#000000"/>
+					<box>
+						<pen lineWidth="0.5"/>
+						<topPen lineWidth="0.5"/>
+						<leftPen lineWidth="0.5"/>
+						<bottomPen lineWidth="0.5"/>
+						<rightPen lineWidth="0.5"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle" markup="styled">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Evaluación]]></text>
+				</staticText>
+				<staticText>
+					<reportElement uuid="b07e7a63-0e03-42a1-9edc-0e2b1d277904" mode="Transparent" x="20" y="0" width="388" height="15" forecolor="#000000"/>
+					<box>
+						<pen lineWidth="0.5"/>
+						<topPen lineWidth="0.5"/>
+						<leftPen lineWidth="0.5"/>
+						<bottomPen lineWidth="0.5"/>
+						<rightPen lineWidth="0.5"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
+						<font fontName="Arial" size="8" isBold="true" isStrikeThrough="false"/>
+						<paragraph lineSpacing="Single"/>
+					</textElement>
+					<text><![CDATA[Indicadores de Evaluación]]></text>
+				</staticText>
+				<staticText>
+					<reportElement uuid="52f5f94f-f599-41b4-9996-f863ba767410" x="408" y="0" width="63" height="15" forecolor="#000000"/>
+					<box>
+						<pen lineWidth="0.5"/>
+						<topPen lineWidth="0.5"/>
+						<leftPen lineWidth="0.5"/>
+						<bottomPen lineWidth="0.5"/>
+						<rightPen lineWidth="0.5"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
+						<font fontName="Arial" size="8" isBold="true" isPdfEmbedded="false"/>
+					</textElement>
+					<text><![CDATA[Autoevaluación]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="tip">
+		<groupExpression><![CDATA[$F{tipo}]]></groupExpression>
+		<groupHeader>
+			<band height="17">
+				<rectangle>
+					<reportElement uuid="69c09059-b1fd-40a9-91d0-093d0d36fd91" mode="Opaque" x="20" y="0" width="507" height="17" backcolor="#003366"/>
+				</rectangle>
+				<textField isBlankWhenNull="false">
+					<reportElement uuid="f8c97736-cfbb-4d48-aa6a-2fa02a10aa62" mode="Opaque" x="22" y="1" width="386" height="14" forecolor="#FFFFFF" backcolor="#003366"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{tipo}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="tipo">
+		<groupExpression><![CDATA[$F{nombre_competencia}]]></groupExpression>
+		<groupHeader>
+			<band height="1"/>
+		</groupHeader>
+	</group>
+	<group name="tipoCompetencia">
+		<groupExpression><![CDATA[$F{tipo}]]></groupExpression>
+		<groupHeader>
+			<band height="16">
+				<rectangle>
+					<reportElement uuid="c5670ab2-08ef-4bc5-974b-45145e5fd46f" mode="Opaque" x="20" y="0" width="507" height="16" backcolor="#BFCDDB"/>
+				</rectangle>
+				<textField>
+					<reportElement uuid="1184dfd4-2982-4e7f-8b1c-1252c2d23a23" mode="Opaque" x="22" y="1" width="386" height="14" backcolor="#BFCDDB"/>
+					<box>
+						<pen lineWidth="0.0"/>
+						<topPen lineWidth="0.0"/>
+						<leftPen lineWidth="0.0"/>
+						<bottomPen lineWidth="0.0"/>
+						<rightPen lineWidth="0.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{nombre_competencia}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="19">
+			<textField pattern="###0.00">
+				<reportElement uuid="51d5075c-2203-4427-9c2a-40e5246cc805" x="471" y="0" width="56" height="19"/>
+				<box>
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{promedio}==null?"":$F{promedio}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="false">
+				<reportElement uuid="6d7cde7b-62aa-4541-9b11-be4a8c70dba6" x="20" y="0" width="388" height="19"/>
+				<box>
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle" markup="styled">
+					<font fontName="Arial" size="7"/>
+					<paragraph lineSpacing="Single" lineSpacingSize="8.0"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{preguntas}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00" isBlankWhenNull="false">
+				<reportElement uuid="52d1ba75-3725-4aad-bfa1-76c399a9dfe8" x="408" y="0" width="63" height="19"/>
+				<box>
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
+					<font fontName="Arial" size="7" isItalic="false" isUnderline="false" isStrikeThrough="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{autoevaluacion}==null?"":$F{autoevaluacion}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="18" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="21" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="1f71be6b-e36b-4e88-af91-4d0f71aec127" x="471" y="10" width="20" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="1a663701-46f8-4612-a5ab-c8bb6520220f" x="491" y="10" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement uuid="9d9a2175-5c02-4a51-b89b-fa65d29cb6d0" x="519" y="10" width="12" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="9a1f9364-a4bd-4b49-a9ac-9ad5e3befcc1" x="504" y="10" width="12" height="11"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0f237b1c-599e-47d5-a20c-aa08ad25caab" x="19" y="5" width="147" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FIRMA DEL COLABORADOR]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="30ba9be8-6311-4cd9-bba4-f91eaa98ee88" x="19" y="1" width="149" height="1"/>
+			</line>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="12" splitType="Stretch"/>
+	</summary>
+</jasperReport>

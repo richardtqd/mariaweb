@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body onload="#{becaMB.obtenerTodos()}">
+            <h:panelGrid styleClass="centrado">
+                <h:form id="frmMantBeca">
+                    <p:panel header="#{msgs.etiquetaMantBeca}" style="width: 500px" class="centrado">
+                        <h:panelGrid columns="1" id="pnlDatosBeca" cellpadding="15" class="centrado siseFontGrid3">
+                                <h:panelGrid columns="6" class="siseFontGrid">
+                                    <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:inputText value="#{becaMB.becaBean.nombre}" required="true"  label="#{msgs.etiquetaNombre}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaTipBeca}" class="negrita"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:selectOneMenu value="#{becaMB.becaBean.codigoBean.idCodigo}" label="#{msgs.etiquetaConcepto}">
+                                        <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                        <f:selectItems value="#{becaMB.listaCodigo}" var="codigo" itemLabel="#{codigo.codigo}" itemValue="#{codigo.idCodigo}"/> 
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaPorcentaje}" class="negrita"/>
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:inputText value="#{becaMB.becaBean.porcentaje}" required="true"  label="#{msgs.etiquetaPorcentaje}"/>
+                                    <h:outputLabel value="#{msgs.etiquetaEstado}: " class="negrita" />
+                                    <h:outputText value="" class="requerido"/>
+                                    <p:inputSwitch  value="#{becaMB.becaBean.status}" label="#{msgs.etiquetaEstado}" onLabel="#{msgs.etiquetaActivo}" offLabel="#{msgs.etiquetaInactivo}"/>   
+                                    <h:outputText value="(*) Requerido" class="requerido" style="font-size: 0.9em" />
+                                </h:panelGrid>
+                        </h:panelGrid>
+                        <h:panelGrid class="centrado" columns="2">
+                            <p:commandButton actionListener="#{becaMB.guardarBeca()}" 
+                                             update=":frmDatosBeca:pnlTablaBeca,msgsAddProc,:frmDatosBeca:tblBeca"
+                                             oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                             value="#{msgs.botonGrabar}">
+                            </p:commandButton>
+                            <p:commandButton actionListener="#{becaMB.limpiarBeca()}" 
+                                             update=":frmMantBeca:pnlDatosBeca,msgsAddProc,:frmDatosBeca:tblBeca"                                                                 
+                                             value="#{msgs.botonNuevo}" process="@this">
+                            </p:commandButton>
+                        </h:panelGrid>
+                        <p:growl id="msgsAddProc" showDetail="true" showSummary="true"/>
+                    </p:panel>
+                </h:form>
+                <h:form id="frmDatosBeca">
+                    <h:panelGrid  id="pnlTablaBeca" >
+                        <p:dataTable id="tblBeca" value="#{becaMB.listaBeca}" widgetVar="tblBeca"
+                                     paginator="true" selectionMode="single" 
+                                     selection="#{becaMB.becaBean}"
+                                     var="beca" rowKey="#{beca}"
+                                     rows="#{becaMB.numRegistrosTablas}" 
+                                     rendered="#{not empty becaMB.listaBeca}" 
+                                     style="width: 900px; font-size: 10px;font-size:14px !important;">
+                            <p:ajax event="rowSelect" listener="#{becaMB.rowSelect}" update=":frmMantBeca:pnlDatosBeca" />
+                            <f:facet name="header" >
+                                <h:outputText value="#{msgs.etiquetaMantBeca}" />  
+                            </f:facet>
+                            <p:column filterBy="#{beca.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains"  styleClass="nombreFiltro6 siseFont1">
+                                <h:outputText value="#{beca.nombre}" />
+                            </p:column>
+                            <p:column filterBy="#{beca.codigoBean.idCodigo}"  headerText="#{msgs.etiquetaTipoDoc}" filterMatchMode="contains" width="30%" >
+                            <f:facet name="filter">
+                                <p:selectOneMenu  onchange="PF('tblBeca').filter()" style="width: 190px">
+                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItems value="#{becaMB.listaCodigo}" var="codigo" itemLabel="#{codigo.codigo}" itemValue="#{codigo.idCodigo}"/>
+                                </p:selectOneMenu>
+                            </f:facet>
+                                <h:outputText value="#{beca.codigoBean.codigo}"/>
+                            </p:column>
+                            <p:column filterBy="#{beca.porcentaje}" headerText="#{msgs.etiquetaPorcentaje}" filterMatchMode="contains"  styleClass="nombreFiltro6 siseFont1">
+                                <h:outputText value="#{beca.porcentaje}" />
+                            </p:column>
+                            <p:column class="centrado-texto"  headerText="#{msgs.etiquetaEstado}" width="50" styleClass="nombreFiltro3 centrado-texto siseFont1">
+                                <p:inputSwitch id="swCambio" value="#{beca.status}">
+                                    <p:ajax listener="#{becaMB.ponerBeca(beca)}" oncomplete="PF('popConfirma').show();" update=":frmConfirma:pnlDatosConfirma"/>
+                                </p:inputSwitch>
+                                <p:tooltip id="toolTipCambio" for="swCambio" value="#{msgs.mensajeCambiarEstado}" />
+                            </p:column>                            
+                            <p:column class="centrado-texto" width="50" styleClass="centrado-texto siseFont1">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaEliminar}" />
+                                </f:facet>
+                                <p:commandLink id="cmdEliminarCod" action="#{becaMB.ponerBeca(beca)}" update=":frmElimina:pnlDatosElimina"
+                                               oncomplete="PF('popEliminar').show();" process="@this">
+                                    <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                </p:commandLink>
+                                <p:tooltip id="toolCodDel" for="cmdEliminarCod" value="#{msgs.mensajeDelCod}" />
+                            </p:column>
+                        </p:dataTable>
+                        <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGrid>  
+            <h:form id="frmConfirma">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popConfirma" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosConfirma">
+                            <h:outputText value="#{msgs.panelEliminacion}"/>
+                            <h:outputLabel value="#{msgs.etiquetaMantBeca}: #{becaMB.becaBean.nombre}"/>
+                            <h:inputHidden value="#{becaMB.becaBean.status}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{becaMB.cambiarEstadoBeca()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosBeca:pnlTablaBeca,msgsConfirma"
+                                         oncomplete="if(args.operacionCorrecta){PF('popConfirma').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" update=":frmDatosBeca:pnlTablaBeca,msgsConfirma"
+                                         icon="ui-icon-close" oncomplete="PF('popConfirma').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsConfirma" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaMantBeca}: #{becaMB.becaBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{becaMB.eliminarBeca()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":frmDatosBeca:pnlTablaBeca,msgsDelProc,:frmDatosBeca:tblBeca"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProc" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

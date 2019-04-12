@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportePresupuestoUniOrg" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f598061e-6628-4e3c-99af-74b644a6db25">
+	<property name="ireport.zoom" value="1.1"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\SIGMA_SVN_GLAM\\SigmaVersion\\web\\reportes\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[Declare @totalProg money = (select sum(isnull(presupuestoprog,0))  from ME_PresupuestoUniOrg where iduniorg in (2,3) and unineg='sanjoc'),
+        @totalEjec money = (select sum(isnull(presupuestoejec,0))  from ME_PresupuestoUniOrg where iduniorg in (2,3) and unineg='sanjoc')
+SELECT distinct
+CONVERT(varchar,preUO.idUniOrg) as idUniOrg,
+uni.nombreUniOrg,
+CONVERT(varchar, CAST(isnull((sum(isnull(preuo.presupuestoprog,0))),0) AS money), 1) as presupuestoTotal,
+CONVERT(varchar, CAST(isnull((sum(isnull(preuo.presupuestoejec,0))),0) AS money), 1) as presupuestoEjec,
+CONVERT(varchar, CAST(@totalProg AS money), 1) as totalPro,
+CONVERT(varchar, CAST(@totalEjec AS money), 1) as totalEjec,
+preUO.anio,
+ent.nombre as nombreUniNeg,
+'R.U.C. ' +un.ruc as ruc
+
+FROM ME_PresupuestoUniOrg preUO
+inner join MO_UnidadNegocio un on un.unineg=preUO.unineg
+inner join MO_Entidad ent on ent.ruc=un.RUC and ent.unineg=preUO.unineg
+inner join MO_UnidadOrganica uni on uni.iduniorg=preUO.iduniorg
+where preUO.unineg='sanjoc' and preUO.anio=2016 and preUO.iduniorg in (2,3)
+group by preUO.iduniorg,uni.nombreuniorg,un.ruc,ent.nombre,preUO.anio]]>
+	</queryString>
+	<field name="idUniOrg" class="java.lang.String"/>
+	<field name="nombreUniOrg" class="java.lang.String"/>
+	<field name="presupuestoTotal" class="java.lang.String"/>
+	<field name="presupuestoEjec" class="java.lang.String"/>
+	<field name="totalPro" class="java.lang.String"/>
+	<field name="totalEjec" class="java.lang.String"/>
+	<field name="anio" class="java.lang.Short"/>
+	<field name="nombreUniNeg" class="java.lang.String"/>
+	<field name="ruc" class="java.lang.String"/>
+	<field name="listaDetalle" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<variable name="NOW" class="java.util.Date" calculation="System">
+		<initialValueExpression><![CDATA[new Date()]]></initialValueExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="68" splitType="Stretch">
+			<textField>
+				<reportElement uuid="8a5aa6a4-0925-43a7-bbdc-e80a3c4fd62a" x="4" y="5" width="267" height="15"/>
+				<textElement>
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nombreUniNeg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4e2013e0-f9b1-4491-b2ff-0599a3d35b33" x="4" y="19" width="100" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{ruc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="54af1f31-726a-4d92-8e70-fd01e0ad12ac" x="463" y="14" width="80" height="11"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format($V{NOW})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="1b71a9c7-c23c-44b9-8981-05c18b75e83b" x="453" y="6" width="100" height="13"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[FECHA DE IMPRESIÓN:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="dca7c5d6-5073-4c40-8a59-f1af83a80c70" x="119" y="35" width="340" height="20"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[REPORTE DE PRESUPUESTO POR UNIDAD ORGÁNICA]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="e563c905-e414-4f60-84bc-14a4a1f5423b" x="239" y="48" width="100" height="20"/>
+				<textElement textAlignment="Center">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{anio}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="55" splitType="Stretch">
+			<subreport>
+				<reportElement uuid="6399b8a5-5132-4b8c-a38a-7531fd9cde36" x="0" y="0" width="555" height="55"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[$F{listaDetalle}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "reportePresupuestoUniOrg_subreport.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="29" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="9c0d1b0d-7538-4a30-a5a6-7f4644129930" x="37" y="13" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ de ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="837225c8-9dbc-4e6c-85c5-5c91620ee4f3" x="4" y="13" width="20" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pág.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="94fee134-8aba-4fdf-81c4-4b8d765e875e" x="24" y="13" width="12" height="11"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement uuid="90d36ee3-6a24-4657-ac24-8da878a18418" x="52" y="13" width="12" height="11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="57" splitType="Stretch">
+			<textField>
+				<reportElement uuid="f1ac0628-e78d-43b4-9eb8-03709d0a1642" x="415" y="32" width="100" height="20"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totalEjec}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="07a972e4-37df-4620-b27c-a5769cb79769" x="415" y="12" width="100" height="20"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totalPro}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="a9a06dc0-181b-43f2-9d1b-6df9794b0aad" x="315" y="12" width="100" height="20"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Programado:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="83170a13-4765-462b-a82f-c8e30c74ea4b" x="315" y="32" width="100" height="20"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Ejecutado:]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

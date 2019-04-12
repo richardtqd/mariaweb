@@ -1,0 +1,292 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml"
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body onload="#{tipoFormacionMB.cargaDatos()}">
+
+            <h:panelGrid width="900" styleClass="centrado">
+                <p:tabView dynamic="true" cache="true" id="pnlDatosTipoForm" styleClass="centrado" >
+                    <p:tab id="tabGA" title="#{msgs.etiquetaGradoAcademico}">
+                         <h:form id="frmDatosGA">
+                            <h:panelGrid styleClass="centrado" id="panelGA">
+                                <p:panel header="#{msgs.etiquetaInserModGradoAcademico}">
+                                    <h:panelGrid columns="3" id="pnlDatosGradoAcad" cellpadding="3">
+                                        <h:outputLabel value="#{msgs.etiquetaCodigo}" class="negrita"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:inputText value="#{tipoFormacionMB.gradoAcademicoBean.codigo}" required="true"  label="#{msgs.etiquetaCodigo}" size="20" maxlength="20"/> 
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:inputText value="#{tipoFormacionMB.gradoAcademicoBean.nombre}" required="true"  label="#{msgs.etiquetaNombre}" size="50" maxlength="50"/> 
+                                        <h:outputLabel value="#{msgs.etiquetaNivelAcademico}" class="negrita"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:selectOneMenu value="#{tipoFormacionMB.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}" required="true">
+                                            <f:selectItems value="#{tipoFormacionMB.listaNivelAcademicoBean}" var="nivAca" 
+                                                           itemLabel="#{nivAca.nombre}" itemValue="#{nivAca.idNivelAcademico}"/>
+                                        </p:selectOneMenu>
+                                        <h:outputText value="(*) Requerido" class="requerido"/>
+                                    </h:panelGrid>
+                                    <h:panelGrid class="centrado" columns="2">
+                                        <p:commandButton id="btnGrabaGA" action="#{tipoFormacionMB.guardarGA()}"  
+                                                         update=":pnlDatosTipoForm:frmDatosGA"
+                                                         oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                         value="#{msgs.botonGrabar}">
+                                        </p:commandButton>
+                                        <p:commandButton id="btnLimpiaGA" action="#{tipoFormacionMB.limpiarGA()}" 
+                                                         update=":pnlDatosTipoForm:frmDatosGA"
+                                                         value="#{msgs.botonNuevo}" process="@this">
+                                        </p:commandButton>
+                                    </h:panelGrid>
+                                    <p:growl id="msgsNA" showDetail="true"/>
+                                </p:panel>
+                            </h:panelGrid>
+                            <br/>
+                            <h:panelGrid  id="pnlTablaGradoAcad" styleClass="centrado" >
+                                <p:dataTable id="tblGradoAcad" value="#{tipoFormacionMB.listaGradoAcademicoBean}"
+                                             paginator="true" selectionMode="single" 
+                                             var="grado" widgetVar="tblGradoAcad"  
+                                             rowKey="#{grado.idGradoAcademico}"
+                                             rows="#{tipoFormacionMB.numRegistrosTablas}" 
+                                             rendered="#{not empty tipoFormacionMB.listaGradoAcademicoBean}" 
+                                             style="width: 1000px; font-size: 10px">
+                                    <p:ajax event="rowSelect" listener="#{tipoFormacionMB.rowSelectGA}" update=":pnlDatosTipoForm:frmDatosGA" />
+                                    <f:facet name="header" >
+                                        <h:outputText value="#{msgs.etiquetaGradosAcademicos}" />  
+                                    </f:facet>
+                                    <p:column filterBy="#{grado.nivelAcademicoBean.tipoFormacionBean.idTipoFormacion}"  headerText="#{msgs.tituloTipoFormacion}" filterMatchMode="contains" width="30%" >
+                                        <f:facet name="filter">
+                                            <p:selectOneMenu id="cmbTipoForm" onchange="PF('tblGradoAcad').filter()" style="width: 190px" value="#{tipoFormacionMB.idTipoForm}">
+                                                <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                <f:selectItems value="#{tipoFormacionMB.listaTipoFormacionBean}" var="tipF" itemLabel="#{tipF.nombre}" itemValue="#{tipF.idTipoFormacion}"/>
+                                                <p:ajax event="change" listener="#{tipoFormacionMB.obtenerNivelPorTipoForm()}" update=":pnlDatosTipoForm:frmDatosGA"/>
+                                            </p:selectOneMenu>
+                                        </f:facet>
+                                        <h:outputText value="#{grado.nivelAcademicoBean.tipoFormacionBean.nombre}"/>
+                                    </p:column>
+                                    <p:column filterBy="#{grado.nivelAcademicoBean.idNivelAcademico}"  headerText="#{msgs.etiquetaNivelAcademico}" filterMatchMode="contains" width="30%" >
+                                        <f:facet name="filter">
+                                            <p:selectOneMenu id="cmbNivelAca" onchange="PF('tblGradoAcad').filter()" style="width: 190px">
+                                                <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                <f:selectItems value="#{tipoFormacionMB.listaNivelAcademicoFiltroBean}" var="nivAcad" itemLabel="#{nivAcad.nombre}" itemValue="#{nivAcad.idNivelAcademico}"/>
+                                            </p:selectOneMenu>
+                                        </f:facet>
+                                        <h:outputText value="#{grado.nivelAcademicoBean.nombre}"/>
+                                    </p:column>
+                                    <p:column filterBy="#{grado.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="25%" styleClass="nombre2Filtro">
+                                        <h:outputText value="#{grado.nombre}" />
+                                    </p:column>
+                                    <p:column class="centrado-texto" style="width:7%">
+                                        <f:facet name="header">
+                                            <h:outputText value="#{msgs.etiquetaEliminar}" />
+                                        </f:facet>
+                                        <p:commandLink id="cmdEliminarGA" action="#{tipoFormacionMB.obtenerPorIdGA(grado)}" update=":frmEliminaGA:pnlDatosEliminaGA" 
+                                                       oncomplete="PF('popEliminarGA').show();" process="@this">
+                                            <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                        </p:commandLink>
+                                        <p:tooltip id="toolTipNA" for="cmdEliminarGA" value="#{msgs.mensajeDelCod}" />
+                                    </p:column>
+                                </p:dataTable>
+                                <p:growl id="growlFiltro3" showDetail="true" life="5000" />
+                            </h:panelGrid>
+                        </h:form>
+                    </p:tab>
+                    
+                    <p:tab id="tabNA" title="#{msgs.etiquetaNivelAcademico}">
+                        <h:form id="frmDatosNA">
+                            <h:panelGrid styleClass="centrado" id="panelNA">
+                                <p:panel header="#{msgs.etiquetaInserModNivelAcademico}">
+                                    <h:panelGrid columns="3" id="pnlDatosNivelAcad" cellpadding="3">
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:inputText value="#{tipoFormacionMB.nivelAcademicoBean.nombre}" required="true"  label="#{msgs.etiquetaNombre}" size="50" maxlength="50"/> 
+                                        <h:outputLabel value="#{msgs.tituloTipoFormacion}" class="negrita"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:selectOneMenu value="#{tipoFormacionMB.nivelAcademicoBean.tipoFormacionBean.idTipoFormacion}" required="true">
+                                            <f:selectItems value="#{tipoFormacionMB.listaTipoFormacionBean}" var="tipoForma" 
+                                                           itemLabel="#{tipoForma.nombre}" itemValue="#{tipoForma.idTipoFormacion}"/>
+                                        </p:selectOneMenu>
+                                        <h:outputText value="(*) Requerido" class="requerido"/>
+                                    </h:panelGrid>
+                                    <h:panelGrid class="centrado" columns="2">
+                                        <p:commandButton id="btnGrabaNA" action="#{tipoFormacionMB.guardarNA()}"  
+                                                         update=":pnlDatosTipoForm:frmDatosNA"
+                                                         oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                         value="#{msgs.botonGrabar}">
+                                        </p:commandButton>
+                                        <p:commandButton id="btnLimpiaNA" action="#{tipoFormacionMB.limpiarNA()}" 
+                                                         update=":pnlDatosTipoForm:frmDatosNA"
+                                                         value="#{msgs.botonNuevo}" process="@this">
+                                        </p:commandButton>
+                                    </h:panelGrid>
+                                    <p:growl id="msgsNA" showDetail="true"/>
+                                </p:panel>
+                            </h:panelGrid>
+                            <br/>
+                            <h:panelGrid  id="pnlTablaNivelAcad" styleClass="centrado" >
+                                <p:dataTable id="tblNivelAcad" value="#{tipoFormacionMB.listaNivelAcademicoBean}"
+                                             paginator="true" selectionMode="single" 
+                                             var="nivel" widgetVar="tblNivelAcad"  
+                                             rowKey="#{nivel.idNivelAcademico}"
+                                             rows="#{tipoFormacionMB.numRegistrosTablas}" 
+                                             rendered="#{not empty tipoFormacionMB.listaNivelAcademicoBean}" 
+                                             style="width: 800px; font-size: 10px">
+                                    <p:ajax event="rowSelect" listener="#{tipoFormacionMB.rowSelectNA}" update=":pnlDatosTipoForm:frmDatosNA" />
+                                    <f:facet name="header" >
+                                        <h:outputText value="#{msgs.etiquetaNivelesAcademicos}" />  
+                                    </f:facet>
+                                    <p:column filterBy="#{nivel.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="25%" styleClass="nombre2Filtro">
+                                        <h:outputText value="#{nivel.nombre}" />
+                                    </p:column>
+                                    <p:column filterBy="#{nivel.tipoFormacionBean.idTipoFormacion}"  headerText="#{msgs.tituloTipoFormacion}" filterMatchMode="contains" width="30%" >
+                                        <f:facet name="filter">
+                                            <p:selectOneMenu onchange="PF('tblNivelAcad').filter()" style="width: 190px">
+                                                <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                <f:selectItems value="#{tipoFormacionMB.listaTipoFormacionBean}" var="tipForm" itemLabel="#{tipForm.nombre}" itemValue="#{tipForm.idTipoFormacion}"/>
+                                            </p:selectOneMenu>
+                                        </f:facet>
+                                        <h:outputText value="#{nivel.tipoFormacionBean.nombre}"/>
+                                    </p:column>
+                                    <p:column class="centrado-texto" style="width:7%">
+                                        <f:facet name="header">
+                                            <h:outputText value="#{msgs.etiquetaEliminar}" />
+                                        </f:facet>
+                                        <p:commandLink id="cmdEliminarNA" action="#{tipoFormacionMB.obtenerPorIdNA(nivel)}" update=":frmEliminaNA:pnlDatosEliminaNA" 
+                                                       oncomplete="PF('popEliminarNA').show();" process="@this">
+                                            <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                        </p:commandLink>
+                                        <p:tooltip id="toolTipNA" for="cmdEliminarNA" value="#{msgs.mensajeDelCod}" />
+                                    </p:column>
+                                </p:dataTable>
+                                <p:growl id="growlFiltro2" showDetail="true" life="5000" />
+                            </h:panelGrid>
+                        </h:form>
+                    </p:tab>
+
+                    <p:tab id="tabTF" title="#{msgs.tituloTipoFormacion}">
+                        <h:form id="frmDatosTF">
+                            <h:panelGrid styleClass="centrado" >
+                                <p:panel header="#{msgs.tituloInserModTipoFormacion}">
+                                    <h:panelGrid columns="3" id="pnlDatosTipoForm" cellpadding="3">
+                                        <h:outputLabel value="#{msgs.etiquetaNombre}" class="negrita"/>
+                                        <h:outputText value="*" class="requerido"/>
+                                        <p:inputText value="#{tipoFormacionMB.tipoFormacionBean.nombre}" required="true"  label="#{msgs.etiquetaNombre}" size="50" maxlength="50"/> 
+                                        <h:outputText value="(*) Requerido" class="requerido"/>
+                                    </h:panelGrid>
+                                    <h:panelGrid class="centrado" columns="2">
+                                        <p:commandButton id="btnGrabaTF" action="#{tipoFormacionMB.guardarTF()}"  
+                                                         update=":pnlDatosTipoForm:frmDatosTF"
+                                                         oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                         value="#{msgs.botonGrabar}">
+                                        </p:commandButton>
+                                        <p:commandButton id="btnLimpiaTF" action="#{tipoFormacionMB.limpiarTF()}" 
+                                                         update=":pnlDatosTipoForm:frmDatosTF"
+                                                         value="#{msgs.botonNuevo}" process="@this">
+                                        </p:commandButton>
+                                    </h:panelGrid>
+                                    <p:growl id="msgsAddProc" showDetail="true"/>
+                                </p:panel>
+                            </h:panelGrid>
+
+                            <br/>
+                            <h:panelGrid  id="pnlTablaTipoForm" styleClass="centrado" >
+                                <p:dataTable id="tblTipoForm" value="#{tipoFormacionMB.listaTipoFormacionBean}"
+                                             paginator="true" selectionMode="single" var="tipoForm" widgetVar="tblTipoForm"  
+                                             rowKey="#{tipoForm.idTipoFormacion}"
+                                             rows="#{tipoFormacionMB.numRegistrosTablas}" 
+                                             rendered="#{not empty tipoFormacionMB.listaTipoFormacionBean}" 
+                                             style="width: 800px; font-size: 10px">
+                                    <p:ajax event="rowSelect" listener="#{tipoFormacionMB.rowSelectTF}" update=":pnlDatosTipoForm:frmDatosTF" />
+                                    <f:facet name="header" >
+                                        <h:outputText value="#{msgs.tituloTipoFormaciones}" />  
+                                    </f:facet>
+                                    <p:column filterBy="#{tipoForm.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="25%" styleClass="nombre2Filtro">
+                                        <h:outputText value="#{tipoForm.nombre}" />
+                                    </p:column>
+                                    <p:column class="centrado-texto" style="width:7%">
+                                        <f:facet name="header">
+                                            <h:outputText value="#{msgs.etiquetaEliminar}" />
+                                        </f:facet>
+                                        <p:commandLink id="cmdEliminar" action="#{tipoFormacionMB.obtenerPorIdTF(tipoForm)}" update=":frmEliminaTF:pnlDatosEliminaTF" 
+                                                       oncomplete="PF('popEliminarTF').show();" process="@this">
+                                            <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                        </p:commandLink>
+                                        <p:tooltip id="toolTip" for="cmdEliminar" value="#{msgs.mensajeDelCod}" />
+                                    </p:column>
+                                </p:dataTable>
+                                <p:growl id="growlFiltro" showDetail="true" life="5000" />
+                            </h:panelGrid>
+                        </h:form>
+                    </p:tab>
+                </p:tabView>
+            </h:panelGrid>
+
+            <h:form id="frmEliminaTF">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarTF" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosEliminaTF">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{tipoFormacionMB.tipoFormacionBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoFormacionMB.eliminarTF()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":pnlDatosTipoForm:frmDatosTF"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarTF').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarTF').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProcTF" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            
+            <h:form id="frmEliminaNA">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarNA" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosEliminaNA">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{tipoFormacionMB.nivelAcademicoBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoFormacionMB.eliminarNA()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":pnlDatosTipoForm:frmDatosNA"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarNA').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarNA').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProcNA" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+            
+            <h:form id="frmEliminaGA">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminarGA" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosEliminaGA">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="#{msgs.etiquetaNombre}: #{tipoFormacionMB.gradoAcademicoBean.nombre}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}" actionListener="#{tipoFormacionMB.eliminarGA()}" 
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         update=":pnlDatosTipoForm:frmDatosGA"
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminarGA').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminarGA').hide();"/>
+                    </h:panelGrid>
+                    <p:growl id="msgsDelProcGA" showDetail="true" showSummary="false"/>
+                </p:dialog>
+            </h:form>
+        </h:body>
+    </ui:define>
+</ui:composition>

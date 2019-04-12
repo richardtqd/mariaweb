@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.AdmisionDAO">  
+    <sql id="consultaAdmision">
+        Select  
+        adm.uniNeg,
+        adm.idAdmision,
+        adm.idEstudiante,
+        per.idPersona,
+        per.nombre,
+        per.apePat,
+        per.apeMat,
+        per.uniNeg as uniNegPersona, 
+        per.correo,
+        adm.uniNeg,
+        adm.idGradoPostula,
+        gra.idGradoAcademico as codIdGradoPostula, 
+        gra.nombre as nombreGradoAca,
+        adm.idProgramacion,
+        proce.idProceso as idPro,
+        proce.anio as anioProceso,
+        proce.descripcion as descripcion,
+        adm.fechaInscripcion,
+        adm.fecExamen,
+        adm.horaExamen,
+        adm.grupo,
+        adm.anio,
+        adm.docRefeIngreso,
+        adm.fechaIngreso,
+        adm.idTipoStatusPostulante,
+        cod.valor,
+        cod.codigo,
+        adm.creaPor,
+        adm.creaFecha,
+        est.dniEstudiante
+        From MX_Admision adm  
+        Inner Join MX_Estudiante est On adm.idEstudiante=est.idEstudiante  and adm.unineg=est.unineg
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona and per.unineg=est.unineg
+        Inner Join MX_GradoAcademico gra On adm.idGradoPostula=gra.idGradoAcademico
+        Inner Join MO_Codigo cod On adm.idTipoStatusPostulante=cod.idCodigo
+        Inner Join MX_Programacion pro On adm.idProgramacion=pro.idProgramacion and pro.unineg=adm.unineg
+        Left Join  MX_Proceso proce On proce.idProceso=pro.idProceso and pro.unineg=proce.unineg
+    </sql>
+    <select id="obtenerAdmision" resultMap="admisionResultado">
+        <include refid="consultaAdmision"/>
+    </select>
+    <resultMap id="admisionResultado" type="pe.marista.sigma.bean.AdmisionBean">
+        
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idAdmision" column="idAdmision"/>
+        <result property="anio" column="anio"/>
+        <result property="fechaInscripcion" column="fechaInscripcion"/>
+        <result property="fecExamen" column="fecExamen"/>
+        <result property="horaExamen" column="horaExamen"/>
+        <result property="grupo" column="grupo"/>
+        <result property="docRefeIngreso" column="docRefeIngreso"/>
+        <result property="fechaIngreso" column="fechaIngreso"/> 
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="gradoAcademicoBean" column="idGradoPostula"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>
+        <association property="programacionBean" column="idProgramacion"
+                     javaType="pe.marista.sigma.bean.ProgramacionBean"
+                     resultMap="programacionResultado"/>
+        <association property="codigoBean" column="idTipoStatusPostulante"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/>
+    </resultMap>
+    <!--Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <result property="codigo" column="codigo"/>
+        <result property="anioIngreso" column="anioIngreso"/>
+        <result property="fechaIngreso" column="fechaIngreso"/>
+        <result property="foto" column="foto"/>
+        <result property="refeLugarNaci" column="refeLugarNaci"/>
+        <result property="viaDomi" column="viaDomi"/>
+        <result property="nroDomi" column="nroDomi"/>
+        <result property="urbDomi" column="urbDomi"/>
+        <result property="refeDomi" column="refeDomi"/>
+        <result property="dniEstudiante" column="dniEstudiante"/>
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+    </resultMap>
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+        <result property="nombre" column="nombre"/>
+        <result property="apepat" column="apepat"/>
+        <result property="apemat" column="apemat"/>
+        <result property="sexo" column="sexo"/>
+        <result property="nroDoc" column="nroDoc"/>
+        <result property="fecNac" column="fecNac"/>
+        <result property="correo" column="correo"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioPersonaResultado"/>
+    </resultMap> 
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/> 
+    </resultMap>
+    <!--Unidad de Negocio persona-->
+    <resultMap id="unidadNegocioPersonaResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegPersona"/> 
+    </resultMap>
+    <!--Grado Academico-->
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="codIdGradoPostula"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreGradoAca"/>
+    </resultMap>
+    <!--Proceso-->
+    <resultMap id="procesoResultado" type="pe.marista.sigma.bean.ProcesoBean">
+        <id property="idProceso" column="idPro"/>
+        <result property="descripcion" column="descripcion"/>
+        <result property="anio" column="anioProceso"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="status" column="status"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+    </resultMap>
+    <!--Programaciono-->
+    <resultMap id="programacionResultado" type="pe.marista.sigma.bean.ProgramacionBean">
+        <id property="idProgramacion" column="idProgramacion"/>
+        <result property="anio" column="anioProgra"/>
+        <result property="precio" column="precio"/>
+        <result property="fecIni" column="fecIni"/>
+        <result property="fecFin" column="fecFin"/>
+        <result property="max" column="max"/>
+        <result property="min" column="min"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="horario" column="horario"/>
+        <result property="status" column="status"/>
+        <result property="seccion" column="seccion"/>
+        <result property="grupo" column="grupo"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <association property="procesoBean" column="idProceso"
+                     javaType="pe.marista.sigma.bean.ProcesoBean"
+                     resultMap="procesoResultado"/>
+    </resultMap>
+    <!--Codigo-->
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusPostulante"/>
+        <result property="codigo" column="codigo"/> 
+    </resultMap>
+    <select id="obtenerAdmisionPorId" resultMap="admisionResultado" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        <include refid="consultaAdmision" />Where adm.idAdmision = #{idAdmision} and adm.uniNeg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerAdmisionPorPostu" resultMap="admisionResultado" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        <include refid="consultaAdmision" />
+        Where adm.idAdmision = #{idAdmision} and adm.uniNeg=#{unidadNegocioBean.uniNeg} and adm.idEstudiante = #{estudianteBean.personaBean.idPersona}
+    </select>
+    <select id="validarPostuEnAdmision" resultMap="admisionResultado" parameterType="pe.marista.sigma.bean.EstudianteBean">
+        Select  top 1
+        adm.uniNeg,
+        adm.idAdmision,
+        adm.idEstudiante,
+        per.idPersona,
+        per.nombre,
+        per.apePat,
+        per.apeMat,
+        per.uniNeg as uniNegPersona, 
+        adm.uniNeg,
+        adm.idGradoPostula,
+        gra.idGradoAcademico as codIdGradoPostula, 
+        gra.nombre as nombreGradoAca,
+        adm.idProgramacion,
+        proce.idProceso as idPro,
+        proce.anio as anioProceso,
+        proce.descripcion as descripcion,
+        adm.fechaInscripcion,
+        adm.fecExamen,
+        adm.horaExamen,
+        adm.grupo,
+        adm.anio,
+        adm.docRefeIngreso,
+        adm.fechaIngreso,
+        adm.idTipoStatusPostulante,
+        cod.valor,
+        cod.codigo,
+        adm.creaPor,
+        adm.creaFecha
+        From MX_Admision adm  
+        Inner Join MX_Estudiante est On adm.idEstudiante=est.idEstudiante
+        Inner Join MX_Persona per On est.idEstudiante=per.idPersona
+        Inner Join MX_GradoAcademico gra On adm.idGradoPostula=gra.idGradoAcademico
+        Inner Join MO_Codigo cod On adm.idTipoStatusPostulante=cod.idCodigo
+        Inner Join MX_Programacion pro On adm.idProgramacion=pro.idProgramacion
+        Left Join MX_Proceso proce On proce.idProceso=pro.idProceso
+        Where  adm.idEstudiante = #{personaBean.idPersona} and adm.uniNeg=#{personaBean.unidadNegocioBean.uniNeg}  
+        order by adm.anio desc
+    </select>
+    <select id="obtenerListaDistinctAdm" resultMap="admisionResultado" parameterType="string">
+        SELECT  distinct ${value}  FROM  MX_Admision  
+        where ${value}!='' 
+    </select>
+    <select id="obtenerAdmisionPorUniNeg" resultMap="admisionResultado" parameterType="String">
+        <include refid="consultaAdmision" />Where adm.uniNeg=#{uniNeg}
+    </select>
+    <insert id="insertarAdmision" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        INSERT INTO MX_Admision 
+        (idEstudiante,uniNeg,anio,idGradoPostula,idProgramacion,fechaInscripcion,
+        fecExamen,horaExamen,grupo,idTipoStatusPostulante,creaPor,creaFecha)
+        Values 
+        (#{estudianteBean.personaBean.idPersona},#{unidadNegocioBean.uniNeg},#{programacionBean.procesoBean.anio},#{gradoAcademicoBean.idGradoAcademico},#{programacionBean.idProgramacion},#{fechaInscripcion},
+        #{fecExamen},#{horaExamen},#{grupo},#{codigoBean.idCodigo},#{creaPor},getDate())
+        <selectKey keyProperty="idAdmision" order="AFTER" resultType="Integer">
+            SELECT max(idAdmision) FROM MX_Admision WHERE uniNeg = #{unidadNegocioBean.uniNeg};
+        </selectKey>   
+    </insert>
+    <insert id="insertarAdmisionEspecial" parameterType="pe.marista.sigma.bean.AdmisionBean" >
+        INSERT INTO MX_Admision 
+        (idEstudiante,
+        uniNeg,
+        anio,
+        idGradoPostula,
+        fechaInscripcion,
+        fecExamen,
+        horaExamen,
+        grupo,
+        idTipoStatusPostulante,
+        creaPor,
+        creaFecha)
+        Values 
+        (#{estudianteBean.personaBean.idPersona},
+        #{unidadNegocioBean.uniNeg},
+        YEAR(#{fechaInscripcion}),
+        <!--(select idgradohabilitado from mx_estudiante where unineg = #{unidadNegocioBean.uniNeg} and idestudiante = #{estudianteBean.personaBean.idPersona}),-->
+        #{gradoAcademicoBean.idGradoAcademico},
+        #{fechaInscripcion},
+        #{fecExamen},
+        #{horaExamen},
+        #{grupo},
+        #{codigoBean.idCodigo},
+        #{creaPor},getDate())
+        <selectKey keyProperty="idAdmision" order="AFTER" resultType="Integer">
+            SELECT max(idAdmision) FROM MX_Admision WHERE uniNeg = #{unidadNegocioBean.uniNeg};
+        </selectKey>   
+    </insert> 
+    
+    <update id="modificarAdmision" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        UPDATE MX_Admision SET  
+        idGradoPostula = #{gradoAcademicoBean.idGradoAcademico},
+        idProgramacion = #{programacionBean.idProgramacion},
+        anio=#{programacionBean.procesoBean.anio},
+        fechaInscripcion = #{fechaInscripcion},
+        fecExamen = #{fecExamen},
+        horaExamen = #{horaExamen},
+        grupo = #{grupo},
+        idTipoStatusPostulante = #{codigoBean.idCodigo}, 
+        modiPor=#{modiPor}
+        Where idAdmision = #{idAdmision} and uniNeg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <update id="cambiarEstadoPostulante" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        UPDATE MX_Admision SET   
+        idTipoStatusPostulante = (Select idCodigo from MO_Codigo Where codigo = #{codigoBean.codigo}),
+        modiPor=#{modiPor}
+        Where  uniNeg=#{estudianteBean.personaBean.unidadNegocioBean.uniNeg} and idEstudiante=#{estudianteBean.personaBean.idPersona}
+        and idAdmision = #{idAdmision}
+    </update>
+    <delete id="eliminarAdmision" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        Delete From MX_Admision Where idAdmision = #{idAdmision} and uniNeg=#{unidadNegocioBean.uniNeg}
+    </delete>
+    <!--Aprobacion de Postulantes-->
+    <select id="obtenerAdmisionFiltro" resultMap="admisionResultado" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        <include refid="consultaAdmision"/>
+        <where>
+            adm.uniNeg = #{unidadNegocioBean.uniNeg} 
+            <if test="estudianteBean.personaBean.idPersona != null and estudianteBean.personaBean.idPersona != 0 ">
+                and adm.idEstudiante = #{estudianteBean.personaBean.idPersona}
+            </if>  
+            <if test="estudianteBean.personaBean.nombreCompleto != null and estudianteBean.personaBean.nombreCompleto != ''">
+                and upper(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE((concat(per.apepat,' ',per.apemat,' ',per.nombre)),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u')) 
+                like concat('%',REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(#{estudianteBean.personaBean.nombreCompleto},'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'%')
+            </if> 
+            <if test="programacionBean.procesoBean.anio != null and programacionBean.procesoBean.anio != 0 ">
+                and proce.anio = #{programacionBean.procesoBean.anio}
+            </if>  
+            <if test="programacionBean.idProgramacion != null and programacionBean.idProgramacion != 0 ">
+                and pro.idProgramacion = #{programacionBean.idProgramacion}
+            </if>  
+            <if test="gradoAcademicoBean.idGradoAcademico != null and gradoAcademicoBean.idGradoAcademico != 0 ">
+                and adm.idGradoPostula = #{gradoAcademicoBean.idGradoAcademico}
+            </if>   
+            <if test="codigoBean.idCodigo != null and codigoBean.idCodigo != 0" >
+                and adm.idTipoStatusPostulante = #{codigoBean.idCodigo}
+            </if>    
+            <if test="docRefeIngreso != null and docRefeIngreso != ''" >
+                and adm.docRefeIngreso = #{docRefeIngreso}
+            </if>    
+            <if test="grupo != null and grupo != ''" >
+                and adm.grupo = #{grupo}
+            </if>    
+        </where>
+        order by proce.anio desc
+    </select>
+    <update id="aprobarPostulante" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        UPDATE MX_Admision SET  
+        idTipoStatusPostulante = (Select idCodigo from MO_Codigo Where codigo = #{codigoBean.codigo}),
+        docRefeIngreso=#{docRefeIngreso},
+        fechaIngreso=#{fechaIngreso}
+        Where idAdmision = #{idAdmision} and uniNeg=#{unidadNegocioBean.uniNeg}
+    </update>
+    <select id="obtenerAdmisionPorIdPeriodo" resultMap="admisionResultado" parameterType="pe.marista.sigma.bean.AdmisionBean">
+        <include refid="consultaAdmision" />
+        WHERE adm.idEstudiante = #{estudianteBean.personaBean.idPersona} and proce.anio = #{programacionBean.procesoBean.anio} and adm.uniNeg = #{unidadNegocioBean.uniNeg} 
+    </select>
+    
+    <select id="llamarGenerarDocPorAdmision" parameterType="pe.marista.sigma.bean.AdmisionBean" resultType="Object">
+        exec PRO_GENERA_DOC_ADMISION
+        @unineg = #{unidadNegocioBean.uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN}, 
+        @idEstudiante = #{estudianteBean.personaBean.idPersona,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @idProgramacion = #{programacionBean.idProgramacion,javaType=int,jdbcType=NUMERIC,mode=IN},
+        @idGradoPostula = #{gradoAcademicoBean.idGradoAcademico,javaType=int,jdbcType=NUMERIC,mode=IN}
+    </select>  
+    <select id="obtenerAlumnosPorAnio" parameterType="map" resultType="pe.marista.sigma.bean.reporte.AdmisionEstudiantesRepBean" >
+        DECLARE  
+        @anio INTEGER,
+        @uniNeg varchar(6) 
+        SET @ANIO=#{anio} 
+        set @uniNeg=#{uniNeg} 
+        DECLARE @IMG varchar(100) = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        end)
+        select 
+        @IMG AS rutaImagen,
+        'REPORTE DE ALUMNOS ADMITIDOS DEL AÑO '+convert(varchar,A.ANIO) AS titulo
+        ,G.NOMBRE AS nombreGradoAcademico
+        ,e.codigo as codigoColegio
+        ,CONCAT(P.apepat,' '+P.apemat,', '+P.nombre) AS nombreCompleto
+        ,U.nombreUniNeg,u.ruc
+        FROM MX_Admision A
+        INNER JOIN MO_UnidadNegocio U ON U.unineg=A.unineg
+        INNER JOIN MX_Estudiante E ON E.idestudiante= A.idestudiante
+        INNER JOIN MX_Persona P ON P.idpersona=E.idestudiante
+        INNER JOIN MX_GradoAcademico G ON G.idgradoacademico=A.idgradopostula
+        INNER JOIN MO_Codigo CO ON CO.idcodigo=A.idtipostatuspostulante
+        where a.unineg=@uniNeg and a.anio=@anio and CO.codigo='Admitido'
+        order by e.codigo asc 
+    </select>
+</mapper>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.ChequeAnuladoDAO">  
+    <sql id="consultaCampos"> 
+        SELECT
+         che.uniNeg
+        ,che.rucBanco
+        ,che.numCuenta
+        ,che.numCheque
+        ,che.obs
+        ,che.fechaAnula
+        ,che.creaPor
+        ,che.creafecha
+        ,cb.rucBanco   as rucBancoCB
+        ,ent.nombre  as nombreEntBanco
+        ,cb.numCuenta  
+        FROM MT_ChequeAnulado che
+        inner join MT_CuentaBanco cb on che.uniNeg=cb.uniNeg and che.rucBanco=cb.rucBanco and che.numCuenta=cb.numCuenta
+        inner join MO_Entidad ent on cb.rucBanco=ent.ruc
+        
+    </sql>
+    <resultMap id="chequeAnuladoResultado" type="pe.marista.sigma.bean.ChequeAnuladoBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="cuentaBancoBean.numCuenta" column="numCuenta"/>
+        <id property="docEgresoBean.numCheque" column="numCheque"/>
+        <result property="obs" column="obs"/>
+        <result property="fechaAnula" column="fechaAnula"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="cuentaBancoBean" column="numCuenta"
+                     javaType="pe.marista.sigma.bean.CuentaBancoBean"
+                     resultMap="cuentaBancoResultado"/>
+        <association property="docEgresoBean" column="numCheque"
+                     javaType="pe.marista.sigma.bean.DocEgresoBean"
+                     resultMap="docEgresoResultado"/> 
+    </resultMap> 
+    <!-- UNI NEG -->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap> 
+    
+    <!-- RUC BANCO -->  
+   <resultMap id="cuentaBancoResultado" type="pe.marista.sigma.bean.CuentaBancoBean">
+        <id property="numCuenta" column="numCuenta"/>
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="entidadBancoBean.ruc" column="rucBancoCB"/> 
+        <!-- unidad negocio de cuenta banco -->
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultadoCB"/> 
+        <association property="entidadBancoBean" column="rucBancoCB"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadBancoResultado"/> 
+        
+    </resultMap>
+     <!-- unidad negocio de entidad  -->
+    <resultMap id="unidadNegocioResultadoCB" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegCuenta" />
+        <id property="nombre" column="nombreCuenta" />
+    </resultMap>
+    
+    <!--entidad Banco   -->
+    <resultMap id="entidadBancoResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucBancoCB" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegBanco"/>
+        <result property="nombre" column="nombreEntBanco" />
+        <!--   unidad negocio de entidad -->
+        <association property="unidadNegocioBean" column="uniNegBanco" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultadoBanco"/> 
+    </resultMap>
+    <!--   unidad negocio de cuenta banco -->
+    <resultMap id="unidadNegocioResultadoBanco" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegBanco" />
+        <id property="nombre" column="nombreBanco" />
+    </resultMap>
+    
+    <!-- NUMERO CHEQUE-->
+    <resultMap id="docEgresoResultado" type="pe.marista.sigma.bean.DocEgresoBean">
+       <result property="numCheque" column="numCheque"/> 
+    </resultMap>
+      
+    <select id="obtenerChequeAnuladoPorId" resultMap="chequeAnuladoResultado" parameterType="pe.marista.sigma.bean.ChequeAnuladoBean">
+        <include refid="consultaCampos" />
+        Where 
+        che.uniNeg = #{unidadNegocioBean.uniNeg} and 
+        che.rucBanco = #{cuentaBancoBean.entidadBancoBean.ruc} and 
+        che.numCuenta = #{cuentaBancoBean.numCuenta} and 
+        che.numCheque = #{docEgresoBean.numCheque}
+    </select>
+    <insert id="insertarChequeAnulado" parameterType="pe.marista.sigma.bean.ChequeAnuladoBean">
+        Insert Into MT_ChequeAnulado 
+        (uniNeg
+        ,rucBanco
+        ,numCuenta
+        ,numCheque
+        ,obs
+        ,fechaAnula
+        ,creaPor
+        ,creafecha)
+        Values 
+        (#{unidadNegocioBean.uniNeg}
+        ,#{cuentaBancoBean.entidadBancoBean.ruc}
+        ,#{cuentaBancoBean.numCuenta}
+        ,#{docEgresoBean.numCheque}
+        ,#{obs}
+        ,#{fechaAnula}
+        ,#{creaPor}
+        ,getDate())
+    </insert>
+    <update id="modificarChequeAnulado" parameterType="pe.marista.sigma.bean.ChequeAnuladoBean">
+        Update MT_ChequeAnulado Set
+        obs = #{obs},  
+        fechaAnula = #{fechaAnula},   
+        modiPor = #{modiPor}
+        Where 
+        uniNeg = #{unidadNegocioBean.uniNeg} and 
+        rucBanco = #{cuentaBancoBean.entidadBancoBean.ruc} and 
+        numCuenta = #{cuentaBancoBean.numCuenta} and 
+        numCheque = #{docEgresoBean.numCheque}
+    </update>
+    <delete id="eliminarChequeAnulado" parameterType="pe.marista.sigma.bean.ChequeAnuladoBean">
+        Delete From MT_ChequeAnulado  
+        Where 
+        uniNeg = #{unidadNegocioBean.uniNeg} and 
+        rucBanco = #{cuentaBancoBean.entidadBancoBean.ruc} and 
+        numCuenta = #{cuentaBancoBean.numCuenta} and 
+        numCheque = #{docEgresoBean.numCheque}
+    </delete> 
+    <select id="obtenerChequeAnuladoPorFiltro" resultMap="chequeAnuladoResultado" parameterType="pe.marista.sigma.bean.ChequeAnuladoBean">
+        <include refid="consultaCampos" />
+        <where>  
+            che.uniNeg= #{unidadNegocioBean.uniNeg}
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and che.fechaAnula >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                 and che.fechaAnula <= #{fechaFin}
+                ]]>
+            </if> 
+            <if test="docEgresoBean.numCheque != null and docEgresoBean.numCheque != '' ">
+                and che.numCheque= #{docEgresoBean.numCheque}
+            </if>
+            <if test="cuentaBancoBean.numCuenta != null and cuentaBancoBean.numCuenta != '' ">
+                and cb.numCuenta=#{cuentaBancoBean.numCuenta}
+            </if> 
+            <if test="obs != null and obs != '' "> 
+                and upper(che.obs) like concat('%',#{obs},'%')
+            </if> 
+        </where>
+        order by che.fechaAnula desc
+    </select> 
+</mapper>

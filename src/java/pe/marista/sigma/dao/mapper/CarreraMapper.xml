@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.CarreraDAO">
+    <sql id="consultaCampos">
+        Select
+        car.idCarrera,
+        car.carrera as nombreCarrera,
+        car.idCarreraSubArea,
+        
+        csa.idCarreraSubArea as idCSA,
+        csa.subArea as nombreSA,
+        csa.idCarreraArea,
+        
+        ca.idCarreraArea as idCA,
+        ca.idGradoAcademico,
+        
+        ca.area as nombreArea,
+        
+        ga.idGradoAcademico as idGA,
+        ga.nombre as nombreGA,
+        ga.idNivelAcademico,
+        
+        na.idNivelAcademico as idNA,
+        na.nombre as nomNA,
+        na.idTipoFormacion,
+
+        tf.idTipoFormacion as idTF,
+        tf.nombre as nomTF
+		 
+        From MO_Carrera car 
+        Inner Join MO_CarreraSubArea csa ON csa.idCarreraSubArea=car.idCarreraSubArea
+        Inner Join MO_CarreraArea ca ON ca.idCarreraArea=csa.idCarreraArea
+        Inner Join MX_GradoAcademico ga on ca.idGradoAcademico = ga.idGradoAcademico
+        inner join MX_NivelAcademico na on ga.idNivelAcademico=na.idNivelAcademico
+        inner join MX_TipoFormacion TF on tf.idTipoFormacion=na.idTipoFormacion
+        
+    </sql>  
+    <!-- Carrera -->
+    <resultMap id="carreraResultado" type="pe.marista.sigma.bean.CarreraBean">
+        <id property="idCarrera" column="idCarrera"/>
+        <result property="carrera" column="nombreCarrera"/>
+        <result property="profesion" column="profesion"/>  
+        <association property="carreraSubAreaBean" column="idCSA"
+                     javaType="pe.marista.sigma.bean.CarreraSubAreaBean"
+                     resultMap="carreraSubAreaResultado"/>
+    </resultMap>
+    <!-- Carrera SubArea -->
+    <resultMap id="carreraSubAreaResultado" type="pe.marista.sigma.bean.CarreraSubAreaBean">
+        <id property="idCarreraSubArea" column="idCSA"/>
+        <result property="subArea" column="nombreSA"/>  
+        <association property="carreraAreaBean" column="idCA"
+                     javaType="pe.marista.sigma.bean.CarreraAreaBean"
+                     resultMap="carreraAreaResultado"/>
+    </resultMap>
+    <!-- Carrera Area -->
+    <resultMap id="carreraAreaResultado" type="pe.marista.sigma.bean.CarreraAreaBean">
+        <id property="idCarreraArea" column="idCA"/>
+        <result property="area" column="nombreArea"/>  
+        <result property="idNivelAcademico" column="idNivelAcademico"/>  
+        <association property="gradoAcademicoBean" column="idGA"
+                     javaType="pe.marista.sigma.bean.GradoAcademicoBean"
+                     resultMap="gradoAcademicoResultado"/>
+    </resultMap>
+    <!-- Grado Academico -->
+    <resultMap id="gradoAcademicoResultado" type="pe.marista.sigma.bean.GradoAcademicoBean">
+        <id property="idGradoAcademico" column="idGA"/>
+        <result property="nombre" column="nombreGA"/>
+        <association property="nivelAcademicoBean" column="idNA"
+                     javaType="pe.marista.sigma.bean.NivelAcademicoBean"
+                     resultMap="nivelResultado"/>
+    </resultMap>
+    <resultMap id="nivelResultado" type="pe.marista.sigma.bean.NivelAcademicoBean">
+        <id property="idNivelAcademico" column="idNA"/>
+        <result property="nombre" column="nomNA"/>
+        <association property="tipoFormacionBean" column="idTF"
+                     javaType="pe.marista.sigma.bean.TipoFormacionBean"
+                     resultMap="tipoResultado"/>
+    </resultMap>
+    <resultMap id="tipoResultado" type="pe.marista.sigma.bean.TipoFormacionBean">
+        <id property="idTipoFormacion" column="idTF"/>
+        <result property="nombre" column="nomTF"/>
+    </resultMap>
+    
+    <select id="obtenerTodosCAR" resultMap="carreraResultado">
+        <include refid="consultaCampos" />
+        Order by nombreCarrera
+    </select>
+    
+    <select id="obtenerCarreraPorCarreraArea" resultMap="carreraResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        Where ca.idCarreraArea=#{idCA}   
+    </select>
+    <select id="obtenerCarreraPorNivelAcademico" resultMap="carreraResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        Where na.idNivelAcademico=#{idNivelAcademico}   
+    </select>
+    <select id="obtenerCarreraPorGradoAca" resultMap="carreraResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        Where idGradoAcademico=#{idGradoAcademico}   
+    </select>
+    
+    <select id="obtenerCarreraPorCarreraSubArea" resultMap="carreraResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        <!--Where car.idcarrerasubarea = #{carreraSubAreaBean.idCarreraSubArea}-->  <!--Cambio_1--> 
+        where car.idCarreraSubArea = #{carreraSubAreaBean.idCarreraSubArea}
+    </select>
+    
+    <select id="obtenerCarreraPorId" resultMap="carreraResultado" parameterType="Integer">
+        <include refid="consultaCampos" />
+        Where idCarrera=#{idCarrera}
+    </select> 
+      
+    <insert id="insertarCarrera" parameterType="pe.marista.sigma.bean.CarreraBean">
+        Insert Into MO_Carrera (idcarrerasubarea,carrera,profesion) 
+        Values (#{carreraSubAreaBean.idCarreraSubArea},#{carrera},#{profesion})
+    </insert> 
+    
+    <update id="modificarCarrera" parameterType="pe.marista.sigma.bean.CarreraBean">
+        Update MO_Carrera set
+        idcarrerasubarea = #{carreraSubAreaBean.idCarreraSubArea},
+        carrera = #{carrera},
+        profesion = #{profesion}
+        Where idCarrera = #{idCarrera}   
+    </update>
+    
+    <delete id="eliminarCarrera" parameterType="Integer">
+        Delete from MO_Carrera Where idCarrera = #{idCarrera}  
+    </delete>
+   
+</mapper>

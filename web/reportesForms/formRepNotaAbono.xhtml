@@ -1,0 +1,167 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">
+        <h:body>
+            <h:form id="frmPagado" >
+                <p:panel header="#{msgs.etiquetaFiltro}" style="width: 500px;margin: 0 auto;">
+                    <h:panelGrid styleClass="centrado" columns="2" >
+                        <p:outputLabel value="#{msgs.etiquetaSelFilto}: " />
+                        <p:selectOneRadio id="cboTip" value="#{reporteNotaAbonoMB.selTipFil}" >
+                            <f:selectItem itemLabel="#{msgs.etiquetaTotal}" itemValue="1" />
+                            <f:selectItem itemLabel="#{msgs.etiquetaFechas}" itemValue="0" />
+                            <p:ajax listener="#{reporteNotaAbonoMB.selFiltro()}" update=":frmPagado:pnlPagado,:frmPagado:fecIni,:frmPagado:fecFin" />
+                        </p:selectOneRadio>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <h:panelGrid id="pnlPagado" styleClass="centrado" columns="2" >
+                            <p:outputLabel value="#{msgs.etiquetaFechaInicio}: " />
+                            <p:calendar id="fecIni" value="#{reporteNotaAbonoMB.procesoBancoBean.fechaInicio}" pattern="dd/MM/yyyy" locale="es" required="true" navigator="true" effect="fadeIn" showOn="button" disabled="#{reporteNotaAbonoMB.flgTipFil}" />
+                            <p:outputLabel value="#{msgs.etiquetaFechaFin}: " />
+                            <p:calendar id="fecFin" value="#{reporteNotaAbonoMB.procesoBancoBean.fechaFin}" pattern="dd/MM/yyyy" locale="es" required="true" navigator="true" effect="fadeIn" showOn="button" disabled="#{reporteNotaAbonoMB.flgTipFil}" />
+                            <p:outputLabel value="#{msgs.etiquetaEstado}:" rendered="false" />
+                            <p:selectOneMenu value="#{reporteNotaAbonoMB.procesoBancoBean.estado}" label="#{msgs.etiquetaEstadoPago}" filter="false" style="width: 175px" panelStyle="width:175px" rendered="false">
+                                <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"  />
+                                <f:selectItems value="#{reporteNotaAbonoMB.listaTipoEstado}" var="estado" itemLabel="#{estado.codigo}" itemValue="#{estado.idCodigo}"/> 
+                            </p:selectOneMenu>
+                        </h:panelGrid> 
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" styleClass="centrado" >
+                        <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{reporteNotaAbonoMB.filtrarPagos()}" 
+                                         update=":frmPnlTblPagado:pnlPnlTblPagado" />
+                        <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{reporteNotaAbonoMB.limpiarPagos()}" 
+                                         process="@this" update=":frmPagado:pnlPagado" />
+                    </h:panelGrid>
+                </p:panel>
+            </h:form>
+
+            <h:form id="frmPnlTblPagado" >
+                <h:panelGrid id="pnlPnlTblPagado" styleClass="centrado" >
+                    <p:dataTable id="tblPagosRep" value="#{reporteNotaAbonoMB.listaNotaAbonoRepBean}" widgetVar="tblPagos"
+                                 paginator="true" paginatorPosition="bottom"
+                                 selection="#{reporteNotaAbonoMB.notaAbonoRepBean}"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+                                 var="pagos" rowIndexVar="n"
+                                 rows="28" rendered="#{not empty reporteNotaAbonoMB.listaNotaAbonoRepBean}" 
+                                 style="width: 1400px; font-size: 10px;font-size:14px !important;">
+                        <f:facet name="header" >
+                            <p:outputLabel value="#{msgs.etiquetaDatosGenerales}" />
+                            <h:commandLink id="expPag" style="float: left;" >
+                                <h:graphicImage value="/resources/images/icons/exportarexcel.png"/>
+                                <p:dataExporter type="xls" target="tblPagos" fileName="PagosTotales" />
+                            </h:commandLink>
+                            <p:tooltip for="expPag" value="#{msgs.etiquetaExportar}" />
+                            <h:commandLink style="float: left;" >
+                                <h:graphicImage value="/resources/images/icons/exportarpdf.png"/>
+                            </h:commandLink>
+                        </f:facet>
+                        <p:column headerText="#{msgs.etiquetaFechaIng}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.fechaVista}" >
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaAnio}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.anio}" />
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaFebrero}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoFebrero}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMarzo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoMarzo}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaAbril}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoAbril}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaMayo}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoMayo}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaJunio}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoJunio}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaJulio}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoJulio}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaAgosto}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoAgosto}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaSetiembre}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoSetiembre}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaOctubre}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoOctubre}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaNoviembre}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoNoviembre}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaDiciembre}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.montoDiciembre}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaTotal} #{msgs.etiquetaMora}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.totalMora}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaSubTotal}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.subTotal}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="#{msgs.etiquetaTotal}" filterMatchMode="contains" width="4%" styleClass="siseFontTable3 centrado-texto" >
+                            <h:outputText value="#{pagos.total}" >
+                                <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:columnGroup type="footer">
+                            <p:row>
+                                <p:column colspan="2" style="text-align:right" footerText="#{msgs.etiquetaTotales}: " />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoFebrero} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoMarzo} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoAbril} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoMayo} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoJunio} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoJulio} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoAgosto} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoSetiembre} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoOctubre} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoNoviembre} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoDiciembre} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoTotalMora} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoTotalImporte} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                                <p:column footerText="#{reporteNotaAbonoMB.montoTotalPagado} Soles" styleClass="siseFontTable3 centrado-texto"  />
+                            </p:row>
+                        </p:columnGroup>
+                    </p:dataTable>
+                </h:panelGrid> 
+            </h:form>
+
+        </h:body>
+    </ui:define>
+</ui:composition>
+
+

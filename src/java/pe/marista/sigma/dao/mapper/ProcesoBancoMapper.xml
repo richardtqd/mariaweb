@@ -1,0 +1,1245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="pe.marista.sigma.dao.ProcesoBancoDAO">  
+    <sql id="consultaCampos" >
+        SELECT  
+        pb.unineg
+        ,pb.idProcesoBanco
+        ,CONCAT('00',ROW_NUMBER() over(order by pb.idprocesobanco)) as operacion
+        ,pb.anio
+        ,pb.ruc
+        ,pb.nombre
+        ,pb.flgproceso
+        ,(case pb.flgproceso when 1 then 'Envio'  when 0 then 'Recuparción' end) as datoProceso
+        ,pb.codunineg
+        ,pb.moneda
+        ,pb.numcuenta
+        ,pb.fecha
+        ,pb.regEnv
+        ,pb.regError
+        ,pb.montoEnv
+        ,pb.montoRecup
+        ,pb.tipoarchivo
+        ,pb.horaCorte
+        ,pb.creaPor
+        ,pb.creaFecha
+        ,pb.modiPor 
+        , DATEPART(YEAR,pb.creafecha) as añoFin 
+        , DATEPART(MONTH,pb.creafecha) as Mes
+        , DATEPART(DAY,pb.creafecha) as dia
+        ,en.ruc as idEntidad
+        ,en.nombre as nombreEntidad
+        ,uni.unineg 
+        ,uni.nombreUniNeg
+        ,ctaBanco.numcuenta as numeroCuenta
+        ,ctaBanco.rucbanco
+        ,ctaBanco.flgcobranza
+        ,ctaBanco.descripcion
+        ,ctaBanco.fechaapertura
+        ,ctaBanco.fechacierre
+        ,enBan.ruc as rucEntidadBan
+        ,enBan.nombre as nombreEntidadBan
+       <!-- ,(case 
+        when pb.unineg='barina'
+        then CONVERT(DATE,SUBSTRING(pb.nombre,10,6))
+        else  CONVERT(DATE,pb.fecha)  end) AS fechaVista -->
+        ,CONVERT(DATE,pb.fecha) AS fechaVista 
+        ,(isnull(pb.regEnv,0) - isnull(pb.regError,0)) as regProcesados
+        FROM MT_ProcesoBanco pb
+        left join MO_Entidad en on pb.ruc = en.ruc and pb.unineg = en.unineg
+        left join MO_UnidadNegocio uni on pb.unineg = uni.unineg 
+        left join MT_CuentaBanco ctaBanco on pb.numcuenta = ctaBanco.numcuenta and pb.unineg = ctaBanco.unineg
+        left join MO_Entidad enBan on ctaBanco.rucbanco = enBan.ruc and ctaBanco.unineg = enBan.unineg
+    </sql>
+    <sql id="consultaCampos2" >
+        SELECT  
+        pb.idProcesoBanco 
+        ,pb.anio
+        ,pb.ruc
+        ,pb.nombre
+        ,pb.flgProceso
+        ,(case pb.flgproceso when 1 then 'Envio'  when 0 then 'Recuperación' end) as datoProceso
+        ,pb.numCuenta
+        ,pb.fecha
+        ,pb.regEnv
+        ,pb.regError
+        ,pb.montoEnv
+        ,pb.montoRecup
+        ,pb.tipoArchivo
+        ,pb.horaCorte as  horaCorte
+        ,pb.creaPor
+        ,pb.creaFecha 
+        ,(isnull(pb.regEnv,0) - isnull(pb.regError,0)) as regProcesados
+        ,ISNULL((SELECT DISTINCT TOP 1  (isnull((isnull(convert(varchar,(convert(date,c.fechapago)),103),'')),''))   from MT_CtasxCobrar C WHERE idprocesobanco=pb.idprocesobanco and unineg=pb.unineg  order by 1 desc),'') fechaOpBco
+        ,CONVERT(DATE,pb.fecha)    AS fechaVista 
+        ,isnull((select sum(isnull(mora,0)) from MT_DetProcesoBanco where  idProcesoBanco = pb.idprocesobanco and unineg=pb.unineg),0) as totalMora
+        ,(isnull((select sum(isnull(mora,0)) from MT_DetProcesoBanco where  idProcesoBanco = pb.idprocesobanco and unineg=pb.unineg),0)) + (isnull(pb.montoRecup,0)) as totalRecaudado
+        FROM MT_ProcesoBanco pb
+        <!--SELECT  
+        pb.idProcesoBanco 
+        ,pb.anio
+        ,pb.ruc
+        ,pb.nombre
+        ,pb.flgProceso
+        ,(case pb.flgproceso when 1 then 'Envio'  when 0 then 'Recuperación' end) as datoProceso
+        ,pb.numCuenta
+        ,pb.fecha
+        ,pb.regEnv
+        ,pb.regError
+        ,pb.montoEnv
+        ,pb.montoRecup
+        ,pb.tipoArchivo
+        ,pb.horaCorte as  horaCorte
+        ,pb.creaPor
+        ,pb.creaFecha 
+        ,(isnull(pb.regEnv,0) - isnull(pb.regError,0)) as regProcesados
+        ,ISNULL((SELECT DISTINCT TOP 1  (isnull((isnull(convert(varchar,(convert(date,c.fechapago)),103),'')),''))   from MT_CtasxCobrar C WHERE idprocesobanco=pb.idprocesobanco and unineg=pb.unineg  order by 1 desc),'') fechaOpBco
+        -->
+        <!--,(isnull(STUFF((select distinct ',' + quotename (isnull(convert(varchar,(convert(date,c.fechapago)),103),''))
+        from MT_CtasxCobrar  c  where idprocesobanco=pb.idprocesobanco and unineg=pb.unineg 
+        for XML path(''), type).value('.','nvarchar(max)'),1,1,''),'')) as fechaOpBco-->
+        <!--  
+        ,CONVERT(DATE,pb.fecha)    AS fechaVista 
+        FROM MT_ProcesoBanco pb 
+        -->
+    </sql>
+    
+    <resultMap id="procesoBancoResultado" type="pe.marista.sigma.bean.ProcesoBancoBean" >
+        <id property="idProcesoBanco" column="idProcesoBanco" />
+        <result property="anio" column="anio" />
+        <result property="mes" column="Mes" />
+        <result property="dia" column="dia" />
+        <result property="nombre" column="nombre" />
+        <result property="codUniNeg" column="codUniNeg" />
+        <result property="fecha" column="fecha" />
+        <result property="regProc" column="regProc" />
+        <result property="regEnv" column="regEnv" />
+        <result property="regError" column="regError" />
+        <result property="montoEnv" column="montoEnv" />
+        <result property="montoRecup" column="montoRecup" />
+        <result property="flgProceso" column="flgProceso" />
+        <result property="datoProceso" column="datoProceso" />
+        <result property="tipoArchivo" column="tipoArchivo" />
+        <result property="numCuenta" column="numCuenta" />
+        <result property="moneda" column="moneda" />
+        <result property="ruc" column="ruc" />
+        <result property="operacion" column="operacion" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <result property="fechaVista" column="fechaVista" /> 
+        <result property="regProcesados" column="regProcesados" />
+        <result property="fechaOpBco" column="fechaOpBco" />
+        <result property="horaCorte" column="horaCorte" />
+        <result property="totalMora" column="totalMora" />
+        <result property="totalRecaudado" column="totalRecaudado" /> 
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="uniNegResultado"   />
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadResultado"   />
+        <association property="cuentaBancoBean" column="numCuenta"
+                     javaType="pe.marista.sigma.bean.CuentaBancoBean" 
+                     resultMap="entidadBancoResultado"/>
+    </resultMap>
+    
+    <resultMap id="uniNegResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <resultMap  id="entidadResultado" type="pe.marista.sigma.bean.EntidadBean" >
+        <id property="ruc" column="idEntidad" />
+        <result property="nombre" column="nombreEntidad"/>
+    </resultMap>  
+    
+    <resultMap id="entidadBancoResultado" type="pe.marista.sigma.bean.CuentaBancoBean">
+        <id property="numCuenta" column="numeroCuenta" />
+        <result property="codUniNeg" column="codUniNeg" />
+        <result property="descripcion" column="descripcion" />
+        <result property="fechaApertura" column="fechaApertura" />
+        <result property="fechaCierre" column="fechaCierre" />
+        <association property="entidadBancoBean" column="rucBanco"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="BancoResultado"/>
+    </resultMap>
+    
+    <resultMap id="BancoResultado" type="pe.marista.sigma.bean.EntidadBean" >
+        <id property="ruc" column="ruc" />
+        <result property="nombre" column="nombreEntidad"/>
+    </resultMap>
+    
+    <select id="obtenerProcesoBanco" resultMap="procesoBancoResultado" >
+        <include refid="consultaCampos" />
+    </select>
+    
+    <select id="obtenerPorUniNeg" resultMap="procesoBancoResultado" parameterType="String" >
+        <include refid="consultaCampos" />WHERE pb.uniNeg = #{unidadNegocioBean.uniNeg} order by pb.idprocesobanco
+    </select>
+    
+    <select id="obtenerPorId" resultMap="procesoBancoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" />  WHERE pb.idProcesoBanco = #{idProcesoBanco}
+    </select>
+    
+    <select id="obtenerPorIdBanco" resultMap="procesoBancoResultado" parameterType="map" >
+        <include refid="consultaCampos" />  WHERE pb.idProcesoBanco = #{idProcesoBanco} and pb.unineg = #{uniNeg}
+    </select>
+    <select id="obtenerProcesoBancoId" resultMap="procesoBancoResultado" parameterType="map" >
+        <include refid="consultaCampos" />  WHERE pb.idProcesoBanco = #{idProcesoBanco} and pb.unineg = #{uniNeg}
+    </select>
+    <select id="obtenerProcesoBancoIdVer2" resultMap="procesoBancoResultado" parameterType="map" >
+        declare @mora money 
+        set @mora=(select sum(isnull(mora,0)) from MT_DetProcesoBanco where  idProcesoBanco = #{idProcesoBanco} and unineg = #{uniNeg}) 
+        SELECT  
+        pb.idProcesoBanco 
+        ,pb.anio
+        ,pb.ruc
+        ,pb.nombre
+        ,pb.flgProceso
+        ,(case pb.flgproceso when 1 then 'Envio'  when 0 then 'Recuperación' end) as datoProceso
+        ,pb.numCuenta
+        ,pb.fecha
+        ,pb.regEnv
+        ,pb.regError
+        ,pb.montoEnv
+        ,pb.montoRecup
+        ,pb.tipoArchivo
+        ,pb.horaCorte as  horaCorte
+        ,pb.creaPor
+        ,pb.creaFecha 
+        ,(isnull(pb.regEnv,0) - isnull(pb.regError,0)) as regProcesados
+        ,ISNULL((SELECT DISTINCT TOP 1  (isnull((isnull(convert(varchar,(convert(date,c.fechapago)),103),'')),''))   from MT_CtasxCobrar C WHERE idprocesobanco=pb.idprocesobanco and unineg=pb.unineg  order by 1 desc),'') fechaOpBco
+        
+        ,CONVERT(DATE,pb.fecha)    AS fechaVista 
+        ,(isnull(@mora,0)) as totalMora  
+        ,(isnull(@mora,0)) + (isnull(pb.montoRecup,0)) as totalRecaudado
+        FROM MT_ProcesoBanco pb
+        WHERE pb.idProcesoBanco = #{idProcesoBanco} and pb.unineg = #{uniNeg}
+    </select>
+    <select id="obtenerNombreDuplicado" resultType="Integer"  parameterType="map" >
+        SELECT  count(*) FROM MT_ProcesoBanco pb where pb.nombre=#{nombre} and pb.unineg = #{uniNeg}
+        and pb.anio=#{anio}
+    </select>    
+    <select id="obtenerProcBancoPorId" resultMap="procesoBancoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" />  WHERE pb.idProcesoBanco = #{idProcesoBanco} 
+    </select>
+    
+    <select id="obterProcBancoPorId" resultMap="procesoBancoResultado" parameterType="Integer" >
+        <include refid="consultaCampos" />  WHERE pb.idProcesoBanco = #{idProcesoBanco} 
+    </select>
+    
+    <select id="obtenerPorTipo" resultMap="procesoBancoResultado" parameterType="map" >
+        <include refid="consultaCampos" /> where nombre = #{nombre} and unineg = #{uniNeg} 
+    </select>    
+    
+    <select id="obtenerUltimaLista" resultMap="procesoBancoResultado" parameterType="Integer" > 
+        <include refid="consultaCampos"/> where pb.idprocesobanco = #{idprocesobanco}
+    </select>
+    
+    <!--CAMBIO-->
+    <select id="obtenerTipoProceso" resultMap="procesoBancoResultado" parameterType="map">
+        <include refid="consultaCampos" /> 
+        WHERE pb.flgproceso in (#{parms.0},#{parms.1})
+    </select>
+    
+    <select id="obtenerMaxIdProcesoBanco" resultType="int" parameterType="String" >
+        Select 
+        isnull(max(idprocesobanco),0) as idProcesoBanco
+        from MT_ProcesoBanco 
+        where unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    
+    <select id="obtenerIdProcesoBancoMax" resultType="Integer" parameterType="map" >
+        Select 
+        isnull(max(idprocesobanco),0) as idProcesoBanco
+        from MT_ProcesoBanco 
+        where unineg=#{uniNeg} and flgproceso = #{flgProceso}
+    </select>
+    
+    <select id="obtenerFechaActual" resultType="String" >
+        select convert(varchar,getdate(),105)
+    </select>
+    
+    <select id="obtenerFecha" resultType="Integer" parameterType="map">
+        DECLARE @var Integer = 0
+        set @var = #{var}
+        if @var = 1
+        begin
+        select YEAR(GETDATE())
+        end
+        else
+        begin
+        if @var = 2
+        begin
+        select MONTH(GETDATE())			
+        end
+        end
+    </select>
+    
+    <insert id="insertarProcesoBanco" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        INSERT INTO MT_ProcesoBanco
+        (unineg
+        ,anio
+        ,ruc
+        ,nombre
+        ,flgproceso
+        ,codunineg
+        ,moneda
+        ,numCuenta
+        ,fecha
+        ,regenv
+        ,regerror
+        ,montoenv
+        ,montorecup
+        ,tipoarchivo
+        ,horacorte
+        ,creapor
+        ,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg} 
+        ,(select case 
+        when #{anio} is null or #{anio} = 0 then (select YEAR(GETDATE())) else #{anio}
+        end)
+        ,#{ruc}
+        ,#{nombre}
+        ,#{flgProceso}
+        ,#{codUniNeg}
+        ,#{tipoMoneda}
+        ,#{numCuenta}
+        ,#{fecha}
+        ,#{regEnv}
+        ,#{regError}
+        ,#{montoEnv}
+        ,#{montoRecup}
+        ,#{tipoArchivo} 
+        ,CONVERT(VARCHAR(8), GETDATE(), 108)
+        ,#{creaPor}
+        ,CAST(GETDATE() as varbinary)) 
+        <selectKey keyProperty="idProcesoBanco" order="AFTER" resultType="Integer">
+            SELECT max(idprocesobanco) FROM MT_ProcesoBanco WHERE uniNeg = #{unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert> 
+    
+    <update id="modificarProcesoBanco" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        UPDATE MT_ProcesoBanco
+        SET
+        uniNeg = #{unidadNegocioBean.uniNeg}
+        ,anio = YEAR(#{fecha})
+        ,nombre = #{nombre}
+        ,fecha = #{fecha}
+        ,regProc = #{regProc}
+        ,regOk = #{regok}
+        ,regError = #{regError}
+        ,idBamco = #{idBanco}
+        ,flgProceso = #{flgproceso}
+        ,tipoArchivo = #{tipoArchivo}
+        ,modiPor = #{modiPor}
+        WHERE idProcesoBanco = #{idProcesoBanco}
+    </update> 
+    
+    <update id="modificarProcesoBancoVer2" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        declare @unineg varchar(6) , @idprocesobanco int , @montoEnv money
+        set @unineg=#{unidadNegocioBean.uniNeg} 
+        set @idprocesobanco=#{idProcesoBanco}        
+        set @montoEnv=0
+        <!--set @montoEnv=(select sum(ISNULL(monto,0)-ISNULL(dsctobeca,0)) from MT_CtasxCobrar where unineg=@unineg and idctasxcobrar in (select idctasxcobrar from MT_DetEnvio where idprocesobanco=@idprocesobanco and unineg=@unineg))-->
+        <!--set @moraEnv=(select sum(ISNULL(mora,0)-ISNULL(dscto,0)) from MT_CtasxCobrar where unineg=@unineg and idctasxcobrar in (select idctasxcobrar from MT_DetEnvio where idprocesobanco=@idprocesobanco and unineg=@unineg))-->
+        
+        UPDATE MT_ProcesoBanco
+        SET        
+        regenv =#{regEnv} 
+        ,regError = #{regError}
+        ,montoRecup=#{montoRecup}
+        ,montoEnv=isnull(@montoEnv,0)
+        WHERE idProcesoBanco = #{idProcesoBanco} and uniNeg = #{unidadNegocioBean.uniNeg} 
+    </update> 
+    <update id="modificarProcesoBancoVer3" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        declare @unineg varchar(6) , @idprocesobanco int , @montoEnv money
+        set @unineg=#{unidadNegocioBean.uniNeg} 
+        set @idprocesobanco=#{idProcesoBanco}        
+        set @montoEnv=0
+        set @montoEnv=(select sum(ISNULL(monto,0)-ISNULL(dsctobeca,0)) from MT_CtasxCobrar where unineg=@unineg and idctasxcobrar in (select idctasxcobrar from MT_DetEnvio where idprocesobanco=@idprocesobanco and unineg=@unineg))
+        <!--set @moraEnv=(select sum(ISNULL(mora,0)-ISNULL(dscto,0)) from MT_CtasxCobrar where unineg=@unineg and idctasxcobrar in (select idctasxcobrar from MT_DetEnvio where idprocesobanco=@idprocesobanco and unineg=@unineg))-->
+        
+        UPDATE MT_ProcesoBanco
+        SET        
+        regenv =#{regEnv} 
+        ,regError = #{regError}
+        ,montoRecup=#{montoRecup}
+        ,montoEnv=isnull(@montoEnv,0)
+        WHERE idProcesoBanco = #{idProcesoBanco} and uniNeg = #{unidadNegocioBean.uniNeg} 
+    </update> 
+    
+    <update id="actualizarProcesoBanco" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        UPDATE MT_ProcesoBanco
+        SET        
+        anio = YEAR(#{fecha})
+        ,nombre = #{nombre}
+        ,fecha = #{fecha}
+        ,montoEnv = #{montoEnv}
+        ,regEnv = #{regEnv}
+        ,tipoArchivo = #{tipoArchivo}
+        ,modiPor = #{modiPor}
+        WHERE idProcesoBanco = #{idProcesoBanco}
+    </update>
+    
+    <update id="modificarErroresProc" parameterType="pe.marista.sigma.bean.ProcesoBancoBean">
+        UPDATE MT_ProcesoBanco
+        SET
+        regError = #{regError}
+        WHERE idProcesoBanco = #{idProcesoBanco}
+    </update>
+    
+    <delete id="eliminarProcesoBanco" parameterType="Integer" >
+        DELETE from MT_ProcesoBanco
+        WHERE idProcesoBanco = #{idProcesoBanco}
+    </delete>
+    
+    <delete id="eliminarProcesoBancoMas" parameterType="map" >
+        declare @unineg char(6) = #{uniNeg}
+        declare @idprocesoBanco Integer = #{idProcesoBanco}
+        delete from MT_ProcesoBanco where unineg = @unineg and idprocesobanco = @idprocesoBanco
+    </delete>  
+    
+    <update id="modificarBancoCuenta" parameterType="map" >
+        declare @unineg char(6) = #{uniNeg}
+        declare @idprocesoBanco Integer = #{idProcesoBanco}
+        declare @flgProceso Integer = #{flgProceso}
+        if(@flgProceso = 0)
+        begin
+        update MT_CtasxCobrar set idprocesobanco = null where unineg = #{uniNeg} and idprocesobanco = #{idProcesoBanco}
+        end
+        if(@flgProceso = 1)
+        begin
+        update MT_CtasxCobrar set idprocesoenvio = null where unineg = #{uniNeg} and idprocesoenvio = #{idProcesoBanco}
+        end
+    </update>
+    
+    <select id="filtrarProceso" resultMap="procesoBancoResultado" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        <include refid="consultaCampos" />
+        <where>
+            pb.unineg = #{unidadNegocioBean.uniNeg}
+            <if test="mes != null and mes != '' ">
+                and upper(DATEPART(MONTH,pb.fecha)) = #{mes}
+            </if> 
+            <if test="flgProceso != null " > 
+                <!-- and upper(pb.flgproceso) like concat('%',#{flgProceso},'%') -->
+                and pb.flgproceso = #{flgProceso}
+            </if> 
+            <if test="anio != null and anio != '' " >
+                and upper(pb.anio) like concat('%',#{anio},'%')
+            </if>
+            <if test="dia != null and dia != '' " >
+                and upper(DATEPART(DAY,pb.fecha)) like concat(#{dia},'%')
+            </if>
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                    and CONVERT(date,pb.fecha) >= CONVERT(date,#{fechaInicio}) 
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[ 
+                    and CONVERT(date,pb.fecha) <= CONVERT(date,#{fechaFin}) 
+                ]]>
+            </if>
+        </where>
+        order by pb.fecha DESC
+    </select>
+    <select id="filtrarProcesoVer2" resultMap="procesoBancoResultado" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        <include refid="consultaCampos2" />
+        <where>
+            pb.unineg = #{unidadNegocioBean.uniNeg} 
+            <if test="flgProceso != null " >  
+                and pb.flgproceso = #{flgProceso}
+            </if> 
+            <if test="anio != null and anio != '' " >
+                and upper(pb.anio) like concat('%',#{anio},'%')
+            </if> 
+            <if test="fechaInicio != null" >
+                <![CDATA[ 
+                    and CONVERT(date,pb.fecha) >= CONVERT(date,#{fechaInicio}) 
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[ 
+                    and CONVERT(date,pb.fecha) <= CONVERT(date,#{fechaFin}) 
+                ]]>
+            </if>
+        </where>
+        order by pb.CREAFECHA DESC
+    </select>
+    
+    <!--<select id="obtenerMaxIdProcesoBanco" resultType="Integer" parameterType="String" >
+        Select 
+        isnull(max(idProcesoBanco),0) as idProcesoBanco
+        from MT_ProcesoBanco 
+        where unineg=#{uniNeg}
+    </select>-->
+    
+    
+    <!-- Reporte de Procesos Bancos -->
+    
+    <resultMap id="BancoReporteResultado" type="pe.marista.sigma.bean.reporte.ProcesosBancosRepBean" >
+        <id property="idReporteBanco" column="idReporteBanco" />
+        <result property="codigo" column="codigo" />
+        <result property="idgradoacademico" column="idgradoacademico" />
+        <result property="gradoAcademico" column="gradoAcademico" />
+        <result property="nombres" column="nombres" />
+        <result property="concepto" column="concepto" />
+        <result property="fechaPago" column="fechaPago" />
+        <result property="refFecha" column="refFecha" />
+        <result property="monto" column="monto" />
+        <result property="mora" column="mora" />
+        <result property="idtipolugarpago" column="idtipolugarpago" />
+        <result property="tipoLugar" column="tipoLugar" />
+        <result property="totalMatricula" column="totalMatricula" />
+        <result property="totalMarzo" column="totalMarzo" />
+        <result property="totalAbril" column="totalAbril" />
+        <result property="totalMayo" column="totalMayo" />
+        <result property="totalJunio" column="totalJunio" />
+        <result property="totalJulio" column="totalJulio" />
+        <result property="totalAgosto" column="totalAgosto" />
+        <result property="totalSetiembre" column="totalSetiembre" />
+        <result property="totalOctubre" column="totalOctubre" />
+        <result property="totalNoviembre" column="totalNoviembre" />
+        <result property="totalDiciembre" column="totalDiciembre" />
+        <result property="totalImporte" column="totalImporte" />
+        <result property="totalMora" column="totalMora" />
+        <result property="total" column="total" />
+        <result property="fechaImp" column="fechaImp" />
+    </resultMap>
+    
+    <select id="obtenerReporteProcesosBancos" parameterType="map" resultMap="BancoReporteResultado" >
+        declare @fecIni varchar(4) = '' ,@fecFin varchar(4)  = ''
+        set @fecIni = (select convert(varchar,YEAR(CONVERT(date,#{parms.fecIni},101))))
+        set @fecFin = (select convert(varchar,YEAR(CONVERT(date,#{parms.fecFin},101))))
+
+        select 
+        row_number() over(order by c.idctasxcobrar) as idReporteBanco,
+        (select nombreUniNeg from MO_UnidadNegocio where unineg = #{parms.uniNeg}) AS nomUniNeg,
+        (case
+        when @fecIni = @fecFin then CONCAT('Reporte ',@fecFin)
+        when @fecIni <![CDATA[ <> ]]> @fecFin then CONCAT('Reporte entre ',@fecIni,' ',@fecFin)
+        end) as anio,
+        CONCAT(#{parms.fecIni},' - ',#{parms.fecFin}) as refFecha,
+        est.idestudiante as idEstudiante,
+        (case
+        when est.codigo is null then est.codigocolegio
+        when est.codigo is not null then est.codigo
+        end) as codigo,
+        m.idgradoacademico,
+        (case
+        when m.idgradoacademico is not null then
+        (case
+        when #{parms.uniNeg} = 'SANJOC' THEN 
+        (case
+        when m.idgradoacademico = 1 then CONCAT('P',m.seccion,'1')
+        when m.idgradoacademico = 2 then CONCAT('P',m.seccion,'2')
+        when m.idgradoacademico = 3 then CONCAT('P',m.seccion,'3')
+        when m.idgradoacademico = 4 then CONCAT('P',m.seccion,'4') 
+        when m.idgradoacademico = 5 then CONCAT('P',m.seccion,'5') 
+        when m.idgradoacademico = 6 then CONCAT('P',M.seccion,'6') 
+        when m.idgradoacademico = 7 then CONCAT('S',m.seccion,'1')
+        when m.idgradoacademico = 8 then CONCAT('S',M.seccion,'2') 
+        when m.idgradoacademico = 9 then CONCAT('S',m.seccion,'3') 
+        when m.idgradoacademico = 10 then CONCAT('S',M.seccion,'4') 
+        when m.idgradoacademico = 11 then CONCAT('S',m.seccion,'5')
+
+        when m.idgradoacademico = 23 then CONCAT('I',m.seccion,'3') 
+        when m.idgradoacademico = 24 then CONCAT('I',m.seccion,'4') 
+        when m.idgradoacademico = 25 then CONCAT('I',m.seccion,'5')
+        end)
+        else 
+        (case
+        when m.idgradoacademico = 1 then '1º de Primaria'
+        when m.idgradoacademico = 2 then '2º de Primaria'
+        when m.idgradoacademico = 3 then '3º de Primaria'
+        when m.idgradoacademico = 4 then '4º de Primaria'
+        when m.idgradoacademico = 5 then '5º de Primaria'
+        when m.idgradoacademico = 6 then '6º de Primaria'
+        when m.idgradoacademico = 7 then '1º de Secundaria'
+        when m.idgradoacademico = 8 then '2º de Secundaria'
+        when m.idgradoacademico = 9 then '3º de Secundaria'
+        when m.idgradoacademico = 10 then '4º de Secundaria'
+        when m.idgradoacademico = 11 then '5º de Secundaria'
+
+        when m.idgradoacademico = 23 then 'Inicial 3 años'
+        when m.idgradoacademico = 24 then 'Inicial 4 años'
+        when m.idgradoacademico = 25 then 'Inicial 5 años'
+        end)
+        end)
+        when m.idgradoacademico is null then
+        (case
+        when est.idgradohabilitado = 1 then '1º de Primaria'
+        when est.idgradohabilitado = 2 then '2º de Primaria'
+        when est.idgradohabilitado = 3 then '3º de Primaria'
+        when est.idgradohabilitado = 4 then '4º de Primaria'
+        when est.idgradohabilitado = 5 then '5º de Primaria'
+        when est.idgradohabilitado = 6 then '6º de Primaria'
+        when est.idgradohabilitado = 7 then '1º de Secundaria'
+        when est.idgradohabilitado = 8 then '2º de Secundaria'
+        when est.idgradohabilitado = 9 then '3º de Secundaria'
+        when est.idgradohabilitado = 10 then '4º de Secundaria'
+        when est.idgradohabilitado = 11 then '5º de Secundaria'
+
+        when est.idgradohabilitado = 23 then 'Inicial 3 años'
+        when est.idgradohabilitado = 24 then 'Inicial 4 años'
+        when est.idgradohabilitado = 25 then 'Inicial 5 años'
+        end)
+        end) as gradoAcademico, 
+        CONCAT(per.apepat,' ',per.apemat,',',per.nombre) as nombres,
+        co.nombre as concepto,
+        CONVERT(varchar,c.fechapago,103) as fechaPago,
+        c.montopagado as monto,
+        isnull(c.mora,0) as mora,
+        d.idtipolugarpago,
+        isnull(cod.codigo,19302) as tipoLugar,
+        c.iddocingreso,
+        (select sum(montopagado) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 100) as totalMatricula,
+        
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 3) as totalMarzo, 
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 4) as totalAbril,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 5) as totalMayo,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 6) as totalJunio,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 7) as totalJulio,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 8) as totalAgosto,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg} 
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 9) as totalSetiembre,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 10) as totalOctubre,
+        (select ISNULL(sum(montopagado),0)  as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 11) as totalNoviembre,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin))
+        and co.idtipoconcepto = 101 and (case
+        when DAY(c.fechavenc) <![CDATA[ > ]]> 15 and MONTH(c.fechavenc) = 12 
+        then MONTH(DATEADD(dd,-(DAY(c.fechavenc)-1),c.fechavenc)) 
+        else MONTH(DATEADD(dd,-(DAY(DATEADD(MONTH,-1,c.fechavenc))-1),DATEADD(MONTH,-1,c.fechavenc))) 
+        end) = 12) as totalDiciembre,
+        (select ISNULL(sum(montopagado),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin)) and co.idtipoconcepto = 101) as totalImporte,
+
+        (select ISNULL(sum(mora),0) as total from MT_CtasxCobrar c
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        where c.unineg = #{parms.uniNeg}
+        and c.idtipostatusctacte = 19404 and c.anio in (CONVERT(Integer,@fecIni),CONVERT(Integer,@fecFin)) and co.idtipoconcepto = 101) as totalMora,
+        convert(varchar,getdate(),105) as fechaImp
+        from MT_CtasxCobrar c
+        left JOIN MX_Matricula m on c.idmatricula = m.idmatricula and c.unineg = m.unineg
+        inner join MX_Estudiante est on c.idestudiante = est.idestudiante and c.unineg = est.unineg
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg
+        inner join MT_ConceptoUniNeg cu on cu.idconcepto = c.idconcepto and cu.unineg = c.unineg
+        inner join MT_Concepto co on cu.idconcepto = co.idconcepto
+        inner join MT_DocIngreso d on c.iddocingreso = d.iddocingreso and c.unineg = d.unineg
+        left join MO_Codigo cod on d.idtipolugarpago = cod.idcodigo
+        where c.unineg = #{parms.uniNeg} and convert(varchar,c.idtipostatusctacte) = 19404
+        <if test="parms.fecIni != null and parms.fecIni != '' " >
+            and CONVERT(varchar,c.fechapago,103) <![CDATA[  >= ]]> CONVERT(varchar,#{parms.fecIni},103) 
+        </if> 
+        <if test="parms.fecFin != null and parms.fecFin != '' " >
+            and CONVERT(varchar,c.fechapago,103) <![CDATA[  <= ]]> CONVERT(varchar,#{parms.fecFin},103) 
+        </if>
+        <if test="parms.idEstudiante != null and parms.idEstudiante != '' " >
+            and est.idestudiante like CONCAT('%',#{parms.idEstudiante},'%') 
+        </if>
+        <if test="parms.codigo != null and parms.codigo != '' " >
+            and est.codigo like CONCAT('%',#{parms.codigo},'%')
+        </if>
+        <if test="parms.nombres != null and parms.nombres != '' " >
+            and CONCAT(per.apepat,' ',per.apemat,' ',per.nombre) like CONCAT('%',#{parms.nombres},'%')
+        </if>
+        order by est.codigo
+    </select>
+    <select id="obtenerReporteDeuda" resultType = "pe.marista.sigma.bean.reporte.ReporteDeudasRepBean" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        ;with lista as( 
+        select 1 as cont, 
+        cta.idestudiante,
+        uni.nombreUniNeg as nombreUniNeg,
+        uni.RUC as ruc,
+        isnull(cta.monto,0) as monto,
+        ISNULL(cta.mora,0)as mora,
+        ISNULL(cta.deuda,0) as deuda,cta.anio,
+        (ISNULL(cta.monto,0) + ISNULL(cta.mora,0)) as mor, 
+        (CONCAT(per.apepat,' ',per.apemat,', ',per.nombre)) as nombreFull,
+        est.codigo as codEstudiante, 
+        (case 
+        when cta.mes = 2 then 'Matricula' 
+        when cta.mes = 3 then 'Marzo' 
+        when cta.mes = 4 then 'Abril' 
+        when cta.mes = 5 then 'Mayo'
+        when cta.mes = 6 then 'Junio' 
+        when cta.mes = 7 then 'Julio' 
+        when cta.mes = 8 then 'Agosto' 
+        when cta.mes = 9 then 'Setiembre' 
+        when cta.mes = 10 then 'Octubre' 
+        when cta.mes = 11 then 'Noviembre' 
+        when cta.mes = 12 then 'Diciembre' 
+        end) as mes
+        ,(case 
+        when m.idgradoacademico = 1 then CONCAT('P',m.seccion,'1') 
+        when m.idgradoacademico = 2 then CONCAT('P',m.seccion,'2') 
+        when m.idgradoacademico = 3 then CONCAT('P',m.seccion,'3') 
+        when m.idgradoacademico = 4 then CONCAT('P',m.seccion,'4') 
+        when m.idgradoacademico = 5 then CONCAT('P',m.seccion,'5') 
+        when m.idgradoacademico = 6 then CONCAT('P',M.seccion,'6') 
+        when m.idgradoacademico = 7 then CONCAT('S',m.seccion,'1') 
+        when m.idgradoacademico = 8 then CONCAT('S',M.seccion,'2')
+        when m.idgradoacademico = 9 then CONCAT('S',m.seccion,'3') 
+        when m.idgradoacademico = 10 then CONCAT('S',M.seccion,'4') 
+        when m.idgradoacademico = 11 then CONCAT('S',m.seccion,'5') 
+        when m.idgradoacademico = 23 then CONCAT('I',m.seccion,'3') 
+        when m.idgradoacademico = 24 then CONCAT('I',m.seccion,'4') 
+        when m.idgradoacademico = 25 then CONCAT('I',m.seccion,'5') 
+        end) as grado, 
+        con.nombre as concepto, 
+        uni.nombreUniNeg as uniNeg, 
+        CONVERT(varchar,GETDATE(),105) as fecha,
+        n.idnivelacademico,m.seccion,ga.idgradoacademico 
+        from MT_CtasxCobrar cta 
+        inner join MX_Estudiante est on cta.idestudiante = est.idestudiante and cta.unineg = est.unineg 
+        inner join MX_Matricula m on cta.idmatricula = m.idmatricula and cta.unineg = m.unineg 
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg 
+        inner join MX_GradoAcademico ga on est.idgradohabilitado = ga.idgradoacademico 
+        inner join MX_NivelAcademico n on ga.idnivelacademico = n.idnivelacademico 
+        inner join MT_Concepto con on cta.idconcepto = con.idconcepto 
+        inner join MO_UnidadNegocio uni on cta.unineg = uni.unineg 
+        where cta.unineg = #{unidadNegocioBean.uniNeg}
+        <if test="fechaInicio != null and fechaInicio != '' " >
+            and cta.fechavenc <![CDATA[ >= ]]> convert(date,#{fechaInicio}) 
+        </if>
+        <if test="fechaFin != null and fechaFin != ''" >
+            and cta.fechavenc <![CDATA[ <= ]]> convert(date,#{fechaFin}) 
+        </if>
+        <if test="estudianteBean.codigo != null and estudianteBean.codigo != '' " >
+            and est.codigo like concat('%',#{estudianteBean.codigo},'%')
+        </if>
+        <if test="estudianteBean.idEstudiante != null and estudianteBean.idEstudiante != '' " >
+            and cta.idestudiante like concat('%',#{estudianteBean.idEstudiante},'%') 
+        </if>
+        <if test="estudianteBean.personaBean.nombreCompleto != null and estudianteBean.personaBean.nombreCompleto != '' " >            
+            and CONCAT(per.apepat,' ',per.apemat,',',per.nombre) like concat('%',#{estudianteBean.personaBean.nombreCompleto},'%') 
+        </if>
+        <if test="mes != null and mes != 13" >
+            and cta.mes = #{mes}
+        </if>
+        <if test="mes == 13" >
+            and cta.mes in (2,3,4,5,6,7,8,9,10,11,12)
+        </if>
+        <if test="anio != null" >
+            and cta.anio = #{anio}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null" >
+            and n.idnivelacademico = #{matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.idGradoAcademico" >
+            and m.idGradoAcademico = #{matriculaBean.gradoAcademicoBean.idGradoAcademico}
+        </if>
+        <!-- and DATEDIFF(DAY,cta.fechavenc,GETDATE()) > 0 -->
+        and isnull(cta.idtipostatusctacte,19401) = 19401 
+        and m.flgmatricula in (0,1)) 
+        select l.idestudiante,l.nombreUniNeg,l.ruc,l.anio,l.deuda,l.grado,l.mes,l.monto,l.mora, l.codEstudiante,l.nombreFull,l.concepto,l.anio, 
+        (select SUM(lis.deuda) from lista lis where lis.cont = l.cont) as montoTotal, 
+        (select SUM(lis.monto) from lista lis where lis.cont = l.cont) as SubMonto, 
+        (select SUM(lis.mora) from lista lis where lis.cont = l.cont) as montoMora 
+        from lista l 
+        order by l.idnivelacademico desc,l.idgradoacademico,l.seccion
+    </select>
+    
+    <select id="obtenerReporteDeudaHor" resultType = "pe.marista.sigma.bean.reporte.ReporteDeudasRepBean" parameterType="pe.marista.sigma.bean.CuentasPorCobrarBean" >
+        ;with lista as(
+        select cta.idestudiante,
+        (case 
+        <if test="idTipoStatusCtaCte.idCodigo == 19401">
+            when cta.idtipostatusctacte = 19401 then (cta.monto - ISNULL(cta.dsctobeca,0))
+        </if>
+        <if test="idTipoStatusCtaCte.idCodigo == 19404">
+            when cta.idtipostatusctacte = 19404 then isnull(cta.montopagado,0)
+        </if> 
+        <if test="idTipoStatusCtaCte.idCodigo == 19406">
+            when cta.idtipostatusctacte = 19406 then ((cta.monto - ISNULL(cta.dsctobeca,0)) * -1)
+        </if>
+        end) as monto, 
+        cta.anio,
+        (CONCAT(per.apepat,' ',per.apemat,', ',per.nombre)) as nombreFull,
+        est.codigo as codEstudiante, 
+        (case 
+        when cta.mes = 2 then upper('Matricula') 
+        when cta.mes = 3 then upper('Marzo')
+        when cta.mes = 4 then upper('Abril')
+        when cta.mes = 5 then upper('Mayo') 
+        when cta.mes = 6 then upper('Junio') 
+        when cta.mes = 7 then upper('Julio') 
+        when cta.mes = 8 then upper('Agosto') 
+        when cta.mes = 9 then upper('Setiembre') 
+        when cta.mes = 10 then upper('Octubre') 
+        when cta.mes = 11 then upper('Noviembre') 
+        when cta.mes = 12 then upper('Diciembre') 
+        end) as mes
+        ,(case 
+        when m.idgradoacademico = 1 then CONCAT('P',m.seccion,'1') 
+        when m.idgradoacademico = 2 then CONCAT('P',m.seccion,'2') 
+        when m.idgradoacademico = 3 then CONCAT('P',m.seccion,'3') 
+        when m.idgradoacademico = 4 then CONCAT('P',m.seccion,'4') 
+        when m.idgradoacademico = 5 then CONCAT('P',m.seccion,'5') 
+        when m.idgradoacademico = 6 then CONCAT('P',M.seccion,'6') 
+        when m.idgradoacademico = 7 then CONCAT('S',m.seccion,'1') 
+        when m.idgradoacademico = 8 then CONCAT('S',M.seccion,'2')
+        when m.idgradoacademico = 9 then CONCAT('S',m.seccion,'3') 
+        when m.idgradoacademico = 10 then CONCAT('S',M.seccion,'4') 
+        when m.idgradoacademico = 11 then CONCAT('S',m.seccion,'5') 
+        when m.idgradoacademico = 23 then CONCAT('I',m.seccion,'3') 
+        when m.idgradoacademico = 24 then CONCAT('I',m.seccion,'4') 
+        when m.idgradoacademico = 25 then CONCAT('I',m.seccion,'5') 
+        end) as grado,co.codigo as estadoest
+        from MT_CtasxCobrar cta
+        inner join MX_Matricula m on m.idmatricula = cta.idmatricula and m.unineg = cta.unineg and m.anio = cta.anio
+        inner join MX_Estudiante est on cta.idestudiante = est.idestudiante and cta.unineg = est.unineg 
+        inner join MO_Codigo co on est.idtipostatusest = co.idcodigo
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg 
+        inner join MX_GradoAcademico ga on est.idgradohabilitado = ga.idgradoacademico 
+        inner join MO_UnidadNegocio uni on cta.unineg = uni.unineg 
+        where cta.unineg = #{unidadNegocioBean.uniNeg} and cta.anio = #{anio} and m.flgmatricula = 1)
+        select codEstudiante,idestudiante,upper(nombreFull) as nombreFull,grado,anio,estadoest,
+        ISNULL([MATRICULA],0) as Matricula,
+        ISNULL([MARZO],0) as Marzo,
+        ISNULL([ABRIL],0) as Abril,
+        ISNULL([MAYO],0) as Mayo,
+        ISNULL([JUNIO],0) as Junio,
+        ISNULL([JULIO],0) as Julio, 
+        ISNULL([AGOSTO],0) as Agosto,
+        ISNULL([SETIEMBRE],0) as Setiembre,
+        ISNULL([OCTUBRE],0) as Octubre,
+        ISNULL([NOVIEMBRE],0) as Noviembre,
+        ISNULL([DICIEMBRE],0) as Diciembre from lista pivot(sum(monto) for mes in([MATRICULA],[MARZO],[ABRIL],[MAYO],[JUNIO],[JULIO],[AGOSTO],[SETIEMBRE],[OCTUBRE],[NOVIEMBRE],[DICIEMBRE])) as pt
+        order by codEstudiante
+    </select>
+    
+    <select id="obtenerBancoConcilia" parameterType="pe.marista.sigma.bean.reporte.ConciliaRepBean" resultType="pe.marista.sigma.bean.reporte.ConciliaRepBean"  >
+        select 
+        pb.unineg,
+        pb.idprocesobanco as idProcesoBanco,
+        isnull((select COUNT(*) from MT_CtasxCobrar cta where cta.unineg = 'SANJOC' and cta.idprocesobanco = pb.idprocesobanco),0) as totalRecuperado,
+        pb.regenv as totalProcesado,
+        isnull((select SUM(montopagado) from MT_CtasxCobrar cta where cta.unineg = 'SANJOC' and cta.idprocesobanco = pb.idprocesobanco),0) as sumRecuperado,
+        isnull(pb.montorecup,0) as sumProcesado,
+        pb.anio,
+        pb.ruc as rucBanco,
+        ent.nombre as nomBanco,
+        pb.fecha as fechaOp, 
+        CONVERT(varchar,pb.fecha,105) as fechaOpVista
+        from MT_ProcesoBanco pb 
+        inner join MO_Entidad ent on pb.ruc = ent.ruc and pb.unineg = ent.unineg
+        where 
+        pb.unineg = #{uniNeg} and pb.flgproceso = #{flgProceso} 
+        <if test="fecIni != null" >
+            and pb.fecha <![CDATA[ >= ]]> #{fecIni}
+        </if>
+        <if test="fecFin != null" >
+            and pb.fecha <![CDATA[ <= ]]> #{fecFin}
+        </if>
+        order by pb.fecha desc
+    </select>
+    
+    <select id="obtenerFechaProceso" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" resultType="String" >
+        declare @uniNeg char(6) = #{unidadNegocioBean.uniNeg}
+        declare @fecha date = #{fecha}
+        if(@uniNeg = 'CHAMPS')
+        begin
+        select replace(convert(varchar,@fecha,105) ,'-','') 
+        end
+        if(@uniNeg = 'SANLUI')
+        begin
+        select replace(convert(varchar,@fecha,105) ,'-','')  
+        end
+        if(@uniNeg = 'SANJOC')
+        begin
+        select replace(convert(varchar,@fecha,105) ,'-','')  
+        end
+        if(@uniNeg = 'SANJOH')
+        begin
+        select replace(convert(varchar,@fecha,105) ,'-','')  
+        end
+        if(@uniNeg = '') 
+        begin
+        select SUBSTRING(replace(convert(varchar,@fecha,102) ,'.',''),5,4)  
+        end
+    </select>
+    <select id="obtenerFechaProcesoBcoSigma" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" resultType="String" >
+        declare @uniNeg char(6) = #{unidadNegocioBean.uniNeg}
+        declare @fecha date = #{fecha}
+        if(@uniNeg = 'CHAMPS')
+        begin
+        select replace(convert(varchar,(FORMAT(GetDate(), 'MMdd'))) ,'-','')  
+        end
+        if(@uniNeg = 'SANLUI')
+        begin
+        select replace(convert(varchar,(FORMAT(GetDate(), 'MMdd'))) ,'-','') 
+        end
+        if(@uniNeg = 'SANJOC')
+        begin
+        select replace(convert(varchar,(FORMAT(GetDate(), 'MMdd'))) ,'-','') 
+        end
+        if(@uniNeg = '') 
+        begin
+        select SUBSTRING(replace(convert(varchar,@fecha,102) ,'.',''),5,4)  
+        end
+    </select>
+    
+    <select id="obtenerNombreProceso" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" resultType="String" >
+        declare @uniNeg char(6) = #{unidadNegocioBean.uniNeg}
+        declare @fecha date = #{fecha}
+        declare @flgProceso Integer = #{flgProceso}
+        if(@uniNeg = 'CHAMPS')
+        begin
+        if(@flgProceso = 1) select SUBSTRING(replace(convert(varchar,@fecha,102) ,'.',''),5,4) 
+        if(@flgProceso = 0) select replace(convert(varchar,@fecha,105) ,'-','')
+        end
+        if(@uniNeg = 'SANLUI')
+        begin
+        select replace(convert(varchar,@fecha,105) ,'-','') /* A CAMBIAR */
+        end
+        if(@uniNeg = 'SANJOC')
+        begin
+        if(@flgProceso = 1) select SUBSTRING(replace(CONVERT(varchar,@fecha,102),'.',''),3,6) 
+        if(@flgProceso = 0) select SUBSTRING(replace(CONVERT(varchar,@fecha,102),'.',''),3,6)
+        end
+    </select>
+    
+    <select id="obtenerNumeroRegistros" resultType="Integer" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        select isnull(regenv,0) as regenv from mt_procesobanco 
+        where unineg = #{unidadNegocioBean.uniNeg}  and flgproceso = #{flgProceso} and idprocesobanco = #{idProcesoBanco}
+    </select>
+    
+    <select id="obtenerHoraCorte" resultType = "pe.marista.sigma.bean.reporte.ReporteDeudasRepBean" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        declare @unineg char(6) = #{unidadNegocioBean.uniNeg}
+        declare @fecha date = convert(date,#{horaCorte}) 
+        ;with lista as( 
+        select 1 as cont, 
+        uni.nombreUniNeg as nombreUniNeg,
+        uni.RUC as ruc,
+        cta.idestudiante,
+        isnull(cta.monto,0) as monto,
+        ISNULL(cta.mora,0)as mora,
+        ISNULL(cta.deuda,0) as deuda,cta.anio,
+        (ISNULL(cta.monto,0) + ISNULL(cta.mora,0)) as mor, 
+        ISNULL(cta.dsctobeca,0) as dsctobeca,
+        ((cta.monto-ISNULL(cta.dsctobeca,0)) + ISNULL(cta.mora,0)) as deudaTotal,
+        upper((CONCAT(per.apepat,' ',per.apemat,',',per.nombre))) as nombreFull,
+        est.codigo as codEstudiante, 
+        (case 
+        when cta.mes = 2 then upper('Matricula') 
+        when cta.mes = 3 then UPPER('Marzo')  
+        when cta.mes = 4 then UPPER('Abril') 
+        when cta.mes = 5 then UPPER('Mayo')
+        when cta.mes = 6 then UPPER('Junio') 
+        when cta.mes = 7 then UPPER('Julio') 
+        when cta.mes = 8 then UPPER('Agosto') 
+        when cta.mes = 9 then UPPER('Setiembre') 
+        when cta.mes = 10 then UPPER('Octubre') 
+        when cta.mes = 11 then UPPER('Noviembre')
+        when cta.mes = 12 then UPPER('Diciembre')
+        end) as mes
+        ,(case
+        when @unineg = 'SANJOC' 
+        then (case 
+        when m.idgradoacademico = 1 then CONCAT('P',m.seccion,'1') 
+        when m.idgradoacademico = 2 then CONCAT('P',m.seccion,'2') 
+        when m.idgradoacademico = 3 then CONCAT('P',m.seccion,'3') 
+        when m.idgradoacademico = 4 then CONCAT('P',m.seccion,'4') 
+        when m.idgradoacademico = 5 then CONCAT('P',m.seccion,'5') 
+        when m.idgradoacademico = 6 then CONCAT('P',M.seccion,'6') 
+        when m.idgradoacademico = 7 then CONCAT('S',m.seccion,'1') 
+        when m.idgradoacademico = 8 then CONCAT('S',M.seccion,'2')
+        when m.idgradoacademico = 9 then CONCAT('S',m.seccion,'3') 
+        when m.idgradoacademico = 10 then CONCAT('S',M.seccion,'4') 
+        when m.idgradoacademico = 11 then CONCAT('S',m.seccion,'5') 
+        when m.idgradoacademico = 23 then CONCAT('I',m.seccion,'3') 
+        when m.idgradoacademico = 24 then CONCAT('I',m.seccion,'4') 
+        when m.idgradoacademico = 25 then CONCAT('I',m.seccion,'5') 
+        end)
+        else CONCAT(ga.nombre,'/',m.seccion)
+        end)  as grado, 
+        con.nombre as concepto, 
+        uni.nombreUniNeg as uniNeg, 
+        CONVERT(varchar,GETDATE(),105) as fecha,
+        n.idnivelacademico,m.seccion,ga.idgradoacademico
+        from MT_CtasxCobrar cta 
+        inner join MX_Estudiante est on cta.idestudiante = est.idestudiante and cta.unineg = est.unineg 
+        inner join MX_Matricula m on cta.idmatricula = m.idmatricula and cta.unineg = m.unineg 
+        inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg 
+        inner join MX_GradoAcademico ga on est.idgradohabilitado = ga.idgradoacademico 
+        inner join MX_NivelAcademico n on ga.idnivelacademico = n.idnivelacademico 
+        inner join MT_Concepto con on cta.idconcepto = con.idconcepto 
+        inner join MO_UnidadNegocio uni on cta.unineg = uni.unineg 
+        where cta.unineg = @unineg and cta.idtipostatusctacte = #{idTipoStatusCtaCte.idCodigo} and cta.anio = year(@fecha) and m.flgmatricula = 1
+        <if test="idTipoStatusCtaCte.idCodigo == 19404" >
+            and cta.fechapago <![CDATA[ <= ]]> CONVERT(date,@fecha)
+        </if>
+        <if test="estudianteBean.codigo != null and estudianteBean.codigo != '' " >
+            and est.codigo like concat('%',#{estudianteBean.codigo},'%')
+        </if>
+        <if test="estudianteBean.idEstudiante != null and estudianteBean.idEstudiante != '' " >
+            and cta.idestudiante like concat('%',#{estudianteBean.idEstudiante},'%') 
+        </if>
+        <if test="estudianteBean.personaBean.nombreCompleto != null and estudianteBean.personaBean.nombreCompleto != '' " >            
+            and CONCAT(per.apepat,' ',per.apemat,',',per.nombre) like concat('%',#{estudianteBean.personaBean.nombreCompleto},'%') 
+        </if>
+        <if test="mes != null and mes != 0" >
+            and cta.mes = #{mes}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null" >
+            and n.idnivelacademico = #{matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+        </if>
+        <if test="matriculaBean.gradoAcademicoBean.idGradoAcademico" >
+            and m.idGradoAcademico = #{matriculaBean.gradoAcademicoBean.idGradoAcademico}
+        </if>
+        <if test="idTipoStatusCtaCte.idCodigo == 19401 and mes != 2" >
+            union all 
+            select 1 as cont, 
+            uni.nombreUniNeg as nombreUniNeg,
+            uni.RUC as ruc,
+            cta.idestudiante,
+            isnull(cta.monto,0) as monto,
+            ISNULL(cta.mora,0)as mora,
+            ISNULL(cta.deuda,0) as deuda,cta.anio,
+            (ISNULL(cta.monto,0) + ISNULL(cta.mora,0)) as mor, 
+            ISNULL(cta.dsctobeca,0) as dsctobeca,
+            ((cta.monto-ISNULL(cta.dsctobeca,0)) + ISNULL(cta.mora,0)) as deudaTotal,
+            upper((CONCAT(per.apepat,' ',per.apemat,',',per.nombre))) as nombreFull,
+            est.codigo as codEstudiante, 
+            (case 
+            when cta.mes = 2 then upper('Matricula') 
+            when cta.mes = 3 then UPPER('Marzo')  
+            when cta.mes = 4 then UPPER('Abril') 
+            when cta.mes = 5 then UPPER('Mayo')
+            when cta.mes = 6 then UPPER('Junio') 
+            when cta.mes = 7 then UPPER('Julio') 
+            when cta.mes = 8 then UPPER('Agosto') 
+            when cta.mes = 9 then UPPER('Setiembre') 
+            when cta.mes = 10 then UPPER('Octubre') 
+            when cta.mes = 11 then UPPER('Noviembre')
+            when cta.mes = 12 then UPPER('Diciembre')
+            end) as mes
+            ,(case
+            when @unineg = 'SANJOC' then 
+            (case 
+            when m.idgradoacademico = 1 then CONCAT('P',m.seccion,'1') 
+            when m.idgradoacademico = 2 then CONCAT('P',m.seccion,'2') 
+            when m.idgradoacademico = 3 then CONCAT('P',m.seccion,'3') 
+            when m.idgradoacademico = 4 then CONCAT('P',m.seccion,'4') 
+            when m.idgradoacademico = 5 then CONCAT('P',m.seccion,'5') 
+            when m.idgradoacademico = 6 then CONCAT('P',M.seccion,'6') 
+            when m.idgradoacademico = 7 then CONCAT('S',m.seccion,'1') 
+            when m.idgradoacademico = 8 then CONCAT('S',M.seccion,'2')
+            when m.idgradoacademico = 9 then CONCAT('S',m.seccion,'3') 
+            when m.idgradoacademico = 10 then CONCAT('S',M.seccion,'4') 
+            when m.idgradoacademico = 11 then CONCAT('S',m.seccion,'5') 
+            when m.idgradoacademico = 23 then CONCAT('I',m.seccion,'3') 
+            when m.idgradoacademico = 24 then CONCAT('I',m.seccion,'4') 
+            when m.idgradoacademico = 25 then CONCAT('I',m.seccion,'5') 
+            end)
+            else CONCAT(ga.nombre,'/',m.seccion)
+            end)  as grado, 
+            con.nombre as concepto, 
+            uni.nombreUniNeg as uniNeg, 
+            CONVERT(varchar,GETDATE(),105) as fecha,
+            n.idnivelacademico,m.seccion,ga.idgradoacademico
+            from MT_CtasxCobrar cta 
+            inner join MX_Estudiante est on cta.idestudiante = est.idestudiante and cta.unineg = est.unineg 
+            inner join MX_Matricula m on cta.idmatricula = m.idmatricula and cta.unineg = m.unineg 
+            inner join MX_Persona per on est.idestudiante = per.idpersona and est.unineg = per.unineg 
+            inner join MX_GradoAcademico ga on est.idgradohabilitado = ga.idgradoacademico 
+            inner join MX_NivelAcademico n on ga.idnivelacademico = n.idnivelacademico 
+            inner join MT_Concepto con on cta.idconcepto = con.idconcepto 
+            inner join MO_UnidadNegocio uni on cta.unineg = uni.unineg 
+            where cta.unineg = @unineg and cta.anio = year(@fecha)
+            and CONVERT(date,cta.fechapago) <![CDATA[ > ]]> CONVERT(date,@fecha)
+            <!-- and cta.fechavenc <![CDATA[ <= ]]> CONVERT(date,@fecha) -->
+            and m.flgmatricula = 1
+            <if test="estudianteBean.codigo != null and estudianteBean.codigo != '' " >
+                and est.codigo like concat('%',#{estudianteBean.codigo},'%')
+            </if>
+            <if test="estudianteBean.idEstudiante != null and estudianteBean.idEstudiante != '' " >
+                and cta.idestudiante like concat('%',#{estudianteBean.idEstudiante},'%') 
+            </if>
+            <if test="estudianteBean.personaBean.nombreCompleto != null and estudianteBean.personaBean.nombreCompleto != '' " >            
+                and CONCAT(per.apepat,' ',per.apemat,',',per.nombre) like concat('%',#{estudianteBean.personaBean.nombreCompleto},'%') 
+            </if>
+            <if test="mes != null and mes != 0" >
+                and cta.mes = #{mes}
+            </if>
+            <if test="matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico != null" >
+                and n.idnivelacademico = #{matriculaBean.gradoAcademicoBean.nivelAcademicoBean.idNivelAcademico}
+            </if>
+            <if test="matriculaBean.gradoAcademicoBean.idGradoAcademico" >
+                and m.idGradoAcademico = #{matriculaBean.gradoAcademicoBean.idGradoAcademico}
+            </if>
+        </if>)
+        select l.nombreUniNeg,l.ruc,l.idestudiante,l.anio,l.deuda,l.grado,l.mes,l.monto-l.dsctobeca as monto,l.dsctobeca,l.mora, l.codEstudiante,l.nombreFull,l.concepto,l.anio, 
+        (select SUM(lis.deudaTotal) from lista lis where lis.cont = l.cont) as montoTotal, 
+        (select SUM(lis.monto - lis.dsctoBeca) from lista lis where lis.cont = l.cont) as SubMonto, 
+        (select SUM(lis.mora) from lista lis where lis.cont = l.cont) as montoMora 
+        from lista l where (l.monto-l.dsctobeca) <![CDATA[ <> ]]> 0
+        order by l.idnivelacademico desc,l.idgradoacademico,l.seccion,l.mes,l.anio
+    </select>
+    
+    <update id="actualizarFiltroMasivo" parameterType="pe.marista.sigma.bean.ProcesoBancoBean" >
+        declare @unineg char(6) =  #{unidadNegocioBean.uniNeg}
+        declare @idproceso Integer = #{idProcesoBanco}
+        declare @flg Integer = #{flgEnvio}
+        <!-- ACTUALIZAR ENVIO-UNINEG -->
+        ;with lista as(
+        select sc.id,cta.unineg,cta.idestudiante,cta.idprocesoenvio,sc.idprocesobanco,cta.idctasxcobrar from envio_SANJOC_InterBank sc
+        inner join MX_Estudiante e on REPLACE(sc.elemento_2,' ','') = e.codigo and sc.unineg = e.unineg
+        inner join MT_CtasxCobrar cta on SUBSTRING(sc.elemento_3,1,4) = cta.anio and SUBSTRING(sc.elemento_3,5,2) = cta.mes and e.idestudiante = cta.idestudiante and e.unineg = cta.unineg
+        where sc.unineg = @unineg 
+        and sc.idprocesobanco = @idproceso)
+        UPDATE sc
+        set
+        sc.elemento_19 = @flg,
+        sc.modipor = 'sigma'+ REPLACE(CONVERT(varchar,GETDATE(),105),'-','') 
+        from Envio_SANJOC_InterBank sc
+        inner join lista l on sc.id=l.id and sc.unineg = l.unineg
+        where l.unineg = @unineg and l.idprocesobanco = @idproceso
+        
+        <!-- ACTUALIZAR CUENTA CORRIENTE -->
+        ;with listaCta as(
+        select sc.id,cta.unineg,cta.idestudiante,cta.idprocesoenvio,sc.idprocesobanco,cta.idctasxcobrar from envio_SANJOC_InterBank sc
+        inner join MX_Estudiante e on REPLACE(sc.elemento_2,' ','') = e.codigo and sc.unineg = e.unineg
+        inner join MT_CtasxCobrar cta on SUBSTRING(sc.elemento_3,1,4) = cta.anio and SUBSTRING(sc.elemento_3,5,2) = cta.mes and e.idestudiante = cta.idestudiante and e.unineg = cta.unineg
+        where sc.unineg = @unineg 
+        and sc.idprocesobanco = @idproceso)
+        update cta
+        set
+        cta.flgEnvio = #{flgEnvio},
+        cta.modipor = 'sigma'+ REPLACE(CONVERT(varchar,GETDATE(),105),'-',''),
+        cta.modifecha = GETDATE()
+        from MT_CtasxCobrar cta
+        inner join listaCta lc on cta.idctasxcobrar = lc.idctasxcobrar and cta.unineg = lc.unineg
+        where cta.unineg = @unineg and lc.idprocesobanco = @idproceso
+    </update>
+    
+    <select id="verificarEstructuraProcesoBanco" resultType="Integer"  parameterType="map" >
+        DECLARE @unineg varchar(6),@flgtipoproceso int
+        set @unineg=#{uniNeg}
+        set @flgtipoproceso =#{flgProceso} <!--1:procesorecup,2:envio-->
+
+        declare @idprocesopadre int
+        set @idprocesopadre=(select idfile from MT_ProcesoFile where idfilepadre=0 and unineg=@unineg)
+
+
+        declare @idtipodectocodigo int,@idtipodectonombre int,@idtipodectofechapago int,@idtipodectofechvenc int,@idtipodectomora int,@idtipodectoimporte int
+        set @idtipodectocodigo=20404
+        set @idtipodectonombre=20407
+        set @idtipodectofechapago=20403
+        set @idtipodectofechvenc=20405
+        set @idtipodectomora=20401
+        set @idtipodectoimporte=20402
+
+
+        declare @flgcodigo       int =(select (case when count(*)=1 then 0 else 1 end) from MT_ProcesoFile where idfilepadre=@idprocesopadre and flgproceso=1 and unineg=@unineg and idDefecto=@idtipodectocodigo)
+        declare @flgnombre       int =(select (case when count(*)=1 then 0 else 1 end) from MT_ProcesoFile where idfilepadre=@idprocesopadre and flgproceso=1 and unineg=@unineg and idDefecto=@idtipodectonombre)
+        declare @flgfechapago    int =(select (case when count(*)=1 then 0 else 1 end) from MT_ProcesoFile where idfilepadre=@idprocesopadre and flgproceso=1 and unineg=@unineg and idDefecto=@idtipodectofechapago)
+        declare @flgfechavenc    int =(select (case when count(*)=1 then 0 else 1 end) from MT_ProcesoFile where idfilepadre=@idprocesopadre and flgproceso=1 and unineg=@unineg and idDefecto=@idtipodectofechvenc)
+        declare @flgmontopension int =(select (case when count(*)=1 then 0 else 1 end) from MT_ProcesoFile where idfilepadre=@idprocesopadre and flgproceso=1 and unineg=@unineg and idDefecto=@idtipodectoimporte)
+        declare @flgmora	     int =(select (case when count(*)=1 then 0 else 1 end) from MT_ProcesoFile where idfilepadre=@idprocesopadre and flgproceso=1 and unineg=@unineg and idDefecto=@idtipodectomora)
+
+        <!--0:OK , 1:ERROR-->
+        select case when @flgcodigo+@flgnombre+@flgfechapago+@flgfechavenc+@flgmontopension+@flgmora=0 then 1 ELSE 0 END AS flg
+    </select>  
+</mapper>
+

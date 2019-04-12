@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.marista.sigma.dao.PlanOperativoDAO">
+    <sql id="consultaCampos">
+        select
+        p.idplanoperativo,
+        p.uniNeg,
+        p.idUniOrg,
+        CONCAT(p.uniNeg,p.idUniOrg) as idPlanOperativo, 
+        p.anio,
+        p.nombre,
+        p.aprobadoPor,
+        p.creaFecha,
+        p.creaPor,
+        p.modiPor,
+        p.modiVer,
+        p.creaPor,
+        p.modipor,
+        p.modiver,
+        un.nombreUniNeg,
+        un.uniNeg as idUniNeg,
+        un.uniNeg,
+        uo.idUniOrg as idUniOrga ,
+        uo.nombreUniOrg as nombreUniOrga
+        from ME_PlanOperativo p
+        inner join MO_UnidadNegocio un on p.uniNeg = un.uniNeg
+        inner join MO_UnidadOrganica uo on p.idUniOrg = uo.idUniOrg
+    </sql>
+ 
+    <resultMap id="planResultado" type="pe.marista.sigma.bean.PlanOperativoBean"> 
+        <id property="anioBean.anio" column="anio" />
+        <id property="unidadOrganicaBean.idUniOrg" column="idUniOrg" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg" />
+        <result property="idPlanOperativo" column="idplanoperativo"/>
+        <result property="nombre" column="nombre"/>
+        <result property="aprobadoPor" column="aprobadoPor"/>
+        <result property="creaPor" column="creaPor" />
+        <result property="anio" column="anio" />
+        <result property="nombre" column="nombre" />
+        <result property="aprobadoPor" column="aprobadoPor" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" />
+        <result property="modiPor" column="modiPor" />
+        <result property="modiVer" column="modiVer" />
+        <association property="unidadNegocioBean" column="uniNeg" 
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean" 
+                     resultMap="unidadNegocioResultado"/>
+        <association property="unidadOrganicaBean" column="idUniOrg" 
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean" 
+                     resultMap="uniOrgResultado"/>
+    </resultMap>
+    
+    <!--Anio Resultado
+    <resultMap id="anioResultado" type="pe.marista.sigma.bean.AnioBean">
+        <id property="anio" column="anio" />
+        <result property="nombre" column="nombre" /> 
+    </resultMap>-->
+    
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="idUniNeg" />
+        <result property="nombreUniNeg" column="nombreUniNeg" />
+    </resultMap>
+    
+    <!--Unidada Organica-->
+    <resultMap id="uniOrgResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrga" />
+        <result property="nombreUniOrg" column="nombreUniOrga" />
+    </resultMap>
+                
+    <select id="obtenerTodos" resultMap="planResultado">
+        <include refid="consultaCampos" />
+        where p.uniNeg = #{uniNeg} 
+    </select>
+    
+    <select id="obtenerPorUnidadNegocio" parameterType="String" resultMap="planResultado">
+    <include refid="consultaCampos" /> where p.unineg = #{unidadNegocioBean.uniNeg} 
+        order by nombre
+    </select>
+    <select id="obtenerPorUnidadNegocioUniOrg" parameterType="map" resultMap="planResultado">
+    <include refid="consultaCampos" /> where p.unineg = #{uniNeg} and p.iduniorg = #{idUniOrg}
+        order by nombre
+    </select>
+    <select id="obtenerPlanOperativoPorId" resultMap="planResultado" parameterType="pe.marista.sigma.bean.PlanOperativoBean">
+        <include refid="consultaCampos" />
+        <!--WHERE idUniOrg = #{idUniOrg}-->
+        <!-- WHERE p.uniNeg = #{unidadNegocioBean.uniNeg} and p.idUniOrg = #{unidadOrganicaBean.idUniOrg} -->
+        WHERE p.idplanoperativo = #{idPlanOperativo}
+    </select>
+    
+    <select id="obtenerPorFiltro" resultMap="planResultado" parameterType="pe.marista.sigma.bean.PlanOperativoBean" >
+        <include refid="consultaCampos"/>
+        <where>
+            p.unineg = #{unidadNegocioBean.uniNeg} 
+            <if test="nombre != null and nombre != '' " >
+                and upper(p.nombre) like concat('%',#{nombre},'%')
+            </if> 
+            <if test="anio != null and anio != '' " >
+                and upper(p.anio) like concat('%',#{anio},'%')
+            </if> 
+            <if test="unidadOrganicaBean.idUniOrg != null and unidadOrganicaBean.idUniOrg != '' " >
+                and upper(uo.idUniOrg) like concat('%',#{unidadOrganicaBean.idUniOrg},'%')
+            </if>
+        </where>
+    </select>
+    
+    <insert id="insertarPlanOperativo" parameterType="pe.marista.sigma.bean.PlanOperativoBean">
+        INSERT INTO ME_PlanOperativo(uniNeg,idUniOrg ,anio,nombre,aprobadopor,creapor,creafecha)
+        VALUES
+        (#{unidadNegocioBean.uniNeg},#{unidadOrganicaBean.idUniOrg},#{anio},#{nombre},#{aprobadoPor},#{creaPor},getDate())
+    </insert>
+    <update id="modificarPlanOperativo" parameterType="pe.marista.sigma.bean.PlanOperativoBean">
+        UPDATE  ME_PlanOperativo
+        SET
+        uniNeg = #{unidadNegocioBean.uniNeg},
+        idUniOrg = #{unidadOrganicaBean.idUniOrg},
+        anio = #{anio},
+        nombre = #{nombre},
+        aprobadoPor = #{aprobadoPor},
+        modiPor = #{modiPor}
+        <!-- WHERE uniNeg = #{unidadNegocioBean.uniNeg} and idUniOrg = #{unidadOrganicaBean.idUniOrg} -->
+        WHERE idplanoperativo = #{idPlanOperativo}
+    </update>
+    <delete id = "eliminarPlanOperativoBean" parameterType="pe.marista.sigma.bean.PlanOperativoBean">
+        DELETE from ME_PlanOperativo
+        <!-- WHERE uniNeg = #{unidadNegocioBean.uniNeg} and idUniOrg = #{unidadOrganicaBean.idUniOrg} -->
+        WHERE idplanoperativo = #{idPlanOperativo}
+    </delete>
+    
+    <select id="obtenerCodigoPlanOperativo" resultType="String" parameterType="String">
+        <!--
+        select max(substring(p.codigoPlanOperativo,6,9)) as codigoPlanOperativo from ME_PlanOperativo p
+        inner join MO_UnidadNegocio uni on p.uniNeg = p.uniNeg
+        where p.uniNeg  = #{uniNeg}
+        -->
+    </select>
+    
+</mapper>
+

@@ -1,0 +1,749 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" >
+    <ui:define name="content">   
+        <h:body>
+            <div>
+                <p:layout fullPage="false"  style="width:1800px;height:850px" styleClass="centrado" >
+                    <p:layoutUnit position="west" size="900" header="#{msgs.etiquetaBuscador}" minSize="150" maxSize="1080" resizable="true" closable="false" collapsible="true" effect="drop" collapsed="false" effectSpeed="500" >
+                        <div>
+                            <h:form id="frmBuscarSolicitudes"> 
+                                <h:panelGrid  styleClass="centrado" style="width: 600px;padding: 0px" id="pnlFiltro" >
+                                    <p:panel toggleable="true" toggleSpeed="500" closeSpeed="500" header="#{msgs.etiquetaFiltros}">
+                                        <h:panelGrid columns="2" styleClass="centrado" id="pnlFiltroReg">
+                                            <h:panelGrid columns="2" styleClass="centrado" >
+                                                <h:outputLabel value="#{msgs.etiquetaNroSol}:" styleClass="negrita"/>
+                                                <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoFiltroBean.idRequerimiento}" 
+                                                             size="10" maxlength="10" />
+                                                <h:outputLabel value="#{msgs.etiquetaFechaInicio}:" styleClass="negrita"/>
+                                                <p:calendar value="#{solicitudLogisticoMB.solicitudLogisticoFiltroBean.fechaInicio}"
+                                                            effect="fold" mask="true" size="10" pattern="#{msgs.etiquetaFormatoFecha}" />
+                                            </h:panelGrid> 
+                                            <h:panelGrid columns="2" styleClass="centrado" >
+                                                <h:outputLabel value="#{msgs.etiquetaPeriodo}:" styleClass="negrita"/>
+                                                <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoFiltroBean.anio}" 
+                                                             size="10" maxlength="4" />
+                                                <h:outputLabel value="#{msgs.etiquetaFechaFin}:" styleClass="negrita"/>
+                                                <p:calendar value="#{solicitudLogisticoMB.solicitudLogisticoFiltroBean.fechaFin}"
+                                                            effect="fold" mask="true" size="10" pattern="#{msgs.etiquetaFormatoFecha}" />
+                                            </h:panelGrid>
+                                        </h:panelGrid>
+                                        <h:panelGrid styleClass="centrado" columns="2">
+                                            <p:commandButton id="btnBuscar" value="#{msgs.botonBuscar}" actionListener="#{solicitudLogisticoMB.obtenerPorFiltroGeneracion()}" update="pnlFiltro,pnlSolicitudes,msg" />
+
+                                            <p:commandButton id="btnNuevo"  value="#{msgs.botonNuevo}"  actionListener="#{solicitudLogisticoMB.limpiarSolicitudFiltro()}" update="pnlFiltro,pnlSolicitudes,msg"/>
+                                        </h:panelGrid>
+                                        <p:messages autoUpdate="false" id="msg" />
+                                    </p:panel>
+                                </h:panelGrid>
+
+                                <h:panelGrid id="pnlSolicitudes" styleClass="centrado">
+                                    <p:dataTable id="tblSol" value="#{solicitudLogisticoMB.listaSolicitudLogisticoBean}" paginator="true" 
+                                                 widgetVar="tblSol" 
+                                                 var="solicitud"  rowKey="#{solicitud.idRequerimiento}"
+                                                 rows="5" 
+                                                 rendered="#{not empty solicitudLogisticoMB.listaSolicitudLogisticoBean}" 
+                                                 style="width: 900px; font-size: 10px" >
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.tituloSolicitudes}" />  
+                                        </f:facet>
+                                        <p:column headerText="#{msgs.etiquetaNroSol}" filterMatchMode="contains" width="1%" styleClass="siseFontTable2 centrado-texto">
+                                            <center><h:outputText value="#{solicitud.idRequerimiento}" /></center>
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaFecSol}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                            <h:outputText value="#{solicitud.fechaSolicitud}">
+                                                <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}"/>
+                                            </h:outputText>
+                                        </p:column>
+                                        <p:column sortBy="#{solicitud.unidadOrganicaBean.nombreUniOrg}" headerText="#{msgs.etiquetaUniOrg}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                            <center><h:outputText value="#{solicitud.unidadOrganicaBean.nombreUniOrg}" /></center>
+                                        </p:column>
+                                        <p:column sortBy="#{solicitud.personalBean.nombreCompleto}" headerText="#{msgs.etiquetaSolicitante}" filterMatchMode="contains" width="2%" styleClass="siseFontTable2 centrado-texto">
+                                            <center><h:outputText value="#{solicitud.personalBean.nombreCompleto}" /></center>
+                                        </p:column>
+                                        <p:column sortBy="#{solicitud.tipoCategoriaBean.codigo}" headerText="#{msgs.etiquetaTipoCategoria}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                            <center><h:outputText value="#{solicitud.tipoCategoriaBean.codigo}" /></center>
+                                        </p:column>
+                                        <p:column sortBy="#{solicitud.tipoSolicitudBean.nombre}" headerText="#{msgs.etiquetaTipoSolicitud}" filterMatchMode="contains" width="2%" styleClass="siseFontTable2 centrado-texto">
+                                            <center><h:outputText value="#{solicitud.tipoSolicitudBean.nombre}" /></center>
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaDescripcion}" sortBy="#{solicitud.titulo}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto" >
+                                            <h:outputText value="#{solicitud.titulo}" />
+                                        </p:column>  
+                                        <p:column  sortBy="#{solicitud.tipoEstadoBean.codigo}" headerText="#{msgs.etiquetaTipoEstado}" filterMatchMode="contains" width="2%" styleClass="siseFontTable3 centrado-texto">
+                                            <center><h:outputText value="#{solicitud.tipoEstadoBean.codigo}" /></center>
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaAcciones}" filterMatchMode="contains" width="1.5%" styleClass="siseFontTable3 centrado-texto">
+                                            <p:commandLink id="cmdSelecSol" actionListener="#{solicitudLogisticoMB.obtenerPorId(solicitud)}"  
+                                                           update=":frmMantDatos,:frmCentroResp,:frmMantDatos:pnlConcepto, :frmMantDatos:pnlDistribucion, :frmMantDatos:pnlDistribucion"
+                                                           process="@this">
+                                                <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                            </p:commandLink>
+                                            <p:tooltip id="toolTip" for="cmdSelecSol" value="#{msgs.toolTipSeleccionar}" />
+                                        </p:column>
+                                    </p:dataTable>
+                                </h:panelGrid>
+                            </h:form>
+                        </div>
+                    </p:layoutUnit>
+                    <p:layoutUnit position="center" styleClass="centrado">
+                        <div>
+                            <h:form id="frmMantDatos">
+                                <!-- <h:panelGrid id="pnlSolicitud" styleClass="centrado">
+                                     <p:commandButton id="popSolicitudes" value="#{msgs.etiquetaHisSol}"
+                                                      update=":frmSolicitud"
+                                                      oncomplete="PF('popSolicitudes').show();">
+                                     </p:commandButton>
+                                 </h:panelGrid>--> 
+                                <br></br>  <br></br>
+                                <h:panelGrid id="pnlGeneral" columns="2" >
+                                    <h:panelGrid columns="2"  styleClass="centrado">
+                                        <p:panel header="#{msgs.tituloDatosSolicitud}"  >
+                                            <h:panelGrid id="pnlDataSolic" columns="6" cellspacing="5" >
+
+                                                <h:outputLabel  value="#{msgs.etiquetaSolicitante}"  styleClass="negrita" />
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:inputText  id="nombreCompleto" value="#{solicitudLogisticoMB.solicitudLogisticoBean.personalBean.nombreCompleto}" label="#{msgs.etiquetaSolicitante}"
+                                                              size="26" >
+                                                    <p:ajax event="keyup" process="@this" update=":frmSolicitante"
+                                                            oncomplete="PF('popSolicitante').show();" />
+                                                </p:inputText>
+                                                <h:outputLabel value="#{msgs.etiquetaNroSol}" styleClass="negrita"/>
+                                                <h:outputText value="" styleClass="requerido"/>
+                                                <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.idRequerimiento}" readonly="true"
+                                                             required="true" style="background-color: #f5f5f5" />
+                                                <h:outputLabel value="#{msgs.etiquetaUniOrg}" styleClass="negrita"/>
+                                                <h:outputText value="" styleClass="requerido"/>
+                                                <p:inputText id="nombreUniOrg" value="#{solicitudLogisticoMB.solicitudLogisticoBean.unidadOrganicaBean.nombreUniOrg}" readonly="true"
+                                                             required="true" style="background-color: #f5f5f5" size="26" label="#{msgs.etiquetaUniOrg}"/>
+                                                <h:outputLabel value="#{msgs.etiquetaTipoEstado}" styleClass="negrita"/>
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:selectOneMenu id="cmbTipoEstado" style="width: 200px" value="#{solicitudLogisticoMB.solicitudLogisticoBean.tipoEstadoBean.idCodigo}"
+                                                                 required="true" label="#{msgs.etiquetaTipoEstado}" >
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{solicitudLogisticoMB.listaTipoEstadoBean}" var="estado" itemLabel="#{estado.codigo}" itemValue="#{estado.idCodigo}"/>
+                                                </p:selectOneMenu>
+                                                <h:outputLabel value="#{msgs.etiquetaTipoCategoria}" styleClass="negrita"/>
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:selectOneMenu id="cmbTipoSol" value="#{solicitudLogisticoMB.solicitudLogisticoBean.tipoCategoriaBean.idCodigo}"
+                                                                 style="width: 200px" required="true" label="#{msgs.etiquetaTipoSolicitud}">
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{solicitudLogisticoMB.listaTipoCategoriaBean}" var="tipSol" itemLabel="#{tipSol.codigo}" itemValue="#{tipSol.idCodigo}"/>
+                                                    <p:ajax event="change" listener="#{solicitudLogisticoMB.cargarCatalogo()}" update=" pnlGrabar"/>
+                                                </p:selectOneMenu>
+                                                <h:outputLabel value="#{msgs.etiquetaDesc}" styleClass="negrita" />
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:inputTextarea id="txtAreaTitulo" value="#{solicitudLogisticoMB.solicitudLogisticoBean.titulo}" 
+                                                                 rows="3" cols="40"  maxlength="100" autoResize="false" label="#{msgs.etiquetaDesc}" />
+                                                <h:outputLabel value="#{msgs.etiquetaTipoSolicitud}" styleClass="negrita"/>
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:selectOneMenu id="cmbTipoSoli" style="width: 200px" value="#{solicitudLogisticoMB.solicitudLogisticoBean.tipoSolicitudBean.idTipoSolicitud}"
+                                                                 required="true" label="#{msgs.etiquetaTipoSolicitud}" >
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{solicitudLogisticoMB.listaTipoSolicitudBean}" var="Tsoli" itemLabel="#{Tsoli.nombre}" itemValue="#{Tsoli.idTipoSolicitud}"/>
+                                                </p:selectOneMenu>
+                                                <h:outputLabel value="#{msgs.etiquetaTipoPrioridad}" styleClass="negrita" />
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:selectOneMenu id="cmbTipoPrioridad" value="#{solicitudLogisticoMB.solicitudLogisticoBean.tipoPrioridadBean.idCodigo}" 
+                                                                 style="width: 200px" required="true" label="#{msgs.etiquetaTipoPrioridad}" >
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{solicitudLogisticoMB.listaTipoPrioridadBean}" var="prio" itemLabel="#{prio.codigo}" itemValue="#{prio.idCodigo}"/>
+                                                </p:selectOneMenu>
+                                                <h:outputLabel value="#{msgs.etiquetaImportePro}" styleClass="negrita" />
+                                                <h:outputText value="" styleClass="requerido" /> 
+                                                <p:inputText id="txtImporte" value="#{solicitudLogisticoMB.solicitudLogisticoBean.importePropuesto}"  
+                                                             maxlength="6" size="20" style="background-color: #f5f5f5" />
+                                                <h:outputLabel value="#{msgs.etiquetaFecSol}" styleClass="negrita" />
+                                                <h:outputText value="" styleClass="requerido"/>
+                                                <p:inputText id="txtFecha" value="#{solicitudLogisticoMB.solicitudLogisticoBean.fechaSolicitud}" readonly="true" maxlength="7" size="20">
+                                                    <f:convertDateTime pattern="#{msgs.etiquetaFormatoFecha}" />
+                                                </p:inputText> 
+                                              
+                                            </h:panelGrid>
+                                            <h:panelGrid id="pnlConcepto" columns="6" cellspacing="5" >
+                                                <p:fieldset legend="#{msgs.etiquetaTipoConcepto}">
+                                                    <h:panelGrid columns="6">
+                                                        <h:outputLabel value="#{msgs.etiquetaTipoConcepto}" styleClass="negrita"/>
+                                                        <h:outputText value="*" styleClass="requerido"/>
+                                                        <p:selectOneMenu value="#{solicitudLogisticoMB.tipoConceptoBean.idTipoConcepto}" required="false"  label="#{msgs.etiquetaTipoConcepto}" filter="true" style="width: 375px" panelStyle="width:400px" filterMatchMode="contains">
+                                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                            <f:selectItems value="#{solicitudLogisticoMB.listaTipoConceptoBean}" var="tipo" itemLabel="#{tipo.nombre}" itemValue="#{tipo.idTipoConcepto}"/>
+                                                            <p:ajax event="change" listener="#{solicitudLogisticoMB.obtenerConceptoPorTipo()}" update="cmbConcepto"/>
+                                                        </p:selectOneMenu>
+                                                        <h:outputLabel value="#{msgs.etiquetaConcepto}" styleClass="negrita"/>
+                                                        <h:outputText  styleClass="requerido" value="*"/>
+                                                        <p:selectOneMenu id="cmbConcepto" value="#{solicitudLogisticoMB.solicitudLogDetalleBean.conceptoUniNegBean.conceptoBean.idConcepto}" required="false"  label="#{msgs.etiquetaConcepto}" filter="true" style="width: 305px" panelStyle="width:400px" filterMatchMode="contains">
+                                                            <f:selectItem itemValue="#{null}" itemLabel="#{msgs.comboSeleccionarLabel}" noSelectionOption="true"/>
+                                                            <f:selectItems value="#{solicitudLogisticoMB.listaConceptoUniNegBean}" var="concepto" itemLabel="#{concepto.conceptoBean.nombre}" itemValue="#{concepto.conceptoBean.idConcepto}"/> 
+                                                            <p:ajax event="change" listener="#{solicitudLogisticoMB.obtenerCuentaConcepto()}" update="txtCuentaD,txtCuentaH"/>
+                                                        </p:selectOneMenu>  
+                                                    </h:panelGrid>
+                                                    <h:panelGrid columns="12">
+                                                        <h:outputLabel value="#{msgs.etiquetaCuentaDebe}" styleClass="negrita"/>
+                                                        <h:inputHidden/>
+                                                        <p:inputText id="txtCuentaD" value="#{solicitudLogisticoMB.solicitudLogDetalleBean.conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta}" style="width: 100px" readonly="true"/>
+                                                        <h:outputLabel value="#{msgs.etiquetaCuentaHaber}" styleClass="negrita"/>
+                                                        <h:inputHidden/>
+                                                        <p:inputText id="txtCuentaH" value="#{solicitudLogisticoMB.solicitudLogDetalleBean.conceptoUniNegBean.conceptoBean.planContableCuentaHBean.cuenta}" style="width: 100px" readonly="true"/>
+                                                        <p:link id="entSeg" outcome="/mantenimientos/mantTipoConceptoPopUp.xhtml" target="_blank">
+                                                            <h:graphicImage value="/resources/images/icons/addverde3.png" style="border:0; cursor:pointer;"/>
+                                                        </p:link> 
+                                                        <p:commandLink id="btnActualizarComSeg" actionListener="#{solicitudLogisticoMB.actualizarTipoConcepto()}" process="@this" update=":frmMantDatos">
+                                                            <h:graphicImage value="/resources/images/icons/refrescar.png"   style="border:0; cursor:pointer;"/>
+                                                        </p:commandLink>
+                                                    </h:panelGrid>
+
+                                                </p:fieldset>
+                                            </h:panelGrid>
+                                            <h:panelGrid id="pnlPlan">
+                                                <p:fieldset legend="#{msgs.etiquetaPlanOperativo}">
+                                                    <h:panelGrid columns="6">
+                                                        <h:outputLabel value="#{msgs.etiquetaPlanOperativo}: " styleClass="negrita" />
+                                                        <h:outputText value="" styleClass="requerido"/>
+                                                        <p:inputText id="txtPlan" value="#{solicitudLogisticoMB.solicitudLogisticoBean.actividadBean.objOperativoBean.planOperativoBean.nombre}" 
+                                                                     maxlength="7" size="30" readonly="true" style="background-color: #f5f5f5"/>
+                                                        <h:outputLabel value="#{msgs.etiquetaObjOperativo}: " styleClass="negrita" />
+                                                        <h:outputText value="" styleClass="requerido"/>
+                                                        <p:inputText id="txtobj" value="#{solicitudLogisticoMB.solicitudLogisticoBean.actividadBean.objOperativoBean.nombre}" 
+                                                                     maxlength="7" size="30" readonly="true" style="background-color: #f5f5f5"/>
+                                                        <h:outputLabel value="#{msgs.etiquetaActividad}: " styleClass="negrita" />
+                                                        <h:outputText value="" styleClass="requerido"/>
+                                                        <p:inputText id="txtact" value="#{solicitudLogisticoMB.solicitudLogisticoBean.actividadBean.nombre}" 
+                                                                     maxlength="7" size="30" readonly="true" style="background-color: #f5f5f5"/>
+                                                        <h:outputLabel value="#{msgs.etiquetaPresupuesto}: " styleClass="negrita" />
+                                                        <h:outputText value="" styleClass="requerido"/>
+                                                        <h:panelGrid columns="2">
+                                                            <p:inputText id="txtPres" value="#{solicitudLogisticoMB.solicitudLogisticoBean.actividadBean.ingreso}" 
+                                                                         maxlength="7" size="10" readonly="true" style="background-color: #f5f5f5">
+                                                                <f:convertNumber currencySymbol="S/." type="currency" pattern="#0.00" />
+                                                            </p:inputText>
+
+                                                            <h:panelGroup styleClass="centrado">
+                                                                <p:commandLink id="btnPlan" 
+                                                                               update=":frmPlan" oncomplete="PF('popEstrategia').show();" >
+                                                                    <h:graphicImage value="/resources/images/icons/search2.png" style="border:0; cursor:pointer;"/>
+                                                                </p:commandLink>
+                                                                <p:tooltip id="toolTipPlan" for="btnPlan" value="#{msgs.toolTipSelecActividad}" />
+                                                            </h:panelGroup>
+                                                        </h:panelGrid>
+                                                        <h:inputHidden value="#{solicitudLogisticoMB.solicitudLogisticoBean.idRequerimiento}"/>
+                                                    </h:panelGrid>
+                                                </p:fieldset>
+                                            </h:panelGrid>
+                                            <br/>
+                                            <center>
+                                              
+                                                <br></br>
+                                                <h:panelGrid styleClass="centrado" columns="3" id="pnlGrabar"> 
+
+                                                    <center>
+                                                        <p:commandButton id="btnGraba" action="#{solicitudLogisticoMB.grabarServicio()}"
+                                                                         rendered="#{solicitudLogisticoMB.flgActivo==true or solicitudLogisticoMB.flgAlmacen==true or solicitudLogisticoMB.flgServicio==true}"
+                                                                           update=":frmMantDatos,:frmBuscarSolicitudes:pnlSolicitudes"
+                                                                         oncomplete="if(args.operacionCorrecta){PF('popDone').show();}"
+                                                                         value="#{msgs.botonGrabar}">   
+                                                        </p:commandButton>
+                                                        <p:commandButton id="btnLimpia" action="#{solicitudLogisticoMB.limpiar()}" 
+                                                                         update=":frmMantDatos, :frmMantDatos:txtAreaTitulo,:frmMantDatos:pickCentroResponsabilidad"
+                                                                         value="#{msgs.botonNuevo}" process="@this">
+                                                        </p:commandButton>
+                                                    </center>
+                                                </h:panelGrid>
+                                            </center>
+                                            <p:growl id="m" showDetail="true"/>
+                                            <p:messages id="msgsAddSol"  autoUpdate="false"/>
+                                        </p:panel>
+                                        <!--
+                                <h:panelGrid id="pnlCentroResp" styleClass="centrado">
+                                    <p:commandButton id="popCentroResp" value="#{msgs.etiquetaCentRes}"
+                                                     update=":frmCentroResp"
+                                                     oncomplete="PF('popCentroResp').show();">
+                                    </p:commandButton>
+                                </h:panelGrid>-->
+                                    </h:panelGrid>
+                                    <h:panelGrid columns="1" styleClass="centrado" >
+                                        <p:fieldset legend="#{msgs.etiquetaCentRes}">
+                                            <h:panelGrid columns="3" styleClass="siseFontGrid4">
+                                                <h:outputLabel value="#{msgs.etiquetaDistribucion}" styleClass="negrita"/>
+                                                <h:outputText value=" " styleClass="requerido"/>
+                                                <p:selectOneMenu id="cmbTipoDist" value="#{solicitudLogisticoMB.solicitudLogisticoBean.codDistribucion}"
+                                                                 style="width: 200px" required="true" label="#{msgs.etiquetaDistribucion}">
+                                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                                    <f:selectItems value="#{solicitudLogisticoMB.listaTipoDistribucionCRBean}" var="dist" itemLabel="#{dist.codigo}" itemValue="#{dist.idCodigo}"/>
+                                                </p:selectOneMenu>
+                                            </h:panelGrid>
+                                            <hr/>
+                                            <p:pickList id="pickCentroResponsabilidad" value="#{solicitudLogisticoMB.dualCentroResponsabilidadBean}" var="cr" itemLabel="#{cr.cr} - #{cr.nombre}" itemValue="#{cr}" 
+                                                        showSourceFilter="true" showTargetFilter="true" filterMatchMode="contains" converter="crConverter"/> 
+                                        </p:fieldset>
+                                        <p:commandButton id="btnDist" actionListener="#{solicitudLogisticoMB.distribuir()}" update="pnlDistribucion,:frmMantDatos:msgsAddSol" process="btnDist,pickCentroResponsabilidad,cmbTipoDist,:frmMantDatos:txtImporte"
+                                                         value="#{msgs.botonDist}">
+                                        </p:commandButton>
+                                        <h:panelGrid id="pnlDistribucion">
+                                            <p:dataTable id="tblDetCR" value="#{solicitudLogisticoMB.solicitudLogisticoBean.listaDetRequerimientoCRBean}" widgetVar="tblDetCR"  scrollable="true" scrollHeight="125" 
+                                                         rowIndexVar="n" rendered="#{not empty solicitudLogisticoMB.solicitudLogisticoBean.listaDetRequerimientoCRBean}" var="detCR"
+                                                         style="font-size:14px !important;margin-bottom:0;width: #{solicitudLogisticoMB.anchoTablasShort}"> 
+                                                <f:facet name="header" >
+                                                    <h:outputText value="#{msgs.tituloCentrosRes}" />  
+                                                </f:facet>
+                                                <p:column  headerText="#{msgs.numero}" width="8%" styleClass="siseFontTable3 centrado-texto">
+                                                    <center>
+                                                        <h:outputText value="#{n+1}" />
+                                                    </center>
+                                                </p:column>
+                                                <p:column headerText="#{msgs.etiquetaCentRes}" styleClass="siseFontTable3 centrado-texto" >
+                                                    <h:outputText value="#{detCR.centroResponsabilidadBean.nombre}"/>
+                                                </p:column> 
+                                                <!--p:column headerText="#{msgs.etiquetaDistribucion}" styleClass="siseFontTable3 centrado-texto" >
+                                                    <h:outputText value="#{detCR.tipoDistribucion.codigo}"/>
+                                                </p:column--> 
+                                                <p:column headerText="#{msgs.etiquetaValor}" styleClass="siseFontTable3 centrado-texto" width="25%">
+                                                    <h:inputText value="#{detCR.valorD}" size="8"/>
+                                                </p:column> 
+                                            </p:dataTable>
+                                        </h:panelGrid><p:separator/>
+
+                                    </h:panelGrid>
+                                </h:panelGrid>
+
+                                <br/>
+                                <h:panelGrid id="pnlCatalogo" columns="1" styleClass="centrado" >
+                                    <p:dataTable value="#{solicitudLogisticoMB.listaSolicitudLogDetalleBean}" paginator="true"
+                                                 var="detalle" id="tblCatalogoSelec" rows="6" editable="true"
+                                                 rendered="#{not empty solicitudLogisticoMB.listaSolicitudLogDetalleBean}" 
+                                                 style="width:730px; font-size: 10px;margin-bottom:20px" > 
+                                        <f:facet name="header" >
+                                            <h:outputText value="#{msgs.etiquetaActivoMaterialSelect}" />  
+                                        </f:facet>
+                                        <p:column styleClass="nombre5Filtro"  headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="70">
+
+                                            <center><h:outputText value="#{detalle.catalogoBean.idCatalogo}"  style=" font-size: 12px"/></center>
+                                        </p:column>
+                                        <p:column  class="nombre2Filtro"  headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="220">
+                                            <h:outputText value="#{detalle.catalogoBean.item}"  style=" font-size: 12px"/>
+                                        </p:column>
+                                        <p:column   styleClass="centrado"  headerText="#{msgs.etiquetaCant}" filterMatchMode="contains" width="80" >
+                                            <p:cellEditor>
+                                                <f:facet name="output"><center><h:outputText value="#{detalle.cantidadSolicitada}" styleClass="centrado"/></center></f:facet>
+                                                <f:facet name="input"><center><p:inputText   value="#{detalle.cantidadSolicitada}" style=" font-size: 12px;width:115px" styleClass="centrado"/></center></f:facet>
+                                            </p:cellEditor>
+                                        </p:column>
+                                        <p:column  class="nombre5Filtro" headerText="#{msgs.etiquetaPrecio}" filterMatchMode="contains" width="50">
+                                            <p:cellEditor>
+                                                <f:facet name="output"><center><h:outputText value="#{detalle.catalogoBean.precioRef}" styleClass="centrado" /></center></f:facet>
+                                                <f:facet name="input"><center><p:inputText   value="#{detalle.catalogoBean.precioRef}" style=" font-size: 12px;width:115px" styleClass="centrado" /></center></f:facet>
+                                            </p:cellEditor>
+                                        </p:column>
+                                        <p:column headerText="#{msgs.etiquetaEdit}" style="width:30px">
+                                            <p:rowEditor id="editCantidad"/>
+                                            <p:tooltip id="toolTip" for="editCantidad" value="#{msgs.toolTipEditCantidad}" />
+                                        </p:column>
+                                        <p:column style="text-align:center;width:60px">
+                                            <f:facet name="header">
+                                                <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                            </f:facet>
+                                            <p:commandLink id="cmdEliminar" action="#{solicitudLogisticoMB.quitarItem(detalle)}" 
+                                                           update=":frmMantDatos:pnlCatalogo,:frmMantDatos:txtImporte" process="@this">
+                                                <h:graphicImage value="/resources/images/icons/delete.gif" style="border:0;cursor:pointer;" />
+                                            </p:commandLink>
+                                            <p:tooltip id="toolTipDel" for="cmdEliminar" value="#{msgs.toolTipQuitarItem}" />
+                                        </p:column>
+                                        <p:ajax event="rowEdit" listener="#{solicitudLogisticoMB.calcularImportePorItem(detalle)}"
+                                                update=":frmMantDatos:txtImporte" />
+                                    </p:dataTable>
+                                </h:panelGrid>
+                            </h:form> 
+                        </div>
+                    </p:layoutUnit>
+                </p:layout>
+            </div>
+
+            <!--nuevo-->
+            <!-- 
+            <h:form id="frmCentroResp">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popCentroResp" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="center" resizable="false">  
+                    <h:panelGrid styleClass="centrado">
+                        <h:outputLabel value="#{msgs.etiquetaDistribucion}" styleClass="negrita"/>
+                        <h:outputText value=" " styleClass="requerido"/>
+                        <p:selectOneMenu id="cmbTipoDist" value="#{solicitudLogisticoMB.solicitudLogisticoBean.tipoDistribucionBean.idCodigo}"
+                                         style="width: 200px" required="true" label="#{msgs.etiquetaDistribucion}">
+                            <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                            <f:selectItems value="#{solicitudLogisticoMB.listaTipoDistribucionCRBean}" var="dist" itemLabel="#{dist.codigo}" itemValue="#{dist.idCodigo}"/>
+                            <p:ajax event="change" listener="#{solicitudLogisticoMB.mostarPanelDistribucion()}" update="pnlCr,pnlDiv,pnlPon,pnlPer"/> 
+                        </p:selectOneMenu>
+                        <h:panelGrid columns="10" cellspacing="5" id="pnlCr">  
+                            <p:panel header="Centro Responsabilidad." rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}" >
+                                <h:panelGrid columns="3" cellspacing="5"  rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"> 
+                                    <h:outputLabel value="#{msgs.etiquetaCentroResponInicial}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <h:outputText value=" " styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <p:selectOneMenu id="cmbCRINICIAL" value="#{solicitudLogisticoMB.solicitudLogisticoBean.centroRespInicialBean.cr}"
+                                                     style="width: 200px" required="false" label="#{msgs.etiquetaCentRes}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <f:selectItems value="#{solicitudLogisticoMB.listaCentroResponsabilidadInicialBean}" var="resInicial" itemLabel="#{resInicial.nombre}" itemValue="#{resInicial.cr}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <p:ajax event="change" listener="#{solicitudLogisticoMB.mostar('ini')}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    </p:selectOneMenu >
+                                    <h:outputLabel value="#{msgs.etiquetaCentroResponPrimaria}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <h:outputText value=" " styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <p:selectOneMenu id="cmbCRPRIMARIA" value="#{solicitudLogisticoMB.solicitudLogisticoBean.centroRespPrimariaBean.cr}"
+                                                     style="width: 200px" required="false" label="#{msgs.etiquetaCentRes}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <f:selectItems value="#{solicitudLogisticoMB.listaCentroResponsabilidadPrimariaBean}" var="resPrimaria" itemLabel="#{resPrimaria.nombre}" itemValue="#{resPrimaria.cr}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <p:ajax event="change" listener="#{solicitudLogisticoMB.mostar('pri')}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaCentroResponSecundaria}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <h:outputText value=" " styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <p:selectOneMenu id="cmbCRSECUNDARIA" value="#{solicitudLogisticoMB.solicitudLogisticoBean.centroRespSecundariaBean.cr}"
+                                                     style="width: 200px" required="false" label="#{msgs.etiquetaCentRes}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <f:selectItems value="#{solicitudLogisticoMB.listaCentroResponsabilidadSecundariaBean}" var="resSecundaria" itemLabel="#{resSecundaria.nombre}" itemValue="#{resSecundaria.cr}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <p:ajax event="change" listener="#{solicitudLogisticoMB.mostar('sec')}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    </p:selectOneMenu>
+                                    <h:outputLabel value="#{msgs.etiquetaCentroResponBachiller}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <h:outputText value=" " styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                    <p:selectOneMenu id="cmbCRBACHILLER" value="#{solicitudLogisticoMB.solicitudLogisticoBean.centroRespBachillerBean.cr}"
+                                                     style="width: 200px" required="false" label="#{msgs.etiquetaCentRes}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}">
+                                        <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" rendered="#{solicitudLogisticoMB.flgDivision==true  or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <f:selectItems value="#{solicitudLogisticoMB.listaCentroResponsabilidadBachillerBean}" var="resBachiller" itemLabel="#{resBachiller.nombre}" itemValue="#{resBachiller.cr}" rendered="#{solicitudLogisticoMB.flgDivision==true or solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                        <p:ajax event="change" listener="#{solicitudLogisticoMB.mostar('bac')}" rendered="#{solicitudLogisticoMB.flgDivision==true}"/>
+                                    </p:selectOneMenu>
+                                </h:panelGrid>  
+                            </p:panel>
+                        </h:panelGrid> 
+                        <h:panelGrid columns="10" cellspacing="5" id="pnlDiv">  
+                            <p:panel header="Division." rendered="#{solicitudLogisticoMB.flgDivision==true}">
+                                <h:panelGrid columns="3" cellspacing="5"  rendered="#{solicitudLogisticoMB.flgDivision==true}">   
+                                    <h:outputLabel value="#{msgs.etiquetaIni}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}"/>
+                                    <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true}"/>
+                                    <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoI}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}"/> 
+                                    <h:outputLabel value="#{msgs.etiquetaPri}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}" />
+                                    <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true}"/>
+                                    <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoP}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}"/> 
+                                    <h:outputLabel value="#{msgs.etiquetaSecundaria}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}"/>
+                                    <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true}" />
+                                    <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoS}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}"/> 
+                                    <h:outputLabel value="#{msgs.etiquetaBac}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}"/>
+                                    <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgDivision==true}" />
+                                    <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoB}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgDivision==true}"/> 
+                                    <p:commandButton id="btnEjecutar" actionListener="#{solicitudLogisticoMB.ObtenerDivision()}" 
+                                                     value="#{msgs.botonEjecutar}"  update="pnlDiv" >
+                                    </p:commandButton>   
+                                </h:panelGrid> 
+                            </p:panel>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="11" cellspacing="5" id="pnlPon">  
+                        <p:panel header="Ponderacion." rendered="#{solicitudLogisticoMB.flgPondarizado==true}">
+                            <h:panelGrid columns="5" cellspacing="5"  rendered="#{solicitudLogisticoMB.flgPondarizado==true}">   
+                                <h:panelGrid columns="1" styleClass="centrado" id="pnlEstNiveles" rendered="#{solicitudLogisticoMB.flgPondarizado==true}">
+                                    <p:separator/>
+                                    <center>
+                                        <h:outputText value="#{msgs.etiquetaAlumnosNivel}"/>
+                                    </center>
+                                    <p:separator/>
+                                    <h:outputText value="#{msgs.etiquetaTotalIni} : " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{solicitudLogisticoMB.viewMatriculaBean.totalIni}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{msgs.etiquetaTotalPri} : " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{solicitudLogisticoMB.viewMatriculaBean.totalPri}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{msgs.etiquetaTotalSec} : " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{solicitudLogisticoMB.viewMatriculaBean.totalSec}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{msgs.etiquetaTotalB} : " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{solicitudLogisticoMB.viewMatriculaBean.totalSecB}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <p:separator/>
+                                    <center>
+                                        <h:outputText value="#{msgs.etiquetaCantPorAlumnos}"/>
+                                    </center>
+                                    <p:separator/>
+                                    <h:outputText value="#{msgs.etiquetaCantidadInicial}: " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputLabel value="#{solicitudLogisticoMB.ponderacionI}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{msgs.etiquetaCantidadPrimaria}: " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputLabel value="#{solicitudLogisticoMB.ponderacionP}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{msgs.etiquetaCantidadSec}: " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputLabel value="#{solicitudLogisticoMB.ponderacionS}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputText value="#{msgs.etiquetaCantidadBac}: " rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                    <h:outputLabel value="#{solicitudLogisticoMB.ponderacionB}" rendered="#{solicitudLogisticoMB.flgPondarizado==true}"/>
+                                </h:panelGrid> 
+                            </h:panelGrid>
+                        </p:panel>
+                    </h:panelGrid>
+                    <h:panelGrid columns="10" cellspacing="5" id="pnlPer">  
+                        <p:panel header="Personalizado." rendered="#{solicitudLogisticoMB.flgPersonalizado==true}">
+                            <h:panelGrid columns="3" cellspacing="5"  rendered="#{solicitudLogisticoMB.flgPersonalizado==true}">   
+                                <h:outputLabel value="#{msgs.etiquetaInicial} :" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoI}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaPri}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}" />
+                                <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoP}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaSecundaria} :" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}" />
+                                <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoS}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/> 
+                                <h:outputLabel value="#{msgs.etiquetaBac}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/>
+                                <h:outputText value="*" styleClass="requerido" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}" />
+                                <p:inputText value="#{solicitudLogisticoMB.solicitudLogisticoBean.montoB}" styleClass="negrita" rendered="#{solicitudLogisticoMB.flgPersonalizado==true}"/> 
+
+                            </h:panelGrid>
+                        </p:panel>
+                    </h:panelGrid>
+                    <br/>
+                    <p:separator/>
+                    <h:panelGrid styleClass="centrado">
+                        <p:commandButton oncomplete="PF('popCentroResp').hide();" 
+                                         value="#{msgs.botonCerrar}"  >
+                        </p:commandButton>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>-->
+            <h:form id="frmCentroResp">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popCentroResp" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false" style="width:1000px; font-size: 12px">  
+                    <h:panelGrid columns="1" styleClass="centrado">
+                        <p:fieldset legend="#{msgs.etiquetaCentRes}">
+                            <h:panelGrid columns="3" styleClass="siseFontGrid4">
+                                <h:outputLabel value="#{msgs.etiquetaDistribucion}" styleClass="negrita"/>
+                                <h:outputText value=" " styleClass="requerido"/>
+                                <p:selectOneMenu id="cmbTipoDist" value="#{solicitudLogisticoMB.solicitudLogisticoBean.codDistribucion}"
+                                                 style="width: 200px" required="true" label="#{msgs.etiquetaDistribucion}">
+                                    <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItems value="#{solicitudLogisticoMB.listaTipoDistribucionCRBean}" var="dist" itemLabel="#{dist.codigo}" itemValue="#{dist.idCodigo}"/>
+                                </p:selectOneMenu>
+                            </h:panelGrid>
+                            <hr/>
+                            <p:pickList id="pickCentroResponsabilidad" value="#{solicitudLogisticoMB.dualCentroResponsabilidadBean}" var="cr" itemLabel="#{cr} - #{cr.nombre}" itemValue="#{cr}" 
+                                        showSourceFilter="true" showTargetFilter="true" filterMatchMode="contains"  converter="crConverter"/> 
+                        </p:fieldset>
+                        <p:commandButton id="btnDist" actionListener="#{solicitudLogisticoMB.distribuir()}" update="pnlDistribucion,:frmMantDatos:msgsAddSol" process="btnDist,pickCentroResponsabilidad,cmbTipoDist,:frmMantDatos:txtImporte"
+                                         value="#{msgs.botonDist}">
+                        </p:commandButton>
+                        <h:panelGrid id="pnlDistribucion">
+                            <p:dataTable id="tblDetCR" value="#{solicitudLogisticoMB.solicitudLogisticoBean.listaDetRequerimientoCRBean}" widgetVar="tblDetCR" scrollable="true" scrollHeight="125" 
+                                         rowIndexVar="n" rendered="#{not empty solicitudLogisticoMB.solicitudLogisticoBean.listaDetRequerimientoCRBean}" var="detCR"
+                                         style="font-size:14px !important;margin-bottom:0;width: #{solicitudLogisticoMB.anchoTablasShort}"> 
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.tituloCentrosRes}" />  
+                                </f:facet>
+                                <p:column  headerText="#{msgs.numero}" width="8%" styleClass="siseFontTable3 centrado-texto">
+                                    <center>
+                                        <h:outputText value="#{n+1}" />
+                                    </center>
+                                </p:column>
+                                <p:column headerText="#{msgs.etiquetaCentRes}" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{detCR.centroResponsabilidadBean.nombre}"/>
+                                </p:column> 
+                                <!--p:column headerText="#{msgs.etiquetaDistribucion}" styleClass="siseFontTable3 centrado-texto" >
+                                    <h:outputText value="#{detCR.tipoDistribucion.codigo}"/>
+                                </p:column--> 
+                                <p:column headerText="#{msgs.etiquetaValor}" styleClass="siseFontTable3 centrado-texto" width="25%">
+                                    <h:inputText value="#{detCR.valorD}" size="8"/>
+                                </p:column> 
+                            </p:dataTable>
+                        </h:panelGrid><p:separator/>
+                        <h:panelGrid styleClass="centrado">
+                            <p:commandButton oncomplete="PF('popCentroResp').hide();" 
+                                             value="#{msgs.botonCerrar}"  >
+                            </p:commandButton>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form> 
+            <h:form id="frmSolicitante" styleClass="center_content">
+                <h:panelGrid  columns="1" styleClass="centrado">
+                    <p:dialog header="#{msgs.appSiglas}" widgetVar="popSolicitante" showEffect="fade" hideEffect="explode"
+                              modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+                        <h:panelGrid id="pnlSolicitante" columns="1" styleClass="centrado">
+                            <p:dataTable value="#{solicitudLogisticoMB.listaPersonalBean}" paginator="true" 
+                                         var="soli" id="tblSolicitante" widgetVar="tblSolicitante"
+                                         rowKey="#{soli.usuario}" rows="12"
+                                         rendered="#{not empty solicitudLogisticoMB.listaPersonalBean}" 
+                                         style="width:600px; font-size: 12px" > 
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaUsuarios}" />  
+                                </f:facet>
+                                <p:column filterBy="#{soli.nombreCompleto}" styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaUsuario}" filterMatchMode="contains" width="70%" >
+                                    <h:outputText value="#{soli.nombreCompleto}"/>
+                                </p:column>
+                                <p:column filterBy="#{soli.unidadOrganicaBean.nombreUniOrg}" styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaUniOrg}" filterMatchMode="contains" width="50%" >
+                                    <h:outputText value="#{soli.unidadOrganicaBean.nombreUniOrg}"/>
+                                </p:column>
+                                <p:column style="text-align:center;width:60px">
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                    </f:facet>
+                                    <p:commandLink id="cmdSelecSoli" actionListener="#{solicitudLogisticoMB.obtenerPersonalPorId(soli)}" 
+                                                   update=":frmMantDatos:nombreUniOrg, :frmMantDatos:nombreCompleto,:frmPlan:pnlAct"
+                                                   oncomplete="PF('popSolicitante').hide();" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/select.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTip" for="cmdSelecSoli" value="#{msgs.toolTipSeleccionar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <p:separator/>
+                        <div align="center">
+                            <p:commandButton oncomplete="PF('popSolicitante').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                        </div>
+                    </p:dialog>
+                </h:panelGrid>
+            </h:form>
+            <h:form id="frmPlan" styleClass="center_content">
+                <h:panelGrid  columns="1" styleClass="centrado">
+
+                    <p:dialog header="#{msgs.appSiglas}" widgetVar="popEstrategia" showEffect="fade" hideEffect="explode"
+                              modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+                        <h:panelGrid id="pnlAct" columns="1" styleClass="centrado">
+                            <h:outputText value="#{msgs.msjListaVacia}"  rendered="#{empty solicitudLogisticoMB.listaActividadBean}" />
+                            <p:dataTable value="#{solicitudLogisticoMB.listaActividadBean}" paginator="true" 
+                                         var="act" id="tblActividad" widgetVar="tblActividad"
+                                         rowKey="#{act.idActividad}" rows="6"
+                                         rendered="#{not empty solicitudLogisticoMB.listaActividadBean}" 
+                                         style="width:1000px; font-size: 12px" > 
+                                <f:facet name="header" >
+                                    <h:outputText value="#{msgs.etiquetaTituloActyProyProg}" />  
+                                </f:facet>
+
+                                <!-- trae la lista del plan operativo-->
+                                <p:column  filterBy="#{act.objOperativoBean.planOperativoBean.idUniOrg}"   headerText="#{msgs.tituloPlanOperativo}" filterMatchMode="contains" width="50%" >
+                                    <f:facet name="filter">
+                                        <p:selectOneMenu id="cmbPlan" onchange="PF('tblActividad').filter()" style="width: 190px">
+                                            <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                            <f:selectItems value="#{solicitudLogisticoMB.listaPlanOperativoBean}" var="plan" itemLabel="#{plan.nombre}" itemValue="#{plan.nombre}"/>
+
+                                        </p:selectOneMenu>  
+                                    </f:facet>
+                                    <h:outputText value="#{act.objOperativoBean.planOperativoBean.nombre}"/>
+                                </p:column>
+
+
+                                <p:column filterBy="#{act.objOperativoBean.idObjOperativo}"  headerText="#{msgs.tituloObjOperativo}" filterMatchMode="contains" width="50%" >
+                                    <f:facet name="filter">
+                                        <p:selectOneMenu id="cmbObj" onchange="PF('tblActividad').filter()" style="width: 190px">
+                                            <f:selectItem itemLabel="#{msgs.comboSeleccionarLabel}" itemValue="#{null}" noSelectionOption="true" />
+                                            <f:selectItems value="#{solicitudLogisticoMB.listaObjOperativoBean}" var="obj" itemLabel="#{obj.nombre}" itemValue="#{obj.nombre}"/>
+                                        </p:selectOneMenu>
+                                    </f:facet>
+                                    <h:outputText value="#{act.objOperativoBean.nombre}"/>
+                                </p:column> 
+
+
+                                <p:column filterBy="#{act.nombre}" headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="60%" styleClass="nombre2Filtro">
+                                    <h:outputText value="#{act.nombre}" />
+                                </p:column>
+                                <p:column filterBy="#{act.ingreso}" headerText="#{msgs.tituloPresupuesto}" filterMatchMode="contains" width="25%" styleClass="nombre1Filtro">
+                                    <h:outputText value="#{act.ingreso}">
+                                        <f:convertNumber currencySymbol="S/." type="currency" pattern="#0.00" />
+                                    </h:outputText>
+                                </p:column>
+                                <p:column style="text-align:center;width:60px">
+                                    <f:facet name="header">
+                                        <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                    </f:facet>
+                                    <p:commandLink id="cmdSelec" actionListener="#{solicitudLogisticoMB.obtenerActPorId(act)}" 
+                                                   update=":frmMantDatos:pnlPlan"
+                                                   oncomplete="PF('popEstrategia').hide();" process="@this">
+                                        <h:graphicImage value="/resources/images/icons/select3.png" style="border:0; cursor:pointer;"/>
+                                    </p:commandLink>
+                                    <p:tooltip id="toolTipEdit" for="cmdSelec" value="#{msgs.toolTipSeleccionar}" />
+                                </p:column>
+                            </p:dataTable>
+                        </h:panelGrid>
+                        <br/>
+                        <p:separator/>
+                        <div align="center">
+                            <p:commandButton oncomplete="PF('popEstrategia').hide();" 
+                                             value="#{msgs.botonCerrar}" >
+                            </p:commandButton>
+                        </div>
+                    </p:dialog>
+                </h:panelGrid>
+            </h:form>
+
+            <h:form id="frmCatalogo">
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popCatalogo" showEffect="fade" hideEffect="explode"
+                          modal="true" styleClass="autoWidthDialog" position="top" resizable="false">
+
+                    <h:panelGrid columns="1" styleClass="centrado" id="pnlCata">
+                        <p:dataTable value="#{solicitudLogisticoMB.listaCatalogoBean}" paginator="true"
+                                     var="catalogo" id="tblCatalogo" widgetVar="tblCatalogo"
+                                     rowKey="#{catalogo.idCatalogo}" rows="15" 
+                                     rendered="#{not empty solicitudLogisticoMB.listaCatalogoBean}" 
+                                     style="width:600px; font-size: 10px" > 
+                            <f:facet name="header" >
+                                <h:outputText value="#{solicitudLogisticoMB.tipoCategoriaBean.codigo == 'Material' || solicitudLogisticoMB.tipoCategoriaBean.codigo == 'Activo Fijo' || olicitudLogisticoMB.tipoCategoriaBean.codigo == 'Servicio' ? msgs.etiquetaListaCatMateriales :msgs.etiquetaListaCatServicios }" />  
+                            </f:facet>
+                            <p:column filterBy="#{catalogo.idCatalogo}" styleClass="nombre5Filtro"  headerText="#{msgs.etiquetaCodigo}" filterMatchMode="contains" width="70">
+                                <center><h:outputText value="#{catalogo.idCatalogo}"  style=" font-size: 12px"/></center>
+                            </p:column>
+                            <p:column filterBy="#{catalogo.item}" styleClass="nombre2Filtro"  headerText="#{msgs.etiquetaNombre}" filterMatchMode="contains" width="220">
+                                <h:outputText value="#{catalogo.item}"  style=" font-size: 12px"/>
+                            </p:column>
+                          <!--  <p:column filterBy="#{catalogo.inventarioActivoBean.stockActual}" styleClass="nombre5Filtro" headerText="#{msgs.etiquetaStock}" filterMatchMode="contains" width="70"
+                                      rendered="#{solicitudLogisticoMB.flgActivo==true}">
+                                <center><h:outputText value="#{catalogo.inventarioActivoBean.stockActual}"  style=" font-size: 12px" rendered="#{solicitudLogisticoMB.flgActivo==true}"/></center>
+                            </p:column>
+                            <p:column filterBy="#{catalogo.inventarioAlmacenBean.stockActual}" styleClass="nombre5Filtro" headerText="#{msgs.etiquetaStock}" filterMatchMode="contains" width="70"
+                                      rendered="#{solicitudLogisticoMB.flgAlmacen==true}">
+                                <center><h:outputText value="#{catalogo.inventarioAlmacenBean.stockActual}"  style=" font-size: 12px" rendered="#{solicitudLogisticoMB.flgAlmacen==true}"/></center>
+                            </p:column>-->
+                            <p:column filterBy="#{catalogo.precioRef}" styleClass="nombre5Filtro" headerText="#{msgs.etiquetaPrecio}" filterMatchMode="contains" width="50">
+                                <center><h:outputText value="#{catalogo.precioRef}" style=" font-size: 13px" /></center>
+                            </p:column>
+                            <p:column style="text-align:center;width:60px">
+                                <f:facet name="header">
+                                    <h:outputText value="#{msgs.etiquetaAcciones}" />
+                                </f:facet>
+                                <p:commandLink id="cmdAdd" actionListener="#{solicitudLogisticoMB.agregarItems(catalogo)}" 
+                                               update=":frmMantDatos:pnlCatalogo,:frmMantDatos:txtImporte,:frmMantDatos:pnlGrabar"
+                                               oncomplete="if(args.operacionCorrecta){PF('popDone').show();}">
+                                    <h:graphicImage value="/resources/images/icons/agregar.png" style="border:0; cursor:pointer;"/>
+                                </p:commandLink>
+                                <p:tooltip id="toolTipAdd" for="cmdAdd" value="#{msgs.toolTipAgregar}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                    <br/>
+                    <p:separator/>
+                    <h:panelGrid columns="4" styleClass="centrado">
+                        <p:commandButton id="btnCerrar" oncomplete="PF('popCatalogo').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                        <p:link id="entSeg" outcome="/mantenimientos/mantNuevo.xhtml" target="_blank">
+                            <h:graphicImage value="/resources/images/icons/addverde3.png" style="border:0; cursor:pointer;"/>
+                        </p:link> 
+                        <p:commandLink id="btnActualizarComSeg" actionListener="#{solicitudLogisticoMB.actualizarCatalogo()}" process="@this" update=":frmCatalogo:pnlCata">
+                            <h:graphicImage value="/resources/images/icons/refrescar.png"   style="border:0; cursor:pointer;"/>
+                        </p:commandLink>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+
+            <h:form>
+                <p:dialog header="#{msgs.appSiglas}" widgetVar="popDone" width="370" height="120" showEffect="fade" hideEffect="explode"
+                          modal="true">
+                    <h:graphicImage value="/resources/images/icons/iconoInfo.png" />
+                    <h:outputText value="#{msgs.notificacionExito}"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popDone').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </p:dialog>
+            </h:form>
+
+            <h:form id="frmStatus">
+                <p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()" />
+                <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+                    <h:graphicImage value="/resources/images/ajaxloader.gif"/>
+                </p:dialog>
+            </h:form>
+
+        </h:body>
+    </ui:define>
+</ui:composition>

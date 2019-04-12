@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="pe.marista.sigma.dao.SolicitudLogisticoDetalleDAO">  
+    
+    <sql id="consultaCampos">
+        <!--select distinct dr.iddetrequerimiento,dr.unineg, c.idCatalogo, invalm.idCatalogo as idCatalogoIA, 
+        invalm.stockactual as stockActualInvAlm, invalm.stockactual as stockVista, isnull(dr.cantidadsolicitada,0) as cantidadsolicitada, 
+        isnull(dr.cantidadentregada,0) as cantidadentregada, isnull(dr.cantidadentregada,0) as cantidadEntregadaParcial,
+        invalm.stockmin as stockMinInvAlm, r.idrequerimiento, r.idtipocategoria, 
+        ter.codigo as tipoReq, c.idcatalogo, c.item, c.cuenta, dr.precioref, um.idcodigo as idUnidadMedida, um.codigo as unidadMedida, 
+        tm.idcodigo as idTipoMoneda, tm.codigo as tipoMoneda, r.importePropuesto, 
+        (select case 
+        when ter.codigo = 'Material' then sum(det.precioref*det.cantidadsolicitada)
+        when ter.codigo = 'Activo Fijo' then sum(det.precioref*det.cantidadsolicitada)
+        when ter.codigo = 'Servicio' then sum(det.precioref*det.cantidadsolicitada) 
+        end from ML_DetRequerimiento det where det.idrequerimiento = dr.idrequerimiento and det.unineg= un.unineg  ) as sumaImporte, 
+        dr.idtipostatusdetreq as codTipoEstado, 
+        case when dr.idtipostatusdetreq = 16302 then 'Nada' 
+        when dr.idtipostatusdetreq = 16303 then 'Asignado Parcial' 
+        when dr.idtipostatusdetreq = 16301 then 'Asignado Total'
+        when dr.idtipostatusdetreq = 16304 then 'Entrega Parcial' 
+        when dr.idtipostatusdetreq = 16305 then 'Entrega Total' 
+        else '' end as tipoEstado, 
+        ia.idinventarioactivo,
+        ia.stockActual as stockActualAct ,unsol.nombreUniNeg ,unsol.unineg as uniNeg ,
+        ent.ruc as rucUnidad ,ent.nombre as nombreUnidad ,ent.direccion as direccionUnidad ,
+        ent.telefono as telefonoUnidad ,ent.correo as correoUnidad ,ent.url as webUnidad ,dis.iddistrito as idDistrito ,
+        dis.nombre as distritoUnidad ,pa.idpais as idPais ,pa.nombre as paisUnidad ,per.idpersonal as idSolicitante,
+        per.nombre as nombre ,per.apepat as apePat ,per.apemat as apeMat ,CONCAT(per.nombre+' ',per.apepat+' ',per.apemat) as nombreCompleto ,
+        uo.iduniorg as idUniOrg ,uo.nombreUniOrg as nombreUniOrg , prio.idcodigo as idTipoPrioridad, prio.codigo as tipoPrioridad,
+        (SELECT
+        (CASE
+        WHEN ia.idinventarioactivo is not null then  isnull(ia.stockActual,0)
+        when invalm.idcatalogo is not null		then  isnull(invalm.stockactual,0)
+        else 0
+        end)) as stockAyuda,
+        ca.idcatalogo as idCatalogoInv,
+        ca.item as itemInv  ,
+        dr.fechasalida as fechaSalida , dr.horasalida as horaSalida ,dr.horaregreso as horaRegreso, dr.destinoservicio as destinoServicio
+        from ML_DetRequerimiento dr 
+        inner join ML_Requerimiento r on dr.idrequerimiento = r.idrequerimiento 
+        left join MO_UnidadOrganica uo on uo.idUniOrg = r.idUniOrg 
+        inner join MO_Codigo ter on r.idtipocategoria = ter.idcodigo 
+        inner join MO_Codigo prio on r.idtipoprioridad = prio.idcodigo 
+        inner join ML_Catalogo c on dr.idcatalogo = c.idcatalogo 
+        left join ML_InventarioActivo ia on c.idcatalogo = ia.idcatalogo 
+        left join ML_Catalogo ca on ia.idcatalogo = ca.idcatalogo 
+        left join ml_inventarioAlmacen invalm on c.idcatalogo = invalm.idcatalogo 
+        left join MO_Codigo um on dr.idtipounimed = um.idcodigo 
+        left join MO_Codigo tm on dr.idtipomoneda = tm.idcodigo 
+        inner join MO_UnidadNegocio un on un.unineg= dr.unineg   
+        left join MO_UnidadNegocio unsol on unsol.unineg= r.unineg 
+        left join MO_Entidad ent on ent.ruc=unsol.ruc 
+        left join MO_Pais pa on pa.idpais= ent.idpais 
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito 
+        left join MO_Personal per on per.idpersonal = r.idsolicitante -->
+        select  distinct 
+        dr.iddetrequerimiento,
+        dr.unineg,  
+        (case when c.idcatalogo is not null then c.idcatalogo else cb.idcatalogo end) as idCatalogo,
+        (case when c.idcatalogo is not null then 1 else 0 end) AS validarCatalogo,
+        invalm.idCatalogo as idCatalogoIA, 
+        invalm.stockactual as stockActualInvAlm,
+        invalm.stockactual as stockVista,
+        isnull(dr.cantidadsolicitada,0) as cantidadsolicitada, 
+        isnull(dr.cantidadentregada,0) as cantidadentregada, 
+        isnull(dr.cantidadentregada,0) as cantidadEntregadaParcial,
+        invalm.stockmin as stockMinInvAlm,
+        r.idrequerimiento, r.idtipocategoria, 
+        ter.codigo as tipoReq,  
+        (case when c.idcatalogo is not null then upper(c.item) else upper(isnull(cb.item,'')) end) as item,
+        c.cuenta,
+        dr.precioref,
+        um.idcodigo as idUnidadMedida,
+        um.codigo as unidadMedida, 
+        tm.idcodigo as idTipoMoneda,
+        tm.codigo as tipoMoneda,
+        r.importePropuesto, 
+        (select case 
+        when ter.codigo = 'Material' then sum(det.precioref*det.cantidadsolicitada)
+        when ter.codigo = 'Activo Fijo' then sum(det.precioref*det.cantidadsolicitada)
+        when ter.codigo = 'Servicio' then sum(det.precioref*det.cantidadsolicitada) 
+        end from ML_DetRequerimiento det where det.idrequerimiento = dr.idrequerimiento and det.unineg= un.unineg  ) as sumaImporte, 
+        dr.idtipostatusdetreq as codTipoEstado, 
+        case when dr.idtipostatusdetreq = 16302 then 'Nada' 
+        when dr.idtipostatusdetreq = 16303 then 'Asignado Parcial' 
+        when dr.idtipostatusdetreq = 16301 then 'Asignado Total'
+        when dr.idtipostatusdetreq = 16304 then 'Entrega Parcial' 
+        when dr.idtipostatusdetreq = 16305 then 'Entrega Total' 
+        else '' end as tipoEstado, 
+        ia.idinventarioactivo,
+        ia.stockActual as stockActualAct,
+        unsol.nombreUniNeg,
+        unsol.unineg as uniNeg ,
+        ent.ruc as rucUnidad,
+        ent.nombre as nombreUnidad,
+        ent.direccion as direccionUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.correo as correoUnidad,
+        ent.url as webUnidad,
+        dis.iddistrito as idDistrito,
+        dis.nombre as distritoUnidad,pa.idpais as idPais ,pa.nombre as paisUnidad ,per.idpersonal as idSolicitante,
+        per.nombre as nombre ,per.apepat as apePat ,per.apemat as apeMat ,CONCAT(per.nombre+' ',per.apepat+' ',per.apemat) as nombreCompleto ,
+        uo.iduniorg as idUniOrg ,uo.nombreUniOrg as nombreUniOrg , prio.idcodigo as idTipoPrioridad, prio.codigo as tipoPrioridad,
+        (SELECT
+        (CASE
+        WHEN ia.idinventarioactivo is not null then  isnull(ia.stockActual,0)
+        when invalm.idcatalogo is not null		then  isnull(invalm.stockactual,0)
+        else 0
+        end)) as stockAyuda,
+        ca.idcatalogo as idCatalogoInv,
+        ca.item as itemInv  ,
+        dr.fechasalida as fechaSalida , dr.horasalida as horaSalida ,dr.horaregreso as horaRegreso, dr.destinoservicio as destinoServicio,
+        dr.flgcomprado as flgComprado
+        from ML_DetRequerimiento dr 
+        inner join ML_Requerimiento r on dr.idrequerimiento = r.idrequerimiento 
+        left join MO_UnidadOrganica uo on uo.idUniOrg = r.idUniOrg 
+        left join MO_Codigo ter on r.idtipocategoria = ter.idcodigo 
+        left join MO_Codigo prio on r.idtipoprioridad = prio.idcodigo 
+        left join ML_Catalogo c on dr.idcatalogo = c.idcatalogo 
+        left join ML_CatalogoBlock cb on dr.idcatalogo = cb.idcatalogo  
+        left join ML_InventarioActivo ia on c.idcatalogo = ia.idcatalogo 
+        left join ML_Catalogo ca on ia.idcatalogo = ca.idcatalogo 
+        left join ml_inventarioAlmacen invalm on c.idcatalogo = invalm.idcatalogo 
+        left join MO_Codigo um on dr.idtipounimed = um.idcodigo 
+        left join MO_Codigo tm on dr.idtipomoneda = tm.idcodigo 
+        inner join MO_UnidadNegocio un on un.unineg= dr.unineg   
+        left join MO_UnidadNegocio unsol on unsol.unineg= r.unineg 
+        left join MO_Entidad ent on ent.ruc=unsol.ruc 
+        left join MO_Pais pa on pa.idpais= ent.idpais 
+        left join MO_Distrito dis on dis.iddistrito= ent.iddistrito 
+        left join MO_Personal per on per.idpersonal = r.idsolicitante and r.unineg=dr.unineg
+        
+    </sql>
+    <resultMap id="detResultado" type="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        <id property="idDetRequerimiento" column="idDetRequerimiento"/>
+        <result property="cantidadSolicitada" column="cantidadSolicitada"/>
+        <result property="cantidadSolicitadaAnterior" column="cantidadSolicitada"/>
+        <result property="cantidadEntregada" column="cantidadEntregada"/>
+        <result property="cantidadEntregadaParcial" column="cantidadEntregadaParcial"/>
+        <result property="sumaImporte" column="sumaImporte"/>
+        <result property="estado" column="estado"/>
+        <result property="stockAyuda" column="stockAyuda"/>
+        <result property="montoRef" column="montoRef"/>
+        <result property="fechaSalida" column="fechaSalida"/>
+        <result property="horaSalida" column="horaSalida"/>
+        <result property="horaRegreso" column="horaRegreso"/>
+        <result property="destinoServicio" column="destinoServicio"/>
+        <result property="validarCatalogo" column="validarCatalogo"/>
+        <result property="flgComprado" column="flgComprado"/> 
+        <association property="solicitudLogisticoBean" column="idrequerimiento"
+                     javaType="pe.marista.sigma.bean.SolicitudLogisticoBean"
+                     resultMap="solResultado"/>
+        <association property="catalogoBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoResultado"/>
+        <association property="materialBean" column="idInventarioAlmacen"
+                     javaType="pe.marista.sigma.bean.MaterialBean"
+                     resultMap="materialResultado"/>
+        <association property="tipoEstadoBean" column="idTipoEstado"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="estadoResultado"/>
+        <association property="conceptoUniNegBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoUniNegBean"
+                     resultMap="conceptoUniNegBeanResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado"/>
+    </resultMap>
+    <resultMap id="solResultado" type="pe.marista.sigma.bean.SolicitudLogisticoBean">  
+        <id property="idRequerimiento" column="idRequerimiento"/> 
+        <result property="importePropuesto" column="importePropuesto"/>
+        <association property="tipoCategoriaBean" column="idtipocategoria"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoReqResultado"/>
+        <association property="tipoPrioridadBean" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadResultado"/>
+        <association property="unidadOrganicaBean" column="idUniOrg"
+                     javaType="pe.marista.sigma.bean.UnidadOrganicaBean"
+                     resultMap="unidadResultado"/>
+        <association property="personalBean" column="idsolicitante"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <association property="unidadNegocioBean" column="unineg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="negocioResultado"/>
+    </resultMap>
+    <resultMap id="unidadResultado" type="pe.marista.sigma.bean.UnidadOrganicaBean">
+        <id property="idUniOrg" column="idUniOrg"/>
+        <result property="nombreUniOrg" column="nombreUniOrg"/>
+    </resultMap>
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idSolicitante"/>
+        <result property="apepat" column="apePat"/>
+        <result property="apemat" column="apeMat"/>
+        <result property="nombre" column="nombre"/>
+        <result property="nombreCompleto" column="nombreCompleto"/>
+    </resultMap>
+    <resultMap id="negocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+        <association property="entidadBean" column="ruc"
+                     javaType="pe.marista.sigma.bean.EntidadBean"
+                     resultMap="entidadUNIResultado"/>
+    </resultMap>
+    <resultMap id="entidadUNIResultado" type="pe.marista.sigma.bean.EntidadBean">
+        <id property="ruc" column="rucUnidad"/>
+        <result property="nombre" column="nombreUnidad"/>
+        <result property="direccion" column="direccionUnidad"/>
+        <result property="telefono" column="telefonoUnidad"/>
+        <result property="correo" column="correoUnidad"/>
+        <result property="url" column="webUnidad"/>
+        <association property="distritoBean" column="idDistrito" 
+                     javaType="pe.marista.sigma.bean.DistritoBean" 
+                     resultMap="distritoUNIDADENTResultado"/>
+        <association property="paisBean" column="idPais" 
+                     javaType="pe.marista.sigma.bean.PaisBean" 
+                     resultMap="paisUNIDADENTResultado"/>
+    </resultMap>
+    <resultMap id="distritoUNIDADENTResultado" type="pe.marista.sigma.bean.DistritoBean">
+        <id property="idDistrito" column="idDistrito"/>
+        <result property="nombre" column="distritoUnidad"/>
+    </resultMap>    
+    <resultMap id="paisUNIDADENTResultado" type="pe.marista.sigma.bean.PaisBean">
+        <id property="idPais" column="idPais"/>
+        <result property="nombre" column="paisUnidad"/>
+    </resultMap>
+    <resultMap id="tipoReqResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idtipocategoria"/>
+        <result property="codigo" column="tipoReq"/>
+    </resultMap>
+    <resultMap id="tipoPrioridadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="tipoPrioridad"/>
+    </resultMap>
+    <resultMap id="catalogoResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogo"/>
+        <result property="item" column="item"/>
+        <result property="cuenta" column="cuenta"/>
+        <result property="precioRef" column="precioRef"/>
+        <association property="tipoUnidadMedidaBean" column="idUnidadMedida"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="unidadMedResultado"/>
+        <association property="tipoMonedaBean" column="idTipoMoneda"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="monedaResultado"/>
+        <association property="inventarioActivoBean" column="idInventarioActivo"
+                     javaType="pe.marista.sigma.bean.InventarioActivoBean"
+                     resultMap="inventarioActivoResultado"/><!--AUMENTE-->
+        <association property="inventarioAlmacenBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.InventarioAlmacenBean"
+                     resultMap="inventarioAlmacenResultado"/><!--AUMENTE-->
+    </resultMap>
+    <resultMap id="unidadMedResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idUnidadMedida"/>
+        <result property="codigo" column="unidadMedida"/>
+    </resultMap> 
+    <resultMap id="monedaResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoMoneda"/>
+        <result property="codigo" column="tipoMoneda"/>
+    </resultMap>
+    <resultMap id="inventarioActivoResultado" type="pe.marista.sigma.bean.InventarioActivoBean">
+        <id property="idInventarioActivo" column="idInventarioActivo"/>
+        <result property="stockActual" column="stockActualAct"/> <!--AUMENTE-->
+    </resultMap>
+    <resultMap id="inventarioAlmacenResultado" type="pe.marista.sigma.bean.InventarioAlmacenBean"> 
+        <result property="idCatalogo" column="idCatalogoIA"/>
+        <result property="precioRef" column="precioRef"/>
+        <result property="stockMin" column="stockMinInvAlm"/>
+        <result property="stockActual" column="stockActualInvAlm"/> <!--AUMENTE-->
+        <result property="stockVista" column="stockVista"/>
+        <association property="catalogoBean" column="idCatalogo"
+                     javaType="pe.marista.sigma.bean.CatalogoBean"
+                     resultMap="catalogoInveResultado"/>
+    </resultMap>
+    <resultMap id="catalogoInveResultado" type="pe.marista.sigma.bean.CatalogoBean">
+        <id property="idCatalogo" column="idCatalogoInv"/>
+        <result property="item" column="itemInv"/>
+    </resultMap>
+    <resultMap id="estadoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codTipoEstado"/>
+        <result property="codigo" column="tipoEstado"/>
+    </resultMap>
+    <resultMap id="materialResultado" type="pe.marista.sigma.bean.MaterialBean">
+        <id property="idInventarioAlmacen" column="idInventarioAlmacen"/>
+        <result property="stockActual" column="stockActual"/>
+        <result property="stockMin" column="stockMin"/>
+    </resultMap>
+    <!--ConceptoUniNeg-->
+    <resultMap id="conceptoUniNegBeanResultado" type="pe.marista.sigma.bean.ConceptoUniNegBean">
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <association property="conceptoBean" column="idConcepto"
+                     javaType="pe.marista.sigma.bean.ConceptoBean"
+                     resultMap="conceptoResultado"/>
+    </resultMap>
+    <!--Unidad de Negocio-->
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNeg"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/>
+    </resultMap>   
+    <!--Concepto-->
+    <resultMap id="conceptoResultado" type="pe.marista.sigma.bean.ConceptoBean">
+        <id property="idConcepto" column="idConcep"/>
+        <result property="codigo" column="codigo"/>
+        <result property="nombre" column="nombreConcepto"/>
+        <result property="descrip" column="descrip"/>
+        <association property="planContableCuentaDBean" column="cuentad"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableDResultadoC"/>
+        <association property="planContableCuentaHBean" column="cuentah"
+                     javaType="pe.marista.sigma.bean.PlanContableBean"
+                     resultMap="planContableHResultadoC"/>
+        <association property="tipoConceptoBean" column="idTipoConcepto"
+                     javaType="pe.marista.sigma.bean.TipoConceptoBean"
+                     resultMap="tipoConceptoResultadoC"/>
+    </resultMap>
+    <resultMap id="planContableDResultadoC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentad"/>
+        <result property="nombre" column="nombreCuentaD"/>
+    </resultMap>
+    <resultMap id="planContableHResultadoC" type="pe.marista.sigma.bean.PlanContableBean">
+        <id property="cuenta" column="cuentah"/>
+        <result property="nombre" column="nombreCuentaH"/>
+    </resultMap>
+    <resultMap id="tipoConceptoResultadoC" type="pe.marista.sigma.bean.TipoConceptoBean">
+        <id property="idTipoConcepto" column="idTipoConcepto"/>
+    </resultMap> 
+    <select id="obtenerUltimo" resultType="Integer" parameterType="Integer" >
+        select isnull((max(idRequerimiento)),0) from ML_DetRequerimiento
+        WHERE idRequerimiento = #{idRequerimiento}
+    </select> 
+    <select id="obtenerCantidadEntregada" resultMap="detResultado" parameterType="map" >
+        select cantidadentregada from ML_DetRequerimiento
+        where unineg=#{unidadNegocioBean.uniNeg} and iddetrequerimiento = #{idDetRequerimiento}
+    </select> 
+    <select id="obtenerPorRequerimiento" resultMap="detResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where dr.idrequerimiento = #{solicitudLogisticoBean.idRequerimiento}
+    </select>
+    <select id="obtenerPorDetRequerimiento" resultMap="detResultado" parameterType="Integer">
+        <include refid="consultaCampos" />where dr.iddetrequerimiento = #{idDetRequerimiento}
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        insert into ML_DetRequerimiento 
+        (iddetrequerimiento,idrequerimiento,unineg,idtipounimed,idcatalogo,cantidadsolicitada,
+        cantidadentregada,precioref,idtipomoneda,idtipostatusdetreq,creaPor,creaFecha,cuentad,cuentah, idconcepto,
+        fechasalida,horasalida,horaregreso,destinoservicio,flgcomprado) 
+        values
+        (0,#{idRequerimiento},#{solicitudLogisticoBean.unidadNegocioBean.uniNeg},
+        #{catalogoBean.tipoUnidadMedidaBean.idCodigo},#{catalogoBean.idCatalogo},
+        #{cantidadSolicitada},#{cantidadEntregada}, #{catalogoBean.precioRef},#{catalogoBean.tipoMonedaBean.idCodigo}
+        ,#{tipoEstadoBean.idCodigo},#{creaPor},getDate(),#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta},#{conceptoUniNegBean.conceptoBean.planContableCuentaHBean.cuenta}
+        ,#{conceptoUniNegBean.conceptoBean.idConcepto},#{fechaSalida},#{horaSalida},#{horaRegreso},#{destinoServicio},
+        #{flgComprado})
+        <selectKey keyProperty="idDetRequerimiento" order="AFTER" resultType="Integer">
+            SELECT max(idDetRequerimiento) FROM ML_DetRequerimiento WHERE uniNeg = #{solicitudLogisticoBean.unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>
+    <insert id="insertarServicio" parameterType="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        insert into ML_DetRequerimiento 
+        (iddetrequerimiento,idrequerimiento,unineg,idtipounimed,idcatalogo,cantidadsolicitada,
+        cantidadentregada,precioref,idtipomoneda,idtipostatusdetreq,creaPor,creaFecha,cuentad,cuentah, idconcepto) 
+        values
+        (0,#{idRequerimiento},#{solicitudLogisticoBean.unidadNegocioBean.uniNeg},
+        #{catalogoBean.tipoUnidadMedidaBean.idCodigo},0,
+        1,#{cantidadEntregada}, #{solicitudLogisticoBean.importePropuesto},#{catalogoBean.tipoMonedaBean.idCodigo}
+        ,#{tipoEstadoBean.idCodigo},#{creaPor},getDate(),#{conceptoUniNegBean.conceptoBean.planContableCuentaDBean.cuenta},#{conceptoUniNegBean.conceptoBean.planContableCuentaHBean.cuenta}
+        ,#{conceptoUniNegBean.conceptoBean.idConcepto})
+        <selectKey keyProperty="idDetRequerimiento" order="AFTER" resultType="Integer">
+            SELECT max(idDetRequerimiento) FROM ML_DetRequerimiento WHERE uniNeg = #{solicitudLogisticoBean.unidadNegocioBean.uniNeg}
+        </selectKey>
+    </insert>
+    <select id="obtenerPorSolicitud" resultMap="detResultado" parameterType="map">
+        <include refid="consultaCampos" />where dr.idrequerimiento = #{idRequerimiento} and un.uniNeg = #{uniNeg} 
+    </select>
+    <select id="obtenerPorSolicitudBean" parameterType="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        <include refid="consultaCampos" />where dr.idrequerimiento = #{idRequerimiento} and un.uniNeg = #{solicitudLogisticoBean.unidadNegocioBean.uniNeg} 
+    </select>
+    <select id="obtenerPorSolicitudCompra" resultMap="detResultado" parameterType="map">
+        <include refid="consultaCampos" />where dr.idrequerimiento = #{idRequerimiento} and un.uniNeg = #{uniNeg} and dr.flgcomprado=1
+    </select>
+    <update id="modificarPrecioDetalle" parameterType="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        update  ML_DetRequerimiento 
+        set
+        precioref = #{montoRef}
+        where 
+        iddetrequerimiento = #{idDetRequerimiento} and 
+        idcatalogo = #{catalogoBean.idCatalogo}
+    </update>
+    <update id="modificarPrecioDetalles" parameterType="map">
+        update  ML_DetRequerimiento 
+        set
+        precioref = #{montoRef}
+        where 
+        iddetrequerimiento = #{idDetRequerimiento} and 
+        idcatalogo = #{idCatalogo}
+    </update>
+    <update id="modificarFlgCompra" parameterType="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        update  ML_DetRequerimiento 
+        set
+        flgcomprado = #{flgComprado}
+        where 
+        iddetrequerimiento = #{idDetRequerimiento}
+    </update>
+    <update id="modificarFlgCompraTotal" parameterType="pe.marista.sigma.bean.SolicitudLogDetalleBean">
+        update  ML_DetRequerimiento 
+        set
+        flgcomprado = 0
+        where 
+        idrequerimiento = #{idRequerimiento} and iddetrequerimiento=#{idDetRequerimiento}
+    </update>
+    <delete id="eliminar" parameterType="Integer">
+        delete from ML_DetRequerimiento
+        where idrequerimiento = #{idRequerimiento}
+    </delete>
+    <!-- PRO CARGAR ITEM -->
+    <select id="execProInventario" resultMap="detResultado" parameterType="pe.marista.sigma.bean.CatalogoBean" >
+        exec PRO_INVENTARIO
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@objFile = #{objFile,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idCategoria = #{idTipoCategoria,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    <!-- PRO CARGAR ITEM -->
+    <select id="execProInventarioTrans" resultMap="detResultado" parameterType="pe.marista.sigma.bean.CatalogoBean" >
+        exec PRO_INVENTARIO_TRANS
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@objFile = #{objFile,javaType=String,jdbcType=VARCHAR,mode=IN},
+        @@idCategoria = #{idTipoCategoria,javaType=Integer,jdbcType=INTEGER,mode=IN}
+    </select>
+    <select  id="ejecutarDetalleProcedure" parameterType="pe.marista.sigma.bean.SolicitudLogDetalleBean" resultType="Object">
+        exec PRO_ACTUALIZADET
+        @@uniNeg = #{uniNeg,javaType=String,jdbcType=VARCHAR,mode=IN}
+    </select>
+    <select id="obtenerSolicitudPDF" resultType="pe.marista.sigma.bean.reporte.SolicitudLogisticoRepBean" parameterType="map">
+        declare @unineg varchar(6), @idrequerimiento int,@IMG varchar(100) 
+        set @unineg=#{uniNeg}
+        set @idrequerimiento=#{idRequerimiento}
+        set @IMG = ''
+        SELECT @IMG = (case 
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        else 'resources\images\sector.jpg' 
+        end)
+        select @IMG AS rutaImagen,
+        req.nrosolicitud as requerimiento, 
+        CONCAT(per.apepat,' '+per.apemat,', '+per.nombre) as solicitante,
+        isnull(uo.nombreuniorg,'-' ) as unidadOrganica, 
+        convert(date,req.fechasolicitud) as fechaSolicitud,
+        (case when ca.idcatalogo is not null then ca.item else cb.item end) as item,
+        convert(int,dr.cantidadsolicitada) cantidad,
+        ent.nombre as nombreUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as distritoUnidad,
+        pais.nombre as paisUnidad
+        from ML_DetRequerimiento dr
+        inner join ML_Requerimiento req on req.idrequerimiento=dr.idrequerimiento
+        inner join MO_Personal per on per.idpersonal=req.idsolicitante
+        left join MO_UnidadOrganica uo on uo.iduniorg=req.iduniorg
+        left join ML_Catalogo ca on ca.idcatalogo=dr.idcatalogo
+        left join ML_CatalogoBlock cb on cb.idcatalogo=dr.idcatalogo
+        left join MO_UnidadNegocio uni on dr.unineg = uni.unineg
+        left join MO_Entidad ent on uni.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        where dr.unineg=@unineg and dr.idrequerimiento=@idrequerimiento 
+    </select>
+    <select id="obtenerSolicitudTransportePDF" resultType="pe.marista.sigma.bean.reporte.SolicitudLogisticoRepBean" parameterType="map">
+        declare @unineg varchar(6), @idrequerimiento int,@IMG varchar(100)
+        set @unineg=#{uniNeg}
+        set @idrequerimiento=#{idRequerimiento}
+        set @IMG = ''
+        SELECT @IMG = (case
+        when @uniNeg = 'CHAMPS' THEN 'resources\images\logo_champs.jpg'
+        when @uniNeg = 'SANJOC' THEN 'resources\images\sanjoc.jpg'
+        when @uniNeg = 'SANLUI' THEN 'resources\images\sanLuis.jpg'
+        when @uniNeg = 'BARINA' THEN 'resources\images\barina.jpg'
+        else 'resources\images\sector.jpg' 
+        end)
+        select @IMG AS rutaImagen,
+        req.nrosolicitud as requerimiento,
+        CONCAT(per.apepat,' '+per.apemat,', '+per.nombre) as solicitante,
+        uo.nombreuniorg as unidadOrganica,
+        convert(date,req.fechasolicitud) as fechaSolicitud,
+        (case when ca.idcatalogo is not null then ca.item else cb.item end) as item,
+        convert(int,dr.cantidadsolicitada) cantidad,
+        convert(date,dr.fechasalida) as fechaServicio,
+        dr.destinoservicio as destino,
+        dr.horasalida as hsalida,
+        dr.horaregreso as hregreso,
+        ent.nombre as nombreUnidad,
+        ent.url as webUnidad,
+        ent.correo as correoUnidad,
+        ent.telefono as telefonoUnidad,
+        ent.direccion as direccionUnidad,
+        dis.nombre as distritoUnidad,
+        pais.nombre as paisUnidad
+        from ML_DetRequerimiento dr
+        left join ML_Requerimiento req on req.idrequerimiento=dr.idrequerimiento
+        left join MO_Personal per on per.idpersonal=req.idsolicitante
+        left join MO_UnidadOrganica uo on uo.iduniorg=req.iduniorg
+        left join ML_Catalogo ca on ca.idcatalogo=dr.idcatalogo
+        left join ML_CatalogoBlock cb on cb.idcatalogo=dr.idcatalogo
+        left join MO_UnidadNegocio uni on dr.unineg = uni.unineg
+        left join MO_Entidad ent on uni.ruc = ent.ruc
+        left join MO_Distrito dis on ent.iddistrito = dis.iddistrito
+        left join MO_Pais pais on ent.idpais = pais.idpais
+        where dr.unineg=@unineg and dr.idrequerimiento=@idrequerimiento
+
+ 
+    </select>
+</mapper>

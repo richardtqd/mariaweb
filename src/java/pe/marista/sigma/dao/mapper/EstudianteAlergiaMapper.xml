@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="pe.marista.sigma.dao.EstudianteAlergiaDAO">  
+    <sql id="consultaCampos">
+        Select  
+        estAle.idEstudianteAlergia,
+        estAle.idEstudiante,
+        estAle.idTipoAlergia,
+        cod.codigo,
+        cod.valor,
+        estAle.alergia
+        From MX_EstudianteAlergia estAle
+        Inner Join MO_Codigo cod On estAle.idTipoAlergia=cod.idCodigo
+    </sql>
+    <resultMap id="estudianteAlergiaResultado" type="pe.marista.sigma.bean.EstudianteAlergiaBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idEstudianteAlergia" column="idEstudianteAlergia"/>
+        <result property="alergia" column="alergia"/>
+        <association property="estudianteBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.EstudianteBean"
+                     resultMap="estudianteResultado"/>
+        <association property="tipoAlergiaBean" column="idTipoAlergia"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="codigoResultado"/>
+        <association property="unidadNegocioBean" column="uniNeg"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+    </resultMap>
+    <!--Estudiante-->
+    <resultMap id="estudianteResultado" type="pe.marista.sigma.bean.EstudianteBean">
+        <association property="personaBean" column="idEstudiante"
+                     javaType="pe.marista.sigma.bean.PersonaBean"
+                     resultMap="personaResultado"/>
+    </resultMap>
+
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean" >
+        <id property="uniNeg" column="uniNeg"/>
+    </resultMap>
+
+    <!--Persona-->
+    <resultMap id="personaResultado" type="pe.marista.sigma.bean.PersonaBean">
+        <id property="idPersona" column="idEstudiante"/>
+    </resultMap>
+    <resultMap id="codigoResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoAlergia"/>
+        <result property="codigo" column="codigo"/>
+    </resultMap>
+    <select id="obtenerEstAlergiaPorId" resultMap="estudianteAlergiaResultado" parameterType="pe.marista.sigma.bean.EstudianteAlergiaBean">
+        <include refid="consultaCampos" />Where estAle.idEstudianteAlergia = #{idEstudianteAlergia}
+    </select>
+    <select id="obtenerEstAlergiaPorEst" resultMap="estudianteAlergiaResultado" parameterType="String">
+        <include refid="consultaCampos" />Where estAle.idEstudiante = #{idEstudiante}
+    </select>
+    <insert id="insertarEstAlergia" parameterType="pe.marista.sigma.bean.EstudianteAlergiaBean">
+        Insert Into MX_EstudianteAlergia (uniNeg,idEstudiante,idTipoAlergia,alergia,creaPor) 
+        Values (#{unidadNegocioBean.uniNeg},#{estudianteBean.personaBean.idPersona},#{tipoAlergiaBean.idCodigo},#{alergia},#{creaPor})  
+    </insert> 
+    <update id="modificarEstAlergia" parameterType="pe.marista.sigma.bean.EstudianteAlergiaBean">
+        Update MX_EstudianteAlergia
+        Set 
+        alergia = #{alergia},
+        idTipoAlergia = #{tipoAlergiaBean.idCodigo},
+        modiPor = #{modiPor}
+        Where idEstudianteAlergia = #{idEstudianteAlergia}
+    </update>
+    <delete id="eliminarEstAlergia" parameterType="pe.marista.sigma.bean.EstudianteAlergiaBean">
+        Delete From MX_EstudianteAlergia Where idEstudianteAlergia = #{idEstudianteAlergia}
+    </delete>
+    <select id="obtenerAlergias" resultType="pe.marista.sigma.bean.reporte.EstudianteAlergiasRepBean" parameterType="map">
+        select 
+        isnull(a.alergia,'Ninguno') as alergia
+        ,isnull(aler.codigo,'-') as tipoAlergia
+        from MX_Estudiante e
+        left join MX_EstudianteAlergia a on a.idestudiante= e.idestudiante
+        left join MO_Codigo aler on aler.idcodigo= a.idtipoalergia
+        WHERE e.idestudiante=#{idEstudiante}  and e.unineg=#{uniNeg}
+    </select>
+</mapper>

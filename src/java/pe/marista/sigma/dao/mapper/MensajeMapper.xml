@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="pe.marista.sigma.dao.MensajeDAO">  
+    <sql id="consultaCampos">
+        Select
+        msj.uniNeg,
+        msj.idMensaje,
+        msj.idOwner,
+        perOwner.apepat as apepatOwner,
+        perOwner.apemat as apematOwner,
+        perOwner.nombre as nombreOwner,
+        msj.idTipoStatusMsje,
+        codStatus.codigo as codigoStatus,
+        msj.idSolicitante as idSoli,
+        perSol.apepat as apepatSol,
+        perSol.apemat as apematSol,
+        perSol.nombre as nombreSol,
+        (case WHEN msj.objeto ='MT_SolicitudCajaCh' then caj.monto
+        WHEN msj.objeto ='ML_Requerimiento' then req.importePropuesto
+        WHEN msj.objeto ='ML_FacturaCompra' then fact.montopago
+        else 0
+        end)  as montoVista, 
+        (case WHEN msj.objeto ='MT_SolicitudCajaCh' then caj.montoaprobado
+        WHEN msj.objeto ='ML_Requerimiento' then req.importePropuesto
+        WHEN msj.objeto ='ML_FacturaCompra' then fact.montopago
+        else 0
+        end)  as montoAprobadoVista,
+        (case WHEN msj.objeto ='MT_SolicitudCajaCh' 
+        then   
+        (
+        case 
+        when caj.idTipoSolicitante ='COL' then concat(UPPER(perSol.apepat),' ',UPPER(perSol.apemat),', ',UPPER(perSol.nombre))
+        when caj.idTipoSolicitante ='PER' then concat(UPPER(persSol.apepat),' ',UPPER(persSol.apemat),', ',UPPER(persSol.nombre))
+        when caj.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre)) end)
+        else 
+        (
+        concat(UPPER(perSol.apepat),' ',UPPER(perSol.apemat),', ',UPPER(perSol.nombre))
+        )
+        end)  as nombreSolicitante,
+        msj.idGestor,
+        perGestor.apepat as apepatGestor,
+        perGestor.apemat as apematGestor,
+        perGestor.nombre as nombreGestor,
+        msj.asunto,
+        msj.fecMsje,
+        msj.fecAccion,
+        msj.idTipoPrioridad,
+        codPriori.codigo as codigoPriori,
+        msj.objeto,
+        isnull(msj.nivelAutoriza,1) as nivelAutoriza,
+        msj.idObjeto,
+        (case 
+        when msj.objeto='MT_SolicitudCajaCH' then convert(varchar,msj.idObjeto) 
+        when msj.objeto='ML_Requerimiento' then (select top 1 isnull(nrosolicitud,'') from  ML_Requerimiento where idrequerimiento=msj.idObjeto and unineg=msj.unineg ) 
+        when msj.objeto='ML_FacturaCompra' then (select top 1 isnull(nroregistro,'') from ML_RegistroCompra where idregistrocompra =(select idregistrocompra from Ml_FacturaCompra where idfacturacompra=msj.idObjeto) and unineg=msj.unineg) 
+        else '0'
+        end
+        ) as idObjetoStr,
+        msj.flgAutoriza,
+        (case WHEN msj.objeto ='MT_SolicitudCajaCh' 
+        then   
+        (
+        case 
+        when caj.idtiporespcheque ='COL' then concat(UPPER(perResp.apepat),' ',UPPER(perResp.apemat),', ',UPPER(perResp.nombre))
+        when caj.idtiporespcheque ='PER' then concat(UPPER(persResp.apepat),' ',UPPER(persResp.apemat),', ',UPPER(persResp.nombre))
+        when caj.idtiporespcheque ='PRO' then  (UPPER(entResp.nombre)) end)
+        
+        when msj.objeto ='ML_Requerimiento' then '-' 
+        when msj.objeto ='ML_FacturaCompra' then  entFact.nombre
+        else ' ' 
+        end)  as nombreRespCheque 		
+        From MM_Mensaje msj   
+        left join MT_SolicitudCajaCh caj on caj.idSolicitudCajaCh=msj.idObjeto and msj.objeto='MT_SolicitudCajaCH' and caj.unineg=msj.unineg
+        left join ML_Requerimiento req on req.idrequerimiento=msj.idObjeto and msj.objeto='ML_Requerimiento' and req.unineg=msj.unineg
+        left join ML_FacturaCompra fact on fact.idfacturacompra =msj.idObjeto and msj.objeto='ML_FacturaCompra' and fact.unineg=msj.unineg
+        left join ML_RegistroCompra reg on reg.idregistrocompra=fact.idregistrocompra and fact.unineg=reg.unineg
+        left join ML_OrdenCompra ord on ord.idordencompra=fact.idordencompra and fact.unineg=ord.unineg
+        left Join MO_Entidad entFact ON  entFact.ruc= (case when fact.idregistrocompra is not null then
+        reg.ruc when fact.idordencompra is not null then ord.ruc end) and entFact.unineg=(case when fact.idregistrocompra is not null then
+        reg.unineg when fact.idordencompra is not null then ord.unineg end)
+        left Join MO_Personal perOwner ON msj.idOwner=perOwner.idPersonal and msj.unineg=perOwner.unineg
+        left Join MO_Personal perSol ON msj.idSolicitante=perSol.idPersonal and msj.unineg=perSol.unineg
+        left Join MX_Persona persSol ON convert(varchar,msj.idSolicitante)=convert(varchar,persSol.idPersona) and msj.unineg=persSol.unineg
+        left Join MO_Entidad ent ON convert(varchar,msj.idSolicitante)=ent.ruc and msj.unineg=ent.unineg
+        left Join MO_Personal perResp ON caj.idrespcheque=perResp.idPersonal and caj.unineg=perResp.unineg
+        left Join MX_Persona persResp ON convert(varchar,caj.idrespcheque)=convert(varchar,persResp.idPersona) and caj.unineg=persResp.unineg
+        left Join MO_Entidad entResp ON convert(varchar,caj.idrespcheque)=convert(varchar,entResp.ruc) and caj.unineg=entResp.unineg
+        left Join MO_Personal perGestor ON msj.idGestor=perGestor.idPersonal and msj.unineg=perGestor.unineg
+        left Join MO_Codigo codStatus ON msj.idTipoStatusMsje=codStatus.idCodigo
+        left Join MO_Codigo codPriori ON msj.idTipoPrioridad=codPriori.idCodigo 
+    </sql> 
+    <sql id="consultaCampos2" >
+        Select msj.uniNeg, msj.idMensaje,msj.idOwner, 
+        perOwner.apepat as apepatOwner, 
+        perOwner.apemat as apematOwner, 
+        perOwner.nombre as nombreOwner, 
+        msj.idTipoStatusMsje,
+        codStatus.codigo as codigoStatus, 
+        msj.idSolicitante as idSoli, 
+        perSol.apepat as apepatSol, 
+        perSol.apemat as apematSol, 
+        perSol.nombre as nombreSol, 
+        (case WHEN msj.objeto ='MT_SolicitudCajaCh' then ( case when caj.idTipoSolicitante ='COL' then concat(UPPER(perSol.apepat),' ',UPPER(perSol.apemat),', ',UPPER(perSol.nombre)) when caj.idTipoSolicitante ='PER' then concat(UPPER(persSol.apepat),' ',UPPER(persSol.apemat),', ',UPPER(persSol.nombre)) when caj.idTipoSolicitante ='PRO' then (UPPER(ent.nombre)) end) else ( concat(UPPER(perSol.apepat),' ',UPPER(perSol.apemat),', ',UPPER(perSol.nombre)) ) end) as nombreSolicitante, 
+        msj.idGestor, 
+        perGestor.apepat as apepatGestor, 
+        perGestor.apemat as apematGestor, 
+        perGestor.nombre as nombreGestor, 
+        msj.asunto, msj.fecMsje, msj.fecAccion, 
+        msj.idTipoPrioridad, 
+        codPriori.codigo as codigoPriori, 
+        msj.objeto, 
+        msj.nivelAutoriza as nivelAutoriza, 
+        (select case 
+        when objeto = 'MT_SolicitudCajaCh' and msj.nivelAutoriza is null 
+        then (select 
+        (case
+        when flgautoriza1 is not null then flgautoriza1
+        when flgautoriza2 is not null then flgautoriza2
+        when flgautoriza3 is not null then flgautoriza3
+        end) 
+        from MT_SolicitudCajaCh where unineg = 'SANJOC' and idsolicitudcajach = msj.idobjeto)
+        when objeto = 'ML_Requerimiento' and msj.nivelAutoriza is null 
+        then (select 
+        (case
+        when flgautoriza1 is not null then flgautoriza1
+        when flgautoriza2 is not null then flgautoriza2
+        when flgautoriza3 is not null then flgautoriza3
+        end)  
+        from ML_Requerimiento where unineg = 'SANJOC' and idrequerimiento = msj.idobjeto)
+        when objeto = 'ML_FacturaCompra' and msj.nivelAutoriza is null 
+        then (select 
+        (case
+        when flgautoriza1 is not null then flgautoriza1
+        when flgautoriza2 is not null then flgautoriza2
+        when flgautoriza3 is not null then flgautoriza3
+        end)  
+        from ML_FacturaCompra where unineg = 'SANJOC' and idfacturacompra = msj.idobjeto)
+        else msj.nivelAutoriza
+        end) as nivelAutoriza, 
+        msj.idObjeto,
+        (case 
+        when msj.objeto='MT_SolicitudCajaCH' then convert(varchar,msj.idObjeto) 
+        when msj.objeto='ML_Requerimiento' then (select top 1 isnull(nrosolicitud,'') from  ML_Requerimiento where idrequerimiento=msj.idObjeto and unineg=msj.unineg ) 
+        when msj.objeto='ML_FacturaCompra' then (select top 1 isnull(nroregistro,'') from ML_RegistroCompra where idregistrocompra =(select idregistrocompra from Ml_FacturaCompra where idfacturacompra=msj.idObjeto) and unineg=msj.unineg) 
+        else '0'
+        end
+        ) as idObjetoStr,
+        msj.flgAutoriza, 
+        (select count(idMensaje) from MM_Mensaje where idowner=perOwner.idPersonal and idtipostatusmsje=18801 )as mensajesRecibidos, (select count(idMensaje) from MM_Mensaje where idowner=perOwner.idPersonal and idtipostatusmsje=18802 )as mensajesAtendidos
+        ,msj.idTipoModoPago
+        ,codModo.idCodigo as idTipoModoPago
+        ,codModo.codigo as codigoModoPago
+        ,msj.rucBanco
+        ,msj.numCuenta
+        From MM_Mensaje msj 
+        left join MT_SolicitudCajaCh caj on caj.idSolicitudCajaCh=msj.idObjeto and msj.objeto='MT_SolicitudCajaCH' 
+        left Join MO_Personal perOwner ON convert(varchar,msj.idOwner)=convert(varchar,perOwner.idPersonal) and msj.unineg=perOwner.unineg 
+        left Join MO_Personal perSol ON convert(varchar,msj.idSolicitante)=convert(varchar,perSol.idPersonal) and msj.unineg=perSol.unineg 
+        left Join MX_Persona persSol ON CONVERT(varchar,msj.idSolicitante)=persSol.idPersona and msj.unineg=persSol.unineg 
+        left Join MO_Entidad ent ON convert(varchar,msj.idSolicitante)=convert(varchar,ent.ruc) and msj.unineg=ent.unineg 
+        left Join MO_Personal perGestor ON msj.idGestor=perGestor.idPersonal and msj.unineg=perGestor.unineg 
+        left Join MO_Codigo codStatus ON msj.idTipoStatusMsje=codStatus.idCodigo 
+        left Join MO_Codigo codPriori ON msj.idTipoPrioridad=codPriori.idCodigo 
+        left Join MO_Codigo codModo ON msj.idTipoModoPago=codModo.idCodigo 
+        left join MT_CuentaBanco cb on cb.numcuenta =msj.numcuenta and msj.rucbanco=cb.rucbanco and  cb.unineg=msj.unineg
+        left join MO_Entidad eb on eb.ruc=msj.rucbanco and eb.unineg=msj.unineg
+    </sql>
+    <resultMap id="mensajeResultado" type="pe.marista.sigma.bean.MensajeBean">
+        <id property="unidadNegocioBean.uniNeg" column="uniNeg"/>
+        <id property="idMensaje" column="idMensaje"/>
+        <result property="asunto" column="asunto"/>
+        <result property="mensajesAtendidos" column="mensajesAtendidos"/>
+        <result property="mensajesRecibidos" column="mensajesRecibidos"/>
+        <result property="asunto" column="asunto"/>
+        <result property="fecMsje" column="fecMsje"/>
+        <result property="fecAccion" column="fecAccion"/>
+        <result property="objeto" column="objeto"/>
+        <result property="idObjeto" column="idObjeto"/>
+        <result property="idObjetoStr" column="idObjetoStr"/>
+        <result property="nivelAutoriza" column="nivelAutoriza"/>
+        <result property="flgAutoriza" column="flgAutoriza"/>
+        <result property="creaPor" column="creaPor"/>
+        <result property="creaFecha" column="creaFecha"/>
+        <result property="modiPor" column="modiPor"/>
+        <result property="idSoli" column="idSoli"/>
+        <result property="nombreSolicitante" column="nombreSolicitante"/>
+        <result property="nombreRespCheque" column="nombreRespCheque"/>
+        <result property="montoVista" column="montoVista"/>
+        <result property="montoAprobadoVista" column="montoAprobadoVista"/>
+        <result property="flgPagado" column="flgPagado"/>
+        <result property="rucBanco" column="rucBanco"/>
+        <result property="numCuenta" column="numCuenta"/>
+        <association property="personalBean" column="idOwner"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>
+        <association property="tipoStatusMensajeBean" column="idTipoStatusMsje"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusMsjeResultado"/>
+        <!--<association property="solicitanteBean" column="idSolicitante"
+        javaType="pe.marista.sigma.bean.PersonalBean"
+        resultMap="solicitanteResultado"/>-->
+        <association property="gestorBean" column="idGestor"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="gestorResultado"/>
+        <association property="tipoPrioridad" column="idTipoPrioridad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoPrioridadResultado"/>
+        <association property="tipoModoPago" column="idTipoModoPago"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoModoPagoResultado"/>
+    </resultMap>
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idOwner"/>
+        <result property="nombre" column="nombreOwner"/>
+        <result property="apepat" column="apepatOwner"/>
+        <result property="apemat" column="apematOwner"/>
+    </resultMap>
+    <resultMap id="tipoStatusMsjeResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoStatusMsje"/>
+        <result property="codigo" column="codigoStatus"/>
+    </resultMap>
+    <!--<resultMap id="solicitanteResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idSolicitante"/>
+        <result property="nombre" column="nombreSol"/>
+        <result property="apepat" column="apepatSol"/>
+        <result property="apemat" column="apematSol"/>
+    </resultMap>-->
+    <resultMap id="gestorResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idGestor"/>
+        <result property="nombre" column="nombreGestor"/>
+        <result property="apepat" column="apepatGestor"/>
+        <result property="apemat" column="apematGestor"/>
+    </resultMap>
+    <resultMap id="tipoPrioridadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="idTipoPrioridad"/>
+        <result property="codigo" column="codigoPriori"/>
+    </resultMap>
+    <resultMap id="tipoModoPagoResultado" type="pe.marista.sigma.bean.CodigoBean">       
+        <id property="idCodigo" column="idTipoModoPago"/>
+        <result property="codigo" column="codigoModoPago"/>
+    </resultMap>
+    <select id="obtenerMensajePorOwner" parameterType="pe.marista.sigma.bean.MensajeBean" resultMap="mensajeResultado">
+        <include refid="consultaCampos" />Where msj.uniNeg = #{unidadNegocioBean.uniNeg} and msj.idOwner = #{personalBean.idPersonal}
+        order by msj.idMensaje desc
+    </select>
+    <select id="obtenerTodosLosMensajesPorPersonal" parameterType="pe.marista.sigma.bean.PersonalBean" resultMap="mensajeResultado">
+        <include refid="consultaCampos2" />Where msj.uniNeg = #{unidadNegocioBean.uniNeg} and  perSol.idPersonal= #{idPersonal}
+        order by msj.idMensaje desc
+    </select>
+    <select id="obtenerTodosLosMensajes" parameterType="pe.marista.sigma.bean.PersonalBean" resultMap="mensajeResultado">
+        declare  @unineg varchar(6) 
+        set @unineg=#{unidadNegocioBean.uniNeg}
+        select fact.idfacturacompra as idObjeto,concat(pers.apepat,' '+pers.apemat,', '+pers.nombre) as nombreSolicitante,en.nombre as nombreRespCheque,
+        fact.glosa as asunto,fact.creafecha as fecMsje,fact.montopago as montoAprobadoVista,tso.nombre as objeto,
+        sta.codigo as codigoStatus
+        from ML_FacturaCompra fact
+        LEFT join ML_RegistroCompra re on re.idregistrocompra=fact.idregistrocompra
+        LEFT join MO_Entidad en on en.ruc=re.ruc
+        LEFT join MM_Usuario us on us.usuario=fact.creapor
+        LEFT join MO_Personal pers on pers.idpersonal=us.idpersonal
+        LEFT join MM_TipoSolicitud tso on tso.idtiposolicitud=fact.idtiposolicitud
+        LEFT join MO_Codigo sta on sta.idcodigo=fact.idtipostatusfactura
+        where fact.idtipostatusfactura in(19902,19901,19903,19905,19904) and fact.unineg=@unineg
+        union all
+        select sol.idsolicitudcajach as idObjeto,concat(per.apepat,' '+per.apemat,', '+per.nombre) as nombreSolicitante,sol.nomrespcheque as nombreRespCheque,
+        sol.motivo as asunto,sol.fechasol as fecMsje ,sol.montoaprobado as montoAprobadoVista,tso.nombre as objeto,
+        sta.codigo as codigoStatus
+        from MT_SolicitudCajaCh sol
+        LEFT join MO_Personal per on per.idpersonal=sol.idpersonal
+        LEFT join MM_TipoSolicitud tso on tso.idtiposolicitud=sol.idtiposolicitud
+        LEFT join MO_Codigo sta on sta.idcodigo=sol.idtipostatussolcajach
+        where sol.idtipostatussolcajach in(18701,18703,18705,18702,18704) and sol.unineg=@unineg
+        order by fact.idfacturacompra desc 
+    </select>
+    <update id="autorizarMensajeSolCajaCh" parameterType="pe.marista.sigma.bean.MensajeBean">
+        Update ${objeto}
+        set 
+        <if test="nivelAutoriza==1"> 
+            flgAutoriza1 = #{flgAutoriza}
+            ,fecAutoriza1=getDate()
+        </if> 
+        <if test="nivelAutoriza==2"> 
+            flgAutoriza2 = #{flgAutoriza}
+            ,fecAutoriza2=getDate()
+        </if> 
+        <if test="nivelAutoriza==3"> 
+            flgAutoriza3 = #{flgAutoriza}
+            ,fecAutoriza3=getDate()
+        </if>  
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and idSolicitudCajaCh = #{idObjeto}
+    </update> 
+    <update id="autorizarMensajeRegistroCompra" parameterType="pe.marista.sigma.bean.MensajeBean">
+        Update ${objeto}
+        set 
+        <if test="nivelAutoriza==1"> 
+            flgAutoriza1 = #{flgAutoriza}
+            ,fecAutoriza1=getDate()
+        </if> 
+        <if test="nivelAutoriza==2"> 
+            flgAutoriza2 = #{flgAutoriza}
+            ,fecAutoriza2=getDate()
+        </if> 
+        <if test="nivelAutoriza==3"> 
+            flgAutoriza3 = #{flgAutoriza}
+            ,fecAutoriza3=getDate()
+        </if>  
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and idRegistroCompra = #{idObjeto}
+    </update> 
+    <update id="autorizarMensajeFacturaCompra" parameterType="pe.marista.sigma.bean.MensajeBean">
+        Update ${objeto}
+        set 
+        <if test="nivelAutoriza==1"> 
+            flgAutoriza1 = #{flgAutoriza}
+            ,fecAutoriza1=getDate()
+        </if> 
+        <if test="nivelAutoriza==2"> 
+            flgAutoriza2 = #{flgAutoriza}
+            ,fecAutoriza2=getDate()
+        </if> 
+        <if test="nivelAutoriza==3"> 
+            flgAutoriza3 = #{flgAutoriza}
+            ,fecAutoriza3=getDate()
+        </if>  
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and idFacturaCompra = #{idObjeto}
+    </update> 
+    <update id="autorizarMensajeSolLog" parameterType="pe.marista.sigma.bean.MensajeBean">
+        Update ${objeto}
+        set 
+        <if test="nivelAutoriza==1"> 
+            flgAutoriza1 = #{flgAutoriza}
+            ,fecAutoriza1=getDate()
+        </if> 
+        <if test="nivelAutoriza==2"> 
+            flgAutoriza2 = #{flgAutoriza}
+            ,fecAutoriza2=getDate()
+        </if> 
+        <if test="nivelAutoriza==3"> 
+            flgAutoriza3 = #{flgAutoriza}
+            ,fecAutoriza3=getDate()
+        </if>  
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and idRequerimiento = #{idObjeto}
+    </update> 
+    <update id="actualizarFechaAccionStatusMsje" parameterType="pe.marista.sigma.bean.MensajeBean">
+        Update MM_Mensaje 
+        set
+        flgAutoriza = #{flgAutoriza},
+        fecAccion = getDate(),
+        idTipoStatusMsje=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusMensajeBean.codigo} and idTipoCodigo=#{tipoStatusMensajeBean.tipoCodigoBean.descripcion}),
+        idTipoModoPago=#{tipoModoPago.idCodigo},
+        rucBanco=#{rucBanco},
+        numCuenta=#{numCuenta}
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and idMensaje = #{idMensaje}
+    </update>  
+    <update id="cambiarStatusMsjeAnulado" parameterType="pe.marista.sigma.bean.MensajeBean">
+        Update MM_Mensaje 
+        set 
+        fecAccion = getDate(),
+        idTipoStatusMsje=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusMensajeBean.codigo} and idTipoCodigo=#{tipoStatusMensajeBean.tipoCodigoBean.descripcion})
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and  objeto = #{objeto} and  idObjeto=#{idObjeto}
+    </update>  
+    <select id="obtenerMensajePorId" resultMap="mensajeResultado">
+        <include refid="consultaCampos" />
+        Where msj.uniNeg = #{unidadNegocioBean.uniNeg} and msj.idMensaje = #{idMensaje}   
+    </select> 
+    <select id="obtenerMensajePorIdTabla" resultMap="mensajeResultado">
+        <include refid="consultaCampos" />
+        Where msj.uniNeg = #{unidadNegocioBean.uniNeg} and msj.objeto = #{objeto} and msj.idObjeto=#{idObjeto}
+    </select> 
+    <select id="obtenerMensajePorOwnerRecibidos" parameterType="pe.marista.sigma.bean.MensajeBean" resultMap="mensajeResultado">
+        <include refid="consultaCampos" />
+        Where msj.uniNeg = #{unidadNegocioBean.uniNeg} and msj.idOwner = #{personalBean.idPersonal}
+        and codStatus.idCodigo=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusMensajeBean.codigo} and idTipoCodigo=#{tipoStatusMensajeBean.tipoCodigoBean.descripcion})
+        order by msj.idMensaje desc
+    </select>
+    <select id="obtenerMensajePorOwneAtendidos" parameterType="pe.marista.sigma.bean.MensajeBean" resultMap="mensajeResultado">
+        <include refid="consultaCampos" />
+        Where msj.uniNeg = #{unidadNegocioBean.uniNeg} and msj.idOwner = #{personalBean.idPersonal}
+        and codStatus.idCdodigo=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusMensajeBean.codigo} and idTipoCodigo=#{tipoStatusMensajeBean.tipoCodigoBean.descripcion})
+        order by msj.idMensaje desc
+    </select>
+    <select id="enviarMensajePapelera" parameterType="pe.marista.sigma.bean.MensajeBean" resultMap="mensajeResultado">
+        <include refid="consultaCampos" />
+        Where msj.uniNeg = #{unidadNegocioBean.uniNeg}
+        and msj.idOwner = #{personalBean.idPersonal} 
+        and codStatus.idCodigo=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusMensajeBean.codigo} and idTipoCodigo=#{tipoStatusMensajeBean.tipoCodigoBean.descripcion})
+        order by msj.idMensaje desc
+    </select>
+    
+    <select id="obtenerMensajePorFiltro" resultMap="mensajeResultado" parameterType="pe.marista.sigma.bean.MensajeBean">
+        <include refid="consultaCampos"/>
+        <where>
+            msj.uniNeg = #{unidadNegocioBean.uniNeg} and  msj.idOwner = #{personalBean.idPersonal} and codStatus.idCodigo=(Select idCodigo from MO_Codigo Where codigo = #{tipoStatusMensajeBean.codigo} and idTipoCodigo=#{tipoStatusMensajeBean.tipoCodigoBean.descripcion})
+            <!--<if test="solicitanteBean.apepat != null and solicitanteBean.apepat != ''">
+                and upper(perSol.apepat) like concat('%',#{solicitanteBean.apepat},'%')
+            </if>
+            <if test="solicitanteBean.apemat != null and solicitanteBean.apemat != ''">
+                and upper(perSol.apemat) like concat('%',#{solicitanteBean.apemat},'%')
+            </if>
+            <if test="solicitanteBean.nombre != null and solicitanteBean.nombre != ''">
+                and upper(perSol.nombre) like concat('%',#{solicitanteBean.nombre},'%')
+            </if>-->
+            <if test="nombreSolicitante != null and nombreSolicitante != '' ">
+                and (case when msj.objeto ='MT_SolicitudCajaCh' 
+                then
+                (
+                ( case
+                when caj.idTipoSolicitante ='COL' then concat(UPPER(perSol.apepat),' ',UPPER(perSol.apemat),'',UPPER(perSol.nombre)) 
+                when caj.idTipoSolicitante ='PER' then concat(UPPER(persSol.apepat),' ',UPPER(persSol.apemat),'',UPPER(persSol.nombre))  
+                when caj.idTipoSolicitante ='PRO' then  (UPPER(ent.nombre))  end
+                ) 
+                )
+                else  (concat(UPPER(perSol.apepat),' ',UPPER(perSol.apemat),'',UPPER(perSol.nombre))) end)  like concat('%',#{nombreSolicitante} ,'%')
+            </if>  
+            <if test="fechaInicio != null" >
+                <![CDATA[
+                and  msj.fecAccion >= #{fechaInicio}
+                ]]>
+            </if>
+            <if test="fechaFin != null" >
+                <![CDATA[
+                and  msj.fecAccion <= #{fechaFin}
+                ]]>
+            </if>
+            <if test="tipoPrioridad.idCodigo != null and tipoPrioridad.idCodigo != 0 ">
+                and codPriori.idCodigo=#{tipoPrioridad.idCodigo}
+            </if>
+            <if test="idObjeto != null and idObjeto != 0 ">
+                and msj.idObjeto=#{idObjeto}
+            </if>
+            <if test="flgAutoriza != null ">
+                and msj.flgAutoriza=#{flgAutoriza}
+            </if>
+            <if test="asunto != null and asunto != '' ">
+                and upper(msj.asunto) like concat('%',#{asunto},'%')
+            </if> 
+            <if test="flgPagado != null ">
+                and (case WHEN msj.objeto ='MT_SolicitudCajaCh' then ( case when caj.idtipostatussolcajach=(select idcodigo from MO_Codigo where idtipocodigo='tipostatussolcajach' and codigo='Pagado') then 1 else 0 end)
+                WHEN msj.objeto ='ML_FacturaCompra' then (case when fact.idtipostatusfactura=(select idcodigo from MO_Codigo where idtipocodigo='tipostatusfactura' and codigo='Pagada') then 1 else 0 end)
+                else 0
+                end) =#{flgPagado} and msj.flgautoriza=1
+            </if> 
+        </where>
+        order by msj.idMensaje desc
+    </select>
+    <select id="obtenerMensajePorFiltroTodos" resultType="String" parameterType="map">
+        declare  @unineg varchar(6) 
+        set @unineg='sector'
+        select fact.idfacturacompra as idCodigo,concat(pers.apepat,' '+pers.apemat,', '+pers.nombre) as nombreSolicitante,en.nombre as nomRespCheque,
+        fact.glosa as motivo,fact.creafecha as fechaSolicitud,fact.montopago as montoPagado,tso.nombre as nombreTipoSolicitud,
+        sta.codigo as statusSolicitud
+        from ML_FacturaCompra fact
+        inner join ML_RegistroCompra re on re.idregistrocompra=fact.idregistrocompra
+        inner join MO_Entidad en on en.ruc=re.ruc
+        inner join MM_Usuario us on us.usuario=fact.creapor
+        inner join MO_Personal pers on pers.idpersonal=us.idpersonal
+        inner join MM_TipoSolicitud tso on tso.idtiposolicitud=fact.idtiposolicitud
+        inner join MO_Codigo sta on sta.idcodigo=fact.idtipostatusfactura
+        where fact.idtipostatusfactura in(19902,19901,19905,19904) and fact.unineg=@unineg
+        union all
+        select sol.idsolicitudcajach as idCodigo,concat(per.apepat,' '+per.apemat,', '+per.nombre) as nombreSolicitante,sol.nomrespcheque as nomRespCheque,
+        sol.motivo as motivo,sol.fechasol as fechaSolicitud ,sol.montoaprobado as montoPagado,tso.nombre as nombreTipoSolicitud,
+        sta.codigo as statusSolicitud
+        from MT_SolicitudCajaCh sol
+        inner join MO_Personal per on per.idpersonal=sol.idpersonal
+        inner join MM_TipoSolicitud tso on tso.idtiposolicitud=sol.idtiposolicitud
+        inner join MO_Codigo sta on sta.idcodigo=sol.idtipostatussolcajach
+        where sol.idtipostatussolcajach in(18703,18705,18702,18704) and sol.unineg=@unineg
+        order by fact.idfacturacompra desc
+    </select>
+         
+    <delete id="eliminarMensaje" parameterType="pe.marista.sigma.bean.MensajeBean">
+        Delete From MM_Mensaje 
+        Where uniNeg = #{unidadNegocioBean.uniNeg} and objeto = #{objeto} and idObjeto=#{idObjeto}
+    </delete>  
+    
+    <select  id="llamarAlDuende" parameterType="pe.marista.sigma.bean.MensajeBean" resultType="Object">
+        <!--exec PRO_CURRIER_MARISTA -->
+        exec CURRIER_MARISTAS_NEW_2
+    </select>
+</mapper>

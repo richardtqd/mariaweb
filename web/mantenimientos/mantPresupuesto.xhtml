@@ -1,0 +1,193 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" 
+                xmlns:p="http://primefaces.org/ui" 
+                template="/plantilla/plantillaPrincipal.xhtml" 
+                xmlns:c="http://java.sun.com/jsp/jstl/core">
+    <ui:define name="content">
+        <h:body> 
+            <h:panelGrid columns="1" style="margin: 0 auto;" > 
+                <h:form rendered="false"> 
+                    <p:chart type="pie" model="#{presupuestoMB.pieModel}"  style="width:1000px;height:600px" >
+                        <p:ajax event="itemSelect" listener="#{presupuestoMB.obtenerGrafo}" process="@this" oncomplete="PF('popGrafoPresu').show()"
+                                update=":frmGrafoPresu:pnlGrafoPresu,:crA"></p:ajax>
+                    </p:chart>
+                    <h:panelGroup rendered="#{not empty presupuestoMB.pieModel}">
+                        <div align="center"> 
+                            <h:commandLink id="pdfPres2" action="#{presupuestoMB.imprimirPresupuestoCr()}" target="_blank">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                        </div>
+                        <p:tooltip for="pdfPres2" value="#{msgs.etiquetaImprimir}" />
+                    </h:panelGroup>
+                </h:form>
+                <h:form id="frmAnios" >
+                    <h:panelGrid columns="1" >
+                        <p:panel id="toggleable" header="#{msgs.etiquetaFiltro} #{msgs.etiquetaPresu}" toggleable="true" toggleSpeed="500" closeSpeed="500" widgetVar="panel" style="margin-bottom:20px;width: 1000px;">
+                            <h:panelGrid columns="4" >
+                                <p:outputLabel value="#{msgs.etiquetaSeleccionar} #{msgs.etiquetaAnio}: " />
+                                <p:selectOneMenu value="#{presupuestoMB.anio}" style="width: 250px;" >
+                                    <f:selectItem itemValue="#{null}" itemLabel="#{msgs.etiquetaSeleccionar}" />
+                                    <f:selectItems value="#{presupuestoMB.listaAnios}" var="anio" itemValue="#{anio}" itemLabel="#{anio}" />
+                                </p:selectOneMenu>
+                                <p:commandButton value="#{msgs.botonBuscar}" actionListener="#{presupuestoMB.obtenerPorAnio()}" update=":frmPie:pie,:frmAnios"
+                                                 oncomplete="if(args.openDialog){PF('popResponse').show();}"/>
+                                <p:commandButton value="#{msgs.botonLimpiar}" actionListener="#{presupuestoMB.limpiar()}" update=":frmAnios" />
+                            </h:panelGrid>
+                            <p:messages id="msg" showDetail="true" closable="true" />
+                        </p:panel>
+                    </h:panelGrid>
+                </h:form>
+                <h:form id="frmPie" > 
+                    <p:chart id="pie" type="pie" model="#{presupuestoMB.piPresModel}"  style="width:1000px;height:600px" >
+                        <p:ajax event="itemSelect" listener="#{presupuestoMB.obtenerCuentasPres}" process="@this"
+                                oncomplete="if(args.openModal){PF('popCR').show();}" update=":frmDetaPres,:popCR"></p:ajax>
+                    </p:chart>
+                    <h:panelGroup rendered="#{not empty presupuestoMB.pieModel}">
+                        <div align="center"> 
+                            <h:commandLink id="pdfPres2" action="#{presupuestoMB.imprimirPresupuestoCr()}" target="_blank">
+                                <h:graphicImage value="/resources/images/icons/pdf.png" />
+                            </h:commandLink>
+                        </div>
+                        <p:tooltip for="pdfPres2" value="#{msgs.etiquetaImprimir}" />
+                    </h:panelGroup>
+                </h:form>
+            </h:panelGrid>
+
+            <p:dialog id="popCR" header="#{presupuestoMB.nombre}" widgetVar="popCR"  modal="true" closeOnEscape="true" >     
+                <h:form id="frmDetaPres"> 
+                    <h:panelGrid>
+                        <p:dataTable value="#{presupuestoMB.listaDetACtividad}" var="deta" 
+                                     rendered="#{not empty presupuestoMB.listaDetACtividad}"
+                                     paginator="true" paginatorPosition="bottom" 
+                                     style="width: 1100px;" rows="10" id="tblPresupuestoEx"> 
+                            <f:facet name="header" >
+                                <p:outputLabel value="#{msgs.etiquetaPresupuesto}" />
+                                <p:commandLink id="cmdExcel" style="float: left;">
+                                    <h:graphicImage value="/resources/images/icons/exportarexcel.png" />
+                                    <p:dataExporter type="xls" target="tblPresupuestoEx" fileName="presupuesto" />
+                                </p:commandLink>
+                                <p:tooltip value="#{msgs.etiquetaExportar}" for="cmdExcel" />
+                            </f:facet>
+                            <p:column headerText="#{msgs.etiquetaNumCta}" filterBy="#{deta.cuenta}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{deta.cuenta}" />
+                            </p:column> 
+                            <p:column headerText="#{msgs.etiquetaNomCuenta}" filterBy="#{deta.nomCuenta}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{deta.nomCuenta}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaNumeroAct}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{deta.numActividades}" />
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaEjecutado}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{deta.ejecutado}" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPresu}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{deta.importe}" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaSaldo}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{deta.importe - deta.ejecutado}" >
+                                    <f:convertNumber  pattern="#,##0.00" locale="en_US"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPorcentajePresu}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{deta.ejecutado / deta.importe} %" >
+                                    <f:convertNumber  pattern="0.00" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="#{msgs.etiquetaPorcentajeSaldo}" filterMatchMode="contains" width="1%" styleClass="siseFontTable3 centrado-texto" >
+                                <h:outputText value="#{(deta.importe - deta.ejecutado) / deta.importe} %" >
+                                    <f:convertNumber  pattern="0.00" />
+                                </h:outputText>
+                            </p:column>
+                            <p:columnGroup type="footer">
+                                <p:row>
+                                    <p:column colspan="4" style="text-align:right" footerText="Total:" />
+                                    <p:column footerText="#{presupuestoMB.totalPres} soles" />
+                                    <p:column footerText="#{presupuestoMB.totalExec} soles" />
+                                    <p:column footerText="#{presupuestoMB.totalSald} soles" />
+                                </p:row>
+                            </p:columnGroup>
+                        </p:dataTable>  
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog>
+
+
+            <p:dialog id="crA" header="#{presupuestoMB.crA.centroResponsabilidadBean.nombre}" widgetVar="popGrafoPresu" modal="true" closeOnEscape="true" >
+                <h:form id="frmGrafoPresu" > 
+                    <h:panelGrid id="pnlGrafoPresu"> 
+                        <p:panelGrid columns="2" style="margin: 0 auto;" >
+                            <f:facet name="header">
+                                <p:outputLabel value="Presupuesto Asignado" style="font-size: 11px;" />
+                                <!--h:graphicImage value="/resources/images/icons/presupuesto.jpg" /-->
+                            </f:facet>
+                            <h:outputText value="#{msgs.etiquetaCentResAb}" />
+                            <h:outputText  value="#{presupuestoMB.cr} - #{presupuestoMB.crNombre}"/>
+                            <h:outputText  value="#{msgs.etiquetaPlanContable}" />
+                            <h:outputText  value="#{presupuestoMB.crA.planContableBean.cuenta}"/>
+                            <h:outputText value="#{msgs.etiquetaImporte}" />
+                            <h:outputText  value="#{presupuestoMB.crA.importe}">
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                            <h:outputText value="Ejecutado" />
+                            <h:outputText  value="#{presupuestoMB.crA.exec}">
+                                <f:convertNumber type="number" groupingUsed="true" minFractionDigits="2" pattern="#0.00"/>
+                            </h:outputText>
+                        </p:panelGrid>
+                    </h:panelGrid>
+                </h:form>
+            </p:dialog> 
+
+
+            <h:form id="frmElimina">
+                <p:dialog header="#{msgs.appTitulo}" showEffect="fade" hideEffect="explode" widgetVar="popEliminar" resizable="false" modal="true">
+                    <h:panelGrid columns="2">
+                        <h:graphicImage value="/resources/images/icons/iconoPregunta.png"/>
+                        <h:panelGrid columns="1" id="pnlDatosElimina">
+                            <h:outputText value="#{msgs.panelEliminacionFisica}"/>
+                            <h:outputLabel value="Presupuesto : #{planOperativoMB.presupuestoBean.nombrePresupuesto}"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                    <h:panelGrid columns="2" class="centrado">
+                        <p:commandButton value="#{msgs.etiquetaSi}"  
+                                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check" 
+                                         oncomplete="if(args.operacionCorrecta){PF('popEliminar').hide();PF('popDone').show();}"/>
+                        <p:commandButton value="#{msgs.etiquetaNo}" styleClass="ui-confirmdialog-no" 
+                                         icon="ui-icon-close" oncomplete="PF('popEliminar').hide();"/>
+                    </h:panelGrid>
+                </p:dialog>
+            </h:form>
+
+            <p:dialog id="popResponse" widgetVar="popResponse" width="400" height="150" showEffect="fade" hideEffect="explode"
+                      modal="true" >
+                <h:form>
+                    <h:graphicImage value="/resources/images/icons/warning.png" />
+                    <h:outputText value="#{msgs.notificacionPresupuesto}" style="text-align: right;"/>
+                    <br/><br/>
+                    <div align="center">
+                        <p:commandButton oncomplete="PF('popResponse').hide();" 
+                                         value="#{msgs.botonCerrar}" >
+                        </p:commandButton>
+                    </div>
+                </h:form>
+            </p:dialog>
+            <script type="text/javascript">
+                function pieExtender() {
+                    this.cfg.highlighter = {
+                        show: true,
+                        tooltipLocation: 'n',
+                        useAxesFormatters: false,
+                        formatString: '%s = %d'
+                    };
+                }
+            </script>
+        </h:body>
+    </ui:define>
+</ui:composition>

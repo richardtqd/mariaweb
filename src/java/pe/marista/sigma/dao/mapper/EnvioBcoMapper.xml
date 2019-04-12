@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.EnvioBcoDAO">
+    
+    <resultMap id="envioBcoResultado" type="pe.marista.sigma.bean.EnvioBcoBean">
+        <id property="uniNeg" column="uniNeg" /> 
+        <id property="idEnvioBco" column="idEnvioBco" /> 
+        <id property="idEnvioBcoSec" column="idEnvioBcoSec" /> 
+        <result property="concatenado" column="concatenado" /> 
+        <result property="usuario" column="usuario" /> 
+        <result property="data1" column="data1" /> 
+        <result property="data2" column="data2" /> 
+        <result property="data3" column="data3" /> 
+        <result property="data4" column="data4" /> 
+        <result property="data5" column="data5" /> 
+        <result property="data6" column="data6" /> 
+        <result property="data7" column="data7" /> 
+        <result property="data8" column="data8" /> 
+        <result property="data9" column="data9" /> 
+        
+        <result property="data10" column="data10" />  
+        <result property="data11" column="data11" /> 
+        <result property="data12" column="data12" /> 
+        <result property="data13" column="data13" /> 
+        <result property="data14" column="data14" /> 
+        <result property="data15" column="data15" /> 
+        <result property="data16" column="data16" /> 
+        <result property="data17" column="data17" /> 
+        <result property="data18" column="data18" /> 
+        <result property="data19" column="data19" /> 
+        <result property="data20" column="data20" />  
+        
+        <result property="data21" column="data21" /> 
+        <result property="data22" column="data22" /> 
+        <result property="data23" column="data23" /> 
+        <result property="data24" column="data24" /> 
+        <result property="data25" column="data25" /> 
+        <result property="data26" column="data26" /> 
+        <result property="data27" column="data27" /> 
+        <result property="data28" column="data28" /> 
+        <result property="data29" column="data29" /> 
+        <result property="data30" column="data30" />  
+        
+        <result property="data31" column="data31" /> 
+        <result property="data32" column="data32" /> 
+        <result property="data33" column="data33" /> 
+        <result property="data34" column="data34" /> 
+        <result property="data35" column="data35" /> 
+        <result property="data36" column="data36" /> 
+        <result property="data37" column="data37" /> 
+        <result property="data38" column="data38" /> 
+        <result property="data39" column="data39" /> 
+        <result property="data40" column="data40" /> 
+         
+        <result property="data41" column="data41" /> 
+        <result property="data42" column="data42" /> 
+        <result property="data43" column="data43" /> 
+        <result property="data44" column="data44" /> 
+        <result property="data45" column="data45" /> 
+        <result property="data46" column="data46" /> 
+        <result property="data47" column="data47" /> 
+        <result property="data48" column="data48" /> 
+        <result property="data49" column="data49" /> 
+        <result property="data50" column="data50" />  
+    </resultMap>
+     
+    <select id="obtenerListaEnvioBcoPorId" resultMap="envioBcoResultado" resultType="map"> 
+        declare @D varchar(1)='D'
+        DECLARE @unineg varchar(6)
+        set @unineg= #{uniNeg}
+        
+        Declare @idprocesobanco int
+        set @idprocesobanco=(select TOP 1 idfile from MT_ProcesoFile where idfilepadre=0 and unineg=@unineg)   
+        
+        declare @idProcesoBancoIns int
+        set @idProcesoBancoIns= #{idProcesoBancoIns}
+        
+        DECLARE @cantregistro int
+        set @cantregistro=(select COUNT(*) from MT_ProcesoFile where idfilepadre=@idprocesobanco and  flgproceso=2 and idtipofile=20002 and idtipofile =  20002 and unineg=@unineg and estado=1)
+         
+        DECLARE @contador int   					 
+        DECLARE @TEXT VARCHAR(MAX) ='' 
+        SET @contador = 1
+					 
+        WHILE (@contador  <![CDATA[ <=  ]]>@cantregistro)
+        BEGIN 
+         
+        DECLARE @VARIABLE VARCHAR (MAX)=''	
+        SET @VARIABLE=REPLACE((SELECT nombre FROM MT_ProcesoFile WHERE idfilepadre=@idprocesobanco  AND unineg=@unineg AND flgproceso=2 and idtipofile=20002  AND posicionitem=@contador and estado=1),' ','')
+         
+        SET @TEXT =@TEXT+','+  @VARIABLE + ' as data'+convert(varchar,@contador)
+		
+        SET @contador = @contador + 1  
+         
+        END 
+        declare @idProcesoBancoInsStr varchar(7)=@idProcesoBancoIns				 
+        SET @TEXT=(SUBSTRING(@TEXT,2,LEN(@TEXT))) 					 
+        
+        SET @TEXT='select  '+dbo.RemoverTildes(@TEXT)+',concatenado,idctasxcobrar'+' from MT_DetEnvio where unineg='''+@unineg  +'''and idprocesobanco='''+@idProcesoBancoInsStr +'''  and tipoReg='''+@D +''' ORDER BY ID DESC' 					 
+        execute (@TEXT)      
+    </select>  
+    <select id="obtenerCantRegPorId"  resultType="Integer" parameterType="map" >  
+        select  count(*) as cantidad from MT_DetEnvio where unineg=#{uniNeg} and idprocesobanco=#{idProcesoBancoIns} and tipoReg='D'
+    </select>  
+    <select id="obtenerCabeceraRegPorId"  resultType="String" parameterType="map" >  
+        select concatenado  from MT_DetEnvio where unineg=#{uniNeg} and idprocesobanco=#{idProcesoBancoIns} and tipoReg='C'
+    </select>  
+    <select id="obtenerListaIntermedioRegPorId"  resultMap="envioBcoResultado" parameterType="map" >  
+        select concatenado  from MT_DetEnvio where unineg=#{uniNeg} and idprocesobanco=#{idProcesoBancoIns} and tipoReg='I' 
+        ORDER BY ID DESC
+    </select>  
+    <select id="obtenerNombreFilePorFormula"  resultType="String" parameterType="map" >  
+        DECLARE @ResultString NVARCHAR(MAX)
+        DECLARE @Qry NVARCHAR(MAX) 
+        DECLARE @FECHA DATE
+        SET @FECHA=getdate()
+        DECLARE @FORMULA VARCHAR(MAX) , @FORMULAFILE VARCHAR(MAX)
+        
+        SET @FORMULAFILE=(select formula from MT_ProcesoFile  where idfilepadre=0 and unineg=#{uniNeg})
+        SET @FORMULA= REPLACE(@FORMULAFILE,'@@FECHA',@FECHA)
+
+        SET @Qry='SELECT  @Result='+@FORMULA
+        EXECUTE sp_executesql @Qry, N'@Result NVARCHAR(MAX) OUTPUT', @Result=@ResultString OUTPUT
+        SELECT @ResultString
+    </select>  
+     
+    <select id="CURSOR_insertarLogEnvioBco" resultMap="envioBcoResultado" resultType="Object" parameterType="map" >      
+        declare @unineg varchar(6)= #{uniNeg}
+        DECLARE @Id int  
+        DECLARE cCta CURSOR FOR
+        <!-- lista-->
+        SELECT  c.idctasxcobrar 
+        FROM MT_CtasxCobrar c
+        inner join mt_DocIngreso d on d.iddocingreso=c.iddocingreso and c.unineg=d.unineg
+        where c.iddocingreso is not null  and c.unineg=@uniNeg  <!--lugar: colegio-->
+        and c.idTipoStatusCtaCte=#{tipoStatusCtaCte.idTipoStatusCtaCte}
+        <if test="fechaIni!=null and fechaFin!=null"> 
+            and d.idtipolugarpago=19301
+            and c.fechapago is not null
+            <!--and c.idTipoStatusCtaCte=19404-->
+            and convert(date,c.fechapago) <![CDATA[ >= ]]>  convert(date,#{fechaIni})
+            and convert(date,c.fechapago) <![CDATA[ <= ]]>  convert(date,#{fechaFin})
+        </if>  
+        <!--
+        <if test="idTipoStatusCtaCte != null and idTipoStatusCtaCte==19401">            
+            and c.idTipoStatusCtaCte=19401
+        </if> 
+        -->
+        <if test="listMeses != null " >
+            and c.mes in
+            <foreach item="item" index="index" collection="listMeses" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="listAnios != null " >
+            and c.anio in
+            <foreach item="item" index="index" collection="listAnios" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if> 
+        order by 1 desc
+        
+        OPEN cCta 
+        FETCH cCta INTO    @id 
+        declare @idprocesobancoins varchar(9)	
+        set @idprocesobancoins = #{idProcesoBancoIns}
+        
+        Declare @idprocesobanco int
+        
+        set @idprocesobanco=(select TOP 1 idfile from MT_ProcesoFile where idfilepadre=0 and unineg=@unineg)
+         
+        DECLARE @cantregistro int
+        set @cantregistro=(select COUNT(*) from MT_ProcesoFile where idfilepadre=@idprocesobanco and  flgproceso=2 and idtipofile=20002 and estado=1 and unineg=@unineg)
+        WHILE (@@FETCH_STATUS = 0 )
+        BEGIN
+        PRINT @id 
+ 
+        DECLARE @contador int 
+        DECLARE @idctasxcobrar int
+				   
+        set @idctasxcobrar=@id 					
+
+        DECLARE @FILA NVARCHAR(MAX) =''
+        DECLARE @TEXT VARCHAR(MAX)
+        DECLARE @CABECERA VARCHAR(MAX)
+        DECLARE @CABVARIABLE VARCHAR (MAX) =''
+        SET @contador = 1
+        DECLARE @CONCATENADO VARCHAR (MAX)=''
+        WHILE (@contador  <![CDATA[ <= ]]> @cantregistro)
+        BEGIN 
+						 
+        DECLARE @FILAIT VARCHAR (MAX)=''
+        DECLARE @FORMULA VARCHAR (MAX)
+        DECLARE @CONSTANTE VARCHAR (MAX)
+		
+        DECLARE @VARIABLE VARCHAR (MAX)=''		
+ 	
+        SET @CONSTANTE=(SELECT constante FROM MT_ProcesoFile WHERE idfilepadre=@idprocesobanco AND unineg=@unineg AND flgproceso=2 and idtipofile=20002   AND posicionitem=@contador and estado=1)
+        SET @FORMULA=(SELECT formula FROM MT_ProcesoFile WHERE idfilepadre=@idprocesobanco AND unineg=@unineg AND flgproceso=2 and idtipofile=20002  AND posicionitem=@contador and estado=1)
+        SET @VARIABLE=REPLACE((SELECT nombre FROM MT_ProcesoFile WHERE idfilepadre=@idprocesobanco AND unineg=@unineg AND flgproceso=2 and idtipofile=20002  AND posicionitem=@contador and estado=1),' ','')
+						
+        SET @CABVARIABLE =@CABVARIABLE+','+  @VARIABLE
+        		 
+        IF(@CONSTANTE='Ninguna')
+        BEGIN 
+        declare @@id int
+        declare @@unineg VARCHAR(6)
+        set @@id=@idctasxcobrar
+        set @@unineg=@unineg
+        DECLARE @ResultString NVARCHAR(MAX)
+        DECLARE @Qry NVARCHAR(MAX)  
+        SET @Qry='SELECT top 1 @Result='+REPLACE((replace(@FORMULA,'@idctasxcobrar',@@id)),'@unineg',@@unineg)
+							 
+        EXECUTE sp_executesql @Qry, N'@Result NVARCHAR(MAX) OUTPUT', @Result=@ResultString OUTPUT
+        set @FILAIT= @ResultString  
+        END
+					 
+        <!--IF(@CONSTANTE!='Ninguna')
+        BEGIN  
+        set @FILAIT= @CONSTANTE   
+        END-->
+         
+        IF(@CONSTANTE!='Ninguna')
+        BEGIN								
+        IF(@CONSTANTE!='@valor')
+        BEGIN  
+        set @FILAIT= @CONSTANTE   
+        END
+
+        IF(@CONSTANTE='@valor')
+        BEGIN  
+        set @FILAIT= #{tipoStatusCtaCte.valor}   
+        END								 							
+        END
+		
+        SET @contador = @contador + 1
+        SET @FILA = @FILA+','+''''+ @FILAIT+''''
+					 
+        SET @CONCATENADO=@CONCATENADO+@FILAIT
+						
+        SET @VARIABLE = @VARIABLE+','+''''+ @VARIABLE+''''  
+						 
+        END
+	
+        SET @FILA=(SUBSTRING(@FILA,2,LEN(@FILA))) 
+        SET @CABVARIABLE=(SUBSTRING(@CABVARIABLE,2,LEN(@CABVARIABLE))) 
+					 
+        SET @CABECERA='INSERT INTO MT_DetEnvio ('+dbo.RemoverTildes(@CABVARIABLE)+',concatenado,unineg,tipoReg,idprocesobanco,idctasxcobrar'+')' 	
+        
+        SET @TEXT='VALUES ('+@FILA+','+''''+@concatenado+''''+','+''''+@unineg+''''+','+''''+'D'+''''+','+''''+@idprocesobancoins+''''+','+''''+convert(varchar,@id)+''''+')'
+				 
+        execute (@CABECERA +' '+@TEXT)
+	 
+        FETCH cCta INTO    @id 
+        END  
+        CLOSE cCta
+ 
+        DEALLOCATE cCta
+    </select>  
+    <select id="CURSOR_insertarLogEnvioBcoCabecera" resultMap="envioBcoResultado" resultType="Object" parameterType="map" >              
+        DECLARE @Id int   
+        DECLARE cCta CURSOR FOR
+        
+        SELECT  top 1 idprocesobanco FROM MT_ProcesoBanco WHERE unineg=#{uniNeg} and idprocesobanco=#{idProcesoBancoIns} order by 1 desc
+ 
+        OPEN cCta 
+        FETCH cCta INTO    @id 
+        declare @idprocesobancoins varchar(6)	 
+        set @idprocesobancoins = #{idProcesoBancoIns}
+
+        Declare @idprocesobanco int
+        set @idprocesobanco=(select TOP 1 idfile from MT_ProcesoFile where idfilepadre=0 and unineg=#{uniNeg})
+        DECLARE @unineg varchar(6)
+        set @unineg=#{uniNeg}
+        DECLARE @cantregistro int
+        set @cantregistro=(select COUNT(*) from MT_ProcesoFile where idfilepadre=@idprocesobanco and  flgproceso=2 and idtipofile=20001 and estado=1 and unineg=@unineg)
+        WHILE (@@FETCH_STATUS = 0 )
+        BEGIN
+        PRINT @id  
+        DECLARE @contador int 
+				   				
+        DECLARE @FILA NVARCHAR(MAX) =''
+        DECLARE @TEXT VARCHAR(MAX)
+        DECLARE @CABECERA VARCHAR(MAX)
+        DECLARE @CABVARIABLE VARCHAR (MAX) =''
+        SET @contador = 1
+        DECLARE @CONCATENADO VARCHAR (MAX)=''
+        WHILE (@contador <![CDATA[ <= ]]> @cantregistro)
+        BEGIN 
+         
+        DECLARE @FILAIT VARCHAR (MAX)=''
+        DECLARE @FORMULA VARCHAR (MAX)
+        DECLARE @CONSTANTE VARCHAR (MAX)
+		
+        DECLARE @VARIABLE VARCHAR (MAX)=''		
+ 	
+
+        SET @CONSTANTE=(SELECT constante FROM MT_ProcesoFile WHERE idfilepadre=@idprocesobanco AND unineg=@unineg AND flgproceso=2 and idtipofile=20001   AND posicionitem=@contador  and estado=1)
+        SET @FORMULA=(SELECT formula FROM MT_ProcesoFile WHERE idfilepadre=@idprocesobanco AND unineg=@unineg AND flgproceso=2 and idtipofile=20001  AND posicionitem=@contador  and estado=1)
+        SET @VARIABLE=REPLACE((SELECT nombre FROM MT_ProcesoFile WHERE idfilepadre=@idprocesobanco AND unineg=@unineg AND flgproceso=2 and idtipofile=20001  AND posicionitem=@contador  and estado=1),' ','')
+					 
+        SET @CABVARIABLE =@CABVARIABLE+','+  @VARIABLE 
+		 
+        IF(@CONSTANTE='Ninguna')
+        BEGIN 
+        declare @@id int
+        declare @@unineg VARCHAR(6)
+        set @@id=@id
+        set @@unineg=@unineg
+        DECLARE @ResultString NVARCHAR(MAX)
+        DECLARE @Qry NVARCHAR(MAX)  
+        SET @Qry='SELECT top 1 @Result='+REPLACE((replace(@FORMULA,'@idprocesobanco',@@id)),'@unineg',@@unineg)
+        PRINT replace(@Qry,'@idctasxcobrar',@@id)
+        
+        EXECUTE sp_executesql @Qry, N'@Result NVARCHAR(MAX) OUTPUT', @Result=@ResultString OUTPUT
+        set @FILAIT= @ResultString  
+        END
+         
+        IF(@CONSTANTE!='Ninguna')
+        BEGIN
+																
+        IF(@CONSTANTE!='@valor')
+        PRINT @CONSTANTE
+        BEGIN  
+        set @FILAIT= @CONSTANTE
+        END							
+								
+        IF(@CONSTANTE='@valor')
+        BEGIN  
+        set @FILAIT= #{tipoStatusCtaCte.valorCab}   
+        END	 								 							
+        END
+						
+        SET @contador = @contador + 1
+        SET @FILA = @FILA+','+''''+ @FILAIT+'''' 
+        SET @CONCATENADO=@CONCATENADO+@FILAIT
+						
+        SET @VARIABLE = @VARIABLE+','+''''+ @VARIABLE+''''   
+        END  
+
+        SET @FILA=(SUBSTRING(@FILA,2,LEN(@FILA))) 
+        SET @CABVARIABLE=(SUBSTRING(@CABVARIABLE,2,LEN(@CABVARIABLE)))				  
+
+        SET @CABECERA='INSERT INTO MT_DetEnvio (concatenado,unineg,tipoReg,idprocesobanco)' 	
+        SET @TEXT='VALUES ('+''''+@concatenado+''''+','+''''+@unineg+''''+','+''''+'C'+''''+','+''''+@idprocesobancoins+''''+')'
+				 
+        execute (@CABECERA +' '+@TEXT) 
+        FETCH cCta INTO    @id 
+        END  
+        CLOSE cCta
+ 
+        DEALLOCATE cCta
+    </select>  
+    <select id="CURSOR_insertarLogEnvioBcoIntermedio" resultMap="envioBcoResultado" resultType="Object" parameterType="map" >              
+        DECLARE @Id int  
+ 
+        DECLARE cCta CURSOR FOR
+
+        select convert(varchar(4),anio)+replicate('0',2-len(mes))+convert(varchar(2),mes) from MT_CronogramaPago
+        where 
+        <if test="listMeses != null " >
+               mes in
+            <foreach item="item" index="index" collection="listMeses" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="listAnios != null " >
+            and  anio in
+            <foreach item="item" index="index" collection="listAnios" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if> 
+        order by anio desc ,mes desc
+ 
+        OPEN cCta
+ 
+        FETCH cCta INTO    @id 
+        declare @idprocesobancoins varchar(6)	 
+        
+        set @idprocesobancoins = #{idProcesoBancoIns}
+        DECLARE @unineg varchar(6)
+        set @unineg='BARINA'
+        Declare @idfilepadre int
+        set @idfilepadre=(select TOP 1 idfile from MT_ProcesoFile where idfilepadre=0 and unineg=@unineg)
+  
+        DECLARE @cantregistro int
+        set @cantregistro=(select COUNT(*) from MT_ProcesoFile where idfilepadre=@idfilepadre and  flgproceso=2 and idtipofile=20003 and estado=1 and unineg=@unineg)
+        WHILE (@@FETCH_STATUS = 0 )
+        BEGIN
+        PRINT @id  
+        
+        DECLARE @contador int 
+				   				
+        DECLARE @FILA NVARCHAR(MAX) =''
+        DECLARE @TEXT VARCHAR(MAX)
+        DECLARE @CABECERA VARCHAR(MAX)
+        DECLARE @CABVARIABLE VARCHAR (MAX) =''
+        SET @contador = 1
+        DECLARE @CONCATENADO VARCHAR (MAX)=''
+        WHILE (@contador <![CDATA[ <=  ]]> @cantregistro)
+        BEGIN  
+        
+        DECLARE @FILAIT VARCHAR (MAX)=''
+        DECLARE @FORMULA VARCHAR (MAX)
+        DECLARE @CONSTANTE VARCHAR (MAX)
+		
+        DECLARE @VARIABLE VARCHAR (MAX)=''		
+ 	
+
+        SET @CONSTANTE=(SELECT constante FROM MT_ProcesoFile WHERE idfilepadre=@idfilepadre AND unineg=@unineg AND flgproceso=2 and idtipofile=20003   AND posicionitem=@contador  and estado=1)
+        SET @FORMULA=(SELECT formula FROM MT_ProcesoFile WHERE idfilepadre=@idfilepadre AND unineg=@unineg AND flgproceso=2 and idtipofile=20003  AND posicionitem=@contador  and estado=1)
+        SET @VARIABLE=REPLACE((SELECT nombre FROM MT_ProcesoFile WHERE idfilepadre=@idfilepadre AND unineg=@unineg AND flgproceso=2 and idtipofile=20003  AND posicionitem=@contador  and estado=1),' ','')
+         
+        SET @CABVARIABLE =@CABVARIABLE+','+  @VARIABLE 
+		 
+        IF(@CONSTANTE='Ninguna')
+        BEGIN 
+        declare @@id int
+        declare @@unineg VARCHAR(6)
+        set @@id=@id
+        set @@unineg=@unineg
+
+        declare @@mes varchar(2),@@anio varchar(4)
+						 
+        set @@anio=substring(convert(varchar,@id),0,5)
+        set @@mes=substring(convert(varchar,@id ),5,6) 
+
+        DECLARE @ResultString NVARCHAR(MAX)
+        DECLARE @Qry NVARCHAR(MAX)  
+        SET @Qry='SELECT top 1 @Result='+REPLACE(replace((replace(@FORMULA,'@anio',@@anio)),'@mes',@@mes),'@unineg',@@unineg)
+      
+        EXECUTE sp_executesql @Qry, N'@Result NVARCHAR(MAX) OUTPUT', @Result=@ResultString OUTPUT
+        set @FILAIT= @ResultString  
+        END 
+
+        IF(@CONSTANTE!='Ninguna')
+        BEGIN
+																
+        IF(@CONSTANTE!='@valor')
+        PRINT @CONSTANTE
+        BEGIN  
+        set @FILAIT= @CONSTANTE
+        END							
+								
+        IF(@CONSTANTE='@valor')
+        BEGIN  
+        set @FILAIT= ' '
+        END	 								 							
+        END
+						
+        SET @contador = @contador + 1
+        SET @FILA = @FILA+','+''''+ @FILAIT+'''' 
+        SET @CONCATENADO=@CONCATENADO+@FILAIT
+						
+        SET @VARIABLE = @VARIABLE+','+''''+ @VARIABLE+''''  
+          
+        END  
+
+        SET @FILA=(SUBSTRING(@FILA,2,LEN(@FILA))) 
+        SET @CABVARIABLE=(SUBSTRING(@CABVARIABLE,2,LEN(@CABVARIABLE))) 
+
+        SET @CABECERA='INSERT INTO MT_DetEnvio (concatenado,unineg,tipoReg,idprocesobanco)' 	
+        SET @TEXT='VALUES ('+''''+@concatenado+''''+','+''''+@unineg+''''+','+''''+'I'+''''+','+''''+@idprocesobancoins+''''+')'
+         
+        execute (@CABECERA +' '+@TEXT)
+         
+        FETCH cCta INTO    @id 
+        END 
+        
+        CLOSE cCta 
+        
+        DEALLOCATE cCta
+    </select>  
+    <select id="countCURSOR_insertarLogEnvioBco" resultType="Integer" parameterType="map" >      
+        declare @unineg varchar(6)= #{uniNeg}
+         
+        SELECT  count(c.idctasxcobrar)
+        FROM MT_CtasxCobrar c
+        inner join mt_DocIngreso d on d.iddocingreso=c.iddocingreso and c.unineg=d.unineg
+        where c.iddocingreso is not null  and c.unineg=@uniNeg  
+        and c.idTipoStatusCtaCte=#{idTipoStatusCtaCte}
+        <if test="fechaIni!=null and fechaFin!=null"> 
+            and d.idtipolugarpago=19301
+            and c.fechapago is not null 
+            and convert(date,c.fechapago) <![CDATA[ >= ]]>  convert(date,#{fechaIni})
+            and convert(date,c.fechapago) <![CDATA[ <= ]]>  convert(date,#{fechaFin})
+        </if>   
+        <if test="listMeses != null " >
+            and c.mes in
+            <foreach item="item" index="index" collection="listMeses" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="listAnios != null " >
+            and c.anio in
+            <foreach item="item" index="index" collection="listAnios" 
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>          
+    </select>  
+     
+</mapper>

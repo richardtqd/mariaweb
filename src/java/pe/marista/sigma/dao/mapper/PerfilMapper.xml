@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PerfilDAO">
+    <sql id="consultaCampos">
+        SELECT 
+        idPerfil,
+        nombre,
+        status,
+        creaPor,
+        creaFecha
+        FROM MM_PERFIL 
+    </sql>
+    <select id="obtenerTodos" resultType="pe.marista.sigma.bean.PerfilBean">
+        <include refid="consultaCampos" />
+    </select>
+    <select id="obtenerPorId" resultType="pe.marista.sigma.bean.PerfilBean">
+        <include refid="consultaCampos" />Where idPerfil = #{idPerfil}
+    </select>
+    <select id="obtenerPerfilPorNombre" resultType="pe.marista.sigma.bean.PerfilBean"  parameterType="pe.marista.sigma.bean.PerfilBean">
+        <include refid="consultaCampos" />Where nombre = #{nombre}
+    </select>
+    <insert id="insertar" parameterType="pe.marista.sigma.bean.PerfilBean"
+            useGeneratedKeys="true" keyProperty="idPerfil" keyColumn="idPerfil">
+        INSERT INTO MM_PERFIL(nombre,status,creaPor,creaFecha)
+        Values (#{nombre},#{status},#{creaPor},getDate())
+    </insert> 
+    <update id="actualizar" parameterType="pe.marista.sigma.bean.PerfilBean">
+        UPDATE MM_PERFIL
+        SET nombre = #{nombre},
+        modiPor = #{modiPor}
+        Where idPerfil = #{idPerfil} 
+    </update>
+    <update id="cambiarEstado" parameterType="pe.marista.sigma.bean.PerfilBean">
+        UPDATE MM_PERFIL
+        SET status = #{status}
+        Where idPerfil = #{idPerfil} 
+    </update>
+    <delete id="eliminar" parameterType="pe.marista.sigma.bean.PerfilBean">
+        DELETE FROM MM_PERFIL WHERE idPerfil=#{idPerfil}
+    </delete> 
+    <select id="obtenerFiltro" resultType="pe.marista.sigma.bean.PerfilBean" parameterType="pe.marista.sigma.bean.PerfilBean">
+        <include refid="consultaCampos" />
+        <where>
+            <if test="nombre != null and nombre != ''">
+                upper(nombre) like CONCAT('%',#{nombre},'%')
+            </if>    
+        </where>
+    </select>
+    <!--Perfil Modulo-->
+    <select id="obtenerTodosPerfilModulo" resultType="pe.marista.sigma.bean.PerfilModuloBean">
+        Select  
+        idPerfil,
+        idModulo
+        From MM_PERFILMODULO 
+    </select>
+    <select id="obtenerPorPerfil" parameterType="pe.marista.sigma.bean.PerfilModuloBean" resultType="pe.marista.sigma.bean.PerfilModuloBean">
+        Select  
+            pm.idModulo,
+            pm.idPerfil,
+            modu.nodo,
+            modu.url,
+            modu.idTipoNodo,
+            modu.idModuloPadre,
+            pm.status
+        From MM_PerfilModulo pm
+        Inner Join MM_Modulo modu ON modu.idModulo=pm.idModulo
+        Where pm.idPerfil = #{idPerfil} and modu.idTipoNodo=89
+       order by modu.idmodulopadre,modu.posicion
+    </select>
+    <select id="obtenerModuloPorPerfil" parameterType="Integer" resultType="pe.marista.sigma.bean.ModuloBean">
+        Select  
+            pm.idModulo,
+            modu.nodo,
+            modu.url,
+            modu.idTipoNodo,
+            modu.idModuloPadre
+        From MM_PerfilModulo pm
+        Inner Join MM_Modulo modu ON modu.idModulo=pm.idModulo
+        Where pm.idPerfil = #{idPerfil} and modu.idTipoNodo=89
+        order by modu.idmodulopadre,modu.posicion
+    </select>
+    <select id="obtenerModulo"  resultType="pe.marista.sigma.bean.PerfilModuloBean">
+        Select  
+            pm.idModulo,
+            pm.idPerfil,
+            modu.nodo,
+            modu.url,
+            modu.idTipoNodo,
+            modu.idModuloPadre
+        From MM_PerfilModulo pm
+        Inner Join MM_Modulo modu ON modu.idModulo=pm.idModulo
+        Where modu.idTipoNodo=89
+       order by pm.idPerfil,modu.idmodulopadre,modu.posicion
+    </select>
+    <select id="obtenerPorPerfil2" parameterType="pe.marista.sigma.bean.PerfilModuloBean" resultType="pe.marista.sigma.bean.PerfilModuloBean">
+        Select  
+            pm.idModulo,
+            pm.idPerfil,
+            modu.nodo,
+            modu.url,
+            modu.idTipoNodo,
+            modu.idModuloPadre,
+            pm.status
+        From MM_PerfilModulo pm
+        Inner Join MM_Modulo modu ON modu.idModulo=pm.idModulo
+        Where pm.idPerfil = #{idPerfil} and modu.idTipoNodo=89
+       order by modu.idmodulopadre,modu.posicion
+    </select>
+    <resultMap id="perfilModuloResultado" type="pe.marista.sigma.bean.PerfilModuloBean">
+        <result property="status" column="status" />
+        <association property="moduloBean" column="idModulo" 
+                      javaType="pe.marista.sigma.bean.ModuloBean" 
+                      resultMap="moduloResultado"/>
+        <association property="perfilBean" column="idPerfil" 
+                      javaType="pe.marista.sigma.bean.PerfilBean" 
+                      resultMap="perfilResultado"/>
+    </resultMap>
+    <resultMap id="perfilResultado" type="pe.marista.sigma.bean.PerfilBean">
+        <id property="idPerfil" column="idPerfil" />
+        <id property="nombre" column="nombre"/>
+        <id property="creaPor" column="creaPor"/>
+        <id property="modiPor" column="modiPor"/>
+    </resultMap>
+    <resultMap id="moduloResultado" type="pe.marista.sigma.bean.ModuloBean">
+        <id property="idModulo" column="idModulo" />
+        <result property="nodo" column="nodo" />
+        <result property="url" column="url" />
+        <result property="idTipoNodo" column="idTipoNodo" />
+        <result property="idModuloPadre" column="idModuloPadre" />
+        <result property="status" column="status" />
+    </resultMap>
+    <insert id="insertarPerfilModulo" parameterType="pe.marista.sigma.bean.PerfilModuloBean">
+        INSERT INTO MM_PerfilModulo(idPerfil,idModulo,status,creaPor,creaFecha)
+        Values (#{perfilBean.idPerfil},#{moduloBean.idModulo},#{status},#{creaPor},getDate())
+    </insert> 
+    <delete id="eliminarPerfilModulo" parameterType="pe.marista.sigma.bean.PerfilBean">
+        Delete from MM_PerfilModulo where idPerfil=#{idPerfil}
+    </delete> 
+    <delete id="eliminarPerfilModuloPorId" parameterType="pe.marista.sigma.bean.PerfilModuloBean">
+        Delete from MM_PerfilModulo where idPerfil=#{idPerfil} and idModulo=#{idModulo}
+    </delete> 
+    
+    <!--Personal Perfil -->
+    <sql id="consultaPersonalPerfil">
+        select distinct
+        erf.idperfil,
+        erf.nombre
+        from MM_VISTA vis
+        inner join MM_USUARIO usu on vis.usuario = usu.usuario
+        inner join MO_PERSONAL per on usu.idpersonal = per.idpersonal
+        inner join MM_PERFIL erf on erf.idperfil = vis.idperfil   
+    </sql>   
+  
+    <select id="obtenerUsarioPerfil" resultMap="perfilResultado" parameterType="pe.marista.sigma.bean.UsuarioBean">
+        <include refid="consultaPersonalPerfil"/>
+        Where usu.usuario=#{usuario}
+    </select>
+    <select id="validaPerfil" parameterType="pe.marista.sigma.bean.VistaBean" resultType="pe.marista.sigma.bean.VistaBean">
+        select distinct
+        idperfil,
+        usuario
+        from MM_VISTA 
+        where idPerfil=#{idPerfil} and usuario=#{usuario}
+    </select>
+</mapper>

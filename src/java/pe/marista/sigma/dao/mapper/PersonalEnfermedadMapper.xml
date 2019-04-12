@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pe.marista.sigma.dao.PersonalEnfermedadDAO">
+    
+    <sql id="consultaCampos">
+        select
+         PENF.idPersonalEnfermedad
+        ,PENF.idEnfermedad 
+        ,PENF.uniNeg as uniNegP
+        ,PENF.idPersonal
+        ,PENF.edadInicio
+        ,PENF.idTipoStatusEnfermedad
+        ,PENF.obs
+        ,PENF.creaFecha
+        ,PENF.creaPor
+        ,PE.nombre
+        ,PE.apepat 
+        ,PE.apemat 
+        ,ENF.enfermedad as nombreEnfermedad
+        ,ENF.idTipoEnfermedad
+        ,CO.idCodigo as codStatusEnfermedad
+        ,CO.codigo as nombreStatusEnfermedad
+        ,COENF.idCodigo as codTipoEnfermedad
+        ,COENF.codigo as nombreTipoEnfermedad
+        FROM MO_PersonalEnfermedad PENF
+        INNER Join  MO_Personal     PE      on  PENF.idPersonal = PE.idPersonal  and penf.unineg=pe.unineg
+        INNER Join  MO_Codigo       CO      on  PENF.idTipoStatusEnfermedad = CO.idCodigo     
+        INNER Join  MO_Enfermedad   ENF     on  PENF.idEnfermedad = ENF.idEnfermedad
+        INNER Join  MO_Codigo       COENF   on  ENF.idTipoEnfermedad = COENF.idCodigo 
+        
+    </sql>
+    <resultMap id="personalEnfermedadResultado" type="pe.marista.sigma.bean.PersonalEnfermedadBean">
+        <id property="idPersonalEnfermedad" column="idPersonalEnfermedad" />
+        <id property="unidadNegocioBean.uniNeg" column="uniNegP" />
+        <result property="edadInicio" column="edadInicio" />
+        <result property="obs" column="obs" />
+        <result property="creaPor" column="creaPor" />
+        <result property="creaFecha" column="creaFecha" /> 
+        <result property="modiPor" column="modiPor" />  
+        <association property="unidadNegocioBean" column="uniNegP"
+                     javaType="pe.marista.sigma.bean.UnidadNegocioBean"
+                     resultMap="unidadNegocioResultado"/>
+        <!--1 idPersonal-->                
+        <association property="personalBean" column="idPersonal"
+                     javaType="pe.marista.sigma.bean.PersonalBean"
+                     resultMap="personalResultado"/>        
+        <!--2 idEnfermedad-->
+        <association property="enfermedadBean" column="idEnfermedad"
+                     javaType="pe.marista.sigma.bean.EnfermedadBean"
+                     resultMap="enfermedadResultado"/>       
+        <!--3 idTipoStatusEnfermedad-->
+        <association property="tipoStatusEnfermedadBean" column="idTipoStatusEnfermedad"
+                     javaType="pe.marista.sigma.bean.CodigoBean"
+                     resultMap="tipoStatusEnfermedadResultado"/>       
+    </resultMap>
+    <resultMap id="unidadNegocioResultado" type="pe.marista.sigma.bean.UnidadNegocioBean">
+        <id property="uniNeg" column="uniNegP"/>
+        <result property="nombreUniNeg" column="nombreUniNeg"/> 
+    </resultMap>
+
+    <!--1 idPersonal-->         
+    <resultMap id="personalResultado" type="pe.marista.sigma.bean.PersonalBean">
+        <id property="idPersonal" column="idPersonal"/>
+        <result property="codPer" column="codPer" />
+        <result property="nombre" column="nombre" />
+        <result property="apepat" column="apepat" />
+        <result property="apemat" column="apemat" />
+    </resultMap>   
+    <!--2 idEnfermedad-->
+    <resultMap id="enfermedadResultado" type="pe.marista.sigma.bean.EnfermedadBean">
+        <id property="idEnfermedad" column="idEnfermedad" />
+        <result property="enfermedad" column="nombreEnfermedad" />
+        <association property="tipoEnfermedadBean" column="codTipoEnfermedad" 
+                     javaType="pe.marista.sigma.bean.CodigoBean" 
+                     resultMap="tipoEnfermedadResultado"/>
+    </resultMap> 
+    <resultMap id="tipoEnfermedadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codTipoEnfermedad"/>
+        <result property="codigo" column="nombreTipoEnfermedad"/>
+    </resultMap> 
+    
+    <!--3 idTipoStatusEnfermedad-->
+    <resultMap id="tipoStatusEnfermedadResultado" type="pe.marista.sigma.bean.CodigoBean">
+        <id property="idCodigo" column="codStatusEnfermedad"/>
+        <result property="codigo" column="nombreStatusEnfermedad"/>
+    </resultMap> 
+       
+    <select id="obtenerPersonalEnfermedadPorPersonal" resultMap="personalEnfermedadResultado" parameterType="pe.marista.sigma.bean.PersonalBean">
+        <include refid="consultaCampos" />
+        where PENF.idPersonal=#{idPersonal} and penf.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+    <select id="obtenerPersonalEnfermedadPorId" resultMap="personalEnfermedadResultado" parameterType="pe.marista.sigma.bean.PersonalEnfermedadBean">
+        <include refid="consultaCampos" />
+        where PENF.idPersonalEnfermedad=#{idPersonalEnfermedad} and penf.unineg=#{unidadNegocioBean.uniNeg}
+    </select>
+     
+    <insert id="insertarPersonalEnfermedad" parameterType="pe.marista.sigma.bean.PersonalEnfermedadBean">
+        INSERT INTO  MO_PersonalEnfermedad
+        (unineg,idpersonal,idEnfermedad,edadInicio,idTipoStatusEnfermedad,obs,creaPor)
+        VALUES (#{unidadNegocioBean.uniNeg},#{personalBean.idPersonal}, #{enfermedadBean.idEnfermedad},#{edadInicio},#{tipoStatusEnfermedadBean.idCodigo},#{obs},#{creaPor})
+    </insert>                                                                                                       
+     
+    <update id="modificarPersonalEnfermedad" parameterType="pe.marista.sigma.bean.PersonalEnfermedadBean">
+        Update MO_PersonalEnfermedad set
+        idEnfermedad = #{enfermedadBean.idEnfermedad}
+        ,edadInicio = #{edadInicio}
+        ,idTipoStatusEnfermedad = #{tipoStatusEnfermedadBean.idCodigo}
+        ,obs = #{obs}
+        ,modiPor = #{modiPor}
+        Where idPersonalEnfermedad=#{idPersonalEnfermedad} and  unineg=#{unidadNegocioBean.uniNeg}
+    </update>
+     
+    <delete id="eliminarPersonalEnfermedad" parameterType="pe.marista.sigma.bean.PersonalEnfermedadBean">
+        Delete From MO_PersonalEnfermedad Where idPersonalEnfermedad = #{idPersonalEnfermedad} 
+        and  unineg=#{unidadNegocioBean.uniNeg}
+    </delete>
+         
+</mapper>
